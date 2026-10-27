@@ -1,0 +1,145 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# Pixel 3 RAM-only first light. Never mount or write Android storage.
+#
+# Modelled on the Pixel 4 first light (device/flame/initramfs/init) but for
+# this gate the guard is absolute: an EMPTY allowlist ships with the image
+# and init fails closed, so even userdata, boot_b and dtbo_b stay read-only.
+# No modules are loaded, no watchdog is taken over, no rootfs handoff runs.
+export PATH=/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# PID 1 exiting on a mount failure panics (panic=10) rather than exposing a
+# root shell with an uninitialized storage guard.
+mount -t proc proc /proc || exit 1
+mount -t sysfs sysfs /sys || exit 1
+mount -t devtmpfs devtmpfs /dev || exit 1
+mkdir -p /dev/pts /run
+mount -t devpts devpts /dev/pts || exit 1
+mount -t tmpfs tmpfs /run || exit 1
+mount -t configfs configfs /sys/kernel/config || exit 1
+
+say() {
+    echo "omamobile-blueline: $*" > /dev/kmsg
+    echo "omamobile-blueline: $*" > /dev/console 2>/dev/null
+}
+
+echo 'Omarchy Mobile first-light (blueline) - RAM only' > /dev/console 2>/dev/null
+say "RAM-only first light: $(uname -r)"
+
+# The guard's allowlist. First light ships it EMPTY: no partition may be
+# written. A missing or non-empty file is not a license to write anything
+# either - init fails closed and keeps every block read-only, logging why.
+allowlist_ok=1
+if [ ! -f /etc/omamobile-ufs-rw ]; then
+    say 'allowlist /etc/omamobile-ufs-rw missing; keeping everything read-only'
+    allowlist_ok=0
+elif [ -s /etc/omamobile-ufs-rw ]; then
+    say 'allowlist not empty at first light; keeping everything read-only'
+    allowlist_ok=0
+fi
+
+# Every UFS block device (disks and partitions) goes read-only before
+# anything mounts. A per-device failure is logged, never fatal here: the
+# image never mounts anything but tmpfs, so a stubborn LUN stays unread.
+storage_guard() {
+    failed=0
+    for s in /sys/class/block/sd*; do
+        [ -e "$s" ] || continue
+        name=${s##*/}
+        [ -b "/dev/$name" ] || continue
+        if ! blockdev --setro "/dev/$name" 2>&1; then
+            say "FAILED to set /dev/$name read-only"
+            failed=$((failed + 1))
+        elif [ "$(cat "$s/ro" 2>/dev/null)" != 1 ]; then
+            say "/dev/$name still reports rw after blockdev --setro"
+            failed=$((failed + 1))
+        fi
+    done
+    echo "$failed"
+}
+failed=$(storage_guard)
+say "storage guard: $failed device(s) could not be write-protected"
+
+# Re-assert the guard: a late-appearing LUN (or a rw flip) is caught the
+# same way flame's probe does. At first light there is nothing to stop,
+# so a failure re-arms everything and logs; it does not reboot the phone.
+(
+    while :; do
+        for s in /sys/class/block/sd*; do
+            [ -e "$s" ] || continue
+            [ "$(cat "$s/ro" 2>/dev/null)" = 1 ] || blockdev --setro "/dev/${s##*/}" 2>/dev/null
+        done
+        sleep 1
+    done
+) &
+
+# Product string from the descriptor's NAME, packed by the builder.
+product='Omarchy Mobile'
+[ -s /etc/omamobile-usb-product ] && product=$(cat /etc/omamobile-usb-product)
+
+# CDC NCM works with Linux and macOS without a proprietary host driver.
+g=/sys/kernel/config/usb_gadget/omamobile
+mkdir -p "$g/strings/0x409" "$g/configs/c.1/strings/0x409"
+echo 0x1d6b > "$g/idVendor"
+echo 0x0104 > "$g/idProduct"
+echo 'Omarchy Mobile' > "$g/strings/0x409/manufacturer"
+echo "$product" > "$g/strings/0x409/product"
+echo omamobile-blueline > "$g/strings/0x409/serialnumber"
+echo 'NCM + ACM' > "$g/configs/c.1/strings/0x409/configuration"
+mkdir -p "$g/functions/ncm.usb0" "$g/functions/acm.GS0"
+ln -s "$g/functions/ncm.usb0" "$g/configs/c.1/"
+ln -s "$g/functions/acm.GS0" "$g/configs/c.1/"
+
+udc=""
+for _ in $(seq 1 30); do
+    for controller in /sys/class/udc/*; do
+        [ -e "$controller" ] && udc=${controller##*/} && break
+    done
+    [ -n "$udc" ] && break
+    sleep 1
+done
+if [ -n "$udc" ] && echo "$udc" > "$g/UDC"; then
+    say "USB gadget bound to $udc"
+else
+    say 'No USB controller; the serial console is still live on ttyMSM0'
+fi
+
+ip link set lo up
+ip addr add 172.16.42.1/24 dev usb0
+ip link set usb0 up
+cat > /run/udhcpd.conf <<'CONF'
+start 172.16.42.2
+end 172.16.42.2
+interface usb0
+option subnet 255.255.255.0
+lease_file /run/udhcpd.leases
+CONF
+touch /run/udhcpd.leases
+udhcpd /run/udhcpd.conf
+
+# Only the locally supplied public key grants SSH access. Host keys are
+# generated in the RAM filesystem; no identity or vendor firmware is shipped.
+mkdir -p /etc/dropbear
+dropbear -R -E -s -j -k -p 172.16.42.1:22
+say 'SSH ready: root@172.16.42.1; all storage read-only'
+
+# Interactive shell on the kernel console (ttyMSM0 via cmdline console=)
+# and on the ACM gadget port, so either cable sees the boot.
+(
+    while :; do
+        setsid getty -n -l /bin/sh 115200 ttyMSM0 vt100
+        sleep 1
+    done
+) &
+(
+    while :; do
+        setsid getty -n -l /bin/sh 115200 ttyGS0 vt100
+        sleep 1
+    done
+) &
+
+# PID 1 never exits: a gone init is a panic, and a panic here (panic=10)
+# just reboots back to whatever the bootloader picks. Stay RAM-only.
+while :; do
+    sleep 60
+done

@@ -1,0 +1,73 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# Runs inside device/blueline/firstlight/build's disposable aarch64 Alpine
+# container: builds the first-light initramfs and the header-v2 boot image.
+# Never connects to or writes a phone.
+set -eu
+apk add --no-cache cpio gzip dtc python3
+
+[ "$(fdtget /input/blueline.dtb / model)" = 'Google Pixel 3' ] || {
+    echo 'Not a Google Pixel 3 device tree' >&2; exit 1;
+}
+case " $(fdtget /input/blueline.dtb / compatible) " in
+    *google,blueline*qcom,sdm845*) ;;
+    *) echo 'Not a google,blueline / qcom,sdm845 device tree' >&2; exit 1 ;;
+esac
+gzip -t /input/kernel || { echo 'Expected a gzip-compressed ARM64 Image' >&2; exit 1; }
+gzip -dc /input/kernel > /tmp/Image
+python3 - <<'PY'
+import sys
+from pathlib import Path
+with Path('/tmp/Image').open('rb') as stream:
+    stream.seek(56)
+    if stream.read(4) != b'ARM\x64':
+        sys.exit('Kernel has no ARM64 Image header')
+PY
+release=$(strings /tmp/Image | sed -n 's/^Linux version \([^ ]*\) .*/\1/p' | head -1)
+[ -n "$release" ] || { echo 'No Linux version string in the kernel' >&2; exit 1; }
+echo "Kernel release: $release"
+rm /tmp/Image
+
+stage=/tmp/rootfs
+mkdir -p "$stage"
+apk --root "$stage" --initdb --no-cache \
+    --repositories-file /etc/apk/repositories --keys-dir /etc/apk/keys add \
+    alpine-baselayout busybox dropbear iproute2 util-linux busybox-extras
+install -m755 /src/device/blueline/firstlight/initramfs/init "$stage/init"
+mkdir -p "$stage/root/.ssh" "$stage/proc" "$stage/sys" "$stage/dev" "$stage/run"
+cp /input/key.pub "$stage/root/.ssh/authorized_keys"
+chmod 700 "$stage/root/.ssh"
+chmod 600 "$stage/root/.ssh/authorized_keys"
+
+# The guard's allowlist ships EMPTY: first light writes nothing. init also
+# fails closed if this file is missing or non-empty.
+: > "$stage/etc/omamobile-ufs-rw"
+
+# The gadget's product string comes from the descriptor's NAME.
+# (busybox tr has no [:print:] class - it deletes the literal characters
+# "[ :pint"; use the printable-ASCII octal range instead.)
+name=$(sed -n 's/^NAME=//p' /src/device/blueline/device.conf | head -1 \
+    | tr -d '"' | tr -cd '\040-\176')
+if [ -n "$name" ]; then
+    printf '%s\n' "$name" > "$stage/etc/omamobile-usb-product"
+fi
+
+# No vendor firmware and no kernel modules enter first light: the kernel
+# build carries everything needed built-in.
+(cd "$stage" && find . -print0 | cpio --null --quiet -o -H newc --owner=0:0) \
+    | gzip -n -9 > /out/initramfs.cpio.gz
+
+# ABOOT on this generation is proven at exactly these offsets (BRINGUP-M1
+# Sources: postmarketOS deviceinfo for google-blueline): base 0, kernel at
+# 0x8000, ramdisk at 0x1000000, tags at 0x100, 4 KiB pages, board DTB
+# appended (--dtb, not the second stage: append_dtb, no QCDT).
+python3 /mkbootimg/mkbootimg.py --header_version 2 \
+    --base 0x0 --kernel_offset 0x00008000 --ramdisk_offset 0x01000000 \
+    --tags_offset 0x100 --pagesize 4096 \
+    --kernel /input/kernel --ramdisk /out/initramfs.cpio.gz \
+    --dtb /input/blueline.dtb \
+    --cmdline 'console=ttyMSM0,115200n8 panic=10 androidboot.hardware=qcom androidboot.board=blueline' \
+    -o /out/firstlight.img
+size=$(stat -c %s /out/firstlight.img)
+[ "$size" -le 67108864 ] || { rm /out/firstlight.img; echo 'Image exceeds the 64 MiB boot partition budget (M1.0 getvar confirms the real size)' >&2; exit 1; }
+(cd /out && sha256sum firstlight.img initramfs.cpio.gz > SHA256SUMS)

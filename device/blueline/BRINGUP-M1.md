@@ -3,6 +3,8 @@
 
 Status (2026-10-27): descriptor, plan and device package written; no Pixel 3
 hardware in hand yet. Nothing in this file has been run on a blueline.
+M1.1, the host-only first-light build, is done and evidenced below; no
+fastboot or adb command has been run for it.
 Upstream's board device tree is already built by our kernel: `sdm845-google-
 blueline.dts` sits in the `omamobile` branch of linux-omarchy-mobile (tree
 contents checked 2026-10-27), which is why this phone starts where the
@@ -111,24 +113,79 @@ passed on this phone, with the date and `uname -r` recorded beside it.
 - Pass: partition table, sizes and slot state recorded. Risk: none beyond
   the unlock itself.
 
-### M1.1 — build the first-light image (host only)
+### M1.1 — build the first-light image (host only) — DONE 2026-10-27, no phone
 
-- Kernel: the `omamobile` integration base plus no blueline-specific patch
-  (the board DT is upstream); `W=1` build of the DTB, `dtbs_check` clean
-  against the base.
-- Initramfs: Alpine + busybox + dropbear + the CDC NCM gadget, built from
-  a **blueline-local init** — the shared `initramfs/init` is written
-  against Tensor bootloaders (its simplefb trigger and probes are keyed to
-  them); the Pixel 4's local init is the model. Guard: every UFS LUN
-  `blockdev --setro` before anything mounts, no writable partition at all
-  in this gate.
-- `mkbootimg` header v2 at the offsets named under Sources, DTB appended,
-  cmdline `console=ttyMSM0,115200n8`, plus `panic=10` (ABOOT appends its
-  own console arguments like Tensor ABL; a panic must still show). The
-  image must be smaller than `boot_b` from M1.0 by a wide margin.
-- Pass: image builds and parses (`avbtool info_image` is not expected to
-  find a footer; ABOOT on an unlocked phone does not require one).
-  Nothing touched a phone.
+**Kernel.** `omamobile` branch of [linux-omarchy-mobile](https://github.com/derekross/linux-omarchy-mobile) shallow-cloned to `~/hermes-workspace/android-mainline/kernel` (outside the repo); release `7.3.0-rc6-omamobile-push1-g33267e524f97-dirty` (`include/config/kernel.release`; `-dirty` is an artifact of the shallow clone's `git describe`, no source was edited). The board DT is upstream, no blueline-specific patch. The repo's `docker/Dockerfile` does not install on arm64 (`g++-multilib`, `gcc-multilib`, `lib32readline-dev`, `lib32z1-dev` have no aarch64 candidates — the image was built for x86_64 hosts), so the build ran in a trim of it for arm64 (`android-mainline/buildenv-Dockerfile.arm64`, same Ubuntu 24.04 minus the multilib packages): gcc 13.3.0, GNU Make 4.3, binutils 2.42, native `--platform linux/arm64` on this Apple-silicon machine, no `LLVM=1`.
+
+Config: arm64 `defconfig` + `kernel/configs/omamobile.config` with `scripts/kconfig/merge_config.sh -m` exactly as `bin/omamobile kernel` does. **The fragment builds clean for sdm845** — arm64 is multi-platform, so the Tensor options are additive; no fallback config was needed. `scripts/config -e` pinned three symbols the defconfig leaves `=m` and the initramfs needs built-in (it loads no modules): `SCSI_UFS_QCOM`, `USB_CONFIGFS`, `QCOM_WDT` (ABOOT-generation watchdog; flame takes it over with a module, first light cannot). `EXT4_FS`, `USB_DWC3_QCOM`, `USB_CONFIGFS_NCM/ACM`, `DEVTMPFS_MOUNT`, `BLK_DEV_INITRD`, `DRM_SIMPLEDRM`, geni serial and the RPMH/ICC/IOMMU sdm845 stack were already `=y` from defconfig or the fragment (`olddefconfig` kept every pin). `modules` was not built (first light loads nothing); the target DTB needed its own `make` invocation — combining `Image.gz arch/arm64/boot/dts/qcom/….dtb` in one call trips kbuild's target-prefix duplication (`No rule to make target 'arch/arm64/boot/dts/arch/arm64/boot/dts/…'`).
+
+```
+make ARCH=arm64 O=out-blueline-kernel defconfig
+scripts/kconfig/merge_config.sh -m -O out-blueline-kernel \
+    out-blueline-kernel/.config kernel/configs/omamobile.config
+scripts/config --file out-blueline-kernel/.config -e SCSI_UFS_QCOM -e USB_CONFIGFS -e QCOM_WDT
+make ARCH=arm64 O=out-blueline-kernel olddefconfig
+make ARCH=arm64 O=out-blueline-kernel -j18 Image.gz
+make ARCH=arm64 O=out-blueline-kernel dtbs
+```
+
+**Image builder.** `device/blueline/firstlight/build` (host CLI, `build-flame-probe` style) runs `device/blueline/firstlight/initramfs/build` in a disposable aarch64 Alpine container and assembles with AOSP `mkbootimg.py` (AOSP `system/tools/mkbootimg`, shallow clone beside the kernel). The initramfs is Alpine `alpine-baselayout busybox dropbear iproute2 util-linux busybox-extras` (729 cpio entries) with `device/blueline/firstlight/initramfs/init`: banner, tmpfs/devtmpfs root, **every** UFS block `blockdev --setro` before anything mounts (per-device failures logged, re-asserted by a 1 s loop), an **empty** `/etc/omamobile-ufs-rw` with fail-closed init (missing or non-empty file also means all-read-only), no module loads, no userdata mount, CDC NCM `usb0` 172.16.42.1/24 + CDC ACM, product string from the descriptor's `NAME` (`/etc/omamobile-usb-product`; busybox `tr` has no `[:print:]` class — the printable-ASCII octal range is used), dropbear key-only on 172.16.42.1, shells on `ttyMSM0` and `ttyGS0`. Assembly:
+
+```
+device/blueline/firstlight/build --kernel …/Image.gz \
+  --dtb …/sdm845-google-blueline.dtb --ssh-key ~/.ssh/id_ed25519.pub \
+  --mkbootimg …/mkbootimg/mkbootimg.py --out out-blueline
+# in the container:
+mkbootimg.py --header_version 2 --base 0x0 --kernel_offset 0x00008000 \
+  --ramdisk_offset 0x01000000 --tags_offset 0x100 --pagesize 4096 \
+  --kernel Image.gz --ramdisk initramfs.cpio.gz --dtb sdm845-google-blueline.dtb \
+  --cmdline 'console=ttyMSM0,115200n8 panic=10 androidboot.hardware=qcom androidboot.board=blueline' \
+  -o out-blueline/firstlight.img
+```
+
+The DTB goes through `--dtb` (appended, header-v2 dtb fields), not the second stage — the field-proven recipe for this phone appends the board DTB (`append_dtb`, no QCDT). Output is `firstlight.img`, never `boot.img`, and the builder refuses an existing file.
+
+**Validation, no phone (all logged to `logs-blueline/`, gitignored):**
+
+(a) header parse (`python3` + `struct`; script in scratch, output verbatim):
+
+```
+magic           : ANDROID!
+header_version  : 2 (header 1660 bytes in a 4096-byte page)
+page_size       : 4096
+kernel          : 16216010 bytes @ 0x8000
+ramdisk         : 4757262 bytes @ 0x1000000
+second          : 0 bytes
+tags_addr       : 0x100
+recovery_dtbo   : 0 bytes @ 0x0
+dtb             : 105798 bytes @ 0x1f00000
+cmdline         : console=ttyMSM0,115200n8 panic=10 androidboot.hardware=qcom androidboot.board=blueline
+size            : 21086208 bytes (sections end at 21086208)
+OK: header v2 layout, all sections present and page-aligned
+```
+
+`mkbootimg.py` wrote `header_version 2` (the v2 layout with the dtb size/addr fields; "header v2" on this generation means this layout, which ABOOT accepts — postmarketOS builds exactly this). `os_version/patch` is 0: the header fields are informational for ABOOT and no deviceinfo value for them was cited, so none was invented. `dtb @ 0x1f00000` is mkbootimg's default `--dtb_offset` load address; ABOOT relocates the appended DTB itself. 21.1 MiB fits a Pixel-3-size boot partition with room to spare; the builder enforces 64 MiB until M1.0's `getvar partition-size:boot_b` replaces the budget.
+
+(b) appended DTB split out of the image and decompiled:
+
+```
+$ dtc -I dtb -O dts /chk/dtb (root node)
+	qcom,board-id = <0x21505 0x00>;
+	qcom,msm-id = <0x141 0x20001>;
+	model = "Google Pixel 3";
+	compatible = "google,blueline", "qcom,sdm845";
+```
+
+(c) ramdisk extracted and listed: 729 entries incl. `init`, `usr/sbin/dropbear`, `usr/bin/dropbearkey`, `sbin/blockdev`, `sbin/getty`, `usr/sbin/udhcpd`, `bin/ip*`, `root/.ssh/authorized_keys` (the one supplied public key), `/etc/omamobile-usb-product = [Google Pixel 3]`, `/etc/omamobile-ufs-rw: 0 bytes` (empty allowlist).
+
+(d) `sha256 out-blueline/firstlight.img`:
+`dcbd1bcdd935cd4dba50b969d006be64c71c6ad28e67e219b219e01d2a9fab53`
+
+- Pass: image builds and parses as header v2 with the board DTB appended and
+  a dropbear-bearing initramfs; re-running the builder refuses the existing
+  `firstlight.img`. `avbtool info_image` is not expected to find a footer;
+  ABOOT on an unlocked phone does not require one. **Nothing touched a
+  phone: no fastboot or adb was ever invoked for this gate.**
 
 ### M1.2 — boot from RAM, zero writes
 

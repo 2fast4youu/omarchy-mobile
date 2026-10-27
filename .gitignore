@@ -1,9 +1,11 @@
 omamobile.local.conf
 out/
+out-blueline/
 *.zip
 *.img
 keys/
 logs/
+logs-blueline/
 
 # Python bytecode from running package code in place
 __pycache__/

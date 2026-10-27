@@ -1,0 +1,78 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# Build a RAM-only Pixel 3 first-light boot image; never connect to or write a phone.
+#
+# Usage: device/blueline/firstlight/build --kernel Image.gz \
+#          --dtb sdm845-google-blueline.dtb --ssh-key ~/.ssh/id_ed25519.pub \
+#          --mkbootimg /path/to/mkbootimg.py --out /path/to/output \
+#          [--docker-image alpine:3.22]
+#
+# The kernel must have UFS (ufs-qcom), USB DWC3/QCOM, configfs NCM/ACM,
+# devtmpfs, tmpfs and ext4 built in; first light loads no modules. Supply
+# the built sdm845-google-blueline.dtb, not a Dragonboard or Flame DTB: the
+# container checks /model and /compatible before packing.
+# mkbootimg.py comes from AOSP system/tools/mkbootimg. ABOOT on this
+# generation takes a header-v2 image at the offsets proven in BRINGUP-M1
+# (base 0, kernel 0x8000, ramdisk 0x1000000, tags 0x100, pagesize 4096)
+# with the board DTB appended, not in the second stage.
+# Docker runs a disposable aarch64 Alpine builder; x86 hosts need binfmt.
+# The result is $out/firstlight.img, never named boot.img (M1.5 flashes it
+# by hand to boot_b; this gate's name must not invite a blind fastboot
+# flash boot).
+set -euo pipefail
+ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)
+kernel="" dtb="" key="" mkbootimg="" out="" image="alpine:3.22"
+die() { echo "error: $*" >&2; exit 1; }
+while (($#)); do
+  case $1 in
+    --kernel) kernel=${2:?}; shift ;;
+    --dtb) dtb=${2:?}; shift ;;
+    --ssh-key) key=${2:?}; shift ;;
+    --mkbootimg) mkbootimg=${2:?}; shift ;;
+    --out) out=${2:?}; shift ;;
+    --docker-image) image=${2:?}; shift ;;
+    -h|--help) sed -n '3,22p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) die "unknown argument: $1" ;;
+  esac
+  shift
+done
+command -v docker >/dev/null || die 'Docker is required'
+command -v python3 >/dev/null || die 'Python 3 is required'
+for path in "$kernel" "$dtb" "$key" "$mkbootimg"; do
+  [[ -n $path && -f $path ]] || die 'supply --kernel, --dtb, --ssh-key and --mkbootimg files'
+done
+[[ -n $out ]] || die 'supply --out DIR'
+
+# Normalize paths portably (macOS realpath lacks -m/-f on older releases),
+# so relative paths and spaces survive Docker's bind mount parsing.
+absolute() { python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$1"; }
+kernel=$(absolute "$kernel") dtb=$(absolute "$dtb") key=$(absolute "$key")
+mkbootimg=$(absolute "$mkbootimg") out=$(absolute "$out")
+for path in "$ROOT" "$kernel" "$dtb" "$key" "$mkbootimg" "$out"; do
+  [[ $path != *,* ]] || die 'Docker bind paths cannot contain commas'
+done
+[[ $(basename "$mkbootimg") == mkbootimg.py ]] || die '--mkbootimg must name AOSP mkbootimg.py'
+[[ ! -e $out/firstlight.img ]] || die "$out/firstlight.img already exists; remove it or choose another output directory"
+python3 - "$key" <<'PY'
+import base64, pathlib, struct, sys
+data = pathlib.Path(sys.argv[1]).read_text().split()
+if len(data) < 2 or data[0] not in ('ssh-ed25519', 'ssh-rsa', 'ecdsa-sha2-nistp256'):
+    sys.exit('--ssh-key must be an OpenSSH PUBLIC key, never a private key')
+try:
+    raw = base64.b64decode(data[1], validate=True)
+    n, = struct.unpack('>I', raw[:4])
+    assert raw[4:4+n].decode() == data[0]
+except (ValueError, struct.error, AssertionError, UnicodeError):
+    sys.exit('invalid SSH public key')
+PY
+
+mkdir -p "$out"
+docker run --rm --platform linux/arm64 \
+  --mount "type=bind,source=$ROOT,target=/src,readonly" \
+  --mount "type=bind,source=$kernel,target=/input/kernel,readonly" \
+  --mount "type=bind,source=$dtb,target=/input/blueline.dtb,readonly" \
+  --mount "type=bind,source=$key,target=/input/key.pub,readonly" \
+  --mount "type=bind,source=$(dirname "$mkbootimg"),target=/mkbootimg,readonly" \
+  --mount "type=bind,source=$out,target=/out" \
+  "$image" sh /src/device/blueline/firstlight/initramfs/build
+echo "Built $out/firstlight.img (RAM-only first light; no phone was accessed)"
