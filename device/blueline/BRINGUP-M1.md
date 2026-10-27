@@ -310,6 +310,48 @@ phone:
    this gate; the heartbeat/pstore loop keeps writing to kmsg anyway
    (harmless) and to ttyGS0 once the PHY fix lets the gadget bind.
 
+#### Attempt 2026-10-27 (third): every instrument silent — the USB glue never probed
+
+Three fixes landed in this round, all found from the host side:
+
+1. **configfs never mounted.** The init mounted `configfs` on
+   `/sys/kernel/config`, but that directory is created by *userspace*,
+   not by the kernel — nothing in `init/` or `fs/sysfs` makes it — so the
+   mount failed against a hidden `/dev/null` file and the gadget was
+   never built. Fixed by `mkdir -p /config` + `mount -t configfs configfs
+   /config` (postmarketOS' initfs path; flame's initramfs has the same
+   latent bug and escapes only because its boot chain pre-creates the
+   directory).
+2. **The real blocker: the DWC3 glue had no matching driver.** Since the
+   flatten series (v7.0/7.1) `drivers/usb/dwc3/dwc3-qcom.c` matches only
+   `"qcom,snps-dwc3"` (`dwc3_qcom_of_match` in 7.3.0-rc6-omamobile, one
+   entry), and `dwc3-of-simple.c` carries no Qualcomm entry at all — but
+   this Android-based tree's `sdm845.dtsi` still labels both wrapper
+   nodes `"qcom,sdm845-dwc3", "qcom,dwc3"`. No driver claimed `usb_1`:
+   no DWC3 core, no `/sys/class/udc`, no probe error, nothing on any
+   instrument. The community Pixel 3 ports run the *old* driver with the
+   old compatible (pmOS' fork pins `sdm845-6.11`/`sdm845-7.1-rc1-r0`), so
+   the binding rename simply never surfaced there. Fixed by
+   `compatible = "qcom,snps-dwc3", "qcom,sdm845-dwc3", "qcom,dwc3"` on
+   `usb_1`/`usb_2` (old strings kept as fallback). The `vdda-phy`/
+   `vdda-pll` swap suspicion from an early diff of the two forks was
+   checked against the 7.1 reference and dropped: mainline order and
+   pmOS order are identical (phy=l26a_1p2, pll=l1a_0p875).
+3. **Instruments added where the plan was mute-by-design:** heartbeat
+   echo onto ttyGS0, pstore ramoops node in the blueline DTS (1 MiB at
+   0x9ff00000, `console-ramoops` readable after the next boot), and a
+   `console=tty0` fbcon line — ABOOT's fastboot splash teardown kills
+   `keep_bootcon`, so `console=tty0` is the only way kernel text can
+   reach the panel at first light.
+
+Side experiment worth recording: a self-built pmOS 6.11 kernel
+(`kernel/sdm845-6.11` tag, their defconfig, our initramfs, same
+concat-DTB v2 pack) booted alive but mute — with `CONFIG_EFI_ZBOOT=y`
+the packaged `Image.gz` is an EFI-stub binary, so that build is *not*
+proof for the reference stack, only for our packaging path. The pmOS
+packaging detail they rely on (initfs, bootimg v2 with DTB appended per
+their `initfs` + `deviceinfo` bootargs) is now reproduced stepwise.
+
 ### M1.3 — the LUN map and the calibration backups (read-only)
 
 - Record which UFS LUN carries the partition table, `userdata` and each

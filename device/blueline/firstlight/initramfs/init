@@ -30,9 +30,9 @@ mkdir -p /run
 mount -t tmpfs tmpfs /run || mark 'mount tmpfs FAILED'
 mount -t sysfs sysfs /sys || mark 'mount sysfs FAILED'
 mount -t devtmpfs devtmpfs /dev || mark 'mount devtmpfs FAILED'
-mkdir -p /dev/pts /sys/fs/pstore
+mkdir -p /dev/pts /sys/fs/pstore /config
 mount -t devpts devpts /dev/pts || mark 'mount devpts FAILED'
-mount -t configfs configfs /sys/kernel/config || mark 'mount configfs FAILED'
+mount -t configfs configfs /config || mark 'mount configfs FAILED'
 mark "kernel $(uname -r) $(uname -m)"
 
 say() {
@@ -46,7 +46,7 @@ echo 'Omarchy Mobile first-light (blueline) - RAM only' > /dev/console 2>/dev/nu
 mark 'usb gadget setup'
 product='Omarchy Mobile'
 [ -s /etc/omamobile-usb-product ] && product=$(cat /etc/omamobile-usb-product)
-g=/sys/kernel/config/usb_gadget/omamobile
+g=/config/usb_gadget/omamobile
 mkdir -p "$g/strings/0x409" "$g/configs/c.1/strings/0x409" 2>/dev/null
 echo 0x1d6b > "$g/idVendor" 2>/dev/null
 echo 0x0104 > "$g/idProduct" 2>/dev/null
