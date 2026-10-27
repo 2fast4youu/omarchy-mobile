@@ -249,6 +249,33 @@ backup-flipped, so the write is restorable bit-for-bit), which is the
 field-proven path for this phone and what the Ubuntu Touch install itself
 did to boot this handset.
 
+#### Attempt 2026-10-27 (second): concatenated-DTB boots alive but mute — the PHYs were modules
+
+Flashed to `boot_a` and rebooted (`fastboot flash` + `fastboot reboot`):
+with the DTB concatenated onto the kernel blob the phone stopped dying —
+no return to ABOOT for minutes, while every header-section-DTB boot was
+back in ~4 s. But it booted **mute**: no NCM link, no ACM port, black
+panel. Two causes, both readable from the built `.config` without the
+phone:
+
+1. First light loads **no kernel modules**, yet `arm64 defconfig` leaves
+   the two PHYs the DWC3 controller needs as `=m`:
+   `CONFIG_PHY_QCOM_QUSB2` (USB2 PHY, `qcom,qusb2-v2-phy`) and
+   `CONFIG_PHY_QCOM_QMP_USB` (USB3 QMP PHY). The controller's probe is
+   deferred forever, no UDC ever appears under `/sys/class/udc`, init's
+   gadget bind has nothing to bind, and there is no instrument left.
+   Fixed by `scripts/config -e PHY_QCOM_QUSB2 -e PHY_QCOM_QMP_USB
+   -e PHY_QCOM_QMP` + `olddefconfig` + Image rebuild, same pin mechanism
+   as M1.1's three pins. (`qcom,dwc3` glue itself was already `=y` via
+   `USB_DWC3_QCOM`; the Google common DTS carries no Type-C/TPM nodes, so
+   peripheral mode needs no TCPM stack.)
+2. The panel console (`console=tty1` + `simple-framebuffer` over the
+   splash region) stays dark on this reboot path: ABOOT kills the
+   bootloader splash on handoff from fastboot mode, and first light
+   ships no DSI driver. The panel is therefore **not** an instrument on
+   this gate; the heartbeat/pstore loop keeps writing to kmsg anyway
+   (harmless) and to ttyGS0 once the PHY fix lets the gadget bind.
+
 ### M1.3 — the LUN map and the calibration backups (read-only)
 
 - Record which UFS LUN carries the partition table, `userdata` and each

@@ -75,23 +75,30 @@ fi
 
 # Once ttyGS0 exists: flush the step log, dump the previous boot's pstore
 # (the crash evidence), then beat every 2 s. Sudden silence after the last
-# beat is itself the measurement.
+# beat is itself the measurement. The panel console (console=tty1) is the
+# fallback instrument, so pstore and the heartbeat ALSO go to /dev/kmsg
+# unconditionally, not gated on the gadget: if the USB gadget never binds,
+# the screen still shows the previous panic and a live beat counter.
 (
-    while [ ! -e /dev/ttyGS0 ]; do sleep 0.2; done
-    cat "$steps" 2>/dev/null > /dev/ttyGS0
+    while [ ! -e /proc/uptime ]; do sleep 0.2; done
+    # Dump the previous boot's crash log to kmsg (panel) and to ttyGS0 (ACM).
     if mount -t pstore pstore /sys/fs/pstore 2>/dev/null; then
-        echo "--- pstore mount ok, files: $(ls /sys/fs/pstore/ 2>/dev/null | tr '\n' ' ')" > /dev/ttyGS0
         for f in /sys/fs/pstore/*; do
             [ -e "$f" ] || continue
-            printf '\n===== %s =====\n' "${f##*/}" > /dev/ttyGS0
-            cat "$f" > /dev/ttyGS0
+            echo "===== PSTORE ${f##*/} begin =====" > /dev/kmsg
+            cat "$f" > /dev/kmsg 2>/dev/null
+            echo "===== PSTORE ${f##*/} end =====" > /dev/kmsg
         done
-        printf '\n===== pstore dump end =====\n' > /dev/ttyGS0
     else
-        echo '--- pstore mount FAILED' > /dev/ttyGS0
+        echo 'omamobile-blueline: pstore mount failed' > /dev/kmsg
     fi
     while :; do
-        echo "beat $(cut -d. -f1 /proc/uptime)s" > /dev/ttyGS0 2>/dev/null
+        up=$(cut -d. -f1 /proc/uptime)
+        echo "omamobile-blueline: beat ${up}s steps:$(tail -1 "$steps" 2>/dev/null)" > /dev/kmsg
+        if [ -e /dev/ttyGS0 ]; then
+            cat "$steps" 2>/dev/null > /dev/ttyGS0 2>/dev/null
+            echo "beat ${up}s" > /dev/ttyGS0 2>/dev/null
+        fi
         sleep 2
     done
 ) &
