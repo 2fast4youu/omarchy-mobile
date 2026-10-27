@@ -35,10 +35,15 @@ ships bootloader **b1c1-0.3-7241706** (verified inside the unpacked zip at
 while this handset runs **b1c1-0.4-7617406** — flashing RQ3A's flash-all
 would *downgrade* the bootloader. The way back is therefore the last
 official blueline factory image, **Android 12 (SP1A.210812.016.C2,
-Jun 2022)**, `blueline-sp1a.210812.016.c2-factory-fa981d87.zip`, the same
-build LineageOS documents for b1c1-0.4-era devices
-(`review.lineageos.org` vars/blueline: build_number 8618562, same URL);
-its sha256 is recorded here once the download completes.
+Jun 2022)**, `blueline-sp1a.210812.016.c2-factory-fa981d87.zip` —
+downloaded 2026-10-27, sha256
+`fa981d87b6b28a1996161accbb147f46fe29663bb2ce6cc13dc9e500cbc59c93`
+verified equal to both the hash in its file name and Google's published
+checksum; its payload `bootloader-blueline-b1c1-0.4-7617406.img`
+(8,726,312 bytes, unpacked under `factory/sp1a/`) matches this handset's
+`version-bootloader` bit for bit, so flashing it does NOT downgrade the
+bootloader (the same build LineageOS documents for the b1c1-0.4 era:
+`review.lineageos.org` vars/blueline, build_number 8618562).
 `android-mainline/factory/` holds both zips; neither is ever flashed
 without re-checking its bootloader version against `fastboot getvar
 version-bootloader` first.
