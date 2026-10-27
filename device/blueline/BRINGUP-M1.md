@@ -390,6 +390,40 @@ the wrong (shifted) map at exactly the hardware that does not want it.
 The probe stays armed on the test images: gadget first, panic at 45 s
 second — the fastboot return is the boot's period at the end of sentence.
 
+#### Attempt 2026-10-27 (fifth): the QSCRATCH map was half the bug — flatten anchors the *core* window at the wrapper reg too
+
+The per-SoC QSCRATCH offset (fourth entry) changed nothing: probe and
+listener images died at 5–6 s exactly like before. The flatten rework
+does not only read QSCRATCH relative to the wrapper `reg` start — it
+passes `probe_data.res` straight into `dwc3_core_probe()`, which maps
+the DWC3 core globals at `res.start + 0xc100` and xHCI at `res.start`,
+and then `dwc3_core_is_valid()` issues the first readl. The flattened
+binding's SoCs anchor their wrapper node at the **core base** (eliza:
+`usb@a600000`, reg `0xfc100`, QSCRATCH at `+0xf8800`); SDM845 anchors it
+at **QSCRATCH** (`usb@a6f8800`, reg `0x400`). So on SDM845 the core read
+hit `0xa709800` — the QSCRATCH-only fix had moved `qscratch_base` to the
+right block while the first fatal access was never QSCRATCH but the core
+probe's own validity readl. `devm_ioremap()` checks no conflict, so
+nothing failed until the access; the abort needs no QSCRATCH write at
+all, which is why every PHY-only diagnosis from the outside looked
+alive-but-mute until the glue bound.
+
+**Fix:** derive both windows from the QSCRATCH address — `ioremap`
+QSCRATCH directly (match data: 0 for `qcom,sdm845-dwc3`, `0xf8800` for
+`qcom,snps-dwc3`) and pass the core resource anchored at
+`QSCRATCH − SDM845_QSCRATCH_BASE_OFFSET`. For the flattened SoCs both
+computations are the identity; for SDM845 they reproduce exactly the
+layout the 6.11-era driver used via the child node (`dwc3@…` reg) —
+which is the tree every working Pixel 3 USB gadget boots on. Kernel
+commits `16897c828` (driver), `7c0318228` (QMP PHY rails), `b5278c8ef`
+(ramoops).
+
+**The instrument now works unattended:** with `panic=10` a dead boot
+warm-reboots into FASTBOOT MODE within seconds by itself, so the
+flash → reboot → observe cycle needs no button holds anymore; a boot
+that survives the probe's 45 s proves driver-probe aliveness, and a
+surviving gadget must show ACM/NCM/SSH from then on.
+
 ### M1.3 — the LUN map and the calibration backups (read-only)
 
 - Record which UFS LUN carries the partition table, `userdata` and each
