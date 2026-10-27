@@ -46,6 +46,14 @@ chmod 600 "$stage/root/.ssh/authorized_keys"
 # The gadget's product string comes from the descriptor's NAME.
 # (busybox tr has no [:print:] class - it deletes the literal characters
 # "[ :pint"; use the printable-ASCII octal range instead.)
+
+# Panic probe (opt-in via the builder's --panic-probe SECONDS): makes the
+# kernel panic while it is provably alive, so its warm reboot returns the
+# handset to FASTBOOT MODE within ~60 s - the only aliveness instrument
+# on a handset with no panel driver, no gadget and no ABOOT fetch.
+if [ -n "${OMAMOBILE_PANIC_PROBE:-}" ]; then
+    printf '%s\n' "$OMAMOBILE_PANIC_PROBE" > "$stage/etc/omamobile-panic-probe"
+fi
 name=$(sed -n 's/^NAME=//p' /src/device/blueline/device.conf | head -1 \
     | tr -d '"' | tr -cd '\040-\176')
 if [ -n "$name" ]; then

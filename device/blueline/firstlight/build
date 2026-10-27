@@ -21,7 +21,7 @@
 # flash boot).
 set -euo pipefail
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)
-kernel="" dtb="" key="" mkbootimg="" out="" image="alpine:3.22"
+kernel="" dtb="" key="" mkbootimg="" out="" image="alpine:3.22" panic_probe=""
 die() { echo "error: $*" >&2; exit 1; }
 while (($#)); do
   case $1 in
@@ -31,6 +31,7 @@ while (($#)); do
     --mkbootimg) mkbootimg=${2:?}; shift ;;
     --out) out=${2:?}; shift ;;
     --docker-image) image=${2:?}; shift ;;
+    --panic-probe) panic_probe=${2:?}; shift ;;
     -h|--help) sed -n '3,22p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown argument: $1" ;;
   esac
@@ -67,7 +68,11 @@ except (ValueError, struct.error, AssertionError, UnicodeError):
 PY
 
 mkdir -p "$out"
+# Panic probe: seconds until a sysrq-c panic with no gadget present; empty
+# disables it. See init's panic-probe block for why this is the only
+# kernel-aliveness instrument on this handset.
 docker run --rm --platform linux/arm64 \
+  -e "OMAMOBILE_PANIC_PROBE=${panic_probe:-}" \
   --mount "type=bind,source=$ROOT,target=/src,readonly" \
   --mount "type=bind,source=$kernel,target=/input/kernel,readonly" \
   --mount "type=bind,source=$dtb,target=/input/blueline.dtb,readonly" \
