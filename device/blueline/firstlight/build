@@ -5,7 +5,12 @@
 # Usage: device/blueline/firstlight/build --kernel Image.gz \
 #          --dtb sdm845-google-blueline.dtb --ssh-key ~/.ssh/id_ed25519.pub \
 #          --mkbootimg /path/to/mkbootimg.py --out /path/to/output \
-#          [--docker-image alpine:3.22]
+#          [--panic-probe SECONDS] [--docker-image alpine:3.22]
+#
+# --panic-probe arms init's timed sysrq-c panic (see init's probe block):
+# the handset panics SECONDS after boot while provably alive, and the
+# panic=10 warm reboot returns it to FASTBOOT MODE — the only aliveness
+# instrument on a handset whose panel, gadget and ABOOT give nothing back.
 #
 # The kernel must have UFS (ufs-qcom), USB DWC3/QCOM, configfs NCM/ACM,
 # devtmpfs, tmpfs and ext4 built in; first light loads no modules. Supply
