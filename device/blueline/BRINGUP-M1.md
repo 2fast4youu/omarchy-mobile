@@ -22,6 +22,20 @@ touches slot B. The plan's gates then take calibration backups, write slot
 B and `userdata`, and mark slot B bootable as CONTRIBUTING 3.1's named GPT
 exception, captured sector by sector before and after.
 
+## Development handset state (2026-10-27)
+
+The port's handset arrived running **Ubuntu Touch on a postmarketOS base**
+(the USB composite self-describes with serial `postmarketOS`,
+`18d1:d001`, connected over a hub; `adb` on the host saw no adbd, so its
+USB gadget exposes no adb function to the Mac). Stock Android therefore no
+longer sits on a boot slot as-is: before any gate writes slot B, the owner
+must have the matching **stock factory image saved off-device** as the way
+back (BRINGUP-M1 M0/M1.5), and M1.0's getvars will show which slot the
+Ubuntu Touch boot lives in. That the phone boots a postmarketOS-family
+stack at all is useful evidence for M1.2 — a mainline-derived SDM845
+kernel already drives this board's storage and display in that setup;
+`uname -r` from it belongs in this note once a shell is reachable.
+
 ## Sources and facts
 
 - [V, source, 2026-10-27] Upstream board DTS:
