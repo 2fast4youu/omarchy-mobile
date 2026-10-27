@@ -68,11 +68,21 @@ fi
 # Parameter / Kernel TextOffset does not match" (pmaports !3932, UART-Log
 # 2023-03-28; mobile-nixos !361 derselbe Fix). Stock-RQ3A paescht, weil
 # Googles Kernel dort noch mit 0x8000 gebaut wird.
-python3 /mkbootimg/mkbootimg.py --header_version 2 \
+#
+# The DTB rides at the END of the kernel blob (cat kernel dtb), NOT in the
+# v2 DTB section: on 2026-10-27 header-section packing died silently in
+# ~4 s on every boot, while the concatenated layout (the pmaports blueline
+# recipe, deviceinfo_append_dtb=true) kept the kernel alive past 2 min on
+# the first try. AOSP mkbootimg refuses an empty --dtb and wants v2 to
+# carry one, so the check is patched out in a local copy and --dtb is not
+# passed at all.
+cat /input/kernel /input/blueline.dtb > /kernel-dtb
+cp -r /mkbootimg /tmp/mkbootimg
+sed -i "s/raise ValueError(.DTB image must not be empty..)/pass/" /tmp/mkbootimg/mkbootimg.py
+python3 /tmp/mkbootimg/mkbootimg.py --header_version 2 \
     --base 0x0 --kernel_offset 0x00000000 --ramdisk_offset 0x01000000 \
     --tags_offset 0x100 --pagesize 4096 \
-    --kernel /input/kernel --ramdisk /out/initramfs.cpio.gz \
-    --dtb /input/blueline.dtb \
+    --kernel /kernel-dtb --ramdisk /out/initramfs.cpio.gz \
     --cmdline 'console=ttyMSM0,115200n8 panic=10 androidboot.hardware=qcom androidboot.board=blueline' \
     -o /out/firstlight.img
 size=$(stat -c %s /out/firstlight.img)
