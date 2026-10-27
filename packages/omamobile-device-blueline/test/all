@@ -1,0 +1,96 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# Tests for omamobile-device-blueline. reboot-to is compiled from
+# src/reboot-to.c in this directory, so a copied package still builds.
+# Do not execute reboot-to.
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+fail() { printf 'not ok - %s\n' "$1" >&2; exit 1; }
+pass() { printf 'ok - %s\n' "$1"; }
+tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+
+bash -n build install omamobile-device-blueline.install || fail "scripts parse"
+pass "scripts parse"
+
+grep -q '\.\./\.\.' build install && fail "build or install reaches outside the package directory"
+pass "build and install stay inside the package directory"
+
+# Shared sources must not drift from the package they were taken from.
+if [[ -f ../omamobile-device-cheetah/src/reboot-to.c ]]; then
+  cmp -s src/reboot-to.c ../omamobile-device-cheetah/src/reboot-to.c \
+    || fail "reboot-to.c drifted from the cheetah package"
+  cmp -s vendor/udev/rules.d/10-omamobile-storage.rules \
+    ../omamobile-device-cheetah/vendor/udev/rules.d/10-omamobile-storage.rules \
+    || fail "the storage rule drifted from the cheetah package"
+  cmp -s vendor/systemd/network/20-usb-gadget.network \
+    ../omamobile-device-cheetah/vendor/systemd/network/20-usb-gadget.network \
+    || fail "the usb0 network drifted from the cheetah package"
+  cmp -s vendor/systemd/logind.conf.d/10-omamobile-power-key.conf \
+    ../omamobile-device-cheetah/vendor/systemd/logind.conf.d/10-omamobile-power-key.conf \
+    || fail "the power-key drop-in drifted from the cheetah package"
+  cmp -s vendor/NetworkManager/conf.d/10-omamobile-usb.conf \
+    ../omamobile-device-cheetah/vendor/NetworkManager/conf.d/10-omamobile-usb.conf \
+    || fail "the NetworkManager drop-in drifted from the cheetah package"
+  pass "the shared sources match the cheetah package"
+fi
+
+grep -q 'omamobile-keyring' PKGBUILD || fail "pacman needs omamobile-keyring"
+grep -q '^install=omamobile-device-blueline.install$' PKGBUILD \
+  || fail "the pacman install script is not named"
+[[ -f etc/omamobile-mirrorlist && -f omamobile-device-blueline.install ]] \
+  || fail "the pacman mirrorlist or install script is missing"
+pass "pacman gets the keyring, the mirrorlist, and the install script"
+
+# The package must not claim hardware it has not passed on a phone: no
+# service, no radio start, no display write, and the descriptor copy must
+# match the descriptor in the tree.
+if [[ -f ../../device/blueline/device.conf ]]; then
+  cmp -s device.conf ../../device/blueline/device.conf \
+    || fail "device.conf drifted from the descriptor"
+  pass "device.conf matches the descriptor"
+fi
+[[ -d vendor/systemd/system ]] && fail "this package ships services before first light passed"
+! grep -qi 'systemctl start\|systemctl enable' omamobile-device-blueline.install \
+  || fail "the install script starts or enables something at install"
+pass "nothing is started or enabled beyond the pacman repository entry"
+
+for f in build install PKGBUILD README.md device.conf \
+         test/all src/reboot-to.c etc/omamobile-mirrorlist \
+         omamobile-device-blueline.install \
+         vendor/udev/rules.d/10-omamobile-storage.rules \
+         vendor/systemd/network/20-usb-gadget.network \
+         vendor/systemd/logind.conf.d/10-omamobile-power-key.conf \
+         vendor/NetworkManager/conf.d/10-omamobile-usb.conf; do
+  [[ -f $f ]] || fail "$f is missing"
+  grep -q 'SPDX-License-Identifier' "$f" || fail "$f has no SPDX header"
+done
+pass "every file exists and carries its SPDX header"
+
+./build "$tmp/build" || fail "reboot-to compiles"
+[[ -x $tmp/build/reboot-to ]] || fail "reboot-to is not executable"
+pass "reboot-to compiles"
+
+./install "$tmp/root" "$tmp/build"
+for f in usr/bin/reboot-to \
+         usr/lib/udev/rules.d/10-omamobile-storage.rules \
+         usr/lib/systemd/network/20-usb-gadget.network \
+         usr/lib/systemd/logind.conf.d/10-omamobile-power-key.conf \
+         usr/lib/NetworkManager/conf.d/10-omamobile-usb.conf \
+         usr/share/omamobile/device.conf \
+         usr/share/omamobile/device-blueline/version \
+         usr/share/licenses/omamobile-device-blueline/LICENSE \
+         etc/pacman.d/omamobile-mirrorlist; do
+  [[ -f $tmp/root/$f ]] || fail "install stages $f"
+done
+pass "install stages every file"
+
+grep -q 'KERNEL=="sda", MODE="0000"' "$tmp/root/usr/lib/udev/rules.d/10-omamobile-storage.rules" \
+  || fail "the whole-disk node is made inaccessible"
+grep -q 'ID_PART_ENTRY_NAME}!="userdata"' "$tmp/root/usr/lib/udev/rules.d/10-omamobile-storage.rules" \
+  || fail "userdata is the only partition desktop tools may see"
+grep -q 'Address=172.16.42.1/24' "$tmp/root/usr/lib/systemd/network/20-usb-gadget.network" \
+  || fail "usb0 keeps the initramfs address"
+power="$tmp/root/usr/lib/systemd/logind.conf.d/10-omamobile-power-key.conf"
+grep -qx '\[Login\]' "$power" || fail "the logind drop-in needs a [Login] header"
+grep -q '^HandlePowerKey=ignore$' "$power" || fail "a short power press must not power off"
+echo "ok - omamobile-device-blueline ${VER:-$(cat version)}"
