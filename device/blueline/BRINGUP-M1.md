@@ -352,6 +352,44 @@ proof for the reference stack, only for our packaging path. The pmOS
 packaging detail they rely on (initfs, bootimg v2 with DTB appended per
 their `initfs` + `deviceinfo` bootargs) is now reproduced stepwise.
 
+#### Attempt 2026-10-27 (fourth): 7-second ABOOT return localizes the death to the QSCRATCH map — flatten's offset is wrong for SDM845
+
+The timed panic probe worked as designed: flashing the probe image (panic
+45 s after init) and the plain listener (no probe) both returned the
+handset to FASTBOOT MODE **7 s** after the reboot command — while the
+stock SP1A `boot.img` under the identical `fastboot reboot` booted on to
+its logo (the owner saw it) and never returned. So the death is ours,
+it happens well before 45 s, and with `panic=10` it is a *panic or abort*
+in the first seconds of driver probe.
+
+Reading the flatten driver closed the loop. `dwc3_qcom_probe()` in
+7.3.0-rc6-omamobile computes the QSCRATCH window as
+`res.start + SDM845_QSCRATCH_BASE_OFFSET` (0xf8800) — written for SoCs
+whose wrapper node sits 0xf8800 below its QSCRATCH block. On SDM845 the
+wrapper node's `reg` **is** the QSCRATCH region itself: every
+working 6.11-era driver (ours in `kernel-pmos`, vanilla mainline's)
+ioremaps `reg[0]` unshifted, and the two trees' QSCRATCH register
+offsets are byte-identical — only the base computation changed. With
+the shift, `qscratch_base` lands at `0xa7f1000`, inside the 0xa600000
+wrapper range but in no man's land: `devm_ioremap()` checks no conflict,
+so the first `GENERAL_CFG`/`vbus_override` write hits a block its GDSC
+does not own, and the SoC aborts. Every symptom lines up:
+
+- PHY-pin builds (glue unbound, no QSCRATCH write) lived minutes;
+- the snps-dwc3-compatible build (glue bound, write at probe —
+  `vbus_override` runs from probe in peripheral mode) dies in seconds;
+- the pmOS 6.11 reference build (old driver, unshifted map) survived
+  and just stayed mute for its own packaging reasons;
+- stock boots the Google logo under the same reboot command.
+
+**Fix (driver, not device tree):** the qscratch offset becomes match
+data — `qcom,sdm845-dwc3` maps `reg[0]` at offset 0, `qcom,snps-dwc3`
+keeps the 0xf8800 shift. The third round's DTS prepend of
+`qcom,snps-dwc3` is reverted: it papered over the driver bug and pointed
+the wrong (shifted) map at exactly the hardware that does not want it.
+The probe stays armed on the test images: gadget first, panic at 45 s
+second — the fastboot return is the boot's period at the end of sentence.
+
 ### M1.3 — the LUN map and the calibration backups (read-only)
 
 - Record which UFS LUN carries the partition table, `userdata` and each
