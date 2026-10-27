@@ -26,12 +26,33 @@ exception, captured sector by sector before and after.
 
 ## Development handset state (2026-10-27)
 
-The way back is held off-device: the stock factory image **Android 11
-(RQ3A.211001.001, Oct 2021)** downloaded from Google's published URL,
-`blueline-rq3a.211001.001-factory-2cca4239.zip`, sha256 verified equal to
-the hash in its file name (`2cca42397f29cc3b032dbd2b627e65049ffd894be4801a39c292e663d01cbc71`),
-kept outside the repository under `android-mainline/factory/`. It restores
-both slots' stock images if the plan ever needs to unwind to Android.
+The way back is held off-device. **Correction 2026-10-27 (owner review):**
+the first factory image pulled here, **Android 11 (RQ3A.211001.001,
+Oct 2021)**, `blueline-rq3a.211001.001-factory-2cca4239.zip` (sha256
+verified equal to the hash in its file name, `2cca42397f29cc3b032dbd2b627e65049ffd894be4801a39c292e663d01cbc71`),
+ships bootloader **b1c1-0.3-7241706** (verified inside the unpacked zip at
+`rq3a/blueline-rq3a.211001.001/bootloader-blueline-b1c1-0.3-7241706.img`)
+while this handset runs **b1c1-0.4-7617406** — flashing RQ3A's flash-all
+would *downgrade* the bootloader. The way back is therefore the last
+official blueline factory image, **Android 12 (SP1A.210812.016.C2,
+Jun 2022)**, `blueline-sp1a.210812.016.c2-factory-fa981d87.zip`, the same
+build LineageOS documents for b1c1-0.4-era devices
+(`review.lineageos.org` vars/blueline: build_number 8618562, same URL);
+its sha256 is recorded here once the download completes.
+`android-mainline/factory/` holds both zips; neither is ever flashed
+without re-checking its bootloader version against `fastboot getvar
+version-bootloader` first.
+
+**Honest state of `boot_a`:** the Ubuntu Touch / postmarketOS `boot_a`
+that ran this handset was overwritten by first-light flashes and the
+intended `fastboot fetch` backup landed as a **0-byte file**
+(`android-mainline/factory/boot_a-ut-backup.img`, verified size 0). It is
+NOT bit-restorable; the way back to Android is the SP1A factory image
+above, which **wipes user data** (owner accepted this on 2026-10-27).
+Standing rule from this incident: **before any partition write, the
+backup file for that partition must exist with nonzero size and a
+recorded sha256 — verified, not assumed — or the write is logged as
+destructive and re-consented.**
 
 The port's handset arrived running **Ubuntu Touch on a postmarketOS base**
 (the USB composite self-describes with serial `postmarketOS`,
@@ -243,11 +264,19 @@ image not built against its exact vbmeta era — TWRP never regained
 `fastboot boot` there (TeamWin/android_device_google_crosshatch#5,
 twrpme#109, several unresolved reports through Android 12) — while
 `fastboot flash` of the same images works. Per this gate's own rule the
-refusal is a stop: no further RAM-boot permutations; the zero-write proof
-moves to a **reversible temporary flash of `boot_a`** (its content is
-backup-flipped, so the write is restorable bit-for-bit), which is the
-field-proven path for this phone and what the Ubuntu Touch install itself
-did to boot this handset.
+refusal is a stop: no further RAM-boot permutations.
+
+**Plan deviation, decided 2026-10-27 (not a reversible shortcut):** M1.2
+was written as zero-write and later gates were to touch only slot B.
+This handset's ABOOT refuses RAM boot outright and there is no second
+bootable mainline slot (slot A holds the only working stack, slot B is
+not Ubuntu Touch's boot source here), so bring-up flashes **`boot_a`
+directly**. That is destructive by design: the Ubuntu Touch `boot_a` was
+overwritten without a valid backup (see the 0-byte-file correction
+above), the way back is the SP1A factory image at the cost of user data,
+and the owner consented to exactly this trade. Every later partition
+write follows the verify-backup-first rule stated at the top of this
+document.
 
 #### Attempt 2026-10-27 (second): concatenated-DTB boots alive but mute — the PHYs were modules
 
