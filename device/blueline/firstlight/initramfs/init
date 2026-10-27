@@ -75,10 +75,10 @@ fi
 
 # Once ttyGS0 exists: flush the step log, dump the previous boot's pstore
 # (the crash evidence), then beat every 2 s. Sudden silence after the last
-# beat is itself the measurement. The panel console (console=tty1) is the
-# fallback instrument, so pstore and the heartbeat ALSO go to /dev/kmsg
-# unconditionally, not gated on the gadget: if the USB gadget never binds,
-# the screen still shows the previous panic and a live beat counter.
+# beat is itself the measurement. Every 10 s the same evidence goes to the
+# raw boot_a log channel (logflush, defined below and resolved at call
+# time): if the panel and USB both stay dark, the partition tail is the
+# only survivor of a later ABOOT timeout reset.
 (
     while [ ! -e /proc/uptime ]; do sleep 0.2; done
     # Dump the previous boot's crash log to kmsg (panel) and to ttyGS0 (ACM).
@@ -92,6 +92,7 @@ fi
     else
         echo 'omamobile-blueline: pstore mount failed' > /dev/kmsg
     fi
+    _n=0
     while :; do
         up=$(cut -d. -f1 /proc/uptime)
         echo "omamobile-blueline: beat ${up}s steps:$(tail -1 "$steps" 2>/dev/null)" > /dev/kmsg
@@ -99,12 +100,67 @@ fi
             cat "$steps" 2>/dev/null > /dev/ttyGS0 2>/dev/null
             echo "beat ${up}s" > /dev/ttyGS0 2>/dev/null
         fi
+        _n=$((_n + 1))
+        if [ $((_n % 5)) -eq 0 ]; then logflush 2>/dev/null; fi
         sleep 2
     done
 ) &
 
 mark 'network bring-up'
 ip link set lo up
+
+# Raw log channel (bring-up instrument, 2026-10-27): this handset shows no
+# panel text and no USB enumeration yet, and boots return to ABOOT after
+# ~2 min. The last 1 MiB of the 64 MiB boot_a partition is free space of
+# our own image, so init flushes its whole evidence bag there; after any
+# reset `fastboot fetch boot_a 63 1` recovers it (dd at 63 MiB, padded
+# with NUL, grep -a OMAMOBILE-LOG). Only that one block device is flipped
+# rw around a write, back to ro immediately; userdata and the other LUNs
+# are never touched. Block devices can appear late, so wait for the
+# by-partlabel link before declaring the channel dead.
+bootdev=""
+find_bootdev() {
+    for l in /dev/disk/by-partlabel/boot_a /dev/disk/by-name/boot_a; do
+        [ -e "$l" ] || continue
+        bootdev=$(basename "$(readlink -f "$l")")
+        return 0
+    done
+    return 1
+}
+logflush() {
+    find_bootdev || return 1
+    d=/dev/$bootdev
+    {
+        echo "===== OMAMOBILE-LOG v1 up=$(cut -d. -f1 /proc/uptime)s ====="
+        cat "$steps" 2>/dev/null
+        echo "--- udcs ---"; ls /sys/class/udc 2>/dev/null
+        echo "--- deferred ---"; cat /sys/devices/postponed_probe 2>/dev/null; cat /sys/kernel/debug/devices_deferred 2>/dev/null
+        echo "--- gadget ---"; ls "$g" 2>/dev/null; cat "$g/UDC" 2>/dev/null
+        echo "--- fb/vt ---"; ls /dev/fb0 /dev/tty0 2>/dev/null; cat /sys/class/vtconsole/vtcon1/name 2>/dev/null
+        echo "--- pstore ---"; ls /sys/fs/pstore 2>/dev/null
+        echo "--- dmesg tail ---"; dmesg 2>/dev/null | tail -50
+        echo "===== ENDOF-LOG ====="
+    } > /run/log.txt 2>/dev/null
+    [ -s /run/log.txt ] || return 1
+    head -c 1048576 /run/log.txt > /run/log.pad
+    pad=$(( 1048576 - $(stat -c %s /run/log.pad) ))
+    dd if=/dev/zero bs=131072 count=$(( (pad + 131071) / 131072 )) 2>/dev/null | dd bs=1 count="$pad" 2>/dev/null >> /run/log.pad
+    blockdev --setrw "$d" 2>/dev/null
+    dd if=/run/log.pad of="$d" bs=131072 seek=504 conv=notrunc,fsync 2>/dev/null
+    blockdev --setro "$d" 2>/dev/null
+}
+(
+    _i=0
+    while [ "$_i" -lt 20 ] && ! find_bootdev; do sleep 1; _i=$((_i + 1)); done
+    if find_bootdev; then
+        mark "raw log channel live on /dev/$bootdev"
+        logflush
+    else
+        mark 'raw log channel dead: no boot_a link in 20 s'
+    fi
+) &
+
+
 ip addr add 172.16.42.1/24 dev usb0 2>/dev/null
 ip link set usb0 up 2>/dev/null
 cat > /run/udhcpd.conf <<'CONF'
@@ -157,10 +213,13 @@ mark 'storage guard pass 1 done'
 # Re-assert the guard: a late-appearing LUN (or a rw flip) is caught the
 # same way flame's probe does. At first light there is nothing to stop,
 # so a failure re-arms everything and logs; it does not reboot the phone.
+# The raw-log channel's own device is the one exempt write target (it is
+# our image's partition; boot_b and every other LUN stay under the guard).
 (
     while :; do
         for s in /sys/class/block/sd*; do
             [ -e "$s" ] || continue
+            [ -n "$bootdev" ] && [ "$bootdev" = "${s##*/}" ] && continue
             [ "$(cat "$s/ro" 2>/dev/null)" = 1 ] || blockdev --setro "/dev/${s##*/}" 2>/dev/null
         done
         sleep 1
