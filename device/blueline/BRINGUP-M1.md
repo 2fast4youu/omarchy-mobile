@@ -26,6 +26,13 @@ exception, captured sector by sector before and after.
 
 ## Development handset state (2026-10-27)
 
+The way back is held off-device: the stock factory image **Android 11
+(RQ3A.211001.001, Oct 2021)** downloaded from Google's published URL,
+`blueline-rq3a.211001.001-factory-2cca4239.zip`, sha256 verified equal to
+the hash in its file name (`2cca42397f29cc3b032dbd2b627e65049ffd894be4801a39c292e663d01cbc71`),
+kept outside the repository under `android-mainline/factory/`. It restores
+both slots' stock images if the plan ever needs to unwind to Android.
+
 The port's handset arrived running **Ubuntu Touch on a postmarketOS base**
 (the USB composite self-describes with serial `postmarketOS`,
 `18d1:d001`, connected over a hub; `adb` on the host saw no adbd, so its
