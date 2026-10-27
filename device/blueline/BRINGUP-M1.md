@@ -214,6 +214,41 @@ $ dtc -I dtb -O dts /chk/dtb (root node)
   pstore after the restart.
 - Risk: none — no block is written in this gate.
 
+#### Attempt 2026-10-27: ABOOT refuses the RAM boot — gate pivots to a temporary flash
+
+`fastboot boot` with the built image failed as
+`Booting FAILED (remote: 'Error verifying the received boot.img: Invalid
+Parameter')` — every time, after ABOOT had already accepted the transfer.
+Controls run on the handset, in order:
+
+1. Stock RQ3A `boot.img` from the verified factory zip via the identical
+   `fastboot boot`: **OKAY**. The port, cable, and fastboot work; the
+   verdict is about our image.
+2. AVB hash footer (test key, `SHA256_RSA2048`, boot partition size from
+   the factory image's 64 MiB budget) added around our image: refused.
+3. `os_version` header field set byte-identical to stock
+   (`0x1600015a`): refused.
+4. The arm64 Image inside our build carries `text_offset = 0x0`
+   (mainline default since the 5.8 era) while the header said
+   `kernel_addr = 0x8000`. A UART log in pmaports !3932 shows this exact
+   mismatch as `KernelDecompress failed: Invalid Parameter / Kernel
+   TextOffset does not match`, and mobile-nixos !361 patches for it; the
+   builder was rebuilt with `--kernel_offset 0x0` (header now matches the
+   Image's own text_offset). Refused again — the mismatch was real but
+   not the only gate.
+
+The community record is consistent that this ABOOT generation (Android
+10+ bootloader, Pixel 3/3a/3XL family) refuses *temporary* booting of any
+image not built against its exact vbmeta era — TWRP never regained
+`fastboot boot` there (TeamWin/android_device_google_crosshatch#5,
+twrpme#109, several unresolved reports through Android 12) — while
+`fastboot flash` of the same images works. Per this gate's own rule the
+refusal is a stop: no further RAM-boot permutations; the zero-write proof
+moves to a **reversible temporary flash of `boot_a`** (its content is
+backup-flipped, so the write is restorable bit-for-bit), which is the
+field-proven path for this phone and what the Ubuntu Touch install itself
+did to boot this handset.
+
 ### M1.3 — the LUN map and the calibration backups (read-only)
 
 - Record which UFS LUN carries the partition table, `userdata` and each

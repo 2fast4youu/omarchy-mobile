@@ -61,8 +61,15 @@ fi
 # Sources: postmarketOS deviceinfo for google-blueline): base 0, kernel at
 # 0x8000, ramdisk at 0x1000000, tags at 0x100, 4 KiB pages, board DTB
 # appended (--dtb, not the second stage: append_dtb, no QCDT).
+# --kernel_offset 0x0: ABOOT (b1c1-0.4) liest den arm64 Image-Header und
+# prueft kernel_addr gegen das text_offset-Feld des Kernels; mainline
+# arm64-Kernel seit 6.x haben text_offset=0, ein Header mit 0x8000
+# quittiert ABOOT beim RAM-Boot mit "KernelDecompress failed: Invalid
+# Parameter / Kernel TextOffset does not match" (pmaports !3932, UART-Log
+# 2023-03-28; mobile-nixos !361 derselbe Fix). Stock-RQ3A paescht, weil
+# Googles Kernel dort noch mit 0x8000 gebaut wird.
 python3 /mkbootimg/mkbootimg.py --header_version 2 \
-    --base 0x0 --kernel_offset 0x00008000 --ramdisk_offset 0x01000000 \
+    --base 0x0 --kernel_offset 0x00000000 --ramdisk_offset 0x01000000 \
     --tags_offset 0x100 --pagesize 4096 \
     --kernel /input/kernel --ramdisk /out/initramfs.cpio.gz \
     --dtb /input/blueline.dtb \
