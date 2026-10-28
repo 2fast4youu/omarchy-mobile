@@ -478,6 +478,29 @@ the 7.3-built DTB (`pmosdtb`); dies => the device tree (prime suspect:
 the ramoops reservation), survives => a 6.12..7.3 code regression and
 a commit bisect with the panic-probe loop as the test harness.
 
+**pmosdtb was NOT a measurement (2026-10-28).** The image lived silently
+for 400 s — but its probe sat at the END of init, behind the 30 s UDC
+wait and `dropbear -R` keygen, so "probe never fired" and "kernel dead"
+were indistinguishable.  The probe is now armed as a background timer
+immediately after the pseudo-fs mounts (commit 8e9d8ae): a fired probe
+proves kernel + PID 1 aliveness even when the main flow hangs.  The
+`dr_mode` theory died on inspection: the 7.3 tree's
+sdm845-google-common.dtsi carries `dr_mode = "peripheral"` exactly like
+pmOS — the device trees agree on the role.
+
+**Next two measurements, both built and byte-verified (2026-10-28):**
+`pmosh` (fl-pmosh, 81941839…): self-built 6.11 kernel + our 7.3 DTB,
+early probe 25 s — is the self-built reference kernel alive at all, and
+does its UDC finally bind (NCM watch added: 172.16.42.1 ends the cycle
+early and SSH collects the boot log)?  `dtb73` (fl-dtb73, 3816a149…):
+7.3 Image.gz (dual-window fix + knob) + the pmOS 6.11 blueline DTB,
+early probe 25 s, verified byte-level to carry both blobs — if it dies
+at 5 s like pmoscfg did, device tree AND config are exonerated and the
+7.3 kernel code is the sole remaining axis: commit bisect with the
+probe loop as harness.  This also tests how far the self-built 6.11
+diverges from pmOS's shipped boot.img; if the shipped image survives
+where the self-build dies, suspect the build/packaging, not the code.
+
 ### M1.3 — the LUN map and the calibration backups (read-only)
 
 - Record which UFS LUN carries the partition table, `userdata` and each
