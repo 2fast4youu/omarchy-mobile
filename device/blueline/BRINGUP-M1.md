@@ -732,6 +732,40 @@ deviceinfo offset 0x8000, gadget on. Timebox from the owner: if the
 reference build plus these tests still show no NCM after 2–3 more
 flashes, no further guessing — we wait for the serial console.
 
+**sdm845-mainline 7.1 fork flashed: the 4-5 s return follows it too
+(2026-10-28, four flashes, images byte-verified, sha of first flash
+52a1db6c…).** The owner's kernel-basis switch is built exactly per the
+pmOS recipe — tag archive `sdm845-7.1-rc1-r0`, DISTRO config
+(21 pins: all already =y except USB_CONFIGFS/USB_LIBCOMPOSITE, flipped
+=y with MODULES off), deviceinfo offset 0x8000, our firstlight initramfs
+with early probe. Results: probe 8 s → FASTBOOT at 4 s; probe 20 s → at
+4 s; probe 40 s → at 5 s; **no probe file at all (panic=10 still on the
+cmdline) → at 4 s**. The probe NEVER tracks the return time on the fork,
+and the fork's own distro config has `QCOM_WDT=y` built-in, so "we never
+feed the PMIC watchdog" fails as an explanation for the fork's return
+too. Meanwhile the only 300 s-silent run in the whole campaign is the
+6.11 with the probe armed early — and every kernel that ever returned at
+4-5 s carried panic=10 on its cmdline, as did alive2. So after 11+
+flashes the signal is still
+exactly as ambiguous as the review said, just sharper: a kernel
+returning fastboot at 4-5 s is consistent with panic-death AND with an
+ABOOT-side return without any kernel ever running (the documented ABOOT
+text-offset rejection — observed as an instant refusal in RAM-boot mode
+at 0x8000 — was never proven absent in flash mode; and a
+watchdog-boot landing in fastboot is standard LK policy at 0x0). Per the owner's own timebox (no NCM after the two packing tests
+plus ~2-3 further flashes): **flash storm over, no more guessing.** The
+discriminator is one serial read at power-on: ABOOT prints its own boot
+reason ("reboot reason"/"fastboot mode" vs watchdog vs textoffset
+complaints), the kernel prints whatever survives — and the fork kernel,
+currently the most promising basis (it is the distro's shipped config,
+packing matches theirs, only OUR initramfs and cmdline deviate), gets
+its next flash ONLY with the console attached. Also documented honestly:
+the host-side `make olddefconfig` incident (macOS make dirties the tree,
+O= builds then refuse it — rebuilt on a container-side copy; skill
+updated). The fork build itself is green: Image.gz 26,192,165 bytes +
+DTB + config-71-actual in `android-mainline/out-blueline-71`, sha256s in
+`SHA256SUMS-build`.
+
 **Ordering from this review (replaces the previous next-steps text):**
 1. alive2 verdict (armed, deterministic `reboot bootloader` probe) —
    defines what silence and timing mean at all.
