@@ -1066,6 +1066,20 @@ measurements worth their flash time.
 | v0e | same + `nowatchdog noreboot.not` on the cmdline, probe 300 s | FASTBOOT at **71 s**, and the panel showed **kernel log lines** (user read them) — so the kernel proper runs and prints |
 | v0g | same cmdline + **watchdog feeder in PID 1** (`echo V > /dev/watchdogN` every second) + a panel status block every 20 s, probe off | **no FASTBOOT return in 361 s** — the observation window simply ran out |
 
+**Correction, same evening, from the panel (user's eyes):** the v0g screen shows
+the boot banner several times, a framebuffer warning, a filesystem error line and
+a **call trace** — i.e. the kernel oopsed inside our init path and then *halted*,
+which is what a panic without `panic=` does. That reading explains the timer table
+without a watchdog at all: v0c and v0e carried `panic=10` on the cmdline, so an
+oops at ~69 s / ~61 s became a warm reboot into FASTBOOT at 79 s / 71 s; v0g was
+built without `panic=` (see its cmdline) and therefore stayed on the trace
+instead of returning. The feeder was never the variable — the two builds differ
+in **two** things (feeder added, `panic=` removed), so "feeding it survives" was
+a two-variable comparison read as one. The watchdog reading is hereby demoted to
+unproven; `# CONFIG_WATCHDOG_QCOM is not set` in the distro config fragment
+(checked: only `# CONFIG_KPSS_XCC is not set` matches there) makes it weaker
+still: no driver, no `/dev/watchdogN`, nothing to feed.
+
 `nowatchdog` on the cmdline does not save it (71 s), feeding from userspace does
 (361 s and counting). Read together: the boot-enabled watchdog the bootloader
 leaves running keeps firing, the kernel's own
