@@ -1,0 +1,111 @@
+#!/usr/bin/env bash
+# newc.py: Round-Trip einer Initramfs, inklusive Geraeteknoten, ohne cpio-Tool.
+# Laeuft ohne Geraet, ohne Netzwerk.
+set -eu
+cd -- "$(dirname -- "${BASH_SOURCE[0]:-$0}")/.."
+here=$PWD
+tool="$here/device/blueline/firstlight/newc.py"
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+fail=0
+ok() { echo "ok - $*"; }
+no() { echo "NOT OK - $*"; fail=$((fail+1)); }
+command -v python3 >/dev/null 2>&1 || { echo "SKIP newc-roundtrip: kein python3"; exit 0; }
+[ -f "$tool" ] || { echo "SKIP newc-roundtrip: $tool fehlt"; exit 0; }
+
+# 1) Kuemmliches newc-Archiv bauen (Name+Puffer, Daten auf 4 Bytes, Geraeteknoten)
+python3 - "$work/base.cpio" <<'PY'
+import sys
+F = ("ino","mode","uid","gid","nlink","mtime","datasize",
+     "devmajor","devminor","rdevmajor","rdevminor","namesize","check")
+out = bytearray()
+def add(name, mode, data, rdev=(0,0)):
+    hdr = b"070701" + b"".join(b"%08X" % v for v in
+        (len(out), mode, 0, 0, 1, 0, len(data), 0, 0, rdev[0], rdev[1], len(name)+1, 0))
+    assert len(hdr) == 110
+    out.extend(hdr); out.extend(name.encode()); out.append(0)
+    out.extend(b"\0" * ((-len(out)) % 4)); out.extend(data)
+    out.extend(b"\0" * ((-len(out)) % 4))
+add("init", 0o100755, b"#!/bin/sh\necho alt\n")
+add("dev/console", 0o020666, b"", (1, 3))       # Zeichenknoten, 0 Bytes
+add("bin/sh", 0o100755, b"\x7fELF-simulator")
+add("TRAILER!!!", 0o040000, b"")
+open(sys.argv[1], "wb").write(bytes(out))
+PY
+[ -s "$work/base.cpio" ] && ok "Grundarchiv gebaut ($(wc -c <"$work/base.cpio" | tr -d ' ') Bytes)" || no "Grundarchiv fehlt"
+
+# 2) init ersetzen, Geraeknoten muss erhalten bleiben
+printf '#!/bin/sh\necho neu\n' > "$work/init"
+if python3 "$tool" "$work/base.cpio" "$work/new.cpio" "$work/init" >"$work/log" 2>&1; then
+  grep -q "4 Eintraege" "$work/log" && ok "Umbau meldet alle vier Eintraege" || no "Umbau-Meldung: $(cat "$work/log")"
+  grep -q "Rueckleseprobe ok" "$work/log" && ok "Rueckleseprobe bestaetigt den neuen init-Inhalt" || no "keine Rueckleseprobe"
+else
+  no "Umbau fehlgeschlagen: $(cat "$work/log")"
+fi
+
+# 3) unabhaengiger Gegenleser (nicht derselbe Code): Inhalt, Modi, Knoten
+python3 - "$work/new.cpio" <<'PY' || exit 1
+import sys
+d = open(sys.argv[1], "rb").read()
+F = ("ino","mode","uid","gid","nlink","mtime","datasize",
+     "devmajor","devminor","rdevmajor","rdevminor","namesize","check")
+off, got = 0, {}
+while d[off:off+6] == b"070701":
+    m = {n: int(d[off+6+i*8: off+14+i*8], 16) for i, n in enumerate(F)}
+    off += 110
+    name = d[off:off+m["namesize"]-1].decode(); off += m["namesize"]
+    off = (off+3) & ~3
+    got[name] = (m["mode"], m["datasize"], d[off:off+m["datasize"]], m["rdevmajor"], m["rdevminor"])
+    off = (off + m["datasize"] + 3) & ~3
+assert got["init"][2] == b"#!/bin/sh\necho neu\n", ("init-Inhalt", got["init"][2])
+assert got["init"][0] & 0o777 == 0o755, ("init-Modus", oct(got["init"][0]))
+assert "dev/console" in got and (got["dev/console"][0] & 0o170000) == 0o020000, "Zeichenknoten verloren"
+assert (got["dev/console"][3], got["dev/console"][4]) == (1, 3), "rdev des Zeichenknotens falsch"
+assert got["dev/console"][1] == 0, "Zeichenknoten hat Daten"
+assert got["bin/sh"][2] == b"\x7fELF-simulator", "Dateiinhalt veraendert"
+print("ok - unabhaengiger Leser: init neu, Zeichenknoten mit rdev 1:3 erhalten")
+PY
+[ $? -eq 0 ] || no "Gegenleser"
+
+# 4) Negativtest: kein cpio-Archiv wird nicht stillgeschluckt
+printf 'kein cpio' > "$work/junk"
+if python3 "$tool" "$work/junk" "$work/junk.out" "$work/init" >/dev/null 2>&1; then
+  no "Muell als cpio akzeptiert"
+else
+  ok "Muell wird abgewiesen (exit != 0)"
+fi
+
+# 5) Echte Referenz-Ramdisk, falls vorhanden: 731 Eintraege, init austauschbar
+# Die Distro-Ramdisk ist zstd-gepackt (Magic 28 b5 2f fd, auf naechste
+# 2048er-Grenze gerueckt), unsere ist gzip. Beides muss der Umbauer handhaben
+# koennen, weil die Kueche beide Bilder anfasst. python3 hat keinen zstd-Codec
+# in der Standardbibliothek, also wird das Werkzeug gesucht oder uebersprungen.
+ref="$(dirname -- "$here")/pmos-ref-build/ref/boot.img"
+if [ -f "$ref" ]; then
+  python3 - "$ref" "$work/ref.gz" <<'PY' || true
+import struct, sys, gzip
+d = open(sys.argv[1], "rb").read()
+ks, = struct.unpack_from("<I", d, 8); rs, = struct.unpack_from("<I", d, 16)
+sec = d[4096+ks:4096+ks+rs]
+if sec[:3] == b"\x1f\x8b\x08":
+    open(sys.argv[2], "wb").write(gzip.decompress(sec))
+else:
+    open(sys.argv[2], "wb").write(sec)   # zstd: Rohtrom weiterreichen
+PY
+  case $(python3 -c 'import sys;print(open(sys.argv[1],"rb").read(4).hex())' "$work/ref.gz" 2>/dev/null || echo leer) in
+    070701*) cpio="$work/ref.gz" ;;
+    *) if command -v zstd >/dev/null 2>&1; then
+         zstd -qdc "$work/ref.gz" > "$work/ref.cpio" 2>/dev/null || true; cpio="$work/ref.cpio"
+       else cpio=""; fi ;;
+  esac
+  if [ -n "${cpio:-}" ] && [ -s "${cpio:-}" ] && head -c 6 "$cpio" | grep -q 070701 \
+     && python3 "$tool" "$cpio" "$work/ref.new" "$work/init" >"$work/ref.log" 2>&1; then
+    grep -q "Rueckleseprobe ok" "$work/ref.log" && ok "echte Distro-Ramdisk (zstd) rundgelaeufen" || no "Referenz-Rundlauf ohne Probe"
+  else
+    echo "SKIP - Referenz-Ramdisk hier nicht entpackbar (zstd-Werkzeug fehlt)"
+  fi
+else
+  echo "SKIP - Referenzbild $ref nicht vorhanden"
+fi
+
+[ "$fail" -eq 0 ] && { echo "newc: alles grin"; exit 0; } || { echo "newc: $fail Fehler"; exit 1; }

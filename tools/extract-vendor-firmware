@@ -101,10 +101,21 @@ while getopts "o:w:c:fh" opt; do
 done
 shift $((OPTIND - 1))
 [[ $# -eq 1 ]] || { usage >&2; exit 2; }
+# Absolute resolution of a path that may not exist yet. GNU `realpath -m` does
+# it; macOS ships a realpath without -m and these checks run on developer
+# laptops too, so fall back to python3 and last to joining with $PWD.
+abs_path() {
+  local p=$1 r
+  if r=$(realpath -m -- "$p" 2>/dev/null) && [[ -n $r ]]; then printf '%s\n' "$r"; return 0; fi
+  if r=$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "$p" 2>/dev/null) && [[ -n $r ]]
+  then printf '%s\n' "$r"; return 0; fi
+  case $p in /*) printf '%s\n' "${p%/}" ;; *) printf '%s\n' "$PWD/${p#./}" ;; esac
+}
+
 SRC=$(readlink -f "$1")
 [[ -f "$SRC" ]] || die "no such file: $1"
 # Absolute, because the checksum step runs from inside the staging dir
-OUT=$(realpath -m -- "$OUT")
+OUT=$(abs_path "$OUT")
 
 if [[ -n "$WORK" ]]; then
   mkdir -p "$WORK"

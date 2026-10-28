@@ -46,6 +46,9 @@ ROOT=$PWD
 say() { printf '\e[1m==> %s\e[0m\n' "$*"; }
 note() { printf '    %s\n' "$*"; }
 die() { printf '\e[31merror:\e[0m %s\n' "$*" >&2; exit 1; }
+# Octal mode of a file, GNU or BSD stat. This tool runs in the developer's own
+# shell, which on macOS is BSD userland.
+file_mode() { stat -c %a "$1" 2>/dev/null || stat -f %Lp "$1"; }
 
 backup=$HOME/android/reference/phone-backup-20261013
 work=${XDG_CACHE_HOME:-$HOME/.cache}/omamobile-provision
@@ -215,7 +218,12 @@ fi
 for f in "${take[@]}"; do
   [[ -f $W/backup/$f ]] || die "the backup has no $f"
   new=$(map_path "$f")
-  install -D -m "$(stat -c %a "$W/backup/$f")" "$W/backup/$f" "$W/stage/$new"
+  # `install -D` and `stat -c` are GNU-isms and this tool runs on the
+  # developer's own shell, which on macOS is BSD userland: stage by hand and
+  # keep the backup file's mode as the source of truth.
+  mkdir -p -- "$(dirname -- "$W/stage/$new")"
+  cp -- "$W/backup/$f" "$W/stage/$new"
+  chmod -- "$(file_mode "$W/backup/$f")" "$W/stage/$new"
   note "$f -> /$new"
 done
 push_tree "$W/stage" / merge
@@ -234,7 +242,12 @@ if ((import_home)); then
   # Plugin and widget ids carried the old name
   while IFS= read -r -d '' f; do
     if grep -q -i omandroid "$f"; then
-      sed -i 's/omandroid/omamobile/g; s/Omandroid/Omamobile/g; s/OMANDROID/OMAMOBILE/g' "$f"
+      # No `sed -i`: GNU wants no suffix there and BSD sed requires one, and
+      # this runs on the developer's host. Rewrite through a temp file and keep
+      # the original mode.
+      mode=$(file_mode "$f")
+      sed 's/omandroid/omamobile/g; s/Omandroid/Omamobile/g; s/OMANDROID/OMAMOBILE/g' \
+        "$f" > "$f.omamobile-tmp" && chmod "$mode" "$f.omamobile-tmp" && mv -f "$f.omamobile-tmp" "$f"
       note "renamed ids in ${f#"$W/home/"}"
     fi
   done < <(find "$W/home" -type f \( -name '*.json' -o -name '*.qml' -o -name '*.js' \) -print0)

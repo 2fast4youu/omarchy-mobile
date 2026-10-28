@@ -1058,6 +1058,34 @@ It contains no watchdog or USB knob at all, so whatever keeps the reference
 alive past 80 s is not a cmdline switch — which is what makes the next two
 measurements worth their flash time.
 
+## The fixed ~79 s timer is the watchdog: feeding it in PID 1 survives (measured)
+
+| build | what changed | outcome |
+|---|---|---|
+| v0c | v0 packing, distro kernel, our init, probe 300 s | FASTBOOT at **79 s** |
+| v0e | same + `nowatchdog noreboot.not` on the cmdline, probe 300 s | FASTBOOT at **71 s**, and the panel showed **kernel log lines** (user read them) — so the kernel proper runs and prints |
+| v0g | same cmdline + **watchdog feeder in PID 1** (`echo V > /dev/watchdogN` every second) + a panel status block every 20 s, probe off | **no FASTBOOT return in 361 s** — the observation window simply ran out |
+
+`nowatchdog` on the cmdline does not save it (71 s), feeding from userspace does
+(361 s and counting). Read together: the boot-enabled watchdog the bootloader
+leaves running keeps firing, the kernel's own
+`CONFIG_WATCHDOG_HANDLE_BOOT_ENABLED=y` plus `OPEN_TIMEOUT=0` means nothing
+takes it over until userspace opens the device, and our init never did. That
+is the whole of the ~79 s class of failure — a watchdog reset, not a hang —
+and the recipe consequence is a feeder process that outlives every step: the
+build's init must open the watchdog node as its first action, before mounts,
+before the gadget, before anything that can block.
+
+`v0f` is a cautionary note in the same table: its first attempt packed a
+silently broken initramfs, because macOS `bsdtar` cannot create device nodes as
+an unprivileged user — it prints `Can't create 'dev/console': Operation not
+permitted`, exits 1, and the pipeline's `gzip` still produces a valid archive of
+what it managed to write (5 entries instead of 731). The 57 s return of that
+build measured a crippled ramdisk, not the feeder. The ramdisk rebuild now goes
+through `firstlight/newc.py`, a pure-Python newc rewriter that keeps every entry
+byte-exact, writes device nodes with their rdev, and reads its own output back
+to prove the replacement landed (`tests/newc-roundtrip`).
+
 Arbiter under measurement (flashed while this was written): the same v0 image
 with `nowatchdog noreboot.not` appended to the cmdline. Survives > 120 s => the
 fixed timer is the watchdog and the fix belongs in the recipe (a feeder in init,

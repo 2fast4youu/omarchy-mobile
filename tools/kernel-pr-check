@@ -38,6 +38,19 @@ self=$(readlink -f "${BASH_SOURCE[0]}")
 repo=$(cd -- "$(dirname -- "$self")/.." && pwd)
 kernel=$HOME/android/mainline/linux
 out=""
+# Absolute resolution of a path that may not exist yet, symlinks resolved.
+# GNU `realpath -m` does it in one go; macOS ships a realpath without -m and
+# these checks also run on developer laptops, so fall back to python3's
+# realpath (same semantics: existing prefixes resolved, tail allowed to be
+# missing) and last to joining with $PWD. Without the symlink resolution
+# /var vs /private/var made an inside-the-tree --build look outside it.
+abs_path() {
+  local p=$1 r
+  if r=$(realpath -m -- "$p" 2>/dev/null) && [[ -n $r ]]; then printf '%s\n' "$r"; return 0; fi
+  if r=$(python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$p" 2>/dev/null) && [[ -n $r ]]
+  then printf '%s\n' "$r"; return 0; fi
+  case $p in /*) printf '%s\n' "${p%/}" ;; *) printf '%s\n' "$PWD/${p#./}" ;; esac
+}
 merge=0
 while (($#)); do
   case $1 in
@@ -58,11 +71,11 @@ if [[ ! -d $kernel ]]; then
   echo "kernel-pr-check: no such tree $kernel" >&2
   exit 2
 fi
-kernel=$(CDPATH='' cd -- "$kernel" && pwd)
+kernel=$(abs_path "$kernel")
 # --build too: the builds run after the cd, and they delete and re-extract
 # directories under OUT, so OUT must never resolve inside the kernel tree.
 if [[ -n $out ]]; then
-  out=$(realpath -m -- "$out")
+  out=$(abs_path "$out")
   case $out/ in
     "$kernel"/*) echo "kernel-pr-check: --build $out is inside the kernel tree; use a directory outside it" >&2; exit 2 ;;
   esac
