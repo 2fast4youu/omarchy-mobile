@@ -771,6 +771,27 @@ updated). The fork build itself is green: Image.gz 26,192,165 bytes +
 DTB + config-71-actual in `android-mainline/out-blueline-71`, sha256s in
 `SHA256SUMS-build`.
 
+**Ground-truth package facts for the pmbootstrap reference (verified
+2026-10-28, no phone involved).** `pmbootstrap init` in the pmos-ref
+container (Alpine edge, pmbootstrap 3.12.1) completed via a piped
+answer file once the v3 config keys were known — final config:
+device=google-blueline, channel=edge, work=/work/pmbootstrap-work
+(host: pmos-ref-build/), UI fell back to `console` (the intended
+`console-mobile` must be re-piped at the UI prompt). Repo facts from the
+live edge index: the mirror moved (mirror.postmarketos.org 301s to
+mirror.nura.eco); the distro ships the fork as a PREBUILT aarch64
+package `linux-postmarketos-qcom-sdm845 7.1_rc1-r4` (57 MiB, source
+tag sdm845-7.1-rc1-r0 — same tarball we built ourselves) plus
+`postmarketos-initramfs`. So the truest reference boot does not need a
+kernel build at all: unpack their apk, take their initramfs through the
+device's initfs recipe, pack with THEIR bootimg hook at THEIR offsets.
+(Scratched after checking: the initramfs package's cmdline parser has
+no ssh-key handling — grepping `authorized` in its sources is empty —
+so a reference image's SSH access comes from the installed rootfs user,
+not from a cmdline knob.)
+This stays QUEUED behind the serial console per the owner's timebox —
+no further phone flashes until the boot reason is readable.
+
 **Ordering from this review (replaces the previous next-steps text):**
 1. alive2 verdict (armed, deterministic `reboot bootloader` probe) —
    defines what silence and timing mean at all.
