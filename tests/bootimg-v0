@@ -1,0 +1,94 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# Packing of the ABOOT boot image for blueline, no phone and no flashed image:
+# the v0 header the handset's own bootloader reads, verified field by field
+# against the image the distro ships. The shipped first-light builder wrote
+# --header_version 2 into offset 40, which the AOSP layout uses for page_size,
+# so every image it produced told ABOOT "page size = 2 bytes" and pointed it at
+# a ramdisk offset the file does not have: the kernel never started, and the
+# bootloader came back to fastboot in ~4 s with no kernel log line at all.
+# These tests pin the layout both ways so that class of bug fails loudly.
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+PACK=device/blueline/firstlight/pack-v0.py
+UNPACK=device/blueline/firstlight/unpack-bootimg.py
+t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
+fail() { echo "not ok - $*" >&2; [[ -f $t/log ]] && sed 's/^/# /' "$t/log" >&2; exit 1; }
+for f in "$PACK" "$UNPACK"; do
+  [[ -x $f && -s $f ]] || fail "$f missing or not executable"
+done
+
+# Fixture: a gzip "kernel" with the DTB appended the way deviceinfo_append_dtb
+# does it, and a gzip initramfs. Small so the test runs everywhere python3 is.
+printf 'kernel-bytes' | gzip -n > "$t/kernel.gz"
+# Der DTB-Kopf traegt seine Gesamtlaenge gross-endian bei +4 — genau die liest
+# der Ausleser, also muss auch die Fixture einen ehrlichen DTB-Kopf haben.
+python3 - "$t/dtb" <<'PY'
+import struct, sys
+body = b"dtb-inhalt"
+open(sys.argv[1], "wb").write(struct.pack(">II", 0xD00DFEED, 8 + len(body)) + body)
+PY
+cat "$t/kernel.gz" "$t/dtb" > "$t/kernel-dtb"
+printf 'initramfs-bytes' | gzip -n > "$t/ramdisk.gz"
+CMD='console=ttyMSM0,115200n8 console=tty0 panic=10'
+
+# 1) The mirrored layout: header is one page, sections follow byte on byte, the
+#    file ends on a page boundary, and every dword says what was asked.
+python3 "$PACK" --kernel "$t/kernel-dtb" --ramdisk "$t/ramdisk.gz" --cmdline "$CMD" \
+  --name '' --kernel-addr 0x8000 --ramdisk-addr 0x1000000 --tags-addr 0x1000 \
+  --pagesize-field 0 -o "$t/v0.img" > "$t/log" 2>&1 || fail "packer failed"
+grep -q 'page_size@40: 0 (0x0) ok' "$t/log" || fail "page_size field is not 0"
+grep -q 'kernel_addr@12: 32768 (0x8000) ok' "$t/log" || fail "kernel_addr not 0x8000"
+grep -q "cmdline@64: $CMD" "$t/log" || fail "cmdline not at the v0 offset 64"
+
+# 2) The reader must find the sections where the header says they are, and the
+#    kernel blob must end exactly at kernel_size.
+python3 "$UNPACK" "$t/v0.img" "$t/out" > "$t/log" 2>&1 || fail "reader rejects our own image"
+grep -q 'Sektionsanfang (gemessen): 4096' "$t/log" || fail "sections do not start at 4096"
+if grep -q ACHTUNG "$t/log"; then fail "reader warns about a clean image"; fi
+cmp -s "$t/kernel-dtb" "$t/out/kernel" || fail "reader extracted a different kernel than was packed"
+cmp -s "$t/ramdisk.gz" "$t/out/ramdisk" || fail "reader extracted a different ramdisk than was packed"
+echo "ok - v0 layout: header fields, sections at the offsets the header implies"
+
+# 3) The shipped bug, reproduced byte-exactly: header_version 2 in page_size.
+python3 - "$t/v0.img" <<'PY'
+import shutil, struct, sys
+shutil.copy(sys.argv[1], sys.argv[1] + ".bug")
+blob = bytearray(open(sys.argv[1] + ".bug", "rb").read())
+struct.pack_into("<I", blob, 40, 2)
+open(sys.argv[1] + ".bug", "wb").write(blob)
+PY
+if python3 "$UNPACK" "$t/v0.img.bug" > "$t/log" 2>&1; then
+  fail "reader accepts page_size = 2 (the shipped bug)"
+fi
+grep -q 'page_size-Feld = 2: keine Seitengroesse' "$t/log" || fail "reader refuses for the wrong reason"
+echo "ok - a header_version where page_size belongs is refused by the reader"
+
+# 4) pack-v0.py must notice the same mistake itself when a reference is given.
+if python3 "$PACK" --kernel "$t/kernel-dtb" --ramdisk "$t/ramdisk.gz" --cmdline "$CMD" \
+     --name '' --pagesize-field 2 --pad-sections --strict-reference \
+     --reference "$t/v0.img" -o "$t/bug.img" > "$t/log" 2>&1; then
+  fail "packer ships a page_size that deviates from the reference"
+fi
+grep -q 'page_size@40 weicht von der Referenz ab' "$t/log" || fail "packer refuses for the wrong reason"
+echo "ok - --strict-reference aborts on a page_size that deviates from the known-good image"
+
+# 5) A padded image (what our old builder produced) is detected as such: the
+#    ramdisk sits at a page-aligned offset instead of directly after the kernel.
+python3 "$PACK" --kernel "$t/kernel-dtb" --ramdisk "$t/ramdisk.gz" --cmdline "$CMD" \
+  --name '' --pagesize-field 2 --pad-sections --tail-align 0 -o "$t/pad.img" > "$t/log" 2>&1 \
+  || fail "padded packing failed"
+if python3 "$UNPACK" "$t/pad.img" > "$t/log" 2>&1; then
+  fail "reader accepts a ramdisk at the page-rounded offset"
+fi
+echo "ok - padded sections are reported instead of trusted"
+
+# 6) The kernel blob must be complete: a truncated kernel fails the round trip.
+head -c 40 "$t/kernel-dtb" > "$t/short"
+python3 "$PACK" --kernel "$t/short" --ramdisk "$t/ramdisk.gz" --cmdline "$CMD" \
+  --name '' --pagesize-field 0 -o "$t/short.img" > "$t/log" 2>&1 || fail "short pack failed"
+if python3 "$UNPACK" "$t/short.img" > "$t/log" 2>&1; then
+  fail "reader accepts a kernel blob that is not a whole gzip stream"
+fi
+grep -q 'kernel-Sektion schaetzt nicht exakt' "$t/log" || fail "truncation reported for the wrong reason"
+echo "ok - a kernel blob that does not end at kernel_size fails"

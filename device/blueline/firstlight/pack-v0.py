@@ -91,6 +91,12 @@ def build(args):
         # unsere Datei nicht liefert.
         body = kernel + ramdisk + second
     out = bytes(head) + body
+    if args.tail_align:
+        # Das Referenzbild endet auf einer 2048er-Grenze (1693 Nullbytes hinter
+        # der ramdisk). Fuer ABOOT aendert die Auffuellung nichts, aber wer das
+        # bekannt-gute Packing spiegelt, sollte es bis auf die Bytes spiegeln,
+        # die er absichtlich aendert.
+        out += b"\x00" * (-len(out) % args.tail_align)
     tmp = args.output + ".part"
     with open(tmp, "wb") as f:
         f.write(out)
@@ -133,6 +139,13 @@ def verify(args, size):
             g, r = dword(blob, off), dword(ref, off)
             if g != r:
                 print(f"    {name}@{off}: wir {g} (0x{g:x}) | Referenz {r} (0x{r:x})")
+                # Genau diese Klasse von Abweichung hat den ganzen Bring-up blind
+                # gemacht: ein Wert im page_size-Feld, den niemand mit dem
+                # bekannt-guten Bild verglichen hat. --strict-reference macht sie
+                # zum Abbruch.
+                if args.strict_reference:
+                    problems.append(f"{name}@{off} weicht von der Referenz ab "
+                                    f"(wir {g}, Referenz {r})")
         rcmd = ref[CMDLINE_OFF:CMDLINE_OFF + 512].split(b"\0")[0].decode(errors="replace")
         if rcmd != cmd:
             print(f"    cmdline unterscheidet sich:\n      Referenz: {rcmd}\n      wir:      {cmd}")
@@ -141,6 +154,8 @@ def verify(args, size):
         if path:
             sz = os.path.getsize(path)
             expected += -(-sz // align) * align if args.pad_sections else sz
+    if args.tail_align:
+        expected = -(-expected // args.tail_align) * args.tail_align
     if size != expected:
         problems.append(f"Dateigroesse {size} != erwartet {expected}")
     print(f"  Dateigroesse: {size} Bytes (erwartet {expected})")
@@ -175,6 +190,12 @@ def main():
     p.add_argument("--pad-sections", action="store_true",
                    help="Sektionen seitig auffuellen (Standard: wie die Distro "
                         "byte-auf-byte ohne Auffuellung)")
+    p.add_argument("--tail-align", type=lambda s: int(s, 0), default=2048,
+                   help="Dateiende auf diese Grenze auffuellen (Referenzbild: 2048; "
+                        "0 schaltet die Auffuellung aus)")
+    p.add_argument("--strict-reference", action="store_true",
+                   help="jede Kopf-Feld-Abweichung vom --reference-Bild abbrechen lassen "
+                        "(die cmdline bleibt frei, die aendern wir absichtlich)")
     p.add_argument("--reference", default=None, help="bekannt-gutes Bild zum Feldvergleich")
     p.add_argument("-o", "--output", required=True)
     args = p.parse_args()
