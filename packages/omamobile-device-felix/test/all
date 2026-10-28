@@ -48,9 +48,20 @@ if [[ -f ../../device/felix/device.conf ]]; then
   pass "device.conf matches the descriptor"
 fi
 
+# Without a C compiler the compile check cannot run. Pointing CC at a stub that
+# only writes its output path keeps the install checks below alive: what those
+# check is the package's file list, not the compiled code.
+if command -v "${CC:-cc}" >/dev/null; then
+  cc_note=""
+else
+  stub=$tmp/fake-cc   # build mkdir's its out dir and install sets the mode itself
+  printf '#!/bin/sh\nwhile [ $# -gt 0 ]; do [ "$1" = -o ] && shift && : > "$1" && chmod +x "$1"; shift; done\n' >"$stub"
+  chmod +x "$stub"; export CC="$stub"
+  cc_note=" (# SKIP: no cc, compile stubbed)"
+fi
 ./build "$tmp/build" || fail "reboot-to compiles"
 [[ -x $tmp/build/reboot-to ]] || fail "reboot-to is not executable"
-pass "reboot-to compiles"
+pass "reboot-to compiles$cc_note"
 
 ./install "$tmp/root" "$tmp/build"
 for f in usr/bin/reboot-to \
