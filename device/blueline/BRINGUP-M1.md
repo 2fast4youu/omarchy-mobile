@@ -453,6 +453,21 @@ handset — `dtbo_a` is still erased, which the 6.11 survival proves is
 survivable and keeps as the one known state difference the 7.3 deaths
 and the 6.11 survival share.
 
+#### Attempt 2026-10-28: off12 measures — with the dwc3-qcom driver fully off the 7.3 kernel still dies at 5 s
+
+The fixed interpolation put a real `omadwc3q=off` into the header
+(byte-checked in the shipped image), the driver binded nothing, no
+register of the USB block was touched — and the ABOOT came back at 5 s,
+before the 10 s userspace probe could fire.  The 6.11 kernel with the
+same first-light initramfs lived through the whole 240 s window.  The
+dwc3-qcom probe is therefore exonerated as the killer of the 7.3 line
+(the window-anchoring fixes remain correct upstream hygiene), and what
+remains is kernel-wide: 7.3.0-rc6-omamobile-push1 vs postmarketOS 6.11,
+with the config the only cheap axis.  Next measurement: 7.3-rc6 built
+from the pmOS 6.11 reference config (`out-blueline-pmoscfg`, pins kept,
+panic probe 120 s) — survives: config, bisect symbols; dies: code,
+bisect commits.
+
 ### M1.3 — the LUN map and the calibration backups (read-only)
 
 - Record which UFS LUN carries the partition table, `userdata` and each
