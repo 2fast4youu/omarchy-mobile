@@ -1100,6 +1100,41 @@ through `firstlight/newc.py`, a pure-Python newc rewriter that keeps every entry
 byte-exact, writes device nodes with their rdev, and reads its own output back
 to prove the replacement landed (`tests/newc-roundtrip`).
 
+## Panel reading of the v0g run, and what the Tux count implies
+
+What the user's eyes reported from the v0g screen (no photo yet, so this is a
+witness account, not a capture): the boot banner repeated **eight times**, one
+framebuffer warning line, one filesystem error line, and a **call trace**.
+
+The count is itself a measurement. A warm reset neither clears the panel
+framebuffer nor the log, so every boot that reaches fbcon paints one more Tux
+over the last one. Eight Tuxes after roughly 23 minutes of observation
+(`v0g` flashed 21:21, watcher ended 21:36, panel read ~21:44) means about
+**2-3 minutes per cycle**, not the 79 s of the v0c/v0e return. So there are at
+least two different timers in play, and this is the part of the picture the
+fastboot-return timestamps alone could not show:
+
+| timer | evidence | period |
+|---|---|---|
+| kernel `panic=N` reboot | v0c (79 s), v0e (71 s) with a 45/300 s probe that never fired | panic=10, so the oops is at ~69/61 s |
+| a reset nobody in userspace asked for | v0g (no `panic=` on its cmdline, feeder present) — eight Tuxes in ~23 min | ~170 s, which is in the range a Qualcomm watchdog takes over after ABOOT leaves it armed |
+
+Both readings share one cause and it is not the packing any more: **the kernel
+reaches our init, prints, and oopses somewhere in it.** The packing question is
+closed (the same kernel bytes boot to a login with the distro's own initramfs).
+What the fix has to answer is which of our init's steps the trace sits under,
+and the instrument that can say so without a UART is already flashed: the panel
+shows the last `omamobile-blueline: <step>` line before the trace, and v0h
+mirrors `/sys/fs/pstore` (ramoops) so the *previous* boot's tail comes back even
+after a reset.
+
+Hypothesis, not finding, to be killed or kept by the v0h panel: the trace is
+under the USB gadget bind (`mark 'binding UDC …'` last). v0h builds with
+`/etc/omamobile-nogadget`, so if it boots past 5 min with the gadget off, the
+bind path is the oops site and the remaining fix is the dwc3 story already
+documented above; if it still oopses, the gadget is exonerated for good and the
+framebuffer/filesystem lines are the lead.
+
 Arbiter under measurement (flashed while this was written): the same v0 image
 with `nowatchdog noreboot.not` appended to the cmdline. Survives > 120 s => the
 fixed timer is the watchdog and the fix belongs in the recipe (a feeder in init,
