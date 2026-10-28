@@ -1135,6 +1135,49 @@ bind path is the oops site and the remaining fix is the dwc3 story already
 documented above; if it still oopses, the gadget is exonerated for good and the
 framebuffer/filesystem lines are the lead.
 
+## The panel is a one-shot log; a ramoops field in the DTB makes it repeatable
+
+Two things read out of the shipped device tree and kernel, both checked rather
+than assumed:
+
+- The distro's `blueline.dtb` has **no ramoops region**. Its `reserved-memory`
+  holds hyp-mem, xbl-mem, aop-mem, aop-cmd-db, smem, tz, qseecom, camera-mem,
+  ipa-fw, ipa-gsi, gpu, adsp, wlan-msa, splash, memory, venus, cdsp-mem, mba,
+  slpi, spss and rmtfs — none named ramoops, and the string `ramoops` does not
+  occur in the 111,641-byte DTB. So `mount -t pstore` succeeds and
+  `/sys/fs/pstore` is **empty**: a warm reset loses the crash text, and every
+  "read the panel now or lose it" cycle costs a human.
+- The kernel *does* carry the code: 56 occurrences of `ramoops` and 104 of
+  `pstore` in the decompressed kernel stream, plus 15 of `qcom_wdt` — which
+  also corrects a line above: the Qualcomm watchdog driver **is** in this
+  kernel, so "no driver, nothing to feed" was wrong, and the ~79 s timer is
+  back to being a live candidate.
+
+`v0i` therefore ships the same image with one byte-level change: a
+`ramoops@9f800000` child at the end of `reserved-memory` — 1 MiB, `no-map`,
+`record-size` 64 KiB, `console-size` 512 KiB, `pmsg-size` 256 KiB. Chosen
+because the splash region ends at `0x9f800000` and paints only
+1080·2160·4 = 0x8e1000 bytes from `0x9d400000`, so the log area sits far outside
+what the bootloader overwrites at the *next* boot, and no other child claims it.
+Built with `dtc -I dtb -O dts` + recompile; `dtc` refuses a property after a
+subnode, so the insert goes before the parent's closing brace, not after its
+opening one.
+
+Verified before flashing (`unpack-bootimg.py` plus a byte comparison, not a
+header trust): gzip stream 16,042,611 B unchanged, DTB behind it 111,812 B, the
+two sum to `kernel_size` 16,154,423 with zero slack, `page_size@40` still 0, the
+DTB inside the image byte-identical to the built one and containing the
+`ramoops` string, the ramdisk **byte-identical to v0h's** — so v0h and v0i
+differ in exactly one thing, the device tree. v0h was not flashed: v0i answers
+the same question (gadget off) and adds the crash log, so it replaces that
+cycle rather than adding one.
+
+With `panic=60` the return time becomes a measurement of the crash time: an
+oops at T sends the handset back to FASTBOOT at T+60, so a comeback at e.g.
+125 s means the panic sat at ~65 s. And once anything panics, the *next* boot of
+the same image prints the previous boot's last 512 KiB of console onto the
+panel by itself — one photo per crash, no button dance in the middle.
+
 Arbiter under measurement (flashed while this was written): the same v0 image
 with `nowatchdog noreboot.not` appended to the cmdline. Survives > 120 s => the
 fixed timer is the watchdog and the fix belongs in the recipe (a feeder in init,
