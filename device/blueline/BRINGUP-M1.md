@@ -536,6 +536,30 @@ innocent and the regression is upstream 6.11 -> 7.3-rc6 (fetch upstream
 history to bisect).  Survives => one of our four commits is the killer
 (ramoops dts being the prime suspect; bisect those five).
 
+**rc6-bare — our four commits are exonerated (2026-10-28, image
+1ca8177a…).** A `git worktree` at the squashed root 33267e524 — bare
+upstream v7.3.0-rc6, none of 16897c828/349f27b/beaeaf73e/eddee2db, the
+dts carrying no ramoops node — built from the same pmOS 6.11 config + 21
+pins, flashed, died at 4 s (before its 25 s probe).  So the death is not
+anything we wrote: it is an upstream regression in the range 6.11 (every
+survivor) -> 7.3.0-rc6 (every death), reproducible at 4-5 s regardless of
+config, device tree, or dwc3 driver state.  The clone is a tarball squash
+(`git rev-list --count HEAD` = 6, no tags, root touches 96114 files), so
+it carries no v6.12..v7.2 history; a mainline bisect means fetching the
+real upstream history and bisecting there, building each suspect with our
+config + first-light initramfs, oracle = the early panic-probe's ABOOT
+return window (survives the probe window = good, dies before it = bad;
+the probe->panic=10->fastboot path needs no USB, so the oracle works even
+with USB compiled out).
+
+**Next cheap single-variable step before that multi-hour bisect: rc6-nousb
+(armed).** v7.3.0-rc6, pmOS config with the whole USB stack disabled
+(CONFIG_USB + DWC3/xHCI/configfs off; PHYs, clocks, interconnect, pstore
+left on), early probe.  Survives => the regression is inside the 7.3 USB
+core/xHCI/dwc3 stack (narrow within it next).  Dies => it is 7.3 core
+(arm64 head, clocks, cpuidle/PSCI, mm, scheduler), a much wider search,
+and the bisect should start on core subsystems, not USB.
+
 **Next two measurements, both built and byte-verified (2026-10-28):**
 `pmosh` (fl-pmosh, 81941839…): self-built 6.11 kernel + our 7.3 DTB,
 early probe 25 s — is the self-built reference kernel alive at all, and
