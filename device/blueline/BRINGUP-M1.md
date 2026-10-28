@@ -488,6 +488,54 @@ proves kernel + PID 1 aliveness even when the main flow hangs.  The
 sdm845-google-common.dtsi carries `dr_mode = "peripheral"` exactly like
 pmOS — the device trees agree on the role.
 
+**pmosdtb was NOT a measurement (2026-10-28).** The image lived silently
+for 400 s — but its probe sat at the END of init, behind the 30 s UDC
+wait and `dropbear -R` keygen, so "probe never fired" and "kernel dead"
+were indistinguishable.  The probe is now armed as a background timer
+immediately after the pseudo-fs mounts (commit 8e9d8ae): a fired probe
+proves kernel + PID 1 aliveness even when the main flow hangs.  The
+`dr_mode` theory died on inspection: the 7.3 tree's
+sdm845-google-common.dtsi carries `dr_mode = "peripheral"` exactly like
+pmOS — the device trees agree on the role.
+
+**The tree is upstream v7.3.0-rc6, squashed, plus only our four commits
+(2026-10-28).** `git tag` is empty and the root commit 33267e524 is a
+96114-file squash of the whole 7.3.0-rc6 tree; on top sit 16897c828
+(dual-window), 349f27b (ramoops dts), beaeaf73e (`omadwc3q=` knob),
+eddee2db (pointer cast).  There is no upstream 6.12..7.3 history in this
+clone, so a code bisect cannot run inside it — the suspect set inside the
+tree is exactly those four commits, and the "kernel code" axis otherwise
+means an upstream 6.11 -> 7.3-rc6 regression that would need the real
+upstream history fetched.
+
+**dtb73 result corrected (2026-10-28).** The probe was armed for 25 s and
+ABOOT returned at 5 s — that is a DEATH before the probe, not a fired
+probe; the watcher's `<= 90 s` label was wrong and is now `<= 25 s`.  So
+the 7.3 kernel on the pmOS 6.11 blueline device tree (no ramoops) also
+dies at 5 s: the device tree does not rescue it.  Config (pmoscfg, two
+independent flashes at 4-5 s), the dwc3 driver state (off12, 5 s), and
+now the device tree (dtb73, 5 s) are all exonerated; every surviving
+first-light boot we have measured was a 6.11 kernel, and every death was
+a 7.3 kernel.
+
+**Config delta, informational (2026-10-28).** Comparing the surviving
+6.11 self-build `.config` to the 7.3 `pmoscfg` `.config`: 160 symbols set
+in 6.11 are absent in 7.3, 672 new in 7.3.  Most are auto-selected
+crypto/CPU-feature symbols, but the absent set includes arm64 base
+symbols — ARM64_PAN, ARM64_LSE_ATOMICS, ARM64_USE_LSE_ATOMICS,
+ARM64_WORKAROUND_REPEAT_TLBI — whose behaviour differs at boot; the bare
+build prints these explicitly to see whether olddefconfig keeps or drops
+them on the 7.3 tree.
+
+**Decisive single-variable test armed (2026-10-28): `rc6-bare`.** A
+`git worktree` at the squashed root 33267e524 (bare upstream 7.3.0-rc6,
+none of our four commits, ramoops-free dts confirmed) built from the same
+pmOS 6.11 config + 21 pins, packed with the early 25 s probe.  This is
+the maximal-innocence 7.3 image.  Dies at 5 s => our four commits are
+innocent and the regression is upstream 6.11 -> 7.3-rc6 (fetch upstream
+history to bisect).  Survives => one of our four commits is the killer
+(ramoops dts being the prime suspect; bisect those five).
+
 **Next two measurements, both built and byte-verified (2026-10-28):**
 `pmosh` (fl-pmosh, 81941839…): self-built 6.11 kernel + our 7.3 DTB,
 early probe 25 s — is the self-built reference kernel alive at all, and
