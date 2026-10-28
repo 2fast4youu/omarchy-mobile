@@ -3,6 +3,7 @@
 # Unsupported boot methods must fail before touching a phone or preparing images.
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+if ((BASH_VERSINFO[0] < 4)); then echo "skip: no bash 4 (the installer's descriptor parser needs one, this is $BASH_VERSION)"; exit 0; fi
 t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
 mkdir -p "$t/repo/bin" "$t/repo/tools" "$t/repo/device/probe" "$t/bin" "$t/bundle/images"
 cp bin/omamobile "$t/repo/bin/"

@@ -10,8 +10,8 @@ trap 'rm -rf "$work"' EXIT
 fail=0
 ok() { echo "ok - $*"; }
 no() { echo "NOT OK - $*"; fail=$((fail+1)); }
-command -v python3 >/dev/null 2>&1 || { echo "SKIP newc-roundtrip: kein python3"; exit 0; }
-[ -f "$tool" ] || { echo "SKIP newc-roundtrip: $tool fehlt"; exit 0; }
+command -v python3 >/dev/null 2>&1 || {  echo "skip: no python3"; exit 0; }
+[ -f "$tool" ] || {  echo "skip: no $tool"; exit 0; }
 
 # 1) Kuemmliches newc-Archiv bauen (Name+Puffer, Daten auf 4 Bytes, Geraeteknoten)
 python3 - "$work/base.cpio" <<'PY'
@@ -37,8 +37,8 @@ PY
 # 2) init ersetzen, Geraeknoten muss erhalten bleiben
 printf '#!/bin/sh\necho neu\n' > "$work/init"
 if python3 "$tool" "$work/base.cpio" "$work/new.cpio" "$work/init" >"$work/log" 2>&1; then
-  grep -q "4 Eintraege" "$work/log" && ok "Umbau meldet alle vier Eintraege" || no "Umbau-Meldung: $(cat "$work/log")"
-  grep -q "Rueckleseprobe ok" "$work/log" && ok "Rueckleseprobe bestaetigt den neuen init-Inhalt" || no "keine Rueckleseprobe"
+  grep -q "4 entries" "$work/log" && ok "Umbau meldet alle vier Eintraege" || no "Umbau-Meldung: $(cat "$work/log")"
+  grep -q "read-back ok" "$work/log" && ok "Rueckleseprobe bestaetigt den neuen init-Inhalt" || no "keine Rueckleseprobe"
 else
   no "Umbau fehlgeschlagen: $(cat "$work/log")"
 fi
@@ -82,15 +82,19 @@ fi
 # in der Standardbibliothek, also wird das Werkzeug gesucht oder uebersprungen.
 ref="$(dirname -- "$here")/pmos-ref-build/ref/boot.img"
 if [ -f "$ref" ]; then
+  # Die Sektion beginnt nicht zwangslaeufig auf 4096+ks: die Distro fuellt vor
+  # der Ramdisk auf naechste 2048er-Grenze auf. Also die Magicsuchen, dann
+  # entpacken (gzip hier, zstd dort, newc roh auch moeglich).
   python3 - "$ref" "$work/ref.gz" <<'PY' || true
 import struct, sys, gzip
 d = open(sys.argv[1], "rb").read()
 ks, = struct.unpack_from("<I", d, 8); rs, = struct.unpack_from("<I", d, 16)
-sec = d[4096+ks:4096+ks+rs]
-if sec[:3] == b"\x1f\x8b\x08":
-    open(sys.argv[2], "wb").write(gzip.decompress(sec))
-else:
-    open(sys.argv[2], "wb").write(sec)   # zstd: Rohtrom weiterreichen
+MAGIC = (b"\x1f\x8b\x08", b"\x28\xb5\x2f\xfd", b"070701")   # gzip, zstd, newc
+start = next((o for o in range(4096+ks, 4096+ks+4097) if d.startswith(MAGIC, o)), None)
+sec = d[start:start+rs] if start is not None else b""
+if sec.startswith(b"\x1f\x8b"):
+    sec = gzip.decompress(sec)
+open(sys.argv[2], "wb").write(sec)
 PY
   case $(python3 -c 'import sys;print(open(sys.argv[1],"rb").read(4).hex())' "$work/ref.gz" 2>/dev/null || echo leer) in
     070701*) cpio="$work/ref.gz" ;;
@@ -98,14 +102,16 @@ PY
          zstd -qdc "$work/ref.gz" > "$work/ref.cpio" 2>/dev/null || true; cpio="$work/ref.cpio"
        else cpio=""; fi ;;
   esac
-  if [ -n "${cpio:-}" ] && [ -s "${cpio:-}" ] && head -c 6 "$cpio" | grep -q 070701 \
+  # Kein `head -c 6 | grep -q`: der Leser schliesst frueh, head fangs SIGPIPE
+  # (141) und der Zweig waere auf quieten Hosts immer ein Skip.
+  if [ -n "${cpio:-}" ] && [ -s "${cpio:-}" ] && [ "$(head -c 6 "$cpio")" = 070701 ] \
      && python3 "$tool" "$cpio" "$work/ref.new" "$work/init" >"$work/ref.log" 2>&1; then
-    grep -q "Rueckleseprobe ok" "$work/ref.log" && ok "echte Distro-Ramdisk (zstd) rundgelaeufen" || no "Referenz-Rundlauf ohne Probe"
+    grep -q "read-back ok" "$work/ref.log" && ok "echte Distro-Ramdisk (zstd) rundgelaeufen" || no "Referenz-Rundlauf ohne Probe"
   else
-    echo "SKIP - Referenz-Ramdisk hier nicht entpackbar (zstd-Werkzeug fehlt)"
+    echo "ok - # skip: no zstd to unpack the reference ramdisk here"
   fi
 else
-  echo "SKIP - Referenzbild $ref nicht vorhanden"
+  echo "ok - # skip: no reference image $ref"
 fi
 
 [ "$fail" -eq 0 ] && { echo "newc: alles grin"; exit 0; } || { echo "newc: $fail Fehler"; exit 1; }

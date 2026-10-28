@@ -10,6 +10,7 @@
 # whole-disk node is removed either way.
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+. "$(dirname -- "${BASH_SOURCE[0]}")/lib/bsd.sh"   # sed_inplace: BSD sed wants a backup suffix after -i, GNU wants none
 fail() { printf 'not ok - %s\n' "$1" >&2; exit 1; }
 pass() { printf 'ok - %s\n' "$1"; }
 t=$(mktemp -d); trap '[[ -n ${KEEP:-} ]] || rm -rf "$t"' EXIT
@@ -39,7 +40,7 @@ om() { (cd "$R" && DEVICE=six bin/omamobile "$@") > "$t/log" 2>&1; }
 om initramfs-config "$t/etc-six" || { cat "$t/log"; fail "the test descriptor packs"; }
 refused() { # what, UFS_RW value, expected message
   cp "$t/good.conf" "$R/device/six/device.conf"
-  sed -i "s/^UFS_RW=.*/UFS_RW=\"$2\"/" "$R/device/six/device.conf"
+  sed_inplace "s/^UFS_RW=.*/UFS_RW=\"$2\"/" "$R/device/six/device.conf"
   rm -rf "$t/etc-bad"
   if om initramfs-config "$t/etc-bad"; then fail "refuses $1"; fi
   grep -c -- "$3" "$t/log" >/dev/null || { cat "$t/log"; fail "refuses $1 with: $3"; }

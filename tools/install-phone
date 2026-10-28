@@ -46,6 +46,13 @@
 # Answers are read from standard input, so they can be piped for tests.
 set -euo pipefail
 shopt -s nullglob
+# The descriptor parser below keeps its keys in an associative array, which is
+# bash 4. macOS still ships /bin/bash 3.2, where `declare -A` only prints a
+# usage line and every later check then fails for the wrong reason.
+if ((BASH_VERSINFO[0] < 4)); then
+  echo "install-phone: needs bash 4 or newer (this is $BASH_VERSION; on macOS, brew install bash)" >&2
+  exit 1
+fi
 # Byte-wise character ranges in the checks below ([ -~] is printable ASCII)
 export LC_ALL=C
 

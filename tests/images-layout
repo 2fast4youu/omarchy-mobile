@@ -21,6 +21,7 @@
 # ~/android/mainline/out*).
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+. "$(dirname -- "${BASH_SOURCE[0]}")/lib/bsd.sh"   # sed_inplace: BSD sed wants a backup suffix after -i, GNU wants none
 fail() { printf 'not ok - %s\n' "$1" >&2; exit 1; }
 pass() { printf 'ok - %s\n' "$1"; }
 skip() { printf 'ok - # skip: %s\n' "$1"; exit 0; }
@@ -159,7 +160,7 @@ unpack vendor_kernel_boot
 cmp -s "$t/u/vendor_kernel_boot/dtb" "$dts/zuma-eight.dtb" || fail "zuma layout: vendor_kernel_boot carries the DTB"
 pass "zuma-style descriptor (SOC_COMPATIBLE): the DTB once, in vendor_kernel_boot"
 cp "$R/device/eight/device.conf" "$t/eight.conf"
-sed -i 's/b1-foplp:0x9865:1:1:0/b1-foplp:0x9865:1:2:0/' "$R/device/eight/device.conf"
+sed_inplace 's/b1-foplp:0x9865:1:1:0/b1-foplp:0x9865:1:2:0/' "$R/device/eight/device.conf"
 if om eight images; then fail "images refuses a DTB whose /soc_compatible differs from SOC_COMPATIBLE"; fi
 grep -c 'does not match SOC_COMPATIBLE' "$t/log" >/dev/null || { cat "$t/log"; fail "a /soc_compatible mismatch is reported"; }
 cp "$t/eight.conf" "$R/device/eight/device.conf"
@@ -312,7 +313,7 @@ pass "a missing later image is refused before the first flash"
 # Bad descriptors are refused before anything is built or written
 bad() { # what, sed expression on six's descriptor, expected message
   cp "$R/device/six/device.conf" "$t/good.conf"
-  sed -i "$2" "$R/device/six/device.conf"
+  sed_inplace "$2" "$R/device/six/device.conf"
   : > "$t/fastboot.log"
   if om six flash; then fail "refuses $1"; fi
   grep -c -- "$3" "$t/log" >/dev/null || { cat "$t/log"; fail "refuses $1 with: $3"; }

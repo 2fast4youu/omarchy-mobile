@@ -8,6 +8,7 @@
 # commands, nothing else), and the first-boot file it writes into the image.
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+. "$(dirname -- "${BASH_SOURCE[0]}")/lib/bsd.sh"   # sed_inplace: BSD sed wants a backup suffix after -i, GNU wants none
 SRC=$PWD
 fail() { printf 'not ok - %s\n' "$1" >&2; exit 1; }
 pass() { printf 'ok - %s\n' "$1"; }
@@ -184,13 +185,13 @@ echo testdev > "$t/images/DEVICE"
 cp "$R/out/$(basename "$img").sha256" "$t/sum"; echo "0000  $(basename "$img")" > "$R/out/$(basename "$img").sha256"
 refuse "a root image that doesn't match its checksum"
 cp "$t/sum" "$R/out/$(basename "$img").sha256"
-sed -i 's/^device: .*/device: cheetah/' "$R/out/omamobile-rootfs-2026.10.13-aarch64.MANIFEST"
+sed_inplace 's/^device: .*/device: cheetah/' "$R/out/omamobile-rootfs-2026.10.13-aarch64.MANIFEST"
 refuse "a root image built for another device"
-sed -i 's/^device: .*/device: testdev/' "$R/out/omamobile-rootfs-2026.10.13-aarch64.MANIFEST"
+sed_inplace 's/^device: .*/device: testdev/' "$R/out/omamobile-rootfs-2026.10.13-aarch64.MANIFEST"
 mkdir -p "$t/include/config" && echo 7.3.0-test-1 > "$t/include/config/kernel.release"
 echo 'kernel modules: 7.3.0-test-2 (tarball sha256 0)' >> "$R/out/omamobile-rootfs-2026.10.13-aarch64.MANIFEST"
 refuse "a root image whose modules don't match the boot images' kernel"; grep -q 'modules for 7.3.0-test-2' "$t/out" || fail "names both kernels"
-sed -i 's/^kernel modules: .*/kernel modules: 7.3.0-test-1 (tarball sha256 0)/' "$R/out/omamobile-rootfs-2026.10.13-aarch64.MANIFEST"
+sed_inplace 's/^kernel modules: .*/kernel modules: 7.3.0-test-1 (tarball sha256 0)/' "$R/out/omamobile-rootfs-2026.10.13-aarch64.MANIFEST"
 install --dry-run || { cat "$t/out"; fail "matching kernel and modules pass"; }
 pass "refuses partitions outside the allowlist, a non-data descriptor, a staged descriptor, both SOC_IDS and SOC_COMPATIBLE, another device's images, a bad or foreign root image, mismatched modules; accepts SOC_COMPATIBLE"
 
