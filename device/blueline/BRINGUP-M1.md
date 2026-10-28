@@ -792,6 +792,34 @@ not from a cmdline knob.)
 This stays QUEUED behind the serial console per the owner's timebox —
 no further phone flashes until the boot reason is readable.
 
+**Ground-truth reference build in flight (2026-10-28 evening, owner said
+"weiter").** Per the owner's correction we do NOT drive pmbootstrap with
+an answer loop any more: the container's `/root/.config/pmbootstrap_v3.cfg`
+is written directly (pmbootstrap 3.12.1 v3 keys: aports/work/device/ui/
+user/hostname/timezone/locale/service_manager/build_pkgs_on_install),
+channel comes from the pmaports branch. First `install --split` run then
+failed with `postmarketos-ui-console-mobile (no such package)` — that UI
+name does not exist in edge (index shows `postmarketos-ui-console[-openrc]`);
+the cfg now says `ui = console` + `service_manager = openrc`. Recorded
+sources and hashes for the reference (review point 3 demanded exactly
+this): pmaports shallow clone HEAD `1eb4dce28ef2d0ecc8651914bcb4972083eefb0f`
+(branch main = edge); device-google-blueline files sha256 deviceinfo
+`3a0d981f682b6d180c70a6a53744defcf5488051b2c802f42be22517f89dd0df`,
+kernel-cmdline.conf `3a8b7899cbb294e12f6b7bb38f620553b9beb9bf57a0d1d31e19b45bcf2c0eb0`,
+APKBUILD `1f9524e0b13c58133032debbb6b30b42520e9a609682c0f2e307cfa921e2e01b`,
+modules-initfs `5018e59bf656fef16800667a8bd0347bfbfa8a35ed8653a037c23494e11d4578`;
+the distro's PREBUILT kernel apk `linux-postmarketos-qcom-sdm845-7.1_rc1-r4.17d6ae79.apk`
+(57,994,142 bytes, sha256 `d0b4b950a500cede73fe5ce094060b1f9d608e3b4cbcb9d59bf2d876b2dc9804`)
+from the moved mirror `https://mirror.nura.eco/postmarketos/main/aarch64/`;
+our fork tarball sha256 `4389f4ae6f5b80174a4b2d2da93ab5afc1d3922db215ebabf7c01436494eb9f2`.
+`install --split` ends with THEIR boot.img built by THEIR initfs/mkinitfs
+pipeline at THEIR deviceinfo offsets — that file, byte-verified and
+hashed, is the single flash that decides whether this handset and ABOOT
+are fine and our own initramfs/packing is the failing component (or
+whether even the untouched distro artifact shows the same 4-5 s return,
+which would move the suspicion to the handset's state, e.g. the erased
+dtbo_a). Nothing is flashed before that file exists and is checked.
+
 **Ordering from this review (replaces the previous next-steps text):**
 1. alive2 verdict (armed, deterministic `reboot bootloader` probe) —
    defines what silence and timing mean at all.
