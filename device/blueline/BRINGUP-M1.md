@@ -468,6 +468,16 @@ from the pmOS 6.11 reference config (`out-blueline-pmoscfg`, pins kept,
 panic probe 120 s) — survives: config, bisect symbols; dies: code,
 bisect commits.
 
+**pmoscfg measured (2026-10-28, image a9cd3b0f…):** the 7.3-rc6 kernel
+built from the full 3501-symbol 6.11 reference config (olddefconfig
+clean, all bring-up pins verified =y afterwards) died at 5 s, twice,
+independently flashed.  Config is exonerated.  Note arm64 has no
+`OF_APPENDED_DTB` — the concatenated-DTB layout is config-free, the
+head.S probe always runs.  Next axis, one flash each: 6.11 kernel with
+the 7.3-built DTB (`pmosdtb`); dies => the device tree (prime suspect:
+the ramoops reservation), survives => a 6.12..7.3 code regression and
+a commit bisect with the panic-probe loop as the test harness.
+
 ### M1.3 — the LUN map and the calibration backups (read-only)
 
 - Record which UFS LUN carries the partition table, `userdata` and each
