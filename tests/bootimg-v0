@@ -73,15 +73,20 @@ fi
 grep -q 'page_size@40 weicht von der Referenz ab' "$t/log" || fail "packer refuses for the wrong reason"
 echo "ok - --strict-reference aborts on a page_size that deviates from the known-good image"
 
-# 5) A padded image (what our old builder produced) is detected as such: the
-#    ramdisk sits at a page-aligned offset instead of directly after the kernel.
+# 5) The shipped ramdisk-offset bug, caught offline: with --no-pad-sections the
+#    ramdisk sits directly behind the kernel, which is NOT the page boundary
+#    the bootloader computes. The reference image (ed2c225f...) pads to the
+#    boundary; packing without padding hands the kernel a blob 372 bytes (here:
+#    a few bytes) too early -> "Initramfs unpacking failed" -> panic
+#    unknown-block(0,0), as photographed on the panel 2026-10-28 22:14.
 python3 "$PACK" --kernel "$t/kernel-dtb" --ramdisk "$t/ramdisk.gz" --cmdline "$CMD" \
-  --name '' --pagesize-field 2 --pad-sections --tail-align 0 -o "$t/pad.img" > "$t/log" 2>&1 \
-  || fail "padded packing failed"
-if python3 "$UNPACK" "$t/pad.img" > "$t/log" 2>&1; then
-  fail "reader accepts a ramdisk at the page-rounded offset"
+  --name '' --no-pad-sections --tail-align 0 -o "$t/mirror.img" > "$t/log" 2>&1 \
+  || fail "unpadded packing failed"
+if python3 "$UNPACK" "$t/mirror.img" > "$t/log" 2>&1; then
+  fail "reader accepts a ramdisk that is not on the page boundary"
 fi
-echo "ok - padded sections are reported instead of trusted"
+grep -q 'NICHT die Seitengrenze' "$t/log" || fail "reader refuses for the wrong reason"
+echo "ok - a ramdisk off the page boundary is refused, the way ABOOT reads it"
 
 # 6) The kernel blob must be complete: a truncated kernel fails the round trip.
 head -c 40 "$t/kernel-dtb" > "$t/short"

@@ -75,20 +75,26 @@ def build(args):
     head[EXTRA_OFF:EXTRA_OFF + len(extra) + 1] = extra + b"\0"
 
     def padded(blob):
-        return blob + b"\xff" * (-len(blob) % align)
+        # Nullbytes, nicht 0xff: das Referenzbild fuellt zwischen Kernel-Ende
+        # und naechster Seitengrenze mit 372 Nullbytes auf (gemessen 2026-10-28,
+        # REF bei Offset 16158348..16158720, eindeutige Byte-Werte [0]).
+        return blob + b"\x00" * (-len(blob) % align)
 
     if args.pad_sections:
         body = padded(kernel) + padded(ramdisk) + padded(second)
     else:
-        # Spiegel-Modus (gemessen am Referenzbild, sha256 ed2c225f...): die
-        # Sektionen liegen byte-auf-byte hintereinander, ohne Seiten-
-        # Auffuellung. Nur der Kopf ist auf 4096 gepolstert, hinter der
-        # ramdisk folgen 1693 Nullbytes. ABOOT nutzt die Groessen aus dem Kopf
-        # und rechnet die Section-Offsets aus dem page_size-Feld — dieses Feld
-        # ist dort 0, also gibt es fuer ABOOT keine Auffuellung, und beides
-        # passt zusammen. Unsere alten Bilder polsterten auf 4096, schrieben
-        # aber den header_version-Wert 2 in genau dieses Feld: ABOOT sucht die ramdisk dann an einem Offset, den
-        # unsere Datei nicht liefert.
+        # ALTER SPIEGEL-MODUS (bis 2026-10-28 22:00 Standard, jetzt widerlegt):
+        # "Sektionen byte-auf-byte ohne Auffuellung". Die Messung am
+        # Referenzbild (sha256 ed2c225f...) zeigt das Gegenteil: die ramdisk
+        # liegt bei 16158720 = der 4096er-Seitengrenze hinter dem Kernel
+        # (kernel_size 16154252, Kernel endet 16158348, 372 Nullbytes Fuellung).
+        # ABOOT rechnet den ramdisk-Offset aus kernel_size und der Seitengroesse
+        # (page_size-Feld 0 => Default) und uebergibt dem Kernel den Blob ab
+        # DIESER Grenze. Ohne Auffuellung erhaelt der Kernel die ramdisk 372
+        # Bytes zu frueh, also mitten im gzip-Strom: "Initramfs unpacking
+        # failed", kein /init, Kernel-Panic "VFS: Unable to mount root fs on
+        # unknown-block(0,0)" (Foto 22:14). Nur zum Rekapitulieren des Fehlers
+        # verwenden.
         body = kernel + ramdisk + second
     out = bytes(head) + body
     if args.tail_align:
@@ -187,9 +193,13 @@ def main():
                    help="was ins Feld page_size@40 geschrieben wird (die Distro schreibt 0)")
     p.add_argument("--pagesize-align", type=lambda s: int(s, 0), default=4096,
                    help="Kopf-Polsterung und Seitenweite (Referenzbild: 4096)")
-    p.add_argument("--pad-sections", action="store_true",
-                   help="Sektionen seitig auffuellen (Standard: wie die Distro "
-                        "byte-auf-byte ohne Auffuellung)")
+    p.add_argument("--pad-sections", dest="pad_sections", action="store_true", default=True,
+                   help="Sektionen seitig auffuellen (Standard, und so packt die "
+                        "Distro: ramdisk beginnt auf der Seitengrenze nach dem Kernel)")
+    p.add_argument("--no-pad-sections", dest="pad_sections", action="store_false",
+                   help="Sektionen ohne Auffuellung byte-auf-byte (der alte, "
+                        "widerlegte Spiegel-Modus: brachte die ramdisk 372 Bytes "
+                        "zu frueh -> Initramfs unpacking failed)")
     p.add_argument("--tail-align", type=lambda s: int(s, 0), default=2048,
                    help="Dateiende auf diese Grenze auffuellen (Referenzbild: 2048; "
                         "0 schaltet die Auffuellung aus)")

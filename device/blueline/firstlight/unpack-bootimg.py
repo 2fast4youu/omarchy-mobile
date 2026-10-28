@@ -26,6 +26,7 @@ FIELD = (("kernel_size", 8), ("kernel_addr", 12), ("ramdisk_size", 16),
          ("os_version", 44))
 NAME_OFF, CMDLINE_OFF, ID_OFF, EXTRA_OFF = 48, 64, 576, 608
 GZIP, DTB, CPIO = b"\x1f\x8b\x08", b"\xd0\x0d\xfe\xed", b"070701"
+ZSTD = b"\x28\xb5\x2f"  # die Referenz-Initramfs ist zsdkomprimiert
 PAGE_CANDIDATES = (2048, 4096, 8192, 16384)
 
 
@@ -91,21 +92,52 @@ def main(img, out=None):
                             f"{accounted}, kernel_size = {d['kernel_size']}")
     ram_off = base + d["kernel_size"]
     ram_pad_off = base + -(-d["kernel_size"] // pad) * pad
-    head = blob[ram_off:ram_off + 6]
-    kind = {GZIP[:3]: "gzip", CPIO: "cpio (unkomprimiert)"}.get(head[:3], "kein Known-Magic")
-    print(f"  ramdisk bei {ram_off} (ohne Auffuellung): {kind}; "
-          f"bei {ram_pad_off} (mit Auffuellung auf {pad}): "
-          f"{ {GZIP[:3]: 'gzip', CPIO: 'cpio'}.get(blob[ram_pad_off:ram_pad_off+3], 'nichts') }")
-    if head[:3] not in (GZIP[:3], CPIO[:3]) and blob[ram_pad_off:ram_pad_off + 3] not in (GZIP[:3], CPIO[:3]):
-        print("  Hinweis: die ramdisk traegt keinen known-Kompressions-Magic am Anfang "
-              "(die postmarketOS-Distro schreibt so); geladen wird sie nach Groesse.")
-    tail_end = ram_off + d["ramdisk_size"] + d["second_size"]
+
+    def known(at):
+        h = blob[at:at + 6]
+        if h[:3] == GZIP[:3]:
+            return "gzip"
+        if h[:3] == ZSTD:
+            return "zstd"
+        if h == CPIO:
+            return "cpio (unkomprimiert)"
+        return None
+
+    k_plain, k_pad = known(ram_off), known(ram_pad_off)
+    print(f"  ramdisk bei {ram_off} (ohne Auffuellung): {k_plain or 'kein Magic'}; "
+          f"bei {ram_pad_off} (Seitengrenze {pad}): {k_pad or 'kein Magic'}")
+    # Massgeblich ist, was der Bootloader uebergibt: der rechnet den
+    # ramdisk-Offset aus kernel_size und Seitengroesse und liest ab der
+    # Seitengrenze. Das Referenzbild (sha256 ed2c225f...) legt die ramdisk
+    # genau dort hin (zstd-Magic auf der 4096er-Grenze, 372 Nullbytes davor).
+    # Liegt der Magic NUR mitten in der Seite, bekommt der Kernel den Blob
+    # verschoben — genau der Fehler, der am 2026-10-28 um 22:14 als
+    # "Initramfs unpacking failed" und Panic
+    # "VFS: Unable to mount root fs on unknown-block(0,0)" auf dem Panel stand.
+    if k_pad:
+        ramdisk_at = ram_pad_off
+        print(f"  Lage: seitenbuendig wie das Referenzbild; ramdisk ab {ramdisk_at}")
+    elif k_plain:
+        ramdisk_at = ram_off
+        if ram_pad_off != ram_off:
+            problems.append(
+                f"ramdisk-Magic nur bei {ram_off}, das ist NICHT die Seitengrenze "
+                f"({ram_pad_off}): der Bootloader uebergibt {ram_pad_off} + "
+                f"{d['ramdisk_size']} Bytes und der Kernel sieht mittendrin "
+                f"keinen Strom -> Initramfs unpacking failed, Panic unknown-block(0,0)")
+    else:
+        ramdisk_at = ram_off
+        print("  Hinweis: die ramdisk traegt keinen known-Kompressions-Magic am "
+              "Anfang (die postmarketOS-Distro schreibt so); geladen wird sie "
+              "nach Groesse.")
+    tail_end = ramdisk_at + d["ramdisk_size"] + d["second_size"]
     print(f"  Ende der Sektionen: {tail_end}, Datei: {len(blob)}, Schweif: {len(blob) - tail_end} Bytes")
     for p in problems:
         print(f"  ACHTUNG: {p}")
     if out:
         os.makedirs(out, exist_ok=True)
-        for name, off in (("kernel", base), ("ramdisk", ram_off), ("second", ram_pad_off)):
+        ramdisk_ziel = ramdisk_at if d["ramdisk_size"] else ram_off
+        for name, off in (("kernel", base), ("ramdisk", ramdisk_ziel), ("second", ram_pad_off)):
             if d[name + "_size"]:
                 raw = blob[off:off + d[name + "_size"]]
                 open(os.path.join(out, name), "wb").write(raw)

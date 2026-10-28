@@ -1270,6 +1270,51 @@ to months from, on hardware where the modem is a Google S5300 over PCIe
 with no field-proven path yet. On blueline the plan's whole risky asset
 is one GPT write; everything after M1.6 is the same road cheetah took.
 
+## 2026-10-29 00:26 — zweite root cause: der ramdisk-Offset (v0j, erster Boot bis /init)
+
+Das Foto von 22:14 (v0g auf dem Panel): `Kernel panic - not syncing: VFS:
+Unable to mount root fs on unknown-block(0,0)`, PID 1 `swapper/0`, Call trace
+über `mount_bdev` → `mount_root` → `kernel_init_freeable`. Das heißt: **unser
+/init ist nie gelaufen** — den Kernel erreichte kein lesbares Initramfs, er
+fiel auf `mount_root` zurück. Kein Fehler in unserem Init, kein Watchdog.
+
+Messung (offline, byte-genau, am Referenzbild ed2c225f... und an v0h):
+
+| Grösse | Referenz | unsere Bilder v0a–v0i |
+|---|---|---|
+| kernel_size | 16154252 | identisch (derselbe Kernel) |
+| Kernel-Sektion endet bei | 16158348 | identisch |
+| ramdisk liegt bei | **16158720** = nächste 4096er-Seitengrenze, 372 Nullbytes Füllung davor | 16158348 = **372 Bytes zu früh** (Spiegel-Modus: Sektionen byte-auf-byte) |
+| ramdisk-Magic dort | zstd (die Distro packt zstd) | gzip |
+
+ABOOT rechnet den ramdisk-Offset aus kernel_size und Seitengrösse und
+übergibt den Blob ab der Seitengrenze. Ohne Auffüllung bekam der Kernel
+einen Ausschnitt, der 372 Bytes mitten im gzip-Strom begann:
+`Initramfs unpacking failed`, kein /init, Panic. An der Ramdisk selbst lag
+es nie: `cpio-ls.py` (neu, läuft die Einträge exakt wie der Kernel) zählt
+in unserer Ramdisk 731 Einträge, `init` 0755/13350 B im Archivgrund,
+TRAILER byte-genau am Ende; im Referenzbild 366 Einträge, `init`
+0755/2093 B.
+
+Alle bisherigen „Comeback"-Messungen waren derselbe Panic: Panic bei ~8 s;
+mit `panic=10` war ABOOT nach den Slot-Retries bei ~71–79 s in fastboot
+(v0a/v0c/v0e); ohne `panic=` hielt der Kernel an und das Panel behielt den
+Trace (v0g → Foto); mit `panic=60` passte v0hs 229 s exakt auf
+3 × (Boot ~8 s + 60 s Panic-Warten) + ABOOT.
+
+Fix: Sektionen auf die Seitengrenze mit Nullbytes auffüllen — jetzt
+Standard in `pack-v0.py` (Alter Modus: `--no-pad-sections`). Der Reader
+erkennt seitenbündige Lage (auch zstd) und verwirft eine ramdisk mitten in
+der Seite mit Exit 1; `tests/bootimg-v0` prüft beide Klassen (5 ok,
+Arch-Alpine-Container, Exit 0).
+
+Messung: v0j = Kernel und Ramdisk byte-identisch zu v0h, cmdline nur um
+`rdinit=/init` ergänzt, Packing seitenbündig (sha256
+5ee02f4c975e221ed76f166da012d6753fceba72a6b658702cd8acb4deb5998e,
+20922368 B) auf boot_a, `fastboot reboot` 00:26:14 → **408 s kein
+Fastboot-Comeback** (v0h kam bei 229 s wieder). ACM: keins (Gadget
+abgeschaltet, Panel ist der einzige Leser).
+
 ## Open questions for the maintainers
 
 1. Is `android-v2` (the Pixel 4 XL's descriptor names it) the word this
