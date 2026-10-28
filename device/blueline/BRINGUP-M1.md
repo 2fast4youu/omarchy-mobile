@@ -988,6 +988,51 @@ the panel instead of guessing —
 `fastboot getvar all` (read-only) is still owed at the next fastboot window
 to rule slot retry/unbootable flags in or out as a second variable.
 
+### Anatomy of the reference image (measured byte by byte, 2026-10-28)
+
+Read out of `ed2c225f…` itself, not out of a header's own claim:
+
+| byte offset | content |
+|---|---|
+| 0..8 | `ANDROID!` |
+| 8, 12 | `kernel_size` 16,154,252 / `kernel_addr` **0x8000** |
+| 16, 20 | `ramdisk_size` 12,569,303 / `ramdisk_addr` 0x1000000 |
+| 32, 36 | `tags_size` 256 / `tags_addr` 0x1000 |
+| 40 | `page_size` = **0** |
+| 44 | 0 |
+| 48 | `name` — all zero |
+| 64 | `cmdline` (218 Zeichen, v0-Layout) |
+| 576 / 608 | sha1 id / `extra_cmdline` (leer) |
+| 4096 | gzip-Strom, **16,042,611 B komprimiert -> 44,498,944 B entpackt** |
+| 16,046,707 | `d00dfeed` DTB, 111,641 B -> Strom + DTB = 16,154,252 = `kernel_size`, **0 Bytes Rest** |
+| 16,158,348 | ramdisk, ohne jede Seiten-Auffuellung, **kein Kompressions-Magic** am Anfang |
+| 28,727,651.. | 1,693 B Schweif, Datei endet auf einer 2048er-Grenze |
+
+Three consequences that change earlier readings:
+
+- **`append_dtb` is proven**, byte-exact: the gzip stream ends at +16,042,611
+  and the DTB fills the rest of `kernel_size`. That is the pmaports recipe.
+- The sections carry **no page alignment at all**. A bootloader that follows
+  `page_size` therefore cannot be aligning anything either — with the field at
+  0 the distro's own packer puts the ramdisk directly behind the kernel, and
+  our `pack-v0.py` mirrors that. Our old v2 images instead padded each section
+  to 4096 **while writing 2 into the `page_size` field**: two independent
+  reasons for ABOOT to look somewhere the file has nothing.
+- The distro's **ramdisk has no gzip/cpio magic at its first byte** (372 zero
+  bytes first). A loader that sniffs compression instead of trusting the header
+  would reject it — a reminder that this format is read by size, not by magic.
+
+`tools/`-Gegenstueck im Repo: `firstlight/unpack-bootimg.py` (vermisst den Strom
+statt dem Kopf zu glauben) und `tests/bootimg-v0` (in `tests/all`), das alle vier
+Fehlerklassen verweigert: header_version an der page_size-Stelle, Abweichung gegen
+ein Referenzbild, gepolsterte Sektionen, abgeschnittener Kernel-Strom.
+Verifikation am echten Referenzbild (Ad-hoc, 20 Pruefungen): Rueckpacken liefert
+kernel- und ramdisk-Sektion **byte-identisch**, Kopf-Unterschiede nur in den 20
+ID-Bytes und im Schweif. Suite: **103 ok, 0 not ok, 2 skip** (Alpine-Container mit
+`perl`, GNU `tar`, `gcc`/`musl-dev`; mit busybox-tar scheitert
+`tests/phone-provision` an `--owner=`, ohne perl `tests/kernel-pr-check` — das ist
+die Umgebung, nicht der Code).
+
 ## What first light does not claim
 
 Wi-Fi (WCN3990 needs the `Google_blueline` calibration from the owner's
