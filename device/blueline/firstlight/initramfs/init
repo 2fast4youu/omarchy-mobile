@@ -43,6 +43,25 @@ echo 'Omarchy Mobile first-light (blueline) - RAM only' > /dev/console 2>/dev/nu
 
 # The gadget first: the ACM console and NCM link are the only instruments
 # on this handset (no UART breakout).
+# Panic probe (bring-up instrument, 2026-10-28): armed as a background
+# timer IMMEDIATELY after the pseudo-filesystem mounts, because the main
+# flow below can block PID 1 for minutes before reaching its old position
+# (30 s UDC wait, `dropbear -R` RSA keygen on a slow core). A timer that
+# only starts at the end of init measures nothing when init hangs. The
+# builder drops /etc/omamobile-panic-probe (content = seconds) in; the
+# panic lands in the ramoops region and panic=10 warm-reboots to FASTBOOT.
+if [ -f /etc/omamobile-panic-probe ]; then
+    (
+        secs=$(cat /etc/omamobile-panic-probe 2>/dev/null)
+        [ -n "$secs" ] || secs=45
+        sleep "$secs"
+        mark "panic probe firing at ${secs}s (last step: $(tail -1 "$steps" 2>/dev/null))"
+        echo 'omamobile-blueline: PANIC-PROBE: kernel alive, PID1 liveness proven' > /dev/kmsg
+        dmesg 2>/dev/null | tail -80 > /dev/kmsg 2>/dev/null
+        echo c > /proc/sysrq-trigger 2>/dev/null
+    ) &
+fi
+
 mark 'usb gadget setup'
 product='Omarchy Mobile'
 [ -s /etc/omamobile-usb-product ] && product=$(cat /etc/omamobile-usb-product)
@@ -252,27 +271,8 @@ mark 'storage guard pass 1 done'
 
 mark 'init main flow complete; PID 1 parking'
 
-# Panic probe (bring-up instrument, 2026-10-27): the handset is a black
-# box - no panel text (mainline has no sw43408 panel driver yet), no USB
-# gadget, and ABOOT has no fetch command, so the boot_a log channel is
-# not readable back. A timed panic turns "is the kernel alive?" into an
-# observable: with panic=10 the warm reboot lands in FASTBOOT MODE within
-# ~60 s of the reboot command, which the host sees without the human
-# reading a screen. The builder drops /etc/omamobile-panic-probe (content
-# = seconds) in; without the file this loop never runs. The panic text
-# itself lands in the ramoops region; the next first-light boot's pstore
-# dump (above, to kmsg and the boot_a tail) carries the backtrace.
-if [ -f /etc/omamobile-panic-probe ]; then
-    (
-        secs=$(cat /etc/omamobile-panic-probe 2>/dev/null)
-        [ -n "$secs" ] || secs=45
-        sleep "$secs"
-        mark "panic probe firing at ${secs}s (no gadget seen; this is the measurement)"
-        echo 'omamobile-blueline: PANIC-PROBE: kernel alive at boot, USB gadget never enumerated' > /dev/kmsg
-        dmesg 2>/dev/null | tail -80 > /dev/kmsg 2>/dev/null
-        echo c > /proc/sysrq-trigger 2>/dev/null
-    ) &
-fi
+# (Panic probe moved up: armed right after the mounts so a blocked main
+# flow cannot outrun the measurement.)
 
 # PID 1 never exits: a gone init is a panic, and a panic here (panic=10)
 # just reboots back to whatever the bootloader picks. Stay RAM-only.
