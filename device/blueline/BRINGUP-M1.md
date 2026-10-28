@@ -1008,6 +1008,22 @@ Read out of `ed2c225f…` itself, not out of a header's own claim:
 | 16,158,348 | ramdisk, ohne jede Seiten-Auffuellung, **kein Kompressions-Magic** am Anfang |
 | 28,727,651.. | 1,693 B Schweif, Datei endet auf einer 2048er-Grenze |
 
+Beweis, woher unsere 2 an Offset 40 stammt (Nachbau 2026-10-28, Fixture durch
+`android-mainline/mkbootimg/mkbootimg.py`): dieses Werkzeug schreibt
+`--header_version 2` **an Offset 40** und die cmdline **an 64**, also nach dem
+alten Kopf-Layout ohne header_version-Feld. Nach dem AOSP-Kopf, den ABOOT liest,
+steht an 40 die Seitengroesse. Unsere Datei polsterte dabei auf das `--pagesize
+4096`, das wir mitgegeben hatten — Feld (2) und Datei (4096) describing two
+different page sizes, and the known-good image carries 0 in that field with
+sections that are not padded at all.
+
+**Was davon Hypothese ist:** dass genau dieses Feld den 4-5-s-Rueckprung
+verursacht. Das geflashte v0a-Bild aendert zwei Dinge gegenueber der Referenz —
+Feldwert/Padding *und* das Initramfs —, also zeigt erst sein Ergebnis, ob die
+Feldtheorie stimmt. Ein BOOT-Image-Kopf ist ein Vertrag ueber Offsets; welches
+Feld ABOOT wirklich liest, ist hier nicht dokumentiert, nur aus dem
+bekannt-guten Bild ablesbar.
+
 Three consequences that change earlier readings:
 
 - **`append_dtb` is proven**, byte-exact: the gzip stream ends at +16,042,611
