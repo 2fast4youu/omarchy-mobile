@@ -1,7 +1,8 @@
 #!/bin/sh
 # SPDX-License-Identifier: MIT
 # Runs inside device/blueline/firstlight/build's disposable aarch64 Alpine
-# container: builds the first-light initramfs and the header-v2 boot image.
+# container: builds the first-light initramfs and the boot image (v0 packing by
+# default, see the packer switch below).
 # Never connects to or writes a phone.
 set -eu
 apk add --no-cache cpio gzip dtc python3
@@ -88,17 +89,37 @@ fi
 # carry one, so the check is patched out in a local copy and --dtb is not
 # passed at all.
 cat /input/kernel /input/blueline.dtb > /kernel-dtb
-cp -r /mkbootimg /tmp/mkbootimg
-sed -i "s/raise ValueError(.DTB image must not be empty..)/pass/" /tmp/mkbootimg/mkbootimg.py
 # Shell-expanded BEFORE mkbootimg sees it: a ${VAR} written inside the
 # single-quoted --cmdline would ride into the boot image as literal text.
 cmdline='console=ttyMSM0,115200n8 console=tty0 loglevel=8 printk.devkmsg=on panic=10 androidboot.hardware=qcom androidboot.board=blueline'
-# One-variable packing tests (owner review follow-up 2026-10-28): the pmOS
-# recipe for THIS handset packs kernel at 0x8000 (deviceinfo_flash_offset_
-# kernel) with cmdline exactly "console=ttyMSM0,115200" (kernel-cmdline.
-# conf).  Our recipe deviates on both counts.  Override ONE at a time per
-# flash, never both; the header assertion prints and checks what shipped.
-kernel_offset="${OMAMOBILE_KERNEL_OFFSET:-0x00000000}"
+# Packing: two packers, one variable at a time per flash.
+#   v0 (Standard) = das Layout des bekannt-guten Distributionsbildes, Feld fuer
+#     Feld abgelesen: Kopf eine Seite, Feld bei 40 = 0, cmdline bei 64,
+#     Sektionen byte-auf-byte ohne Auffuellung, DTB an den Kernel-Strom
+#    anhaengt (append_dtb, 0 Bytes Rest).
+#   v2 = die mitgelieferte mkbootimg.py-Kopie. Sie schreibt --header_version an
+#     Offset 40, wo der von ABOOT gelesene boot_img_hdr die Seitengroesse
+#     traegt, und fuellt die Sektionen auf --pagesize auf. Damit meldete unsere
+#     Datei 'page size = 2 Byte' und schob die ramdisk auf einen Offset, den
+#     die Datei nicht liefert: der Kernel startete nie, ABOOT war nach ~4 s
+#     wieder da, ohne eine einzige Kernel-Logzeile.
+packer="${OMAMOBILE_PACKER:-v0}"
+reference=""
+[ -f /packer/packer.py ] || { echo 'builder mounted no packer at /packer/packer.py' >&2; exit 1; }
+case $packer in
+  v0)
+    kernel_offset="${OMAMOBILE_KERNEL_OFFSET:-0x8000}"
+    [ -f /packer/reference.img ] && reference=/packer/reference.img
+    ;;
+  v2)
+    [ -d /mkbootimg ] || { echo 'OMAMOBILE_PACKER=v2 needs the --mkbootimg mount' >&2; exit 1; }
+    cp -r /mkbootimg /tmp/mkbootimg
+    sed -i "s/raise ValueError(.DTB image must not be empty..)/pass/" /tmp/mkbootimg/mkbootimg.py
+    kernel_offset="${OMAMOBILE_KERNEL_OFFSET:-0x00000000}"
+    [ -f /packer/reference.img ] && { echo 'OMAMOBILE_PACKER=v2 ignores /packer/reference.img' >&2; }
+    ;;
+  *) echo "unknown OMAMOBILE_PACKER: $packer" >&2; exit 1 ;;
+esac
 replaced=""
 if [ -n "${OMAMOBILE_CMDLINE_REPLACE:-}" ]; then
     cmdline="$OMAMOBILE_CMDLINE_REPLACE"
@@ -106,31 +127,55 @@ if [ -n "${OMAMOBILE_CMDLINE_REPLACE:-}" ]; then
 fi
 [ -n "${OMAMOBILE_EXTRA_CMDLINE:-}" ] && cmdline="$cmdline $OMAMOBILE_EXTRA_CMDLINE"
 extra_knob="${OMAMOBILE_EXTRA_CMDLINE:-}"
-python3 /tmp/mkbootimg/mkbootimg.py --header_version 2 \
-    --base 0x0 --kernel_offset "$kernel_offset" --ramdisk_offset 0x01000000 \
-    --tags_offset 0x100 --pagesize 4096 \
-    --kernel /kernel-dtb --ramdisk /out/initramfs.cpio.gz \
-    --cmdline "$cmdline" \
-    -o /out/firstlight.img
-# The debug knobs must be byte-verifiable in the shipped image: assert the
-# exact strings landed in the v2 header's cmdline field.
-python3 - <<PY
-import sys
-d = open('/out/firstlight.img','rb').read(4096)
-cmd = d[64:1024].split(b'\x00')[0].decode()
-print('cmdline:', cmd)
-replaced = '''$replaced'''
-if not replaced and 'panic=10' not in cmd:
+if [ "$packer" = v0 ]; then
+    set -- --kernel /kernel-dtb --ramdisk /out/initramfs.cpio.gz --cmdline "$cmdline"
+    [ -n "$reference" ] && set -- "$@" --reference "$reference"
+    python3 /packer/packer.py "$@" --name '' --kernel-addr "$kernel_offset" \
+        --ramdisk-addr 0x01000000 --tags-addr 0x1000 --pagesize-field 0 \
+        -o /out/firstlight.img
+else
+    python3 /tmp/mkbootimg/mkbootimg.py --header_version 2 \
+        --base 0x0 --kernel_offset "$kernel_offset" --ramdisk_offset 0x01000000 \
+        --tags_offset 0x100 --pagesize 4096 \
+        --kernel /kernel-dtb --ramdisk /out/initramfs.cpio.gz \
+        --cmdline "$cmdline" \
+        -o /out/firstlight.img
+fi
+# Byte-Beleg am gelieferten Bild: cmdline, kernel_addr und — neu — dass die
+# Sektionen dort liegen, wo der Kopf sie laut seinem Feld vermutet, und dass
+# der Kernel-Blob im Bild byte-identisch zu /kernel-dtb ist.
+cmdline_want="$cmdline" replaced_want="$replaced" kernel_off_want="$kernel_offset" \
+extra_knob="$extra_knob" kernel_dtb=/kernel-dtb ramdisk=/out/initramfs.cpio.gz \
+packer_name="$packer" python3 - <<'PY'
+import os, sys
+env = os.environ
+d = open('/out/firstlight.img', 'rb').read()
+cmd = d[64:64 + 512].split(b'\x00')[0].decode()
+print('packer:', env['packer_name'], ' cmdline:', cmd)
+if cmd != env['cmdline_want']:
+    sys.exit('cmdline not verbatim in the shipped header')
+if env['extra_knob'] and env['extra_knob'] not in cmd:
+    sys.exit('cmdline lost extra knob ' + repr(env['extra_knob']))
+if env['replaced_want'] != 'yes' and 'panic=10' not in cmd:
     sys.exit('cmdline lost panic=10')
-# This mkbootimg packs v2 as: magic@0, kernel_size@8, kernel_addr@12 (LE).
-got = int.from_bytes(d[12:16], 'little')
-want = int('''$kernel_offset''', 16)
-print('kernel_addr: 0x%x (want 0x%x)' % (got, want))
+dw = lambda o: int.from_bytes(d[o:o + 4], 'little')
+got, want = dw(12), int(env['kernel_off_want'], 16)
+print('kernel_addr@12: 0x%x (want 0x%x)' % (got, want))
 if got != want:
     sys.exit('kernel_addr in header does not match requested offset')
-extra = '''$extra_knob'''
-if extra and extra not in cmd:
-    sys.exit('cmdline lost extra knob ' + repr(extra))
+if env['packer_name'] == 'v0':
+    if dw(40) != 0:
+        sys.exit('v0 packing must leave page_size@40 at 0, found %d' % dw(40))
+    page, ksz, rsz = 4096, dw(8), dw(16)
+    kern = open(env['kernel_dtb'], 'rb').read()
+    if d[page:page + ksz] != kern or ksz != len(kern):
+        sys.exit('kernel section in the image is not the input kernel+dtb byte for byte')
+    if d[page + ksz:page + ksz + rsz] != open(env['ramdisk'], 'rb').read():
+        sys.exit('ramdisk section is not at kernel_size behind the kernel (v0 layout)')
+    print('sections: kernel bei %d, ramdisk bei %d, beide byte-identisch zur Eingabe'
+          % (page, page + ksz))
+else:
+    print('v2-Pfad: Sektions-Pruefung uebersprungen (dieser Packer polstert seitig auf)')
 PY
 size=$(stat -c %s /out/firstlight.img)
 [ "$size" -le 67108864 ] || { rm /out/firstlight.img; echo 'Image exceeds the 64 MiB boot partition budget (M1.0 getvar confirms the real size)' >&2; exit 1; }

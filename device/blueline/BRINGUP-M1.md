@@ -988,6 +988,52 @@ the panel instead of guessing —
 `fastboot getvar all` (read-only) is still owed at the next fastboot window
 to rule slot retry/unbootable flags in or out as a second variable.
 
+## The packing was the 4-5 s signal; the fixed ~79 s return is a second, different signal
+
+`getvar all` at the next fastboot window (read-only, as asked):
+
+    current-slot:a   slot-retry-count:a:2   slot-unbootable:a:no   slot-successful:a:no
+    version-bootloader:b1c1-0.4-7617406   max-download-size:0x10000000   secure-boot:PRODUCTION
+
+So the "slot A flagged unbootable -> every image lands in fastboot" reading is
+**refuted by measurement**: the slot is bootable, retry count is not exhausted.
+
+Measured return times, same initramfs, same kernel bytes, packing as noted:
+
+| packing | kernel | probe | return |
+|---|---|---|---|
+| v2 (`--header_version 2` in the page_size field, sections padded to 4096) | 7.3, 7.1-fork, pmOS-config, bare rc6, no-USB | 8/20/40 s, none | **4-5 s, flat** |
+| v0 (mirrored distro layout) | distro kernel bytes | 45 s | **78 s** |
+| v0 | distro kernel bytes | 300 s | **79 s** |
+
+Two clean separations fall out:
+
+1. **The 4-5 s return is a property of OUR v2 packing**, not of the kernel: with
+   the layout mirrored from the known-good image, the same kernel bytes stay up
+   ~80 s instead of 4-5 s. `reboot bootloader`/panic also now demonstrably works
+   (ABOOT returns on command), which every earlier "the probe is unobservable"
+   note had to leave open.
+2. **The ~79 s return does NOT track the probe** (45 s -> 78 s, 300 s -> 79 s) and
+   cannot be the probe's `panic=10` path either (that would give ~55 s and ~310 s).
+   It is a fixed timer. **Hypothese, nicht Befund:** the SoC's boot-enabled
+   watchdog, started by ABOOT and never taken over. Supporting evidence, not
+   proof: both the distro config and our builds carry
+   `CONFIG_WATCHDOG=y`, `CONFIG_WATCHDOG_HANDLE_BOOT_ENABLED=y`,
+   `CONFIG_WATCHDOG_OPEN_TIMEOUT=0`, the DTB has
+   `compatible = "qcom,apss-wdt-sdm845", "qcom,kpss-wdt"` at `watchdog@17980000`,
+   and our init ships no watchdog feeder (no `WATCHDOG_QCOM` in either build,
+   no feeder process). The known-good distro image boots through it — whether it
+   feeds the timer or never arms it is **not yet measured**, and the distro
+   package's own config fragment lists no Qualcomm watchdog driver at all, so
+   the mechanism may be ABOOT-side rather than driver-side.
+
+Arbiter under measurement (flashed while this was written): the same v0 image
+with `nowatchdog noreboot.not` appended to the cmdline. Survives > 120 s => the
+fixed timer is the watchdog and the fix belongs in the recipe (a feeder in init,
+or the knob in the cmdline); returns at 79 s anyway => the timer is not the
+watchdog core and the panel/pstore channels have to say what it is.
+
+
 ### Anatomy of the reference image (measured byte by byte, 2026-10-28)
 
 Read out of `ed2c225f…` itself, not out of a header's own claim:
