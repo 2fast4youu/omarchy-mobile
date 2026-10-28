@@ -93,10 +93,21 @@ sed -i "s/raise ValueError(.DTB image must not be empty..)/pass/" /tmp/mkbootimg
 # Shell-expanded BEFORE mkbootimg sees it: a ${VAR} written inside the
 # single-quoted --cmdline would ride into the boot image as literal text.
 cmdline='console=ttyMSM0,115200n8 console=tty0 loglevel=8 printk.devkmsg=on panic=10 androidboot.hardware=qcom androidboot.board=blueline'
+# One-variable packing tests (owner review follow-up 2026-10-28): the pmOS
+# recipe for THIS handset packs kernel at 0x8000 (deviceinfo_flash_offset_
+# kernel) with cmdline exactly "console=ttyMSM0,115200" (kernel-cmdline.
+# conf).  Our recipe deviates on both counts.  Override ONE at a time per
+# flash, never both; the header assertion prints and checks what shipped.
+kernel_offset="${OMAMOBILE_KERNEL_OFFSET:-0x00000000}"
+replaced=""
+if [ -n "${OMAMOBILE_CMDLINE_REPLACE:-}" ]; then
+    cmdline="$OMAMOBILE_CMDLINE_REPLACE"
+    replaced="yes"
+fi
 [ -n "${OMAMOBILE_EXTRA_CMDLINE:-}" ] && cmdline="$cmdline $OMAMOBILE_EXTRA_CMDLINE"
 extra_knob="${OMAMOBILE_EXTRA_CMDLINE:-}"
 python3 /tmp/mkbootimg/mkbootimg.py --header_version 2 \
-    --base 0x0 --kernel_offset 0x00000000 --ramdisk_offset 0x01000000 \
+    --base 0x0 --kernel_offset "$kernel_offset" --ramdisk_offset 0x01000000 \
     --tags_offset 0x100 --pagesize 4096 \
     --kernel /kernel-dtb --ramdisk /out/initramfs.cpio.gz \
     --cmdline "$cmdline" \
@@ -108,8 +119,15 @@ import sys
 d = open('/out/firstlight.img','rb').read(4096)
 cmd = d[64:1024].split(b'\x00')[0].decode()
 print('cmdline:', cmd)
-if 'panic=10' not in cmd:
+replaced = '''$replaced'''
+if not replaced and 'panic=10' not in cmd:
     sys.exit('cmdline lost panic=10')
+# This mkbootimg packs v2 as: magic@0, kernel_size@8, kernel_addr@12 (LE).
+got = int.from_bytes(d[12:16], 'little')
+want = int('''$kernel_offset''', 16)
+print('kernel_addr: 0x%x (want 0x%x)' % (got, want))
+if got != want:
+    sys.exit('kernel_addr in header does not match requested offset')
 extra = '''$extra_knob'''
 if extra and extra not in cmd:
     sys.exit('cmdline lost extra knob ' + repr(extra))

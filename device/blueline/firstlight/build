@@ -31,7 +31,7 @@
 # flash boot).
 set -euo pipefail
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)
-kernel="" dtb="" key="" mkbootimg="" out="" image="alpine:3.22" panic_probe="" no_gadget="" extra_cmdline=""
+kernel="" dtb="" key="" mkbootimg="" out="" image="alpine:3.22" panic_probe="" no_gadget="" extra_cmdline="" kernel_offset="" cmdline_replace=""
 die() { echo "error: $*" >&2; exit 1; }
 while (($#)); do
   case $1 in
@@ -44,6 +44,8 @@ while (($#)); do
     --panic-probe) panic_probe=${2:?}; shift ;;
     --no-gadget) no_gadget=1 ;;
     --extra-cmdline) extra_cmdline=${2:?}; shift ;;
+    --kernel-offset) kernel_offset=${2:?}; shift ;;
+    --cmdline-replace) cmdline_replace=${2:?}; shift ;;
     -h|--help) sed -n '3,27p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown argument: $1" ;;
   esac
@@ -87,6 +89,8 @@ docker run --rm --platform linux/arm64 \
   -e "OMAMOBILE_PANIC_PROBE=${panic_probe:-}" \
   -e "OMAMOBILE_NO_GADGET=${no_gadget:-}" \
   -e "OMAMOBILE_EXTRA_CMDLINE=${extra_cmdline:-}" \
+  -e "OMAMOBILE_KERNEL_OFFSET=${kernel_offset:-}" \
+  -e "OMAMOBILE_CMDLINE_REPLACE=${cmdline_replace:-}" \
   --mount "type=bind,source=$ROOT,target=/src,readonly" \
   --mount "type=bind,source=$kernel,target=/input/kernel,readonly" \
   --mount "type=bind,source=$dtb,target=/input/blueline.dtb,readonly" \

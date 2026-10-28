@@ -672,6 +672,66 @@ own decision).  With a real console we read the death instead of timing
 it; the breakout is a ~10 € part and the honest fix for the "one signal,
 two readings" problem at its root.
 
+**alive2 verdict (2026-10-28, /private/tmp/fl-alive, 6.11 pmOS kernel +
+pmOS DTB + reboot-bootloader probe armed at init start, 20 s):** 300 s
+after `fastboot reboot`: no FASTBOOT, no NCM, no ACM. Two readings stay
+open and we do NOT pick one: (a) our initramfs/packaging keeps even the
+known-good 6.11 from ever reaching `init` — consistent with review point
+2's "hängt wahrscheinlich vor init"; (b) init ran but the probe's way
+back (`reboot` with RESTART2 command "bootloader", fallbacks
+fastboot/recovery, last sysrq+panic=10) does not make THIS ABOOT show
+fastboot — mainline pmic-restart handlers commonly drop the restart
+command, so "probe fired but nobody saw it" is fully possible. The
+signal has no witness without a console; that is the review's point 4
+made concrete. The owner ordered the USB-C SBU breakout + 3.3 V USB-UART
+adapter today (see einkaufsliste-uart-pixel3.md next to this file).
+
+**`fastboot oem help` on this ABOOT (read-only probe, 2026-10-28):**
+`FAILED (remote: 'Invalid oem command help')` — b1c1-0.4-7617406 has no
+verb to enumerate OEM commands, so whether `oem uart enable` exists here
+is unknowable without trying it (which is a write). pmOS's blueline
+recipe uses the SBU serial console purely via `console=ttyMSM0,115200`
+in the kernel cmdline without any oem switch, so the cable alone is the
+planned path; we leave the uart bit untouched.
+
+**Two one-variable packing tests, both negative (2026-10-28, owner
+instructed to run them before any long reference build).** Both on the
+current 7.3 kernel (dual-window + knob, our config), early probe 20 s,
+gadget on, one flash each, byte-verified in the shipped v2 header
+(kernel_addr at +12 of this mkbootimg's layout — the assert in
+initramfs/build now checks it):
+- `off8000` (sha 94705b9d…, --kernel-offset 0x8000 like
+  deviceinfo_flash_offset_kernel, rest of our cmdline): FASTBOOT back at
+  **4 s** — same as the 0x0 baseline. The pmOS offset does not save 7.3.
+- `cmdpmos` (sha ab61ff12…, cmdline replaced by exactly pmOS
+  `console=ttyMSM0,115200`, no tty0/devkmsg/androidboot/panic): FASTBOOT
+  back at **4 s**. The cmdline stack does not save 7.3 either.
+Reading under the review's hypothesis label: the ABOOT-return signal is
+now byte-for-byte IDENTICAL for {offset 0x0, 0x8000} × {our cmdline,
+pmOS cmdline} × {full config, pmOS config, USB-less, bare rc6}. Whatever
+it is, no packing knob on our side changes it. (Kernel-7.1 fork next —
+if THAT survives at 4 s with the same packing, the signal was never the
+packing and the kernel-version axis gets its first clean contrast.)
+
+**Kernel basis switched to the proven fork (owner decision 2026-10-28,
+replaces any 6.11→7.3 bisect):** pmOS ships blueline on
+`https://gitlab.com/sdm845-mainline/linux` tag `sdm845-7.1-rc1-r0`
+(APKBUILD pkgver 7.1_rc1-r4). Tarball downloaded from the tag archive
+URL; sha256 of OUR download is 4389f4ae6f5b80174a4b2d2da93ab5afc1d3922db215ebabf7c01436494eb9f2
+while the APKBUILD records 94da173aaf74dd33ef8ff9015e92759481cd0da5bd8a1e52c8664fd372d48a1155655001ad2e9d26557733c71ae8bc448e4ebdf1372b8f32159907a35f0306a9
+— GitLab's archive endpoint is not byte-reproducible across servers, the
+content is the tag. Extracted to `android-mainline/kernel-71` (1.7 GiB).
+Basis .config = the DISTRO config `config-postmarketos-qcom-sdm845.aarch64`
+straight out of the pmaports shallow clone: all 21 bring-up pins are
+already =y except `USB_CONFIGFS` and `USB_LIBCOMPOSITE` which upstream
+carries as =m — flipped to =y with MODULES off (first light loads no
+modules). Building Image.gz + DTBs in the arm64 container
+(`out-blueline-71`) as this is committed. First flash plan after the
+build: pack with OUR firstlight initramfs + probe 20 s at the pmOS
+deviceinfo offset 0x8000, gadget on. Timebox from the owner: if the
+reference build plus these tests still show no NCM after 2–3 more
+flashes, no further guessing — we wait for the serial console.
+
 **Ordering from this review (replaces the previous next-steps text):**
 1. alive2 verdict (armed, deterministic `reboot bootloader` probe) —
    defines what silence and timing mean at all.
