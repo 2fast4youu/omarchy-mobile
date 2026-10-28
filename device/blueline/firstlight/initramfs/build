@@ -54,6 +54,9 @@ chmod 600 "$stage/root/.ssh/authorized_keys"
 if [ -n "${OMAMOBILE_PANIC_PROBE:-}" ]; then
     printf '%s\n' "$OMAMOBILE_PANIC_PROBE" > "$stage/etc/omamobile-panic-probe"
 fi
+if [ -n "${OMAMOBILE_NO_GADGET:-}" ]; then
+    : > "$stage/etc/omamobile-nogadget"
+fi
 name=$(sed -n 's/^NAME=//p' /src/device/blueline/device.conf | head -1 \
     | tr -d '"' | tr -cd '\040-\176')
 if [ -n "$name" ]; then
@@ -91,7 +94,7 @@ python3 /tmp/mkbootimg/mkbootimg.py --header_version 2 \
     --base 0x0 --kernel_offset 0x00000000 --ramdisk_offset 0x01000000 \
     --tags_offset 0x100 --pagesize 4096 \
     --kernel /kernel-dtb --ramdisk /out/initramfs.cpio.gz \
-    --cmdline 'console=ttyMSM0,115200n8 console=tty0 loglevel=8 printk.devkmsg=on panic=10 androidboot.hardware=qcom androidboot.board=blueline' \
+    --cmdline 'console=ttyMSM0,115200n8 console=tty0 loglevel=8 printk.devkmsg=on panic=10 androidboot.hardware=qcom androidboot.board=blueline ${OMAMOBILE_EXTRA_CMDLINE:-}' \
     -o /out/firstlight.img
 size=$(stat -c %s /out/firstlight.img)
 [ "$size" -le 67108864 ] || { rm /out/firstlight.img; echo 'Image exceeds the 64 MiB boot partition budget (M1.0 getvar confirms the real size)' >&2; exit 1; }

@@ -59,6 +59,12 @@ ln -s "$g/functions/ncm.usb0" "$g/configs/c.1/" 2>/dev/null
 ln -s "$g/functions/acm.GS0" "$g/configs/c.1/" 2>/dev/null
 
 udc=""
+# --no-gadget build instrument (bring-up bisect, 2026-10-27): configfs
+# skeleton exists but the UDC is never written, so the DWC3 core's gadget
+# start, the pre_run_stop glue notifier and the PHY power-on never run —
+# a boot that survives the panic probe with this flag localizes a death
+# to the bind path instead of the core probe.
+if [ ! -e /etc/omamobile-nogadget ]; then
 for _ in $(seq 1 30); do
     for controller in /sys/class/udc/*; do
         [ -e "$controller" ] && udc=${controller##*/} && break
@@ -71,6 +77,9 @@ if [ -n "$udc" ]; then
     echo "$udc" > "$g/UDC" 2>/dev/null && mark 'UDC bound' || mark 'UDC bind FAILED'
 else
     mark 'no UDC appeared in 30 s'
+fi
+else
+    mark 'gadget bind skipped (--no-gadget instrument)'
 fi
 
 # Once ttyGS0 exists: flush the step log, dump the previous boot's pstore
