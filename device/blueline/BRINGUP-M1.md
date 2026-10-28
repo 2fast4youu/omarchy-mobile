@@ -537,7 +537,10 @@ history to bisect).  Survives => one of our four commits is the killer
 (ramoops dts being the prime suspect; bisect those five).
 
 **rc6-bare — our four commits are exonerated (2026-10-28, image
-1ca8177a…).** A `git worktree` at the squashed root 33267e524 — bare
+1ca8177a…).**  [Review 2026-10-28: same caveat — "exonerated" holds only
+once the 4 s ABOOT return is proven to mean kernel death; see the review
+section.  The build-content facts (no bring-up commits in the tree) are
+verified regardless.]  A `git worktree` at the squashed root 33267e524 — bare
 upstream v7.3.0-rc6, none of 16897c828/349f27b/beaeaf73e/eddee2db, the
 dts carrying no ramoops node — built from the same pmOS 6.11 config + 21
 pins, flashed, died at 4 s (before its 25 s probe).  So the death is not
@@ -560,7 +563,11 @@ core/xHCI/dwc3 stack (narrow within it next).  Dies => it is 7.3 core
 (arm64 head, clocks, cpuidle/PSCI, mm, scheduler), a much wider search,
 and the bisect should start on core subsystems, not USB.
 
-**rc6-nousb — the 7.3 death is CORE, not USB (2026-10-28).** Same
+**rc6-nousb — the 7.3 death is CORE, not USB (2026-10-28).**  [Review
+2026-10-28: retitle honestly — "CORE" here means "the ABOOT-return-at-
+4 s signal persisted with USB compiled out"; it is only evidence of a
+CORE cause once the signal's meaning is proven by the deterministic
+probe.  Treat as hypothesis.]  Same
 v7.3.0-rc6 + pmOS config with the entire USB stack compiled out
 (`USB-Symbole gesetzt: 0`; clocks/interconnect/pstore/PHY left on), early
 probe 20 s: died at 4 s, before the probe.  So the 4-5 s death is not the
@@ -594,6 +601,85 @@ return we then time becomes a true "init ran" oracle.  Then re-run the
 gadget that never binds (pivot 100% to configfs/UDC bring-up); still
 nothing in 300 s => even the known-good 6.11 does not reach our init, so
 the initramfs/bootargs packaging is the bug, not the kernel at all.
+
+## Review 2026-10-28 (owner): the 7.3 findings are a HYPOTHESIS, not a measurement
+
+**One signal, two readings (review point 1, accepted).** Every "TOT nach
+4-7 s" in the tables above really means: after `fastboot reboot` the
+handset answered FASTBOOT again 4-7 s later, without us asking.  Nobody
+ever saw why ABOOT came back.  The working assumption is a panic ->
+`machine_restart`/PSCI restart carrying the restart2 command line
+("bootloader" from ABOOT's own reboot) -> ABOOT shows fastboot; but a
+watchdog reset that ABOOT treats as boot failure landing in fastboot is
+equally consistent with everything measured.  With that ambiguity, the
+"7.3 core regression" chain rests on a signal with zero kernel log lines
+behind it.  Until the deterministic probe (below) fires on a boot we
+control, ALL rows above are measurements of *the signal*, not of the
+kernel; no 6.11 -> 7.3 bisect before this is settled.
+
+**"6.11 lebt" was never proven either (review point 2, accepted).** The
+early probe never observably fired on any 6.11 boot: the 240 s fl-pmos run
+shipped no probe at all, and the 300/400 s silent runs had the probe
+armed in the initramfs but produced no observable outcome.  "Kernel lebt
+240 s" was an absence-of-death inference; "hangt vor init" is equally
+open.  Consequently "the gadget is the real front" was premature — it is
+one reading of silence.  The alive2 run (probe issues `reboot bootloader`
+explicitly via busybox RESTART2 instead of hoping a panic lands in
+fastboot) is the arbiter: fastboot inside ~20-40 s proves the kernel
+reaches our init and only the gadget fails; continued silence proves our
+initramfs never reaches init (bootargs/packaging bug) — evaluate before
+concluding anything.
+
+**Ground truth is missing (review point 3, source verified today).** No
+image we ever flashed was unmodified vendor/distro output: even "fl-pmos"
+was OUR first-light initramfs packed by OUR mkbootimg call.  The official
+pmOS route for blueline builds its own image (`pmbootstrap install` +
+`pmbootstrap flasher flash_rootfs/flash_kernel`, wiki
+Google_Pixel_3_(google-blueline)#Installation); the prebuilt image
+farms have sargo/beryllium but return 404 for google-blueline
+(images.nura.eco/bpo/edge/google-blueline, v25.12, v26.06 checked
+2026-10-28).  So the reference = build it with pmbootstrap in a docker
+workaround (device-google-blueline 7-r? at gitlab.postmarketos.org
+pmaports master; kernel linux-postmarketos-qcom-sdm845 pkgver
+**7.1_rc1-r4**, fork gitlab.com/sdm845-mainline/linux tag
+`sdm845-7.1-rc1-r0`), record source URL + sha512 of the deviceinfo
+(`d67a19ae…`, in the APKBUILD) and of the produced boot.img, flash it
+unmodified, check NCM/172.16.42.1.  Only after that passes do we swap
+our pieces in, one per boot.
+
+**The pmOS packaging facts differ from ours and are candidates (found
+while verifying point 3):** deviceinfo sets `kernel_offset 0x8000` (we
+flash 0x0 after the ABOOT rejection experiment) and
+`deviceinfo_append_dtb=true` (same concat layout we converged on); the
+device's official `kernel-cmdline.conf` is exactly
+`console=ttyMSM0,115200` — no `console=tty0`, no `printk.devkmsg`, no
+`androidboot.*` args, while every image we ever shipped carried them.
+None of them is suspect or innocent by measurement; the reference image
+settles which of our deviations matter.
+
+**Serial console is available on this handset (review point 4, wiki +
+AOSP docs verified today).** pmOS wiki, same device page: USB-C breakout,
+A1 GND -> adapter GND, A8 SBU1 -> adapter RXD, B8 SBU2 -> TXD,
+**115200 baud**, 3.3 V nominal (1.8 V also works); Google's own serial
+debug cable + Peter-Easton's android-debug-cable-howto document the same
+pins for Pixel-class devices.  AOSP's Pixel kernel docs list
+`fastboot oem uart enable` + `fastboot oem uart config 3000000`; whether
+this b1c1-0.4 LK ABOOT implements `uart`/`uart-enable` has NEVER been
+checked on this handset — next time it sits in fastboot, run the
+read-only probe `fastboot oem help` and record the exact output (a bare
+`fastboot oem uart enable` may be a persistent bit flip, so it needs its
+own decision).  With a real console we read the death instead of timing
+it; the breakout is a ~10 € part and the honest fix for the "one signal,
+two readings" problem at its root.
+
+**Ordering from this review (replaces the previous next-steps text):**
+1. alive2 verdict (armed, deterministic `reboot bootloader` probe) —
+   defines what silence and timing mean at all.
+2. pmbootstrap reference build, flashed unmodified, NCM check — ground
+   truth, with source + hashes recorded here.
+3. serial console: cable + `fastboot oem help` probe; then read instead
+   of infer.
+4. only then: bisect decisions, if any axis still needs one.
 
 **Next two measurements, both built and byte-verified (2026-10-28):**
 `pmosh` (fl-pmosh, 81941839…): self-built 6.11 kernel + our 7.3 DTB,
