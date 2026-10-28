@@ -920,6 +920,74 @@ where the self-build dies, suspect the build/packaging, not the code.
   cold-boot policy and this line cites the evidence).
 - `tools/phone-smoke` runs and its report opens the pull request.
 
+## Reference build result (2026-10-28): the unmodified distro boot.img BOOTS — and the 4-5 s signal dies as a device property
+
+Review point 3 executed: built the distro's own image rather than our
+packing, so a known-good artefact exists at last.
+
+Build (all inside Docker, Alpine edge arm64, `pmbootstrap` 3.12.1,
+pmaports `main`/edge HEAD `1eb4dce28ef2d0ecc8651914bcb4972083eefb0f`,
+device `google-blueline`, `ui = console`, `service_manager = openrc`):
+`pmbootstrap install --split`. The distro packed its own boot image with its
+own bootimg hook — kernel + DTB + initramfs + offsets, nothing of ours
+involved.
+
+- `boot.img` 28,729,344 B, sha256
+  `ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82`
+  (from `chroot_rootfs_google-blueline/boot/boot.img`), sha verified on the
+  host after the copy, before the write.
+- kernel inside: `linux-postmarketos-qcom-sdm845 7.1_rc1-r4` — the same fork
+  we rebuild from source.
+- rootfs images also produced (`google-blueline-boot.img` 536,870,912 B,
+  `google-blueline-root.img` 1,205,862,400 B) but NOT flashed: only `boot_a`
+  was written, the handset's rootfs partition is still the Ubuntu
+  Touch/pmOS one.
+- Build gotcha worth keeping: pmbootstrap on the macOS bind mount left stale
+  directory entries (readdir lists a name whose `stat` is ENOENT, same inode)
+  that made its own `du -ks` size step fail, and `rm -rf` could not clear it
+  (ENOTEMPTY). Moving the whole work path onto a named docker volume fixed
+  it. Do not debug such a phantom file — move the work path.
+
+**Measured:** `fastboot flash boot_a` + `fastboot reboot` -> the handset did
+NOT come back to fastboot within 300 s, and the Mac saw no USB attach at all
+in that window (no fastboot, no `172.16.42.1` NCM, no adb). The owner looked
+at the handset: **the panel shows a pmOS text console / login.** So this
+image is alive and driving the display while our images "die".
+
+What that settles:
+
+1. **The handset, slot A, ABOOT and the fork kernel are good.** A distro
+   image boots to a login and stays up for minutes.
+2. **The 4-5 s fastboot return is image-specific, not a device or slot
+   policy.** If ABOOT were returning because slot A was flagged unbootable
+   or because of a boot-failure/watchdog policy, the reference image would
+   have returned in the same seconds. It did not.
+3. **`172.16.42.1` NCM is not a liveness oracle.** The known-good reference
+   never presents it to this host either (its console is the panel +
+   `ttyMSM0`, and its network config is not the gadget config we assumed).
+   Every past verdict that leaned on a missing NCM was measuring the gadget,
+   not the kernel — this retroactively weakens every "TOT" row above, exactly
+   as the owner's review predicted.
+4. **The `panic=10` arithmetic (owner's point) holds**: the no-probe k71 run
+   carried `panic=10` and still came back at 4 s, so panic -> 10 s wait ->
+   restart cannot explain that row. Either ABOOT returns on its own for our
+   images, or the reboot path never goes through the panic timer.
+
+What it does NOT say: why our images return at 4-5 s. The panel is now a
+free console for exactly this question — the fork kernel drives the panel,
+so a boot with `console=tty0` prints the kernel log (and any panic text) on
+the display. Next: part-for-part swap starting from this reference, reading
+the panel instead of guessing —
+
+| step | kernel + DTB | initramfs | packing | reads the panel |
+|---|---|---|---|---|
+| 1 (done) | distro | distro | distro | login, alive |
+| 2 | distro (unpacked from `ed2c225f`) | OURS | distro offsets | our prints? panic? |
+| 3 | OUR fork build | distro initramfs | distro offsets | distro boot? |
+
+`fastboot getvar all` (read-only) is still owed at the next fastboot window
+to rule slot retry/unbootable flags in or out as a second variable.
+
 ## What first light does not claim
 
 Wi-Fi (WCN3990 needs the `Google_blueline` calibration from the owner's
