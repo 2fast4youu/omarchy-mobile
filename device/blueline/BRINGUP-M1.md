@@ -1027,6 +1027,37 @@ Two clean separations fall out:
    package's own config fragment lists no Qualcomm watchdog driver at all, so
    the mechanism may be ABOOT-side rather than driver-side.
 
+## USB truth from the reference ramdisk (read byte by byte, 2026-10-28)
+
+`init_functions.sh` ships **two** gadget paths:
+`setup_usb_network_android()` runs only when `/sys/class/android_usb/android0`
+exists — the out-of-tree android_usb driver, which the 6.11/7.x kernels no longer
+have (grep over the reference kernel section finds zero `android_usb` strings) —
+and `setup_usb_network_configfs()` which mounts configfs at
+`/sys/kernel/config` (the distro's `CONFIGFS` constant) and writes
+`idVendor`/`idProduct`, `strings/0x409`, `functions/ncm.usb0` (fallback
+`rndis.usb0`), `configs/c.1` + symlink, then `echo $(ls /sys/class/udc | head -1) > UDC`.
+No `os_desc`, no extra per-function attributes — structurally the same configfs
+sequence our init runs at `/config`, so our gadget recipe is not missing a knob.
+
+Decisive corollary, measured twice: **the known-good distro image shows no NCM
+and no `172.16.42.1` on the host either**, while the user watches it boot to a
+login on the panel. Every past "no NCM => dead" verdict — including the whole
+`alive2` run — was therefore weak evidence, not a measurement of liveness. The
+readable channel in this state is the **panel** (`console=tty0`), which the
+`nowatchdog` build confirmed: with the timer suppressed the user reads kernel
+log lines, including our own `Omarchy Mobile first-light` banner, on a device
+that never enumerates USB. Panel reading is now the primary oracle; a UART
+adapter stays on the shopping list as the channel that survives a kernel hang.
+
+The reference cmdline, read verbatim from the image:
+
+    quiet splash plymouth.ignore-serial-consoles plymouth.prefer-fbcon console=ttyMSM0,115200 pmos_boot_uuid=… pmos_root_uuid=… pmos_rootfsopts=defaults
+
+It contains no watchdog or USB knob at all, so whatever keeps the reference
+alive past 80 s is not a cmdline switch — which is what makes the next two
+measurements worth their flash time.
+
 Arbiter under measurement (flashed while this was written): the same v0 image
 with `nowatchdog noreboot.not` appended to the cmdline. Survives > 120 s => the
 fixed timer is the watchdog and the fix belongs in the recipe (a feeder in init,
