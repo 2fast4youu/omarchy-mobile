@@ -683,7 +683,12 @@ fastboot/recovery, last sysrq+panic=10) does not make THIS ABOOT show
 fastboot — mainline pmic-restart handlers commonly drop the restart
 command, so "probe fired but nobody saw it" is fully possible. The
 signal has no witness without a console; that is the review's point 4
-made concrete. The owner ordered the USB-C SBU breakout + 3.3 V USB-UART
+made concrete. (The watcher script's own printed verdict — "selbst der
+bekannte 6.11 erreicht unser init NICHT => Initramfs/Bootargs-Packen ist
+der Fehler" — is reading (a) hard-coded into its if/else thresholds
+(`t<=12`/`t<=90` leave only silence ⇒ blame the packaging); it is
+evidence of the ambiguity, not of the cause.) The owner ordered the
+USB-C SBU breakout + 3.3 V USB-UART
 adapter today (see einkaufsliste-uart-pixel3.md next to this file).
 
 **`fastboot oem help` on this ABOOT (read-only probe, 2026-10-28):**
