@@ -424,6 +424,31 @@ flash → reboot → observe cycle needs no button holds anymore; a boot
 that survives the probe's 45 s proves driver-probe aliveness, and a
 surviving gadget must show ACM/NCM/SSH from then on.
 
+#### Attempt 2026-10-27 (sixth): the driver is innocent — the whole 7.3 kernel line dies at 4-6 s, 6.11 survives
+
+Three instruments ran back to back, all automatic (panic=10 turns every
+death into a fastboot reappearance within seconds):
+
+| build | boot args | outcome |
+|---|---|---|
+| fixA2 (dual-window fix + clocks-before-reset reorder) | bind active, probe 45 s | dead, ABOOT back at 4 s |
+| same kernel | `--no-gadget` (UDC never written) | dead at 4 s — the bind never ran, so the death is not the gadget start |
+| fl-phy (yesterday's "mute but alive" build, same bytes) | — | now dead at 4 s |
+| fl-pmos (postmarketOS 6.11 kernel, same first-light initramfs) | — | alive through the whole 240 s window |
+
+**Interpolation bug found mid-evening:** the `--cmdline` in
+`initramfs/build` was single-quoted, so every `omadwc3q=` (and any
+`${OMAMOBILE_EXTRA_CMDLINE}`) run above actually booted the literal text
+`${OMAMOBILE_EXTRA_CMDLINE:-}` — the kernel ignored it and the driver ran
+at full power. The scratch-only/off falsifications from the first
+pass of this table are therefore VOID, not evidence; the fixed
+interpolation (expand in shell, byte-assert the knob in the shipped
+header) re-runs as off12. The two rows that never used the knob stand:
+the 7.3 line dies at 4 s even with the gadget bind skipped, and the
+6.11 kernel survives 240 s. The dwc3 window fixes stay (correct against
+the binding either way, checkpatch clean); whether the driver is also a
+trigger is exactly what off12's now-real `omadwc3q=off` decides.
+
 ### M1.3 — the LUN map and the calibration backups (read-only)
 
 - Record which UFS LUN carries the partition table, `userdata` and each

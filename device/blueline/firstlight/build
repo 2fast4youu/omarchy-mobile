@@ -5,12 +5,17 @@
 # Usage: device/blueline/firstlight/build --kernel Image.gz \
 #          --dtb sdm845-google-blueline.dtb --ssh-key ~/.ssh/id_ed25519.pub \
 #          --mkbootimg /path/to/mkbootimg.py --out /path/to/output \
-#          [--panic-probe SECONDS] [--docker-image alpine:3.22]
+#          [--panic-probe SECONDS] [--no-gadget] [--extra-cmdline KNOBS] \
+#          [--docker-image alpine:3.22]
 #
 # --panic-probe arms init's timed sysrq-c panic (see init's probe block):
 # the handset panics SECONDS after boot while provably alive, and the
 # panic=10 warm reboot returns it to FASTBOOT MODE — the only aliveness
 # instrument on a handset whose panel, gadget and ABOOT give nothing back.
+#
+# --no-gadget keeps the configfs skeleton but never writes the UDC bind;
+# --extra-cmdline appends kernel knobs (e.g. omadwc3q=off). Both are
+# bring-up bisect instruments and byte-asserted in the shipped header.
 #
 # The kernel must have UFS (ufs-qcom), USB DWC3/QCOM, configfs NCM/ACM,
 # devtmpfs, tmpfs and ext4 built in; first light loads no modules. Supply
@@ -26,7 +31,7 @@
 # flash boot).
 set -euo pipefail
 ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../.." && pwd)
-kernel="" dtb="" key="" mkbootimg="" out="" image="alpine:3.22" panic_probe="" no_gadget=""
+kernel="" dtb="" key="" mkbootimg="" out="" image="alpine:3.22" panic_probe="" no_gadget="" extra_cmdline=""
 die() { echo "error: $*" >&2; exit 1; }
 while (($#)); do
   case $1 in
@@ -38,7 +43,8 @@ while (($#)); do
     --docker-image) image=${2:?}; shift ;;
     --panic-probe) panic_probe=${2:?}; shift ;;
     --no-gadget) no_gadget=1 ;;
-    -h|--help) sed -n '3,22p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --extra-cmdline) extra_cmdline=${2:?}; shift ;;
+    -h|--help) sed -n '3,27p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown argument: $1" ;;
   esac
   shift
@@ -80,6 +86,7 @@ mkdir -p "$out"
 docker run --rm --platform linux/arm64 \
   -e "OMAMOBILE_PANIC_PROBE=${panic_probe:-}" \
   -e "OMAMOBILE_NO_GADGET=${no_gadget:-}" \
+  -e "OMAMOBILE_EXTRA_CMDLINE=${extra_cmdline:-}" \
   --mount "type=bind,source=$ROOT,target=/src,readonly" \
   --mount "type=bind,source=$kernel,target=/input/kernel,readonly" \
   --mount "type=bind,source=$dtb,target=/input/blueline.dtb,readonly" \
