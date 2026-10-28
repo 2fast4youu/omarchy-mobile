@@ -560,6 +560,41 @@ core/xHCI/dwc3 stack (narrow within it next).  Dies => it is 7.3 core
 (arm64 head, clocks, cpuidle/PSCI, mm, scheduler), a much wider search,
 and the bisect should start on core subsystems, not USB.
 
+**rc6-nousb — the 7.3 death is CORE, not USB (2026-10-28).** Same
+v7.3.0-rc6 + pmOS config with the entire USB stack compiled out
+(`USB-Symbole gesetzt: 0`; clocks/interconnect/pstore/PHY left on), early
+probe 20 s: died at 4 s, before the probe.  So the 4-5 s death is not the
+dwc3/xHCI/configfs stack either — it is 7.3 core that faults on this
+board before userspace.  A mainline commit bisect 6.11 -> 7.3-rc6 is the
+only way to name it and is a multi-hour effort that, by itself, makes the
+phone no more usable.
+
+**The panic-probe oracle is only good for EARLY hard deaths (2026-10-28,
+the `alive` run).** The known-good 6.11 (kernel-pmos) + the pmOS 6.11
+device tree + OUR first-light initramfs (early probe armed right after
+the mounts, USB on): 300 s with NEITHER the 172.16.42.1 NCM link NOR any
+ABOOT return, and no ACM.  Two readings, and they matter more than the
+7.3 bisect: (a) our configfs gadget has bound a UDC on NO kernel we have
+ever booted, including the pmOS known-good — so the gadget bring-up is
+the real, still-open blocker, independent of the 7.3 death; and (b) the
+probe's `echo c > /proc/sysrq-trigger` + `panic=10` may warm-reboot a
+post-init panic straight back into boot_a (a self-rebooting boot loop)
+rather than into FASTBOOT MODE, so "no fastboot return" is ambiguous
+between "alive and looping" and "hung before the probe".  The 7.3 deaths
+we timed were pre-init (4-5 s) and DID surface as fastboot; a post-init
+panic's landing has never been proven to be fastboot.
+
+**Decisive instrumentation fix armed next: land the probe in FASTBOOT
+deterministically.** Replace the probe action `echo c > sysrq-trigger`
+with `reboot bootloader` (LINUX_REBOOT_CMD_RESTART2 to ABOOT; fall back
+`reboot recovery`/`reboot fastboot`), so a kernel whose init reaches the
+probe is GUARANTEED to show fastboot within seconds, and one whose fastboot
+return we then time becomes a true "init ran" oracle.  Then re-run the
+6.11-alive flash: fastboot in ~20-40 s => init runs and it is purely the
+gadget that never binds (pivot 100% to configfs/UDC bring-up); still
+nothing in 300 s => even the known-good 6.11 does not reach our init, so
+the initramfs/bootargs packaging is the bug, not the kernel at all.
+
 **Next two measurements, both built and byte-verified (2026-10-28):**
 `pmosh` (fl-pmosh, 81941839…): self-built 6.11 kernel + our 7.3 DTB,
 early probe 25 s — is the self-built reference kernel alive at all, and

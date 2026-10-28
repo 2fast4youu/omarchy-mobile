@@ -55,9 +55,16 @@ if [ -f /etc/omamobile-panic-probe ]; then
         secs=$(cat /etc/omamobile-panic-probe 2>/dev/null)
         [ -n "$secs" ] || secs=45
         sleep "$secs"
-        mark "panic probe firing at ${secs}s (last step: $(tail -1 "$steps" 2>/dev/null))"
-        echo 'omamobile-blueline: PANIC-PROBE: kernel alive, PID1 liveness proven' > /dev/kmsg
+        mark "probe firing at ${secs}s (last step: $(tail -1 "$steps" 2>/dev/null))"
+        echo 'omamobile-blueline: PROBE: kernel alive, PID1 liveness proven' > /dev/kmsg
         dmesg 2>/dev/null | tail -80 > /dev/kmsg 2>/dev/null
+        # Land in FASTBOOT deterministically so "init reached the probe" is
+        # readable as a fastboot return, not an ambiguous silence. ABOOT
+        # takes the RESTART2 reason via `reboot <reason>`; try the names it
+        # accepts, then a raw panic=10 crash as the last resort.
+        reboot bootloader 2>/dev/null
+        reboot fastboot 2>/dev/null
+        reboot recovery 2>/dev/null
         echo c > /proc/sysrq-trigger 2>/dev/null
     ) &
 fi
