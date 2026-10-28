@@ -325,8 +325,10 @@ docker run --rm -v "$PWD:/w" -w /w --platform linux/amd64 archlinux:latest sh -c
 
 `--disable-sandbox` is not decoration: without it pacman aborts on
 `error restricting syscalls via seccomp: 22` inside the container, and the suite
-then fails on a missing `git`. Measured on a Mac Studio, 2026-10-28: 117 `ok`,
-no `not ok`, exit 0.
+then fails on a missing `git`. Measured on a Mac Studio, 2026-10-28, with the
+container's own `cc`, `git`, `dtc` and `shellcheck` on the branch's tree:
+`tests/all` 117 `ok` / 0 `not ok` / exit 0, `tests/packages` 451 `ok` / 0 `not ok`
+/ exit 0. It emulates x86-64, so budget a few minutes for the package suite.
 
 **Then run the smoke test on your own phone,** booted into the build your change is in:
 
