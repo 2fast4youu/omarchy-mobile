@@ -307,6 +307,27 @@ tests/all                    # the installer, the images, the storage guard and 
 tests/packages               # every package's own test/all (or name the ones you touched)
 ```
 
+**On a macOS laptop these need the container.** The package `install` scripts stage
+with GNU `install -Dm644`, which BSD `install` does not have, so `tests/packages`
+cannot run in the laptop's own shell there. CI's image is the recipe
+(`.github/workflows/checks.yml`; there is no arm64 `archlinux` image, so Apple
+Silicon emulates it):
+
+```sh
+docker run --rm -v "$PWD:/w" -w /w --platform linux/amd64 archlinux:latest sh -c '
+  pacman -Syu --noconfirm --needed --disable-sandbox git base-devel e2fsprogs zstd \
+    openssl python python-dbus python-gobject dbus nodejs dtc cpio file jq busybox \
+    xz gzip shellcheck
+  useradd -m ci && chown -R ci: /w
+  runuser -u ci -- git config --global --add safe.directory "*"
+  runuser -u ci -- tools/pr-check HEAD~1 && runuser -u ci -- tests/all'
+```
+
+`--disable-sandbox` is not decoration: without it pacman aborts on
+`error restricting syscalls via seccomp: 22` inside the container, and the suite
+then fails on a missing `git`. Measured on a Mac Studio, 2026-10-28: 117 `ok`,
+no `not ok`, exit 0.
+
 **Then run the smoke test on your own phone,** booted into the build your change is in:
 
 ```sh
