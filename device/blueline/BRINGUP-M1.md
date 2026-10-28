@@ -447,7 +447,11 @@ header) re-runs as off12. The two rows that never used the knob stand:
 the 7.3 line dies at 4 s even with the gadget bind skipped, and the
 6.11 kernel survives 240 s. The dwc3 window fixes stay (correct against
 the binding either way, checkpatch clean); whether the driver is also a
-trigger is exactly what off12's now-real `omadwc3q=off` decides.
+trigger is exactly what off12's now-real `omadwc3q=off` decides.  Note:
+the dtbo-restoration flash cycles both timed out waiting for the
+handset — `dtbo_a` is still erased, which the 6.11 survival proves is
+survivable and keeps as the one known state difference the 7.3 deaths
+and the 6.11 survival share.
 
 ### M1.3 — the LUN map and the calibration backups (read-only)
 
