@@ -14,7 +14,10 @@ IMG=${1:?usage: run-flash-observe.sh <boot.img> <sha256> [dauer-s]}
 SOLL=${2:?erwartete sha256 fehlt}
 DAUER=${3:-300}
 OUT=${OUT:-/private/tmp/flash-observe}
-export PATH="$HOME/Library/Android/sdk/platform-tools:$PATH"
+# platform-tools nur in den PATH, wenn nicht schon ein fastboot da ist: ein
+# Test-Fake, der den PATH von aussen setzt, verliert sonst gegen den echten
+# (dieselbe Falle, die der Runner-Test fuer ref-enumeration-test.sh dokumentiert).
+command -v fastboot >/dev/null 2>&1 || export PATH="$HOME/Library/Android/sdk/platform-tools:$PATH"
 RUECKWEG=/Users/gregor/hermes-workspace/android-mainline/factory/sp1a/boot.img
 RUECKWEG_SHA=5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e
 mkdir -p "$OUT"; LOG="$OUT/protokoll.txt"; exec >>"$LOG" 2>&1
@@ -31,7 +34,7 @@ say "Rueckweg steht: $rb B $rs"
 
 snap() { { ioreg -p IOUSB -l -w 0; system_profiler SPUSBDataType 2>/dev/null; } \
   | grep -iE '"?USB (Product|Serial) (Name|Number)"?|Product ID|Serial Number|idVendor|idProduct' | sort -u; }
-count() { { ioreg -p IOUSB -l -w 0 | grep -ci "android\|fastboot"; } 2>/dev/null | head -1; }
+count() { { ioreg -p IOUSB -l -w 0 | grep -ci "android\|fastboot"; } 2>/dev/null || true; }
 before=$(snap); say "Vorher: $(printf '%s' "$before" | wc -l | tr -d ' ') Zeilen"
 
 fastboot devices | grep -q . || { say "not ok - kein Fastboot-Geraet"; exit 1; }
@@ -42,24 +45,27 @@ fastboot getvar slot-unbootable:a 2>&1 | sed 's/^/  /'
 R=rebo; fastboot ${R}ot; say "Neustart kommandiert, $DAUER s Beobachtung"
 
 t0=$(date +%s); seen=0
+POLL=${POLL:-5}
 while :; do
   t=$(( $(date +%s) - t0 )); [ "$t" -ge "$DAUER" ] && break
   now=$(snap); new=$(comm -13 <(printf '%s\n' "$before") <(printf '%s\n' "$now"))
-  fb=$(count)
+  fb=$(count)   # fastboot-Zahlenstand: unter pipefail darf ein grep -c ohne
+                # Treffer (Exit 1) die Schleife nicht beenden - das war ein
+                # echter Ausfall, den der Fake-Lauf gefunden hat
   if [ -n "$new" ]; then
     seen=$((seen+1)); say "t=${t}s NEU: $(printf '%s' "$new" | tr '\n' '|' | cut -c1-200)"
     before=$(printf '%s\n' "$now")
   fi
-  if ping -c1 -W2000 172.16.42.1 >/dev/null 2>&1; then
-    say "t=${t}s 172.16.42.1 pingbar"
-    if nc -z -G 2 172.16.42.1 23 2>/dev/null; then say "t=${t}s Port 23 offen"; break; fi
+  if ping -c1 -W2000 "${PHONE:-172.16.42.1}" >/dev/null 2>&1; then
+    say "t=${t}s ${PHONE:-172.16.42.1} pingbar"
+    if nc -z -G 2 "${PHONE:-172.16.42.1}" 23 2>/dev/null; then say "t=${t}s Port 23 offen"; break; fi
   fi
-  sleep 5
+  sleep "$POLL"
 done
 say "ERGEBNIS: $seen Beobachtungen mit neuen Eintraegen, $t s gelaufen"
 # Wenn die Telefon-Shell erreichbar ist: volle Beweiskammer fuellen.
-if nc -z -G 3 172.16.42.1 23 2>/dev/null; then
-  python3 - "$OUT" <<'PY'
+if nc -z -G 3 "${PHONE:-172.16.42.1}" 23 2>/dev/null; then
+  python3 - "$OUT" "${PHONE:-172.16.42.1}" <<'PY'
 import os, socket, sys, time
 IAC,WILL,WONT,DO,DONT,SB,SE=255,251,252,253,254,250,240
 def neg(b):
@@ -75,8 +81,8 @@ def neg(b):
                 o+=bytes([IAC,WONT,b[i+1]]);i=j+2;continue
         o.append(b[i]);i+=1
     return bytes(o)
-out=sys.argv[1]
-s=socket.create_connection(("172.16.42.1",23),8); s.settimeout(15)
+out=sys.argv[1]; host=sys.argv[2]
+s=socket.create_connection((host,23),8); s.settimeout(15)
 s.sendall(b"\r\n"); time.sleep(1)
 try:
     while True: s.recv(65536)

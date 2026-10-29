@@ -2138,3 +2138,41 @@ say where.
 
 UART: Claude and the evidence agree it is no longer urgent — NCM+telnet is a
 proven channel on this handset, and v0r carries its own shell.
+
+## Ad-hoc verification of the bisection tools (30 ok / 0 not ok), two faults it caught
+
+The suite says the tree is sound; it does not yet know these files. A focused
+script (ad-hoc, tempfile-scoped, since deleted — not suite-green by definition)
+checked what this round actually created: Bild A byte-invariants against the
+reference, `patch-v0r.py` reproducing the shipped v0r archive byte-exact,
+`verify-v0r.py` accepting v0r and *refusing* the old v0q image (a counter-check,
+not only a happy path), the runner's exit branches against a fake fastboot, and
+`strip_echo` against a real captured prompt transcript, including a wrapped
+command line. 30 ok / 0 not ok, exit 0. Two real faults fell out:
+
+1. **`run-flash-observe.sh` died on its first loop turn under `pipefail`:**
+   `fb=$(count)` where `count` ends in `grep -c`, and `grep -c` exits 1 on zero
+   matches — the exact quiet state the observer exists to watch. The loop
+   printed `not ok - kein Fastboot-Geraet` (from the *fake*) and exited. Fixed
+   with `|| true` plus a comment naming the trap.
+2. **My own PATH-prepend trap, now inside my own runner:** the script prepended
+   `platform-tools` to PATH unconditionally, so a fake placed there by a test
+   lost to the real fastboot — the same fault class `tests/ref-enumeration`
+   documents for `ref-enumeration-test.sh`. The runner now prepends only when
+   no fastboot is already on PATH, counter-checked under
+   `env -i PATH=/usr/bin:/bin` — with a clean environment it still finds the
+   real binary and exits honestly (`kein Fastboot-Geraet`, because the phone
+   is *running*, not in fastboot). A fix that only works under the test's PATH
+   is a disablement, not a fix.
+
+One of my own check lines was also wrong before it ever ran: I asserted `_i`
+must not appear in init at all — an invented constraint; v0q already used `_i`
+in the bootdev search and init runs without `set -u`. The real check is that
+the *new* loop counts with `udc_wort` and the two existing `_i` counters are
+untouched. And the honest re-scan of Claude's CJK point: the full tree holds
+4794 CJK-range characters in exactly **one** file,
+`packages/omamobile-owl-widgets/index.json` (pre-existing, committed at
+`4eafa28`, not from this bring-up); every file this bring-up touched is clean.
+
+Suite re-run for the runner fix on native arm64: 121 ok / 0 not ok / 4 skip /
+exit 0.
