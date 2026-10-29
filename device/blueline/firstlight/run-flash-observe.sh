@@ -60,8 +60,13 @@ ist=$(sha "$IMG")
 [ "$ist" = "$SOLL" ] || { say "not ok - Hash $ist != $SOLL"; exit 1; }
 rb=$(fsize "$RUECKWEG")
 rs=$(sha "$RUECKWEG")
-[ "$rb" -gt 1000000 ] && [ "$rs" = "$RUECKWEG_SHA" ] || {
-  say "not ok - Rueckweg $rb B $rs (erwartet 67108864 B, $RUECKWEG_SHA)"; exit 1; }
+# Zwei Bedingungen, zwei Meldungen. Die fruehere Meldung nannte 67108864 B,
+# durchgesetzt wurden >1000000 B und der Hash - eine Zahl, die der Code nicht
+# prueft, ist eine zweite Quelle, die fault: nach dem Wechsel von Stufe 1 auf
+# die Referenz (28729344 B) haette sie fuer jede richtige Datei eine falsche
+# Erwartung behauptet.
+[ "$rb" -gt 1000000 ] || { say "not ok - Rueckweg $rb B, erwartet mehr als 1000000 B: $RUECKWEG"; exit 1; }
+[ "$rs" = "$RUECKWEG_SHA" ] || { say "not ok - Rueckweg-Hash $rs != $RUECKWEG_SHA: $RUECKWEG"; exit 1; }
 say "Rueckweg steht: $rb B $rs"
 
 snap() { { ioreg -p IOUSB -l -w 0; system_profiler SPUSBDataType 2>/dev/null; } \
