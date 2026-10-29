@@ -965,6 +965,20 @@ What that settles:
 3. **`172.16.42.1` NCM is not a liveness oracle.** The known-good reference
    never presents it to this host either (its console is the panel +
    `ttyMSM0`, and its network config is not the gadget config we assumed).
+   File evidence for that sentence, checked 2026-10-29 rather than from
+   memory: the only surviving result file of that run,
+   `pmos-ref-build/ref/ERGEBNIS-REF.txt`, reads verbatim `kein boot.img in
+   /work/export gefunden` — the flasher bailed out before its observation
+   loop, and the later-copied `boot.img` (20:12, sha256 `ed2c225f…`) is the
+   one that was flashed. Searching every surviving file under /private/tmp
+   for `172.16.42` returns only the scripts that were supposed to look for
+   it — not one hit from the evening itself. So the reference was just as
+   mute on the bus as v0q: **USB peripheral on this handset + this Mac has
+   never been observed with ANY mainline image.** M1 ("NCM gives us the
+   console") therefore rests on two unproven claims in series — that our
+   gadget binds, and that a binding gadget would show up at this port at
+   all. Neither panel nor host can separate them; only a second,
+   independent wire can.
    Every past verdict that leaned on a missing NCM was measuring the gadget,
    not the kernel — this retroactively weakens every "TOT" row above, exactly
    as the owner's review predicted.
@@ -987,6 +1001,52 @@ the panel instead of guessing —
 
 `fastboot getvar all` (read-only) is still owed at the next fastboot window
 to rule slot retry/unbootable flags in or out as a second variable.
+
+## 2026-10-29 14:40 — what the device page actually says (quoted, not read into)
+
+Device page `Google_Pixel_3_(google-blueline)` on the Nura wiki (successor of
+the postmarketOS wiki), fetched 2026-10-29, cell contents verbatim:
+
+* **USB Networking: `Works`** — legend text: "After connecting the device with
+  USB to your PC, you can connect to it via telnet (initramfs) or SSH (booted
+  system)."
+* **USB OTG: `Broken`** — "USB On-The-Go or USB-C Role switching."
+* Flashing, Internal storage, Screen, Touchscreen, Battery, FDE: `Works`.
+* Nura kernel on the page: `7.1_rc1-4` — the same 7.1-rc1 line as our blob
+  (`7.1.0-rc1-sdm845`).
+
+Honest limit: the page names no host OS and no test date, and it says nothing
+about this Mac. `Works` means somebody got it over mainline — it does not
+excuse our gadget side, it only moves the burden of proof to a place where it
+can be measured independently.
+
+### The second channel, documented for exactly this handset
+
+From the same page, section "UART", taken over verbatim:
+
+1. USB-C breakout with SBU1/SBU2 broken out + a serial adapter. Wiring:
+   `A1 (GND) - GND`, `A8 (SBU1) - RXD`, `B8 (SBU2) - TXD`.
+2. Levels: "Voltage is 3.3V, although 1.8V seems to work as well." Baud 115200
+   — exactly our kernel cmdline `console=ttyMSM0,115200n8`.
+3. Direction: "it won't work if the plug is reversed on one side"; in the
+   original wording a TB3/USB-3 capable cable, with the Thunderbolt logos on
+   the same side as the phone's screen and the `A` side of the breakout out.
+4. **Why this is the channel:** phone in fastboot, then `fastboot oem uart
+   enable`, then power off. Two further sources confirm the command for this
+   exact device: AOSP "Build Pixel kernels" ("If you have a serial dongle and
+   want to enable serial logs … `fastboot oem uart enable`", device table
+   names Pixel 3 blueline) and `Peter-Easton/android-debug-cable-howto` ("If
+   all goes well, fastboot will report OKAY", same orientation rule).
+
+The command writes no partition, so it cannot damage the fallback. What it
+does leave behind is documented on the cable howto: uart stays enabled across
+a bootloader re-lock until `fastboot oem uart disable`, and the same command
+undoes it.
+
+**Consequence for the order of work:** no further gadget build on hope. UART
+first — the parts sit with the owner, ordering is the one open hand — and only
+then, with a console in hand, decide whether the gadget binds and whether this
+Mac could ever have seen it.
 
 ## The packing was the 4-5 s signal; the fixed ~79 s return is a second, different signal
 

@@ -35,6 +35,35 @@ steht — deshalb hier die Panel-Ausgabe, die der Init tatsächlich schreibt.
 | `letzter Schritt: KEINER`/leer | `/run/steps.log` nie beschrieben | `mark()` lief nie | Mounts prüfen (Zeile 28–34 melden `mount … FAILED` in kmsg) |
 | `wdt bootstatus=` mit Reset-Bit | Reset kam vom Watchdog | ABOOT-Zähler erklärt | mit `retry-count`-Lesung abgleichen |
 
+## Der unabhaengige Kanal: UART ueber SBU (kein Partitionsschreib)
+
+Aus der Geraeteseite `Google_Pixel_3_(google-blueline)` (Nura-Wiki, am 29.10.
+abgerufen), Abschnitt „UART", bestaetigt durch AOSP „Build Pixel kernels" und
+`Peter-Easton/android-debug-cable-howto` — woertlich uebernommen:
+
+* Pinbelegung: `A1 (GND) → GND`, `A8 (SBU1) → RXD`, `B8 (SBU2) → TXD`.
+* Pegel: „Voltage is 3.3V, although 1.8V seems to work as well." Baud 115200
+  = genau unsere Kernelzeile `console=ttyMSM0,115200n8`.
+* Einschalten: Telefon in Fastboot, dann `fastboot oem uart enable`, dann
+  starten lassen. Der Befehl schreibt keine Partition; rueckgaengig mit
+  `fastboot oem uart disable`.
+* Richtung: „it won't work if the plug is reversed on one side" — USB-3/TB3-
+  taugliches Kabel, „A"-Seite der Breakout auf der Seite des Displays.
+
+Was dieser Kanal trennt, was Panel und Host nicht trennen koennen:
+
+| Beobachtung am UART | Bedeutung |
+|---|---|
+| Kernel-Log, aber kein `init:` | Init laeuft nicht → Archiv/Initramfs |
+| `init:` bis `modul ….rc=0` | Module geladen; die Gadget-Schritte lesen sich dann selbst |
+| Fehler bei `mkdir …/functions/ncm.usb0` | ROOT CAUSE #4 doch noch offen |
+| UDC gesetzt, am Mac aber kein `en*` | Gadget bindet, Host-/Kabelseite versagt → NCM als Plan verwerfen |
+| gar kein Log | SBU-Richtung/Pegel/Kabel — Handgriff, keine Software |
+
+Der Beobachter zaehlt fuer `seriell` nur `/dev/cu.usb*`; ein UART-Adapter
+taucht dort auf, sobald er steckt — die Spalte ist ohne Skriptaenderung
+dafuer brauchbar.
+
 ## Was das Foto NICHT entscheidet
 
 * Ob ABOOT `RESTART2` ehrt — in v0q ist der `restart2`-Block toter Code (Datei
