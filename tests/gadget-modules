@@ -202,7 +202,33 @@ else
   skip "kein Bild $IMG (bauen mit $FL/build-v0q.sh)"
 fi
 
-# 5) Die Leseseite derselben Falle: ein Archiv, das Daten hinter dem TRAILER
+# 5) Das Rezept haelt seinen eigenen Hash: die Bild-Pruefung muss die wirkliche
+#    sha256 bestaetigen und eine bewusste Falschangabe abbrechen lassen. Ohne
+#    Gegenprobe ist ein "ok" von einem Pruefer, der die Vorgabe schlicht
+#    uebersieht (so geschehen: die Pruefung lief nach dem IKCONFIG-Fruehreturn
+#    und wurde nie erreicht), kein Nachweis.
+if [[ -r $IMG ]]; then
+  WIRKLICH=$(sha256sum "$IMG" | cut -d" " -f1)
+  if python3 "$FL/kernel-config-from-image.py" "$IMG" --expect-sha256 "$WIRKLICH" > "$t/hash.log" 2>&1 \
+     && grep -q "TREFFER" "$t/hash.log"; then
+    ok "Bild-sha256 gegen Vorgabe: TREFFER ($WIRKLICH)"
+  else
+    fail "Bild-sha256-Pruefung meldet keinen TREFFER: $(tail -2 "$t/hash.log")"
+  fi
+  if python3 "$FL/kernel-config-from-image.py" "$IMG" \
+       --expect-sha256 0000000000000000000000000000000000000000000000000000000000000000 \
+       > "$t/hash-neg.log" 2>&1; then
+    fail "Gegenprobe: eine falsche sha256 wird durchgewinkt"
+  else
+    grep -q "ABWEICHEND" "$t/hash-neg.log" \
+      && ok "Gegenprobe: falsche sha256 bricht ab (die Pruefung sieht hin)" \
+      || fail "Gegenprobe bricht aus, ohne den Grund zu nennen: $(tail -2 "$t/hash-neg.log")"
+  fi
+else
+  skip "kein Bild $IMG fuer die Hash-Gegenprobe"
+fi
+
+# 6) Die Leseseite derselben Falle: ein Archiv, das Daten hinter dem TRAILER
 #    liegen lässt, sieht kein Kernel-Leser. Muss laut newc.py abbrechen.
 python3 - "$NEWC" "${t}/ghost.cpio" <<'PY'
 import importlib.util, sys

@@ -41,6 +41,7 @@ docker run --rm \
   -v /private/tmp/fl-v0q:/q \
   -v "$FL":/om:ro \
   -v /Users/gregor/hermes-workspace/pmos-ref-build/ref:/ref:ro \
+  -e SOLL_SHA=2911e6f7666299639e0a712604fe3ae0427802f875b319f47146d93826fd3ee1 \
   alpine:edge sh -euc '
 apk add --no-cache python3 gzip zstd >/dev/null 2>&1
 python3 /om/patch-v0q.py /p/firstlight.img /m /p/new.cpio /q/new.cpio
@@ -53,4 +54,5 @@ python3 /om/pack-v0.py \
   --name "" --kernel-addr 0x8000 --ramdisk-addr 0x1000000 --tags-addr 0x1000 \
   --pagesize-field 0 --pagesize-align 4096 --reference /ref/boot.img -o /q/firstlight.img 2>&1 | tail -2
 python3 /om/verify-v0q.py /q/firstlight.img
+python3 /om/kernel-config-from-image.py /q/firstlight.img --expect-sha256 "$SOLL_SHA" | tail -3
 sha256sum /q/firstlight.img /q/new.cpio'

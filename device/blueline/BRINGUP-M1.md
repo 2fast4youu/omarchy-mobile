@@ -1607,13 +1607,27 @@ kein zstd — deshalb ohne `.zst` — und prüft den vermagic selbst.
 Reihenfolge im fertigen Init: insmod (126) → configfs-Mount (145) →
 `functions/$netfunc` (161) → `functions/acm.GS0` (175) → UDC-Write (182).
 
-Bild: `/private/tmp/fl-v0q/firstlight.img`, 20963328 B,
+Bild: `/private/tmp/fl-v0q/firstlight.img`, 21094400 B (neu gemessen, 05:44 —
+die zuvor notierten 20963328 B waren das v0p-Bild),
 sha256 `2911e6f7666299639e0a712604fe3ae0427802f875b319f47146d93826fd3ee1`.
-`verify-v0q.py`: 28 Prüfpunkte, 0 Fehler. CI (Arch-Container):
-`tests/gadget-modules` 5 ok / 0 not ok, `tests/all` **126 ok / 0 not ok**
-(3 Skips: docker, AOSP mkbootimg, rootfs-Image).
+`verify-v0q.py`: 28 Prüfpunkte, 0 Fehler. **Reproduzierbarkeit gemessen 05:44:**
+derselbe eingecheckte Umbau in einen leeren Zielordner gebaut (kein
+Wiederverwenden des bestehenden Archivs) ergibt bitgleich `2911e6f7…`.
 
-### Drei methodische Funde nebenbei
+Dabei ist ein dritter Prüfer-Fehler aufgefallen und behoben worden:
+`kernel-config-from-image.py` hatte eine sha256-Vorgabe, die **nie erreicht**
+wurde — sie stand hinter dem `return None` des IKCONFIG-Frühreturns, und
+genau dieses Bild hat kein eingebettetes IKCONFIG. Ein Prüfer, der eine Vorgabe
+übersieht, meldet `ok`. Jetzt liegt die Prüfung vor dem Frühreturn, und
+`tests/gadget-modules` Schritt 5 verlangt beides: `TREFFER` gegen die wirkliche
+sha256 **und** Abbruch gegen eine bewusste Falschangabe.
+
+CI-Messungen im Arch-Container, jeweils frisch: 04:3x — `tests/gadget-modules`
+5 ok, `tests/all` 126 ok / 0 not ok / 3 skip. Nach dem Prüfer-Fix, 05:5x —
+`tests/gadget-modules` 7 ok / 0 not ok, `tests/all` 128 ok / 0 not ok / 3 skip
+(Skips: docker, AOSP mkbootimg, rootfs-Image), `tools/pr-check HEAD~1` Exit 0.
+
+### Vier methodische Funde nebenbei
 
 1. **Heredoc ohne Quotes frisst den Init-Block.** Denselben insmod-Block einmal
    als `<<PY` in ein Shellskript geschrieben: `$m`, `$(basename "$m")` und
@@ -1630,6 +1644,14 @@ sha256 `2911e6f7666299639e0a712604fe3ae0427802f875b319f47146d93826fd3ee1`.
    Statusblocks ruiniert (Zeile 39) — zurück auf HEAD, Diff gelesen, vorher/nachher
    verglichen. Flächen-Umbauten in Datei-Inhalten, die auf ein Telefon gehen,
    brauchen vorab den Diff.
+4. **Ein Prüfer mit Blindem Fleck meldet `ok`.** Die sha256-Vorgabe in
+   `kernel-config-from-image.py` stand hinter dem `return None` des
+   IKCONFIG-Frühreturns — und dieses Bild hat kein eingebettetes IKCONFIG,
+   also wurde die Prüfung nie erreicht. Ein Test, der eine Vorgabe übersieht,
+   ist wertloser als gar keiner: er bestätigt, was der Prüfer zufällig sieht.
+   Deshalb verlangt `tests/gadget-modules` jetzt beide Richtungen — TREFFER
+   gegen die wirkliche sha256 und Abbruch gegen eine falsch eingetragene.
+
 ## Open questions for the maintainers
 
 1. Is `android-v2` (the Pixel 4 XL's descriptor names it) the word this

@@ -9,7 +9,12 @@ entheidet: sind USB_F_NCM / USB_F_ACM / TYPEC-* / NVMEM_REBOOT_MODE im
 die Gadget-Sequenz ist). Liest mit open(), nie mit einem Zeilen praefixierenden
 Leser.
 """
-import re, struct, subprocess, sys, zlib
+import hashlib
+import re
+import struct
+import subprocess
+import sys
+import zlib
 
 IKSTART = b"IKCFG_ST"
 IKEND = b"IKCFG_ED"
@@ -46,12 +51,19 @@ def ikconfig(blob):
         return "ZLIB-FEHLER: %s" % err
 
 
-def report(tag, img):
+def report(tag, img, expect=None):
     blob, d, page, ks = kernel_blob(img)
     cfg = ikconfig(blob)
     print("== %s ==" % tag)
     print("   kernel_size %d B, Seite %d, Blob gzip-magic %s"
           % (ks, page, blob[:3].hex()))
+    if expect:
+        got = hashlib.sha256(open(img, "rb").read()).hexdigest()
+        good = got == expect
+        print("   Bild-sha256 gegen Vorgabe %s: %s"
+              % (expect[:16], "TREFFER" if good else "ABWEICHEND " + got))
+        if not good:
+            raise SystemExit("Bild hat nicht die erwartete sha256")
     if cfg is None:
         print("   IKCONFIG: NICHT EINGEBETTET (CONFIG_IKCONFIG=n) -> Config des "
               "Baums ist nicht aus dem Bild beweisbar")
@@ -84,11 +96,27 @@ want = ["CONFIG_USB_F_NCM", "CONFIG_USB_F_ACM", "CONFIG_USB_CONFIGFS",
         "CONFIG_USB_LIBCOMPOSITE", "CONFIG_TYPEC_QCOM_PMIC",
         "CONFIG_NVMEM_REBOOT_MODE", "CONFIG_USB_DWC3_QCOM"]
 
-imgs = sys.argv[1:]
+# Optionale Vorgabe: erwartete sha256 des fertigen Bildes, gemessen am
+# zurueckgelesenen Bild. Ein Rezept, das seinen eigenen/hash-Pfad haelt, ist ein
+# Leser mehr, der nicht auf den Builder vertraut - und die Groesse bleibt nicht
+# als Zahl in einem Shellskript stehen, die niemand nachmisst.
+argv = list(sys.argv[1:])
+expect, imgs = None, []
+i = 0
+while i < len(argv):
+    a = argv[i]
+    if a == "--expect-sha256":          # beide Schreibweisen, damit ein
+        expect = argv[i + 1]; i += 2    #Uberlauf nicht als Bilddatei endet
+    elif a.startswith("--expect-sha256="):
+        expect = a.split("=", 1)[1]; i += 1
+    else:
+        imgs.append(a); i += 1
+if expect and not imgs:
+    raise SystemExit("--expect-sha256 ohne Bildpfad: es wird nichts gepueft")
 results = {}
 for img in imgs:
     tag = img.split("/")[-2] if "/" in img else img
-    r = report(tag, img)
+    r = report(tag, img, expect)
     results[img] = r
     if r is None:
         continue
