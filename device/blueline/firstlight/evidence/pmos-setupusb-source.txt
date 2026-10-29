@@ -1,0 +1,179 @@
+### Zeile 785: setup_usb_network_android() {
+	local sysfs_dir
+	# Only run, when we have the android usb driver
+	sysfs_dir=/sys/class/android_usb/android0
+	if ! [ -e "$sysfs_dir" ]; then
+		return
+	fi
+
+	info "  Setting up USB gadget through android_usb"
+
+	usb_idVendor="$(echo "${deviceinfo_usb_idVendor:-0x18D1}" | sed "s/0x//g")"	# default: Google Inc.
+	usb_idProduct="$(echo "${deviceinfo_usb_idProduct:-0xD001}" | sed "s/0x//g")"	# default: Nexus 4 (fastboot)
+
+	# Do the setup
+	echo "0" >"$sysfs_dir/enable"
+	echo "$usb_idVendor" >"$sysfs_dir/idVendor"
+	echo "$usb_idProduct" >"$sysfs_dir/idProduct"
+	echo "rndis" >"$sysfs_dir/functions"
+	echo "1" >"$sysfs_dir/enable"
+}
+### Zeile 816: setup_usb_configfs_udc() {
+	# Check if there's an USB Device Controller
+	local _udc_dev
+	_udc_dev="$(get_usb_udc)"
+
+	# Remove any existing UDC to avoid "write error: Resource busy" when setting UDC again
+	if [ "$(wc -w <$CONFIGFS/g1/UDC)" -gt 0 ]; then
+		echo "" > "$CONFIGFS"/g1/UDC || echo "  Couldn't write to clear UDC"
+	fi
+	# Link the gadget instance to an USB Device Controller. This activates the gadget.
+	# See also: https://gitlab.postmarketos.org/postmarketOS/pmbootstrap/issues/338
+	echo "$_udc_dev" > "$CONFIGFS"/g1/UDC || echo "  Couldn't write new UDC"
+}
+### Zeile 831: setup_usb_network_configfs() {
+	# See: https://www.kernel.org/doc/Documentation/usb/gadget_configfs.txt
+	local skip_udc="$1"
+
+	if ! [ -e "$CONFIGFS" ]; then
+		info "usb_gadget not found in configfs, skipping gadget setup..."
+		return
+	fi
+
+	if [ -z "$(get_usb_udc)" ]; then
+		info "No UDC found, skipping gadget setup..."
+		return
+	fi
+
+	# Default values for USB-related deviceinfo variables
+	usb_idVendor="${deviceinfo_usb_idVendor:-0x18D1}"   # default: Google Inc.
+	usb_idProduct="${deviceinfo_usb_idProduct:-0xD001}" # default: Nexus 4 (fastboot)
+	usb_serialnumber="${deviceinfo_usb_serialnumber:-postmarketOS}"
+	usb_network_function="${deviceinfo_usb_network_function:-ncm.usb0}"
+	usb_network_function_fallback="rndis.usb0"
+	usb_network_host_addr="${deviceinfo_usb_network_host_addr:-}"
+
+	echo "  Setting up USB gadget through configfs"
+	# Create an usb gadet configuration
+	mkdir $CONFIGFS/g1 || echo "  Couldn't create $CONFIGFS/g1"
+	echo "$usb_idVendor"  > "$CONFIGFS/g1/idVendor"
+	echo "$usb_idProduct" > "$CONFIGFS/g1/idProduct"
+
+	# Create english (0x409) strings
+	mkdir $CONFIGFS/g1/strings/0x409 || echo "  Couldn't create $CONFIGFS/g1/strings/0x409"
+
+	# shellcheck disable=SC2154
+	echo "$deviceinfo_manufacturer" > "$CONFIGFS/g1/strings/0x409/manufacturer"
+	echo "$usb_serialnumber"        > "$CONFIGFS/g1/strings/0x409/serialnumber"
+	# shellcheck disable=SC2154
+	echo "$deviceinfo_name"         > "$CONFIGFS/g1/strings/0x409/product"
+
+	# Create network function.
+	if ! mkdir $CONFIGFS/g1/functions/"$usb_network_function"; then
+		# Try the fallback function next
+		if mkdir $CONFIGFS/g1/functions/"$usb_network_function_fallback"; then
+			usb_network_function="$usb_network_function_fallback"
+		fi
+	fi
+
+	# Create configuration instance for the gadget
+	mkdir $CONFIGFS/g1/configs/c.1 \
+		|| echo "  Couldn't create $CONFIGFS/g1/configs/c.1"
+	mkdir $CONFIGFS/g1/configs/c.1/strings/0x409 \
+		|| echo "  Couldn't create $CONFIGFS/g1/configs/c.1/strings/0x409"
+	echo "USB network" > $CONFIGFS/g1/configs/c.1/strings/0x409/configuration \
+		|| echo "  Couldn't write configration name"
+	if [ -n "$usb_network_host_addr" ]; then
+		echo "$usb_network_host_addr" > $CONFIGFS/g1/functions/"$usb_network_function"/host_addr \
+			|| echo "  Couldn't write host addr"
+	fi
+
+
+	# Link the network instance to the configuration
+	ln -s $CONFIGFS/g1/functions/"$usb_network_function" $CONFIGFS/g1/configs/c.1 \
+		|| echo "  Couldn't symlink $usb_network_function"
+
+	# If an argument was supplied then skip writing to the UDC (only used for mass storage
+	# log recovery)
+	if [ -z "$skip_udc" ]; then
+		setup_usb_configfs_udc
+	fi
+}
+### Zeile 900: setup_usb_network() {
+	# Only run once
+	_marker="/tmp/_setup_usb_network"
+	[ -e "$_marker" ] && return
+	touch "$_marker"
+	info "Setup usb network"
+	# Run all usb network setup functions (add more below!)
+	setup_usb_network_android
+	setup_usb_network_configfs
+}
+### Zeile 967: setup_usb_acm_configfs() {
+	local active_udc
+	active_udc="$(cat $CONFIGFS/g1/UDC)"
+
+	if ! [ -e "$CONFIGFS" ]; then
+		echo "  $CONFIGFS does not exist, can't set up serial gadget"
+		return 1
+	fi
+
+	# unset UDC
+	echo "" > $CONFIGFS/g1/UDC
+
+	# Create acm function
+	mkdir "$CONFIGFS/g1/functions/$CONFIGFS_ACM_FUNCTION" \
+		|| echo "  Couldn't create $CONFIGFS/g1/functions/$CONFIGFS_ACM_FUNCTION"
+
+	# Link the acm function to the configuration
+	ln -s "$CONFIGFS/g1/functions/$CONFIGFS_ACM_FUNCTION" "$CONFIGFS/g1/configs/c.1" \
+		|| echo "  Couldn't symlink $CONFIGFS_ACM_FUNCTION"
+
+	return 0
+}
+### Zeile 1014: setup_usb_storage_configfs() {
+	local active_udc
+	local storage_dev
+	active_udc="$(cat $CONFIGFS/g1/UDC)"
+	storage_dev="$1"
+
+	if ! [ -e "$CONFIGFS" ]; then
+		echo "  $CONFIGFS does not exist, can't set up storage gadget"
+		return 1
+	fi
+
+	if [ -z "$storage_dev" ]; then
+		if [ -e "$CONFIGFS/g1/configs/c.1/$CONFIGFS_MASS_STORAGE_FUNCTION" ]; then
+			echo "Disabling USB mass storage gadget"
+			unlink "$CONFIGFS/g1/configs/c.1/$CONFIGFS_MASS_STORAGE_FUNCTION"
+			setup_usb_configfs_udc
+		fi
+		return 0
+	fi
+
+	if ! [ -b "$storage_dev" ]; then
+		echo "  Storage device '$storage_dev' is not a block device"
+		return 1
+	fi
+
+	# Set up network gadget if not already done
+	if [ -z "$active_udc" ]; then
+		setup_usb_network_configfs "skip_udc"
+	else
+		# Unset UDC before reconfiguring gadget
+		echo "" > $CONFIGFS/g1/UDC
+	fi
+
+	# Create mass storage function
+	mkdir -p "$CONFIGFS/g1/functions/$CONFIGFS_MASS_STORAGE_FUNCTION" \
+		|| echo "  Couldn't create $CONFIGFS/g1/functions/$CONFIGFS_MASS_STORAGE_FUNCTION"
+
+	echo "$storage_dev" > "$CONFIGFS/g1/functions/$CONFIGFS_MASS_STORAGE_FUNCTION/lun.0/file"
+
+	# Link the mass storage function to the configuration
+	ln -sf "$CONFIGFS/g1/functions/$CONFIGFS_MASS_STORAGE_FUNCTION" "$CONFIGFS/g1/configs/c.1" \
+		|| echo "  Couldn't symlink $CONFIGFS_MASS_STORAGE_FUNCTION"
+
+	setup_usb_configfs_udc
+	return 0
+}

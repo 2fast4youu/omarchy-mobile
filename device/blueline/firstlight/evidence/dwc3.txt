@@ -1,0 +1,4 @@
+lrwxrwxrwx    1 0        0                0 Jan  1 00:00 a600000.usb -> ../../../devices/platform/soc@0/a6f8800.usb/a600000.usb
+lrwxrwxrwx    1 0        0                0 Jan  1 00:00 a6f8800.usb -> ../../../devices/platform/soc@0/a6f8800.usb
+--
+--

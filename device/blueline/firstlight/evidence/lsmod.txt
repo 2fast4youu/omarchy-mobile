@@ -1,0 +1,9 @@
+Module                  Size  Used by    Tainted: G  
+usb_f_acm              24576  2 
+u_serial               32768  3 usb_f_acm
+usb_f_mass_storage     73728  2 
+usb_f_ncm              32768  2 
+u_ether                36864  1 usb_f_ncm
+gpi                    36864  2 [permanent]
+evdev                  24576  0 
+libcomposite           98304 16 usb_f_acm,u_serial,usb_f_mass_storage,usb_f_ncm,u_ether

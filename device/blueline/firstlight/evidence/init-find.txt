@@ -1,0 +1,3 @@
+-rwxr-xr-x    1 0        0             2093 Jan  1 00:00 [1;32m/init[m
+-rw-r--r--    1 0        0            40549 Jan  1 00:00 [0;0m/init_functions.sh[m
+ls: /usr/share/postmarketos-initramfs/: No such file or directory

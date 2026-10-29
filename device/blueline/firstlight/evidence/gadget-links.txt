@@ -1,0 +1,7 @@
+total 0
+-rw-r--r--    1 0        0             4096 Jan  1 00:36 [0;0mMaxPower[m
+lrwxrwxrwx    1 0        0                0 Jan  1 00:00 [1;36macm.usb0[m -> [1;34m../../../../usb_gadget/g1/functions/acm.usb0[m
+-rw-r--r--    1 0        0             4096 Jan  1 00:36 [0;0mbmAttributes[m
+lrwxrwxrwx    1 0        0                0 Jan  1 00:00 [1;36mmass_storage.0[m -> [1;34m../../../../usb_gadget/g1/functions/mass_storage.0[m
+lrwxrwxrwx    1 0        0                0 Jan  1 00:00 [1;36mncm.usb0[m -> [1;34m../../../../usb_gadget/g1/functions/ncm.usb0[m
+drwxr-xr-x    3 0        0                0 Jan  1 00:00 [1;34mstrings[m

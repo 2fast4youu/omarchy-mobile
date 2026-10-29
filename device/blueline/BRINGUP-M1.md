@@ -2045,3 +2045,96 @@ out of the logs disk (`mount -o loop /tmp/logs.img /mnt/lg` inside the phone).
 That reframes the goal once: to get past `Entering debug shell` this device needs
 a rootfs written into `userdata` (or a `super`/`vendor_boot` route), not more
 gadget work. The gadget is proven.
+
+## The phone as oracle: 21 evidence files from the live debug shell (2026-10-29 18:45-18:55)
+
+Claude's check-in: use the running reference as an oracle *before anyone reboots
+it*. Done — `device/blueline/firstlight/oracle-capture.py` drives the telnet
+shell (it strips the echoed command lines, which is what makes these files
+readable) and captured into `firstlight/evidence/`:
+
+`cmdline.txt`, `modules.txt`, `lsmod.txt`, `udc-list.txt`, `udc-state.txt`,
+`udc-soft-bus.txt`, `gadget-tree.txt`, `gadget-values.txt`, `gadget-links.txt`,
+`configfs-mount.txt`, `ncm-iface.txt`, `typec.txt`, `dwc3.txt`, `ttyGS.txt`,
+`serial-getty.txt`, `uname.txt`, `proc-partitions.txt`, `init-find.txt`,
+`dtb-board.txt`, `partitions-reference-2026-10-29.txt`,
+`pmos-setupusb-source.txt` — plus `dmesg` (797 lines, buffer had already
+wrapped) and `/pmOS_init.log` captured earlier. `pmos-setupusb-source.txt` is
+the gadget source *as it exists in the shipped image's `init_functions.sh`*
+(366-entry extraction of `/private/tmp/ref-ramdisk.cpio`), cross-checked line
+for line against the live sysfs values below.
+
+What the oracle says, in one breath:
+
+- `state = configured`, `UDC = a600000.usb`, configfs mounted `rw,nosuid,
+  nodev,noexec`; functions `ncm.usb0` + `acm.usb0` (`console=1`, `port_num 0`)
+  + `mass_storage.0`, all three linked into `c.1`; `idVendor 0x18d1`,
+  `idProduct 0xd001`, strings `Google`/`Google Pixel 3`/`postmarketOS`;
+  `bcdUSB 0x0210`, `max_speed super-speed-plus`, `bmAttributes 0x80`.
+- The DHCP server on the phone is **`unudhcpd -i usb0 -s 172.16.42.1
+  -c 172.16.42.2`** (`serial-getty.txt`) — not busybox `udhcpd`. The shell is
+  `telnetd -b 172.16.42.1:23 -l /sbin/pmos_getty`.
+- `/sys/class/typec/` is **empty** — no class devices at all on this boot
+  (`typec.txt` is just the unexpanded glob). Whatever role logic exists, the
+  gadget does not need a typec class entry to reach `configured`.
+- **The number that changes the diagnosis: the reference reaches
+  `Setting up USB gadget through configfs` at 1.708 s and the gadget's
+  `HOST MAC` line at 1.734 s.** pmOS stage1 starts at ~1.155 s; its stage2
+  still does rootfs probing first. Our v0q init is PID 1 directly with no
+  stage1 detour — it reached `udc=$(ls /sys/class/udc | head -1)` **once**,
+  early, and if dwc3 had not finished probing at that instant it printed
+  `No UDC found, skipping gadget setup` and skipped the gadget for the entire
+  boot, then parked in `sleep 60`. 83 minutes of total bus absence, no panic,
+  no come-back: exactly what that code path produces. The dmesg ring had
+  already wrapped, so the dwc3 probe timestamp itself is gone — the 1.734 s
+  bind is the earliest positive proof the UDC existed, not a proof it existed
+  earlier. That is why the fix is a wait loop, not a guessed constant.
+
+## Bisection from the good side, two images built (not yet flashed)
+
+Per Claude: one change per flash, starting from the known-good side.
+
+**Bild A** — `ref-packer` content, our packer. Built by
+`firstlight/build-refpacked.sh` (alpine arm64, same pack-v0.py call as every
+v0 build). `cmp -l` against the reference: **exactly 20 bytes differ, offset
+577–596 — that is the `id[]` field and nothing else.** Same file size
+(28729344 B), same header fields (incl. `page_size@40 = 0` — the reference
+itself carries 0 there, our v0 layout discovery was already the distro's),
+byte-identical kernel+DTB section (16154252 B), byte-identical zstd ramdisk
+section (12569303 B at the 4096-boundary `16158720`), byte-identical embedded
+cmdline (218 chars, `pmos_boot_uuid`/`pmos_root_uuid` included, `extra_cmdline`
+empty on both). sha256 `346a96dac53567f60f1fe6645f5021a0b73197a3d8e0aafb347eefbdd1d9f13a`.
+
+**Bild v0r** — v0q plus two changes in `init` only
+(`firstlight/patch-v0r.py`, build `build-v0r.sh`, checks `verify-v0r.py` +
+the unchanged 28-point `verify-v0q.py`, `bash -n` clean). 1: UDC wait loop,
+60 half-second rounds instead of one read; 2: debug shell
+`telnetd -l /bin/sh` respawned forever, armed before dropbear, listening on
+*:23 even if usb0 never appears. Panel title now says `first-light v0r` so a
+photo identifies the build. sha256 `44d4f2648a328b964db1b1f2e9e4cec58d8d54ae26985db32ff38713f9e06a75`
+(image 21094400 B, init 17230 B, 6 modules intact).
+
+Three harness faults surfaced while building v0r, all mine, all now guarded by
+files instead of heredocs: (1) I repeated the mistake that stands warned in
+build-v0q.sh's own header — a `<<PY` heredoc *inside* `sh -euc` lets ash
+expand `$(ls /sys/class/udc …)` and die on `$_i: parameter not set` before
+python ever sees the line; checks moved to `verify-v0r.py`. (2) verify-v0q.py
+silently compared modules against a missing `/m` mount and reported `not ok`
+for it — a container mount is part of the test surface. (3) The anchor
+indentation: the init in the archive is indented 4 spaces, a full terminal
+dump had shown it with more; anchors must come from the archive, never from
+the screen.
+
+Predicted readings, fixed BEFORE the flashes so nobody can bend them after:
+A must enumerate like the reference (~16 s device, ~21 s NCM, telnet 23 =
+pmOS debug shell). v0r must enumerate (`Google Pixel 3` with
+0x18d1:0xd001) AND answer telnet 23 with an Omarchy Mobile shell whose
+`/run/steps.log` ends in `debug shell armed` — if it enumerates late
+(not before ~1.7 s), the UDC-timing diagnosis is confirmed with a number.
+If v0r enumerates but the shell is dark, init died between gadget bind and
+telnetd. If v0r stays dark on the bus while A is bright, the difference is
+inside our ramdisk's init again, and steps.log will finally be readable to
+say where.
+
+UART: Claude and the evidence agree it is no longer urgent — NCM+telnet is a
+proven channel on this handset, and v0r carries its own shell.

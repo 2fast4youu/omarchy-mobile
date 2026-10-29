@@ -1,0 +1,10 @@
+3: usb0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc pfifo_fast state UP qlen 1000
+    link/ether ea:a3:27:58:65:c4 brd ff:ff:ff:ff:ff:ff
+    inet 172.16.42.1/16 brd 172.16.255.255 scope global usb0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::e8a3:27ff:fe58:65c4/64 scope link 
+       valid_lft forever preferred_lft forever
+--
+up
+--
+lrwxrwxrwx    1 0        0                0 Jan  1 00:13 [1;36m/sys/class/net/usb0/device[m -> [1;34m../../../gadget.0[m

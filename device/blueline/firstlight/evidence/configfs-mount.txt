@@ -1,0 +1,1 @@
+configfs on /sys/kernel/config type configfs (rw,nosuid,nodev,noexec,relatime)

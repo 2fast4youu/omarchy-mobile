@@ -1,0 +1,4 @@
+== /sys/class/udc/*/soft_bus_speed
+== /sys/class/udc/a600000.usb/maximum_speed
+super-speed
+== /sys/class/udc/*/is_active
