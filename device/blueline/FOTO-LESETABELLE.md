@@ -37,8 +37,9 @@ steht — deshalb hier die Panel-Ausgabe, die der Init tatsächlich schreibt.
 
 ## Der unabhaengige Kanal: UART ueber SBU (kein Partitionsschreib)
 
-Aus der Geraeteseite `Google_Pixel_3_(google-blueline)` (Nura-Wiki, am 29.10.
-abgerufen), Abschnitt „UART", bestaetigt durch AOSP „Build Pixel kernels" und
+Aus der Geraeteseite `Google_Pixel_3_(google-blueline)` (postmarketOS-Wiki, Revision oldid 93743, staendig ueber
+`https://web.archive.org/web/20260610002652/https://wiki.postmarketos.org/wiki/Google_Pixel_3_(google-blueline)`
+gelesen am 29.10.), Abschnitt „UART", bestaetigt durch AOSP „Build Pixel kernels" und
 `Peter-Easton/android-debug-cable-howto` — woertlich uebernommen:
 
 * Pinbelegung: `A1 (GND) → GND`, `A8 (SBU1) → RXD`, `B8 (SBU2) → TXD`.

@@ -1004,21 +1004,30 @@ to rule slot retry/unbootable flags in or out as a second variable.
 
 ## 2026-10-29 14:40 — what the device page actually says (quoted, not read into)
 
-Device page `Google_Pixel_3_(google-blueline)` on the Nura wiki (successor of
-the postmarketOS wiki), fetched 2026-10-29, cell contents verbatim:
+Source, checkable: **postmarketOS wiki, page `Google_Pixel_3_(google-blueline)`,
+revision oldid 93743**, permanent copy
+`https://web.archive.org/web/20260610002652/https://wiki.postmarketos.org/wiki/Google_Pixel_3_(google-blueline)`
+(fetched 2026-10-29). Reading `https://wiki.postmarketos.org/...` directly on
+2026-10-29 answers Anubis (bot wall) and redirects to `wiki.nura.eco`, which is
+why a first reading of this page came back wearing another wiki's name; the
+cells below are the archived pmOS revision, and the live mirror showed the same
+values. Cell contents verbatim:
 
 * **USB Networking: `Works`** — legend text: "After connecting the device with
   USB to your PC, you can connect to it via telnet (initramfs) or SSH (booted
   system)."
 * **USB OTG: `Broken`** — "USB On-The-Go or USB-C Role switching."
 * Flashing, Internal storage, Screen, Touchscreen, Battery, FDE: `Works`.
-* Nura kernel on the page: `7.1_rc1-4` — the same 7.1-rc1 line as our blob
-  (`7.1.0-rc1-sdm845`).
+* Kernel package on the page: `linux-postmarketos-qcom-sdm845` — the same fork
+  our blob comes from (`7.1.0-rc1-sdm845`).
 
 Honest limit: the page names no host OS and no test date, and it says nothing
 about this Mac. `Works` means somebody got it over mainline — it does not
 excuse our gadget side, it only moves the burden of proof to a place where it
-can be measured independently.
+can be measured independently. Which makes the exact wording of our own
+finding important: the reference was not measured mute at the bus, it was
+**never measured** there (see the `ERGEBNIS-REF.txt` quote above - the flasher
+left before its loop). "ungemessen", not "stumm".
 
 ### The second channel, documented for exactly this handset
 
@@ -1042,6 +1051,53 @@ The command writes no partition, so it cannot damage the fallback. What it
 does leave behind is documented on the cable howto: uart stays enabled across
 a bootloader re-lock until `fastboot oem uart disable`, and the same command
 undoes it.
+
+### Orderable parts (a "Google debug cable for Pixel 3" is not a product)
+
+SuzyQ is the Chromebook/CCD cable and does not fit this phone; what the page
+describes is a plain SBU breakout. Concrete list:
+
+1. **USB-C male breakout board with SBU1/SBU2 on header pins** — search terms
+   "USB-C male breakout board SBU", "USB 3.1 Type-C male break out PCB". A bare
+   USB-2 male breakout has no SBU pins and cannot work.
+2. **USB-UART adapter with a 3.3 V/1.8 V selectable VIO** — CP2102 or FT232R/R3
+   based (FT232RL breakout, CP2102 breakout); jumper set to 3.3 V, which the
+   page says works, 1.8 V per the same sentence is also tolerated. Connect
+   adapter VIO/VTTL to the breakout's 3V3 **only if the breakout feeds it**;
+   otherwise leave the phone's VBUS pin unconnected and link only GND, SBU1,
+   SBU2 — the phone is its own power source.
+3. **A thick USB-A/C-to-C cable marked USB 3 / TB3** — the page's own words:
+   thin charge cables do not carry SBU ("I had to use a thicker TB3/USB 3.0
+   capable cable").
+
+Wiring (the page's table, drawn):
+
+```
+   phone USB-C                  breakout            UART adapter
+   ----------                   ---------           ------------
+   A1  GND          ─────────── GND        ─────── GND
+   A8  SBU1         ─────────── SBU1       ─────── RXD
+   B8  SBU2         ─────────── SBU2       ─────── TXD
+   B5/B9 VBUS 5V    (leave open unless the adapter needs a shared GND ref)
+   A4/A9 TX/RX USB2 (leave open - that is the side that never enumerated)
+```
+
+Direction: the cable is symmetric, SBU1/SBU2 swap with plug orientation; if the
+terminal stays empty, flip the plug at one end before believing anything is
+broken (page: "it won't work if the plug is reversed on one side").
+
+### Cheapest measurement first, and it is a boot_a write
+
+Before any hardware arrives, one flash answers the host-side question outright
+(the reference was never measured at the bus, see above): flash
+`pmos-ref-build/ref/boot.img` — sha256 re-measured 2026-10-29 as
+`ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82`, 28729344 B,
+matching `SHA256SUMS-ref` — and poll **every** USB enumeration for 5 min
+(`ioreg -p IOUSB -l` + `system_profiler SPUSBDataType` diffed against a
+before-snapshot), not only `172.16.42.1`. If the reference enumerates in full
+mode, the difference is our v0q image; if it never appears, the answer is
+host/cable/macOS and every gadget build from here is shouting into a wall.
+Runner: `device/blueline/firstlight/ref-enumeration-test.sh`.
 
 **Consequence for the order of work:** no further gadget build on hope. UART
 first — the parts sit with the owner, ordering is the one open hand — and only
