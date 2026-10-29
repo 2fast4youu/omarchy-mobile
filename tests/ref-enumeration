@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""Prueft device/blueline/firstlight/ref-enumeration-test.sh.
+
+Der Runner ist der billigste Test auf die Frage, die wir nicht beantworten
+koennen: USB-Peripheral ist auf diesem Geraet + diesem Mac von KEINEM
+mainline-Bild je gesehen worden - die Referenz wurde am Bus nie gemessen (ihr
+Flasher stieg vor der Schleife aus, ERGEBNIS-REF.txt: "kein boot.img in
+/work/export gefunden"). Erscheint die Referenz, liegt der Unterschied an v0q;
+erscheint sie nie, an Host/Kabel/macOS.
+
+Getestet wird mit Fake-fastboot, und zwar auf die einzige Art, die zaehlt: der
+Runner setzt export PATH="...platform-tools:$PATH" selbst. Ein Fake, den man
+DAHINTER an den PATH haengt, verliert gegen den echten fastboot und die
+Warteschleife laeuft nie aus - ein Haenger ist dann ein Fehler am Aufbau, nicht
+am Skript. Also wird der Fake-Pfad in die Kopie hineingeschrieben.
+"""
+import hashlib, os, re, shutil, subprocess, sys, tempfile
+
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RUN = os.path.join(HERE, "device", "blueline", "firstlight", "ref-enumeration-test.sh")
+BAUM = open(RUN, encoding="utf-8").read()
+ok = 0
+def punkt(meldung):
+    global ok; ok += 1; print("ok -", meldung)
+def fail(meldung, aus=""):
+    if aus:
+        print("--- letzte Zeilen ---", file=sys.stderr)
+        print("\n".join(aus.splitlines()[-12:]), file=sys.stderr)
+    print("not ok -", meldung, file=sys.stderr); sys.exit(1)
+
+# --- statisch ---------------------------------------------------------------
+for want in ("FAC_SHA=", "REF_SHA=", "ioreg -p IOUSB", "system_profiler SPUSBDataType"):
+    if want not in BAUM: fail("Runner enthaelt nicht: %s" % want)
+punkt("Runner prueft beide sha256 und pollt ioreg + system_profiler")
+
+zeilen = BAUM.splitlines()
+def zeile(muster):
+    for n, text in enumerate(zeilen, 1):
+        if muster in text: return n
+    return None
+flash = zeile("fastboot flash")
+fac = zeile("Rueckweg-sha256 weicht ab")
+ref = zeile("Referenz-sha256 weicht ab")
+if not (fac and ref and flash and fac < flash and ref < flash):
+    fail("sha256-Vergleich steht nicht vor dem Write (flash:%s fac:%s ref:%s)" % (flash, fac, ref))
+punkt("beide sha256-Vergleiche liegen vor dem einzigen Write (Zeile %d)" % flash)
+
+FAKES = {
+    "fastboot": "#!/bin/sh\ncase \"$1\" in\n"
+                "  devices) echo 'PIXEL3-SERIAL  fastboot';;\n"
+                "  getvar)  echo 'current-slot: a';;\n"
+                "  flash)   echo 'OKAY [ 0.001s]';;\n"
+                "  reboot)  echo 'OKAY';;\nesac\nexit 0\n",
+    "system_profiler": "#!/bin/sh\necho '   Speed: Downstream Device Configuration'\n",
+    # Der Bus zeigt ab dem dritten Aufruf einen zusätzlichen Eintrag, wenn
+    # $ENUMERIERT=ja - der Vorher-Snapshot bleibt frei davon.
+    "ioreg": "#!/bin/sh\nz=$(cat \"$FAKE_ZAEHLER\"); z=$((z + 1)); echo \"$z\" > \"$FAKE_ZAEHLER\"\n"
+             "echo '\"USB Product Name\" = \"USB3.0 Bus\"'\n"
+             "if [ \"$ENUMERIERT\" = ja ] && [ \"$z\" -ge 3 ]; then echo '\"USB Product Name\" = \"Gadget-Test\"'; fi\n",
+}
+
+def kopie(ordner, enumeriert, fac_falsch, ref_falsch):
+    f = os.path.join(ordner, "factory-boot.img"); r = os.path.join(ordner, "ref-boot.img")
+    open(f, "wb").write(b"fabrik"); open(r, "wb").write(b"referenz")
+    bin_ = os.path.join(ordner, "bin"); os.makedirs(bin_, exist_ok=True)
+    for name, text in FAKES.items():
+        p = os.path.join(bin_, name); open(p, "w", encoding="utf-8").write(text); os.chmod(p, 0o755)
+    def sha(pfad): return hashlib.sha256(open(pfad, "rb").read()).hexdigest()
+    t = (BAUM.replace('REF="/Users/gregor/hermes-workspace/pmos-ref-build/ref/boot.img"', 'REF="%s"' % r)
+            .replace('FACTORY="/Users/gregor/hermes-workspace/android-mainline/factory/sp1a/boot.img"', 'FACTORY="%s"' % f)
+            .replace('REF_SHA="ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82"',
+                     'REF_SHA="%s"' % ("badc0ffe" if ref_falsch else sha(r)))
+            .replace('FAC_SHA="5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e"',
+                     'FAC_SHA="%s"' % ("deadbeef" if fac_falsch else sha(f)))
+            .replace('export PATH="$HOME/Library/Android/sdk/platform-tools:$PATH"', 'export PATH="%s:$PATH"' % bin_))
+    if t == BAUM or bin_ not in t: fail("Kopie nicht umgeschrieben")
+    sk = os.path.join(ordner, "skript.sh"); open(sk, "w", encoding="utf-8").write(t); os.chmod(sk, 0o755)
+    return sk, bin_
+
+def szenario(T, name, enumeriert, fac_falsch, ref_falsch, erwartet, wexit, dauer=10):
+    d = os.path.join(T, name); os.makedirs(d, exist_ok=True)
+    sk, bin_ = kopie(d, enumeriert, fac_falsch, ref_falsch)
+    u = dict(os.environ)
+    u["PATH"] = bin_ + os.pathsep + u["PATH"]
+    u["FAKE_ZAEHLER"] = os.path.join(d, "zaehler"); open(u["FAKE_ZAEHLER"], "w").write("0")
+    u["ENUMERIERT"] = "ja" if enumeriert else "nein"
+    try:
+        p = subprocess.run(["bash", sk, os.path.join(d, "o"), str(dauer)],
+                           capture_output=True, text=True, env=u, timeout=120)
+    except subprocess.TimeoutExpired:
+        fail("%s: Haenger - Fake-Pfad wurde nicht vorn wirksam" % name)
+    aus = p.stdout + p.stderr
+    for st in erwartet:
+        if st not in aus: fail("%s: erwartet %r (Exit %d)" % (name, st, p.returncode), aus)
+    if p.returncode != wexit: fail("%s: Exit %d statt %d" % (name, p.returncode, wexit), aus)
+    if wexit == 1 and re.search(r"(?m)^\s*fastboot flash\s", aus):
+        fail("%s: schreibt, obwohl ein Hash abweicht" % name, aus)
+    punkt(name)
+    return os.path.join(d, "o", "enum.log")
+
+# Die vier Szenarien brauchen shasum (fuer die echten Vergleichswerte) und
+# system_profiler (die zweite Poll-Quelle, hier als Fake im PATH). Ohne beides
+# sind nur die statischen Pruefpunkte moeglich - auf dem Mac sind sie es immer.
+fehlend = [w for w in ("shasum", "system_profiler") if not shutil.which(w)]
+if fehlend:
+    print("ok - # skip: keine funktionellen Szenarien ohne %s (Linux-Container);"
+          " auf dem Mac laeuft dieser Test vollstaendig" % " und ".join(fehlend))
+    sys.exit(0)
+
+T = tempfile.mkdtemp(prefix="refenum-")
+try:
+    szenario(T, "falscher-rueckweg-hash", True, True, False, ["Rueckweg-sha256 weicht ab"], 1)
+    szenario(T, "falscher-referenz-hash", True, False, True, ["Referenz-sha256 weicht ab"], 1)
+    log = szenario(T, "neuer-usb-eintrag", True, False, False, ["ERGEBNIS: Referenz enumeriert"], 0, dauer=20)
+    text = open(log, encoding="utf-8", errors="replace").read()
+    if "Gadget-Test" not in text: fail("der neue Eintrag steht nicht im Protokoll: %s" % log)
+    punkt("der neue Enumerationseintrag steht im Protokoll")
+    szenario(T, "bus-unveraendert", False, False, False, ["KEIN einziger neuer USB-Eintrag"], 0)
+finally:
+    shutil.rmtree(T, ignore_errors=True)
+sys.exit(0)

@@ -5,7 +5,8 @@
 # (and a container standing in for the phone, with Docker), the initramfs's
 # first-boot growth, the bring-up overlays, the simplefb trigger, the storage guard's packed
 # allowlist and the USB product string, the blueline v0 boot-image packing,
-# the postmarketOS USB gadget sequence and the panel block,
+# the postmarketOS USB gadget sequence and the panel block, the reference
+# enumeration runner (does the known-good distro image enumerate at all),
 # bin/omamobile's boot-image layouts
 # and flash against a fake fastboot, omamobile-firstboot's own tests, and the
 # smoke test of the newest root image in out/ if there is one, and the
@@ -15,14 +16,16 @@ cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 for f in tools/install-phone tools/phone-provision tools/build-rootfs tools/build-packages tools/make-bundle \
          tools/lib/alarm.sh tools/lib/alarm-setup rootfs/build-inside tests/*; do
   [[ -f $f ]] || continue   # tests/owl is the OWL conformance suite's folder
-  bash -n "$f" || { echo "not ok - $f parses" >&2; exit 1; }
+  if head -1 "$f" | grep -q "^#!.*python"; then python3 -c "import ast,sys;ast.parse(open(sys.argv[1],encoding='utf-8').read())" "$f" ' ' || { echo "not ok - $f parst" >&2; exit 1; }
+  else bash -n "$f" || { echo "not ok - $f parst" >&2; exit 1; }
+  fi
 done
 sh -n initramfs/init
 sh -n device/flame/initramfs/init
 sh -n device/flame/initramfs/build
 bash -n tools/build-flame-probe
 echo "ok - scripts parse"
-for t in tests/pr-check tests/kernel-pr-check tests/install-phone tests/phone-provision tests/initramfs-grow tests/images-layout tests/device-overlays tests/simplefb-trigger tests/storage-guard tests/usb-product tests/boot-method tests/bootimg-v0 tests/gadget-reference tests/gadget-modules tests/flame-probe packages/omamobile-firstboot/test/all packages/omamobile-device-felix/test/all; do
+for t in tests/pr-check tests/kernel-pr-check tests/install-phone tests/phone-provision tests/initramfs-grow tests/images-layout tests/device-overlays tests/simplefb-trigger tests/storage-guard tests/usb-product tests/boot-method tests/bootimg-v0 tests/gadget-reference tests/gadget-modules tests/ref-enumeration tests/flame-probe packages/omamobile-firstboot/test/all packages/omamobile-device-felix/test/all; do
   echo "# $t"
   "$t"
 done
