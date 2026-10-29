@@ -1758,6 +1758,44 @@ von Slot a wieder her, **ohne** `userdata` zu löschen. Der Factory-Flash, der
 Nutzerdaten kostet, ist also nicht der einzige Rückweg — das war in den Notizen
 zu pessimistisch.
 
+## 2026-10-29 12:30 — erster Boot seit v0q, und er bleibt weg: 10 min kein USB-Gerät
+
+Der Beobachter (`/private/tmp/fl-v0q/beobachtung.txt`, 10-s-Raster) hat als
+einziger Übergang in 6 1/2 Stunden Fastboot-Präsenz:
+
+    t=6043s fastboot=1 ncm=0 seriell=0 12:29:51
+    t=6053s fastboot=0 ncm=0 seriell=0 12:30:01     <- hier ist gestartet worden
+
+Von da an bis 12:40:30 (Nachzählen am Host): `fastboot=0`, `ncm=0`,
+`seriell=0`, `adb=0`, und das Telefon erscheint in **keiner** ioreg-USB-Liste
+mehr. Zehn Minuten komplette Abwesenheit vom Bus — nicht "hängt im
+Fastboot-Menü", nicht "NCM bleibt aus": weg.
+
+Das ist ein bisher nicht beobachteter Boot-Zustand, und was v0q darin tut, ist
+im Bild nachgelesen, nicht aus meiner Erinnerung (Init aus `firstlight.img`
+zurückgelesen, 370 Zeilen):
+
+* Zeile 93–109: der `restart2`-Block hängt in v0q an `if [ -f
+  /etc/omamobile-panic-probe ]`, und **diese Datei ist im Bild nicht enthalten**
+  (alle 737 cpio-Einträge durchsucht: kein `omamobile-panic-probe`, kein
+  `omamobile-nogadget`). Der Block ist toter Code — es gibt keinen zweiten Weg
+  hinaus.
+* Zeile 361: `mark 'init main flow complete; PID 1 parking'`, Zeile 368–370:
+  `while :; do sleep 60; done`. **PID 1 verlässt den Init nie**, kein Panic,
+  kein Watchdog-Fressen: v0q hat keinen Mechanismus, der das Telefon von selbst
+  zurück ins Fastboot bringt. Zehn Minuten Abwesenheit sind also **kein**
+  Beweis gegen das Booten — sie sind mit einem lebenden, stummen Init verträglich.
+* Lesefolge im Init, die das Foto zeigen kann: Zeile 119–123 meldet
+  `gadget-module-dir gefunden` oder `KEIN /usr/lib/modules/... `, Zeile 124–132
+  jede `.ko` einzeln (`modul usb_f_ncm.ko geladen` / `FEHLER <rc>`), Zeile 133
+  `moduli: <n> geladen, usb_f_ncm <0|1>`, Zeile 150/182–183 `udc=…` und
+  `binding UDC …`. Fehlt der Block völlig, entscheidet das Foto nichts.
+* Was das Foto **nicht** unterscheidet: (a) Kernel lebt, Gadget bindet nicht,
+  Panel zeigt etwas — (b) Kernel hängt früh, Panel dunkel. Der einzige Weg, das
+  zu trennen, ist das Panel-Foto (Lesetabelle: `FOTO-LESETABELLE.md`) oder eine
+  serielle Konsole. Kein weiterer Blindbau: v0q ist der erste Build, der Module
+  und Gadget-Sequenz nachweislich im Bild hat, und er bootet gerade.
+
 ## Open questions for the maintainers
 
 1. Is `android-v2` (the Pixel 4 XL's descriptor names it) the word this

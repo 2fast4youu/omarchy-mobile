@@ -1,60 +1,64 @@
-# Foto-Lesetabelle v0q (2026-10-29, 06:4x)
+# Foto-Lesetabelle v0q (Stand 2026-10-29, 12:5x)
 
-Vorab festgelegt, damit das Display-Foto in einer Minute ausgewertet ist. Der
-Statusblock des v0q-Init schreibt in dieser Reihenfolge — die **erste Zeile,
-die fehlt oder einen Fehler zeigt**, ist der Fund. Alles darunter ist dann
-nur noch Kontext.
+**Erste Fassung (11:0x) war eine erfundene Skala.** Sie schrieb Zeilen `P1`–`P5`
+mit `insmod`-Rückgabewerten aufs Panel; nachgelesen im fertigen Bild (Init,
+370 Zeilen, 737 cpio-Einträge): die Modul-Meldungen stehen dort in `mark()` =
+nur `/dev/kmsg` (Zeile 19–22), **nicht** auf dem Panel. Das ist genau die Klasse
+Fehler, die zwei Abschnitte weiter unten als „never invent the instrument"
+steht — deshalb hier die Panel-Ausgabe, die der Init tatsächlich schreibt.
 
-## Der Statusblock (Panel, 5 Zeilen pro Schritt)
+## Was auf dem Panel wirklich steht (wörtlich aus dem Bild)
 
-    P1 v0q <marke> u=<uptime-s> init=<pid>          <- lebt Init ueberhaupt
-    P2 mod libcomposite=<rc> u_ether=<rc> ncm=<rc>  <- Module geladen?
-    P3 cfgfs=<rc> udc=<erster UDC>                  <- configfs gemountet, UDC da?
-    P4 bind=<rc> udcline=<UDC-Datei> ip=<ncm-addr>   <- Gadget gebunden?
-    P5 host=ping<rc> mac=<mac>                       <- Host am anderen Ende?
+    Omarchy Mobile first-light v0h - RAM only, Watchdog-Fuetterer + Pstore    (Zeile 82, immer zuerst)
+    ===== pstore: <datei> =====  …tail -40…                                   (Zeile 71-73, nur wenn vorheriger Crash)
+    --- <uptime>s ---                                                          (Zeile 53-59, alle 20 s neu)
+    wdt bootstatus=… timeout=…
+    udc=<ls /sys/class/udc> gebunden=<cat /sys/kernel/config/usb_gadget/*/UDC>
+    dwc3 rolle=<typec data_role> typec=<ls /sys/class/typec>
+    pid1=<comm> state=<stat-Feld 3> kinder=<…>
+    letzter Schritt: <tail -1 /run/steps.log>
+    omamobile-blueline: SSH ready: root@172.16.42.1; all storage read-only     (Zeile 295, Gadget-Ende)
+    omamobile-blueline: storage guard: <n> device(s) could not be write-protected (Zeile 327)
 
-## Lesetabelle
+## Lesetabelle (die erste Zeile, die fehlt oder abweicht, ist der Fund)
 
-| Beobachtung | These | widerlegt / gestuetzt | naechster Schritt |
+| Beobachtung auf dem Panel | These | gestützt / widerlegt | nächster Schritt |
 |---|---|---|---|
-| **P1 fehlt ganz** (Panel dunkel oder nur ABOOT) | Init laeuft nicht | Ramdisk/Init-Pfad oder Kernel-Abort | pstore lesen (`/sys/fs/pstore`), dann Packing pruefen — **nicht** neu flashen |
-| P1 zeigt `init=` ohne 1 | Init ist nicht PID 1 | `rdinit=/init` ignoriert | cmdline aus dem Bild auslesen (`unpack-v0.py`) |
-| **P2 rc ungleich 0** (z.B. `libcomposite=1`) | Modul passt nicht zum Kernel | vermagic oder Abhaengigkeit | `insmod` einzeln mit Meldung; vermagic vergleichen: `modinfo` der .ko gegen `uname -r` im initramfs; Reihenfolge libcomposite → u_ether → u_serial → usb_f_ncm |
-| P2 meldet `File exists` | Modul schon im Kernel (=y) | ungefaehrlich | ignorieren, weiter lesen |
-| **P3 `cfgfs=` ungleich 0** | configfs nicht verfuegbar | `CONFIG_USB_CONFIGFS` fehlt oder mount-Pfad falsch | Pfad im Init pruefen (`/sys/kernel/config`, nicht `/config`); libcomposite-RC von P2 nachsehen |
-| **P3 `udc=` leer** | kein UDC-Provider = dwc3 nicht gebunden | USB-Controller/PHY/Typec | Typec- + dwc3-Module pruefen (`typec_qcom_pmic`, `dwc3`); DT-Knoten `usb@a6f8800` status; Rolle in `/sys/class/typec` |
-| **P4 `bind=` ungleich 0** | Gadget-Seqenz fehlerhaft | UDC schon belegt / functions fehlen | Inhalt von `/sys/kernel/config/usb_gadget/g1/UDC` und `functions/` auflisten; UDC vor bind auf leeren String setzen (Referenz tut das) |
-| P4 `udcline=` zeigt g1, P5 `host=` Fehler | Gadget gebunden, Host sieht nichts | Kabel, Host-Seite, oder NCM-Interface nicht sichtbar | anderes Kabel/Port; am Mac `ifconfig -a` und `system_profiler SPUSBDataType`; Interface-Name im Panel nachtragen |
-| **P4 ok, P5 ping ok** | NCM steht | — | M1 erfuellt: `ssh root@172.16.42.1` vom Mac (Host 172.16.42.5) |
-| Panel zeigt nur `P1`, keine Folge | Panelblock bricht ab | dmesg-Ausgabe ueberlagert tty0 | Ausgabe auf die 5 Zeilen begrenzen (`clear`/`printf`), Bild mit dem Handy-Foto halten |
-| Panel zeigt die **dmesg**-Zeilen, keinen Statusblock | Panelblock lief zu frueh/spaet | Zeitfenster | Statusblock vor `exec init` verankern, Wiederholen ohne dmesg |
+| Panel ganz dunkel | Init nie gelaufen **oder** Panelblock schreibt ins Leere | beides möglich, trennen: `dmesg`/pstore brauchen den Runner nicht | pstore am nächsten Fastboot lesen; kein Blindbau |
+| Banner (Zeile 82) da, danach nichts | PID 1 hängt zwischen Mounts und Messblock | Mount- oder Panelblock-Problem | Inhalt von `/run/steps.log` auf dem Panel fehlt hier — nächster Build schreibt ihn |
+| Statusblock alle 20 s, **`udc=` leer** | UDC-Provider fehlt: dwc3/PHY/Typec | Modul-/DT-Lücke | `typec`, `dwc3`-Module und DT-Knoten `usb@a6f8800`; UART statt weiterem Bild |
+| `udc=a6f8800.dwc3` o.ä., **`gebunden=` leer** | Gadget gebaut, nie an UDC gebunden | Bind-Schritt (Zeile 182/183) nicht erreicht | `letzter Schritt:` lesen — er sagt, wo PID 1 stand |
+| `gebunden=g1` und Mac sieht kein NCM | Gadget bindet, Host sieht nichts | Kabel/Host-Seite oder Interface unsichtbar | anderes Kabel/Port, `ifconfig -a`, `system_profiler SPUSBDataType` |
+| `SSH ready: root@172.16.42.1` auf dem Panel | Kette ist durchgelaufen | — | M1: vom Mac `ssh root@172.16.42.1` |
+| `pstore:`-Block mit Call Trace | vorheriger Boot ist abgestürzt | Grund steht im Text | den Crashtext lesen, nicht neu flashen |
+| `pid1=` zeigt etwas anderes als `init` | nicht unser Init als PID 1 | `rdinit` verfehlt | cmdline aus dem Bild auslesen |
+| `letzter Schritt: KEINER`/leer | `/run/steps.log` nie beschrieben | `mark()` lief nie | Mounts prüfen (Zeile 28–34 melden `mount … FAILED` in kmsg) |
+| `wdt bootstatus=` mit Reset-Bit | Reset kam vom Watchdog | ABOOT-Zähler erklärt | mit `retry-count`-Lesung abgleichen |
 
 ## Was das Foto NICHT entscheidet
 
-* Ob ABOOT `RESTART2` ehrt — dafuer braucht es UART oder einen Test, bei dem
-  das Telefon danach in Fastboot zurueckkommt.
-* Ob der Host (Mac) das Interface richtig benennt — dafuer `ifconfig -a`.
+* Ob ABOOT `RESTART2` ehrt — in v0q ist der `restart2`-Block toter Code (Datei
+  `/etc/omamobile-panic-probe` fehlt im Bild), also läuft er gar nicht erst.
+* Ob der Mac das Interface richtig benennt — dafür `ifconfig -a`.
+* Die Modul-Einzelmeldungen: die stehen nur in kmsg. **Nachtrag für den nächsten
+  Build:** `say "moduli: $(ls /proc/modules | wc -l)"` in den 20-s-Block, dann
+  ist `usb_f_ncm` geladen/nicht geladen auf dem Foto sichtbar.
 
-## Der Handgriff, der v0q startet (eindeutig, 2026-10-29 11:0x)
+## Der Handgriff, der v0q startet
 
-Das Telefon steht im Fastboot-Menü, und dort steht **„Start" schon
-ausgewaehlt**. Ein **kurzer Druck auf Power** startet den Boot — das ist die
-Aktion, die gemeint ist, wenn ich „starten" schreibe.
+Im Fastboot-Menü ist **„Start" bereits ausgewählt** → **kurzer Druck auf Power**.
 
-* **Kurzer Druck auf Power** = ausgewaehlten Menüpunkt ausführen → v0q bootet.
-* **Power ~10 s halten** = Hard-Reset. Geht auch, ist aber eine andere Aktion
-  (ohne Menü, erzwingt einen Neustart aus jedem Zustand).
-* **Power + Leiser ~10 s halten** = ins Fastboot-Menü (damit sind wir dort
-  hingekommen); aus dem Menü heraus ist das kein Start.
-* `fastboot --set-active=a` ist hier **nicht** nötig: Slot a ist der aktive und
-  war in jeder Lesung nicht als unbootable gemeldet (siehe BRINGUP-M1.md 09:31).
-  Ein Neustart ist kein Partitionsschreibvorgang.
+* **kurzer Druck Power** = Menüpunkt ausführen → bootet v0q
+* **Power ~10 s halten** = Hard-Reset (geht auch, andere Aktion)
+* **Power + Leiser ~10 s halten** = zurück ins Fastboot-Menü
+* `--set-active=a` ist nicht nötig: Slot a ist aktiv und war in jeder Lesung
+  nicht unbootable (BRINGUP-M1.md 09:31). Ein Neustart ist kein Partitionsschreibvorgang.
 
-## Fixe Reihenfolge nach dem Foto
+## Feste Reihenfolge nach dem Foto
 
-1. Erste fehlerhafte Zeile bestimmen (Tabelle oben).
+1. Erste fehlerhafte oder fehlende Zeile bestimmen (Tabelle oben).
 2. Am Mac parallel: `ifconfig -a | grep -i -E "ncm|usb0|172.16"`,
-   `ls /dev/cu.usb*`, `fastboot devices` — damit "kein NCM" und "kein Bus"
-   getrennt sind.
-3. Bei Modul- oder UDC-Fehler: UART (`fastboot oem uart enable`, SBU-Adapter,
-   1.8 V) statt naechstem Blindbau.
+   `ls /dev/cu.usb*`, `fastboot devices`, `ioreg -p IOUSB` — damit „kein NCM"
+   und „kein Gerät am Bus" getrennt sind.
+3. Bei leerem `udc=` oder Modul-Verdacht: UART (`fastboot oem uart enable`,
+   USB-C SBU1/SBU2, **1.8 V**) statt nächstem Blindbau.
