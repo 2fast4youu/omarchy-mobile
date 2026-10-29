@@ -18,11 +18,18 @@ OUT=${OUT:-/private/tmp/flash-observe}
 # Test-Fake, der den PATH von aussen setzt, verliert sonst gegen den echten
 # (dieselbe Falle, die der Runner-Test fuer ref-enumeration-test.sh dokumentiert).
 command -v fastboot >/dev/null 2>&1 || export PATH="$HOME/Library/Android/sdk/platform-tools:$PATH"
-# Rueckweg: der echte Pfad ist der Default; RUECKWEG/RUECKWEG_SHA lassen
-# sich ueberschreiben, damit ein Test die Pruefung an einer eigenen Datei
-# fahren kann. Ohne die Datei bricht der Runner vor jedem Write ab.
-RUECKWEG=${RUECKWEG:-/Users/gregor/hermes-workspace/android-mainline/factory/sp1a/boot.img}
-RUECKWEG_SHA=${RUECKWEG_SHA:-5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e}
+# Rueckweg-STUFE-1, korrigiert nach dem Check-in von 23:5x: der Default war
+# factory/sp1a/boot.img (5c1ce19e…, Android). Das ist der Rueckweg auf den
+# Android-Urzustand - korrekt als letzte Stufe, aber es ist NICHT die laufende
+# pmOS-Referenz, und die Freigabe an Gregor war mit "du bekommst die laufende
+# Referenz zurueck" auf die Android-Datei gated. Stufe 1 ist jetzt die
+# Referenz selbst (pmos-ref-build/ref/boot.img, ed2c225f…, 28729344 B): ein
+# Flash darauf stellt den genauen Zustand wieder her, den das Telefon heute
+# haelt. Die Android-Datei bleibt Stufe 2 (Falle: bleibt v0r dunkel und Telnet
+# antwortet nicht, hilft nur Power+Leiser ~10 s, dann wird Stufe 1 geflasht;
+# auf Android zurueck ist noetig, wenn die Referenz selbst es nicht mehr tut).
+RUECKWEG=${RUECKWEG:-/Users/gregor/hermes-workspace/pmos-ref-build/ref/boot.img}
+RUECKWEG_SHA=${RUECKWEG_SHA:-ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82}
 mkdir -p "$OUT"; LOG="$OUT/protokoll.txt"; exec >>"$LOG" 2>&1
 say() { echo "$(date '+%H:%M:%S') $*"; }
 # Portabilitaet: shasum/stat -f sind macOS-Werkzeuge, Linux kennt sha256sum
