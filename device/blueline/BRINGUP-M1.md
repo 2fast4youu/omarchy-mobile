@@ -1373,6 +1373,36 @@ Bild: sha256 265c492077b476d5172c983968cdd9afbe268d32028e70a5b8c88edffe086411,
 dem fertigen Bild vorgelesen. Flash auf boot_a läuft; die Messung steht in
 `/private/tmp/fl-v0l/ERGEBNIS.txt`.
 
+## 2026-10-29 02:49 — Zeitfenster-Rechnung: v0ls Init erreicht die 90-s-Sonde
+
+ABOOT-Zählung als Nebenoracle: `--set-active=a` setzt slot-retry-count:a auf
+3 und löscht slot-unbootable (um 02:40 gemessen: `retry:a 3, unbootable:no`).
+Danach v0l (Sonde 90 s, Notnagel sysrq-crash, `panic=60`) gebootet und der
+Host hat das Fastboot-Menü auf die Sekunde passend zum Sonden-Zyklus
+gesehen:
+
+| Hypothese | erwarteter Fastboot-Auftritt | beobachtet |
+|---|---|---|
+| Init lebt, Sonde feuert bei 90 s, Kette endet am sysrq-crash, ABOOT gibt nach 3 Fehlschlägen auf (Boot ~10 s + 90 s + 60 s panic-Warten + ~15 s ABOOT ≈ 175 s/Zyklus) | 02:40:09 + 3×175 s ≈ **02:48:54** | zwischen 02:48:23 (noch 0) und **02:49:15 (da)** ✓ |
+| Init hängt im UDC-Bind (~t+12 s), Firmware-Watchdog beisst ~70–80 s, 3 Zyklen | ≈ **02:44:0x** (und 02:41–02:45 waren sechs Polls mit fastboot=0) | ✗ |
+
+Das ist die erste tragfähige Aussage seit dem Packing-Fix: **unser Init läuft
+nach dem seitenbündigen Packing über 90 s hinaus** — also auch durch den
+Gadget-Bind an der Referenz-Position `g1` durch (der dwc3-Bind tötet den Boot
+nicht, der alte Bisect-Verdacht ist damit vom Tisch), und `busybox reboot`
+machte die ganze Nacht über Warmboots ohne Grund: busybox ruft
+`reboot(..., LINUX_REBOOT_CMD_RESTART, NULL)` — das Wort `bootloader` erreichte
+den Kernel nie. Dazu passt der DTB-Befund: **im Distro-DTB gibt es keinen
+poweroff-/pon-/restart-Knoten**, es registriert also gar kein Treiber einen
+restart-Handler mit Grund auf diesem Kernel — pmOS selbst nutzt diesen Pfad
+nicht. v0m misst mit einem 162-KiB-Standalone (`restart2.c`, direkter
+`SYS_reboot` mit RESTART2-Kommando, Konstanten hartkodiert, da musl kein
+`linux/reboot.h` hat) den ehrlichen Fall: Fastboot-Auftritt bei ~155 s =
+ABOOT ehrt den Grund trotz fehlendem Knoten (PSCI-Reset schreibt ABOOTs eige-
+nes SCR-Feld); Auftritt bei ~440 s = Grund ignoriert, wieder nur die
+Erschöpfung nach drei Zyklen. Panelfotos (Statusblock jetzt mit PID-1-Status,
+UDC-Bindung, dwc3-Rolle) lesen die Zwischenschritte.
+
 ## Open questions for the maintainers
 
 1. Is `android-v2` (the Pixel 4 XL's descriptor names it) the word this
