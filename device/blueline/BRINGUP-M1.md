@@ -1449,8 +1449,8 @@ und der Gadget-Block läuft hinter `if [ ! -e /etc/omamobile-nogadget ]`
 Gadget-Bindung **AUS**, auch nachdem der Init längst bis zum Gadget lebte.
 Der Host sah nie ein `172.16.42.1`, weil wir es selbst abgeschaltet hatten,
 nicht weil das Phone es nicht konnte. Lehrstück: ein Instrumentierungs-
-Schalter, der in nachfolgende Inits kopiert wird,Blindheit überlebt den
-Grund, warum er gesetzt wurde.
+Schalter, der in nachfolgende Inits kopiert wird, überlebt den Grund, warum er
+ gesetzt wurde, und hält die folgenden Builds blind.
 
 **v0o** (sha256 049345f7…, 20963328 B) schaltet den Schalter aus (touch
 gelöscht, Guard bleibt), stellt den restart2-Zweig auf *bleiben* um und
@@ -1458,6 +1458,51 @@ misst als erstes echtes First Light: Host-Poll alle 4 s auf
 `ifconfig`-`172.16.42`-Interface, USB-Enumeration, Fastboot. Erstmals seit
 v0d (ACM) wieder ein aktives Gadget im Boot. Baurezept:
 `device/blueline/firstlight/build-v0o.sh`.
+
+## 2026-10-29 03:4x — v0p: die Gadget-Sequenz der Referenz, wortgetreu
+
+Der Check-in hieß, `setup_usb_network_configfs` **1:1 zu übernehmen statt neu
+zu erfinden**. Nachgemessen am Wortlaut (`pmos-ref-build/pminit/root/
+init_functions.sh`, Zeilen 12, 831, 816, 967) und gegen das geflashte Bild
+unterschied sich unsere Sequenz in drei Punkten — jeder allein genug, damit am
+Host kein NCM-Interface auftaucht:
+
+| | Referenz | unser Stand bis v0o |
+|---|---|---|
+| configfs-Hang | `mount -t configfs -o nodev,noexec,nosuid configfs "$(dirname $CONFIGFS)"` → `/sys/kernel/config` | `mount -t configfs configfs /config` |
+| Gadgetname | `g1` | `omamobile` |
+| VID/PID | `0x18D1` / `0xD001` | `0x1d6b` / `0x0104` |
+| Binden | erst `echo "" > g1/UDC` (im Quelltext gegen *write error: Resource busy*), dann den Controller | Controller direkt, alles nach `2>/dev/null` |
+
+**Korrektur einer eigenen Falschaussage:** der v0l-Abschnitt oben (und Commit
+`a722889`) behauptet, das Gadget sei auf `g1`/`0x18D1` mit UDC-clear umgezogen.
+Das geflashte Bild sagt etwas anderes — aus `fl-v0l/firstlight.img`
+vorgelesen: `g=/config/usb_gadget/omamobile`, `echo 0x1d6b`, `echo 0x0104`,
+kein Leeren des UDC. Beschrieben und committet war die Änderung, gebaut nie.
+Dieselbe Klasse wie die TRAILER-Falle: der Baustein erzählt sich selbst, was
+er tut, und das Bild weiß es nicht.
+
+**v0p** (sha256 `0a239edddf73094e29662dd39cfd45b109e104b22b4e14932d8b40cba89f82a2`,
+20963328 B) legt den Block deshalb als Datei im Repo ab —
+`firstlight/gadget-reference.sh` — und baut ihn unverändert ein; die
+Nachprüfung verlangt den **Block als Ganzes** im fertigen Bild, nicht ein
+paar Einzelzeichen. Dazu `firstlight/panel-status.sh`, vier Zeilen, die ein
+Foto allein entscheiden lassen: Uptime und Watchdog, `ls /sys/class/udc` plus
+der Inhalt von `g1/UDC`, `dwc3`-Rolle/Typec/VBUS, `pid1`-`comm`/`state`/
+Kinderzahl, letzter Schritt. Paneltext wird zwanghaft ASCII geprüft
+(`t.isascii()`), ein UTF-8-Gedankenstrich ist auf dem Panel Müll.
+
+Kompression braucht kein `modprobe`: `USB_LIBCOMPOSITE`, `USB_CONFIGFS*`,
+`USB_F_NCM`, `USB_F_ACM`, `USB_DWC3*` stehen im Kernel auf `=y`, und das
+Ramdisk hat keine einzige `.ko` — die Referenz modprobt nur sicherheitshalber.
+
+Zwei Builds nacheinander liefern byte-gleich dasselbe Bild. Ad-hoc-Verifikation
+gegen das fertige Bild: 30 Prüfpunkte, 0 Fehler (`hermes-verify-v0p.py`,
+nach dem Lauf gelöscht). Der Beobachter (`/private/tmp/fl-v0p/run.sh`)
+sucht jetzt auch `/dev/cu.usbmodem*`: bindet `acm.GS0`, haben wir eine
+Konsole über USB und brauchten für den nächsten Befund gar kein Foto.
+Zurück nach Fastboot geht es ohne Funktionstaste nicht — RESTART2 ist hier
+ein No-op (Root Cause #3), also Power + Leiser.
 
 ## Open questions for the maintainers
 
