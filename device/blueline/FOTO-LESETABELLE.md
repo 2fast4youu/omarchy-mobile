@@ -35,6 +35,21 @@ nur noch Kontext.
   das Telefon danach in Fastboot zurueckkommt.
 * Ob der Host (Mac) das Interface richtig benennt — dafuer `ifconfig -a`.
 
+## Der Handgriff, der v0q startet (eindeutig, 2026-10-29 11:0x)
+
+Das Telefon steht im Fastboot-Menü, und dort steht **„Start" schon
+ausgewaehlt**. Ein **kurzer Druck auf Power** startet den Boot — das ist die
+Aktion, die gemeint ist, wenn ich „starten" schreibe.
+
+* **Kurzer Druck auf Power** = ausgewaehlten Menüpunkt ausführen → v0q bootet.
+* **Power ~10 s halten** = Hard-Reset. Geht auch, ist aber eine andere Aktion
+  (ohne Menü, erzwingt einen Neustart aus jedem Zustand).
+* **Power + Leiser ~10 s halten** = ins Fastboot-Menü (damit sind wir dort
+  hingekommen); aus dem Menü heraus ist das kein Start.
+* `fastboot --set-active=a` ist hier **nicht** nötig: Slot a ist der aktive und
+  war in jeder Lesung nicht als unbootable gemeldet (siehe BRINGUP-M1.md 09:31).
+  Ein Neustart ist kein Partitionsschreibvorgang.
+
 ## Fixe Reihenfolge nach dem Foto
 
 1. Erste fehlerhafte Zeile bestimmen (Tabelle oben).

@@ -1377,6 +1377,17 @@ dem fertigen Bild vorgelesen. Flash auf boot_a läuft; die Messung steht in
 
 ABOOT-Zählung als Nebenoracle: `--set-active=a` setzt slot-retry-count:a auf
 3 und löscht slot-unbootable (um 02:40 gemessen: `retry:a 3, unbootable:no`).
+[Korrigiert am 10:48 desselben Tages, siehe Abschnitt 09:31: Die Zuschreibung
+an `--set-active=a` steht in keiner erhaltenen Datei, und der gelöschte
+unbootable-Flag ist unbelegt — in jedem Log, das diese Nacht überlebt hat, war
+der Flag schon `no` (`fl-v0a/getvar-all.txt` vom 28.10.: `retry:a:2,
+unbootable:a:no`; `fl-v0q/ERGEBNIS.txt` vor dem Flash am 29.10.: ebenso `no`;
+10:48 gelesen: ebenso). Ein einzelnes `yes, retry:a:0` aus der Sitzung um 03:06
+existiert nur im Gespräch, nicht in einer Datei. Der Anstieg 2 -> 3 ist seit
+dem 09:31-Fenster erstmals sauber isoliert: dort lag zwischen den beiden
+Lesungen **nur** ein `fastboot flash boot_a`, ohne `--set-active` und ohne
+erfolgreichen Boot — eine Stichprobe, als Regel noch nicht brauchbar. Die
+Zeitfenster-Rechnung unten hängt nicht an der Zuschreibung und bleibt gültig.]
 Danach v0l (Sonde 90 s, Notnagel sysrq-crash, `panic=60`) gebootet und der
 Host hat das Fastboot-Menü auf die Sekunde passend zum Sonden-Zyklus
 gesehen:
@@ -1691,22 +1702,50 @@ Qualcomm-ABOOT, USB-C-Adapter ueber SBU1/SBU2, 1.8 V Logikpegel (nie 5 V an
 den SoC), 115200 8N1; die Pixel-UART ist informativ und blockiert Fastboot
 nicht. Kein Blindbau mehr, solange das Telefon nicht lesbar ist.
 
-## 2026-10-29 09:31 — v0q ist in `boot_a`, und der Slot-Write war uberflussig
+## 2026-10-29 09:31 — v0q ist in `boot_a`; der Slot-Write war uberflussig — und meine Begruendung dafuer war falsch
 
 Der Runner hat das Bild um 09:31:37 geflasht (Vorher-Prüfung: 21094400 B,
 sha256 `2911e6f7…`, soll = ist), dann 15 min auf `~/ok-set-active` gewartet —
-keine Freigabe, Exit 3, **kein Slot-Write, kein Neustart**. Read-only danach,
-10:48, Telefon weiter in Fastboot:
+keine Freigabe, Exit 3, **kein Slot-Write, kein Neustart**.
 
-    current-slot: a        slot-retry-count:a: 3     slot-unbootable:a: no
-    version-bootloader: b1c1-0.4-7617406
+Was tatsächlich gemessen ist, steht allein in `fl-v0q/ERGEBNIS.txt` (Zeilen 4–6,
+vor dem Write) und im read-only-Nachlesen um 10:48, Telefon weiter in Fastboot:
 
-Vor dem Write stand dort `slot-unbootable:a: yes` und `retry:a: 2`. **Das
-Flashen selbst hat den unbootable-Flag gelöscht und den Retry-Zähler
-aufgefüllt** — `--set-active=a` war damit von Anfang an überflüssig, Slot a war
-schon der aktive. Was fehlt, ist ein Neustart, und der ist kein
-Partitionsschreibvorgang. Zweimalige Nachfrage (60 min je Versuch) blieb
-unbeantwortet, also habe ich nicht gestartet.
+| getvar | **vor** dem Flash (09:31, im Log) | nach dem Flash (10:48, im Terminal) |
+|---|---|---|
+| `current-slot` | a | a |
+| `slot-retry-count:a` | **2** | 3 |
+| `slot-unbootable:a` | **no** | no |
+| `version-bootloader` | — | b1c1-0.4-7617406 |
+
+Erste Fassung dieses Abschnitts behauptete, **das Flashen habe den
+unbootable-Flag gelöscht** — das war aus der Erinnerung geraten. Der Flag war
+vor dem Flash schon `no`. In keinem Log, das diese Nacht überlebt hat, stand er
+je auf `yes`: `fl-v0a/getvar-all.txt` (28.10., read-only) meldet
+`retry:a:2, unbootable:a:no, successful:a:no`, `fl-v0q/ERGEBNIS.txt` (Zeile 6,
+vor dem Flash) meldet `no`, und 10:48 ebenfalls `no`. Das einzige
+`unbootable:a: yes, retry:a: 0` stammt aus der Sitzung um 03:06 und existiert
+nur im Gespräch — `grep -rn unbootable /private/tmp/fl-v0*/ERGEBNIS.txt
+/private/tmp/fl-v0*/kanal.txt` findet genau eine Zeile, und die sagt `no`. Eine
+Prämisse, die nur im Kopf und nicht im Log steht, ist keine Messung — Commit
+`819d162` hat genau das verdient.
+
+Was die Logs hergeben und was nicht:
+
+* **Herzugeben:** Slot a war vor dem Flash schon der aktive und war nicht als
+  unbootable gemeldet. `--set-active=a` war damit überflüssig — nicht weil der
+  Flash ihn geändert hätte, sondern weil er nie gesetzt werden musste. Was
+  fehlt, ist ein Start, und ein Start ist kein Partitionsschreibvorgang.
+* **Nur ein einzelner Messpunkt:** der Retry-Zähler stand vor dem Flash auf 2
+  und nachher auf 3. Das passt zu „ABOOT füllt den Zähler bei einem erfolgreichen
+  Flash auf", ist aber **eine** Stichprobe ohne Kontrollmessung — ich habe nicht
+  bewiesen, dass der Flash ihn angehoben hat (ein Neustart, der den Zähler
+  verringert, lag in der Zwischenzeit nicht vor). Nicht als Regel weitergeben.
+* **Nicht herzugeben:** ob ABOOT `RESTART2` mit Grund `bootloader` ehrt.
+
+`run.sh` schreibt die drei getvars jetzt **auch nach** dem Flash in
+`ERGEBNIS.txt`; vorher standen sie nur davor drin, und genau diese Lücke hat
+die Falschaussage möglich gemacht.
 
 Nebenbei die Rückwegs-Frage sauber gemacht: die Datei
 `android-mainline/factory/boot_a-ut-backup.img` war **0 Byte** (sha256
