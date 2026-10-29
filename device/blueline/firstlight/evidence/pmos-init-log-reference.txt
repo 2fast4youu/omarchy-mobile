@@ -1,0 +1,32 @@
+initramfs version: 3.12.5-r0
+  ❬❬ PMOS STAGE 2 ❭❭
+  Setting up USB gadget through configfs
+Trying to start server with parameters: Server IP addr: 172.16.42.1:67, client IP addr: 172.16.42.2, interface: usb0
+Setting framebuffer mode to: U:1080x2160p-0
+failed to read status from child immediately after starting to daemonize: No such file or directory
+Trying to mount subpartitions for 10 seconds...
+Mount subpartitions of /dev/sda21
+Mount subpartitions of /dev/sda21
+Mount subpartitions of /dev/sda21
+Mount subpartitions of /dev/sda21
+Mount subpartitions of /dev/sda21
+Mount subpartitions of /dev/sda21
+Mount subpartitions of /dev/sda21
+ERROR: failed to mount subpartitions!
+Creating logs disk
+32+0 records in
+32+0 records out
+33554432 bytes (32.0MB) copied, 0.038549 seconds, 830.1MB/s
+./_info
+./blkid.txt
+./cmdline.txt
+./dmesg.txt
+./fdt.dtb
+./partitions.txt
+./pmOS_init.txt
+Making logs available via mass storage
+Entering debug shell
+/usr/bin/buffyboard
+Ignoring invalid config file /usr/share/buffyboard/buffyboard.conf
+Ignoring invalid config file /etc/buffyboard.conf
+~ # [6n

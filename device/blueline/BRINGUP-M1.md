@@ -1941,3 +1941,83 @@ Kein Prozess läuft mehr; es wartet jetzt nichts auf etwas.
 3. The `MAIN_LUN`, `FIRMWARE_MAP`, `FACTORY_PRODUCT` and `USERDATA_FS`
    keys reserved in docs/RELEASES.md 3.2 fit this device exactly; values
    come from M1.3 and the owner's factory image.
+
+
+## Reference enumeration test: the gadget WORKS, on this Mac, in 21 seconds (2026-10-29 18:11-18:17)
+
+Claude's third correction was right: the reference had never been *measured*,
+only assumed silent. `device/blueline/firstlight/ref-enumeration-test.sh`
+measures it. The owner approved the one `boot_a` write at 18:10.
+
+Hashes re-checked with `shasum -a 256` before the write, as agreed:
+
+| file | bytes | sha256 |
+|---|---|---|
+| `pmos-ref-build/ref/boot.img` (reference, written to `boot_a`) | 28729344 | `ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82` |
+| `android-mainline/factory/sp1a/boot.img` (the way back) | 67108864 | `5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e` |
+
+Measured on the Mac, `ioreg -p IOUSB -l` plus `system_profiler SPUSBDataType`
+every 5 s, comparing against a "before" snapshot:
+
+| time | event |
+|---|---|
+| 18:11:18 | `fastboot flash boot_a` |
+| 18:11:36 | t=16 s: new device `Google Pixel 3`, `fastboot=0` |
+| 18:11:41 | t=21 s: `ncm=1` |
+| 18:12:09 | macOS has interface `en11` with `172.16.42.2/24`, `status: active` |
+| 18:12:09 | `ping 172.16.42.1`: 3/3 answers, avg 1.45 ms |
+| 18:17:18 | `nc -z 172.16.42.1 22` closed; port 23 answers with a **root shell** |
+
+So the answer to the question Claude posed is unambiguous: **the reference
+appears — it is v0q, not the host, the cable, or macOS.** USB peripheral mode
+works on this handset with this Mac, and it works 21 s after the kernel starts.
+
+Details read *from the running reference* (telnet, `id` = `uid=0 gid=0`):
+
+- `USB Product Name = "Google Pixel 3"`, `idVendor = 6353` = `0x18D1`,
+  `idProduct = 53249` = `0xD001`. Same VID/PID as the fastboot device, so the
+  host cannot tell the two states apart by VID/PID; the interface set can.
+- The ramdisk is postmarketOS initramfs `3.12.5-r0`, OS `edge`, kernel
+  `7.1.0-rc1-sdm845 #5-postmarketos-qcom-sdm845`, device string
+  `Google Pixel 3 (google-blueline)`.
+- `/pmOS_init.log` (transcript: `firstlight/evidence/pmos-init-log-reference.txt`):
+  `Setting up USB gadget through configfs` -> `Server IP addr: 172.16.42.1:67,
+  client IP addr: 172.16.42.2, interface: usb0` -> `Setting framebuffer mode
+  to: U:1080x2160p-0` -> `Mount subpartitions of /dev/sda21` x7 -> `ERROR:
+  failed to mount subpartitions!` -> `Creating logs disk` (32 MiB) -> `Making
+  logs available via mass storage` -> `Entering debug shell`. It never reaches
+  a Linux rootfs here: our `userdata` holds no postmarketOS install.
+- Live configfs: `UDC = a600000.usb`, functions `acm.usb0`, `mass_storage.0`,
+  `ncm.usb0`, all three linked into `configs/c.1`.
+- Live `lsmod`: `usb_f_acm`, `u_serial`, `usb_f_mass_storage`, `usb_f_ncm`,
+  `u_ether`, `libcomposite` — exactly the closure `refmodules.py` computed for
+  v0q, plus `usb_f_mass_storage`.
+- `ip addr`: `usb0: ... state UP ... inet 172.16.42.1/16`.
+- The kernel log of this boot carries `console=null`. The reference suppresses
+  the kernel console on a normal boot, which is a second, independent reason
+  serial stayed dark and why `fastboot oem uart enable` is needed.
+- Kernel ring buffer of this boot: `firstlight/evidence/dmesg-reference-2026-10-29.txt`
+  (798 lines; the buffer had already wrapped, the gadget bind at 1.734 s
+  survives in it).
+
+**The difference that matters is not the gadget, it is the exit.** When the
+reference cannot mount a rootfs, its PID 1 drops into a root shell *and sells
+that shell over NCM on TCP 23*. Our init parks in `while :; do sleep 60; done`
+and hands the host nothing. Three hours of `ioreg` could therefore never tell
+"init stalled before the gadget" apart from "gadget bound and nobody was
+listening": not one `grep` in `beobachtung.txt`, `ERGEBNIS.txt` or `kanal.txt`
+matches a TCP probe, port 23 was never tried in 1080 samples.
+
+Two corollaries for the next build:
+
+1. `udhcpd` on the phone is what hands the host `172.16.42.2`; macOS claims the
+   NCM interface on its own (`AppleUSBNCMControl`/`AppleUSBNCMData` bind
+   without a kext). A static IP on the Mac is a fallback, not a requirement.
+2. Our init's gadget block *is* the reference sequence (compare
+   `firstlight/gadget-reference.sh`), and the module closure is right. What it
+   lacks is the debug shell. If `mkdir functions/ncm.usb0` failed, `usb0` never
+   appears, and every later `ifconfig usb0 ...` then fails into `/dev/null`
+   with no trace. A debug shell answers that question in one telnet.
+
+`console=null` also means: the panel photo and the UART are the *only* windows
+into a normal reference boot; the NCM shell exists because this boot *failed*.
