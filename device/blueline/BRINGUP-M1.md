@@ -1325,6 +1325,54 @@ Verifikation `hermes-verify-seclay.py`: 11 Prüfpunkte grün, Exit 0.
 `tests/bootimg-v0` 5 ok / Exit 0 und `tests/newc-roundtrip` Exit 0 im
 Alpine-arm64-Container; `tests/all` im Arch-Container läuft noch nach.
 
+## 2026-10-29 01:4x — v0l: Sonde, Gadget-Lage und Statusblock nach dem Check-in
+
+Zwei Schlusskorrekturen aus dem Check-in, beide angenommen:
+
+1. **"408 s kein Comeback = /init läuft" ist kein Beleg** — dieselbe Klasse
+   Stille wie alive2. Und **"ABOOT ehrt `reboot bootloader`" war
+   unbelegt**: v0as Comeback bei 78 s war der VFS-Panic mit `panic=10`,
+   nie eine Sonde. Neuer Stand: v0k trug (Baufehler, unten) die Sonde bei
+   300 s; das Beobachtungsfenster endete um 304 s mit `fastboot=0`, und als
+   wir zurückkamen, **stand das Telefon in FASTBOOT** — zeitlich genau das
+   Feuern der 300-s-Sonde + `reboot bootloader` (~310 s, sechs Sekunden
+   nach Fensterende). Einzelbeobachtung, nicht Messung: v0l misst es mit
+   Sonde 90 s in einem 240-s-Fenster sauber nach.
+2. **Ramoops-Überlappung, nachgemessen** (`check-ramoops.py`, alle
+   reserved-memory-Kinder des Distro-DTB, 21 Bereiche): der Kandidat
+   0x9f800000..0x9f900000 berührt nur die untere Grenze des
+   36-MiB-Carveouts 0x9d400000..0x9f800000 (splash) und überlappt nichts;
+   der nächste Carveout beginnt bei 0xf2700000, dazwischen 1327 MiB frei.
+
+**Baufehler v0k, dokumentiert:** der erste Pack-Durchlauf lief ohne
+`-v …/ref:/ref` und brach nach dem Ramdisk-Umbau im Packer ab; das danach
+gepackte und geflashte Bild trug wieder `300` statt `120` (im fertigen
+Bild nachgelesen: `Sonden-Sekunden im laufenden Bild: b'300'`). Lehre:
+`pack-v0.py`-Ausgabe und Sondeninhalt werden jetzt *aus dem fertigen Bild*
+gegengelesen, nicht aus der Baubeschreibung. (Zusätzlich: `set -eo
+pipefail` — `python3 … | tail -2` verschluckte den Packer-Abbruch.)
+
+**v0l = v0k-Kernel (ramoops-DTB) + Init mit drei Änderungen:**
+
+* Gadgetbaum an dem Ort und mit dem Namen der Distro-Referenz:
+  `/sys/kernel/config/usb_gadget/g1`, idVendor/idProduct 0x18D1/0xD001,
+  und Binden exakt wie `setup_usb_configfs_udc`: erst `echo "" > UDC`
+  wenn eines gebunden steht, dann die UDC schreiben.
+* Der Statusblock (alle 20 s aufs Panel) trägt, was ein einzelnes Foto
+  über USB entscheiden lassen soll: Uptime, `comm`/`state`/Kinderzahl von
+  PID 1, `ls /sys/class/udc` **und** der Inhalt von `g1/UDC`,
+  Rolle/Modus jedes `*dwc3*`-Plattformgeräts, Typec-Zustand und VBUS,
+  Watchdog-Status, letzter Schritt.
+* Sonde auf **90 s**; danach bleibt die Kette `reboot bootloader` →
+  `fastboot` → `recovery` → sysrq-crash. Mit `panic=60` heißt ein
+  Foto: Fastboot-Comeback bei ~100 s = Sonde + ABOOT bewiesen; sonst
+  steht die Crash-Spur fürs Foto auf dem Panel.
+
+Bild: sha256 265c492077b476d5172c983968cdd9afbe268d32028e70a5b8c88edffe086411,
+20922368 B, Ramdisk seitenbündig ab 16158720, Schalter und Sondeninhalt aus
+dem fertigen Bild vorgelesen. Flash auf boot_a läuft; die Messung steht in
+`/private/tmp/fl-v0l/ERGEBNIS.txt`.
+
 ## Open questions for the maintainers
 
 1. Is `android-v2` (the Pixel 4 XL's descriptor names it) the word this
