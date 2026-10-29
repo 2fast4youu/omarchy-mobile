@@ -1691,6 +1691,34 @@ Qualcomm-ABOOT, USB-C-Adapter ueber SBU1/SBU2, 1.8 V Logikpegel (nie 5 V an
 den SoC), 115200 8N1; die Pixel-UART ist informativ und blockiert Fastboot
 nicht. Kein Blindbau mehr, solange das Telefon nicht lesbar ist.
 
+## 2026-10-29 09:31 — v0q ist in `boot_a`, und der Slot-Write war uberflussig
+
+Der Runner hat das Bild um 09:31:37 geflasht (Vorher-Prüfung: 21094400 B,
+sha256 `2911e6f7…`, soll = ist), dann 15 min auf `~/ok-set-active` gewartet —
+keine Freigabe, Exit 3, **kein Slot-Write, kein Neustart**. Read-only danach,
+10:48, Telefon weiter in Fastboot:
+
+    current-slot: a        slot-retry-count:a: 3     slot-unbootable:a: no
+    version-bootloader: b1c1-0.4-7617406
+
+Vor dem Write stand dort `slot-unbootable:a: yes` und `retry:a: 2`. **Das
+Flashen selbst hat den unbootable-Flag gelöscht und den Retry-Zähler
+aufgefüllt** — `--set-active=a` war damit von Anfang an überflüssig, Slot a war
+schon der aktive. Was fehlt, ist ein Neustart, und der ist kein
+Partitionsschreibvorgang. Zweimalige Nachfrage (60 min je Versuch) blieb
+unbeantwortet, also habe ich nicht gestartet.
+
+Nebenbei die Rückwegs-Frage sauber gemacht: die Datei
+`android-mainline/factory/boot_a-ut-backup.img` war **0 Byte** (sha256
+`e3b0c442…`, der Hash von nichts) und lag damit als Schein-Sicherung herum —
+nach `quarantine/2026-10-29/` verschoben, umbenannt auf `…leer-0B`. Der
+originale `boot_a`-Inhalt ist als **`factory/sp1a/boot.img`, 67108864 B,
+sha256 `5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e`**
+vorhanden: `fastboot flash boot_a` mit diesem Bild stellt den Auslieferungszustand
+von Slot a wieder her, **ohne** `userdata` zu löschen. Der Factory-Flash, der
+Nutzerdaten kostet, ist also nicht der einzige Rückweg — das war in den Notizen
+zu pessimistisch.
+
 ## Open questions for the maintainers
 
 1. Is `android-v2` (the Pixel 4 XL's descriptor names it) the word this
