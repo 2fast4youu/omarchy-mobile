@@ -1315,6 +1315,16 @@ Messung: v0j = Kernel und Ramdisk byte-identisch zu v0h, cmdline nur um
 Fastboot-Comeback** (v0h kam bei 229 s wieder). ACM: keins (Gadget
 abgeschaltet, Panel ist der einzige Leser).
 
+Nachlese: der Packer prüft die Lage jetzt selbst nach dem Schreiben
+(`ramdisk-Magic (gzip) liegt auf der Seitengrenze 16158720`) und liest dafür
+die ganze Datei — die erste Nachprüfung las nur die Kopfseite und meldete bei
+seitenbündigen Bildern selbst „mitten in der Seite" (die Ad-hoc-Verifikation
+2026-10-29 fand genau das, zuerst rot). Neugepackt mit dem finalen Packer:
+**byte-identisch zum geflashten v0j** (cmp, sha256 5ee02f4c…). Ad-hoc-
+Verifikation `hermes-verify-seclay.py`: 11 Prüfpunkte grün, Exit 0.
+`tests/bootimg-v0` 5 ok / Exit 0 und `tests/newc-roundtrip` Exit 0 im
+Alpine-arm64-Container; `tests/all` im Arch-Container läuft noch nach.
+
 ## Open questions for the maintainers
 
 1. Is `android-v2` (the Pixel 4 XL's descriptor names it) the word this

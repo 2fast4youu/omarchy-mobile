@@ -26,7 +26,7 @@ FIELD = (("kernel_size", 8), ("kernel_addr", 12), ("ramdisk_size", 16),
          ("os_version", 44))
 NAME_OFF, CMDLINE_OFF, ID_OFF, EXTRA_OFF = 48, 64, 576, 608
 GZIP, DTB, CPIO = b"\x1f\x8b\x08", b"\xd0\x0d\xfe\xed", b"070701"
-ZSTD = b"\x28\xb5\x2f"  # die Referenz-Initramfs ist zsdkomprimiert
+ZSTD = b"\x28\xb5\x2f"  # die Referenz-Initramfs ist zstd-komprimiert
 PAGE_CANDIDATES = (2048, 4096, 8192, 16384)
 
 
@@ -93,17 +93,9 @@ def main(img, out=None):
     ram_off = base + d["kernel_size"]
     ram_pad_off = base + -(-d["kernel_size"] // pad) * pad
 
-    def known(at):
-        h = blob[at:at + 6]
-        if h[:3] == GZIP[:3]:
-            return "gzip"
-        if h[:3] == ZSTD:
-            return "zstd"
-        if h == CPIO:
-            return "cpio (unkomprimiert)"
-        return None
-
-    k_plain, k_pad = known(ram_off), known(ram_pad_off)
+    MAGIC_KIND = {GZIP[:3]: "gzip", ZSTD: "zstd", CPIO: "cpio (unkomprimiert)"}
+    k_plain = MAGIC_KIND.get(blob[ram_off:ram_off + 3])
+    k_pad = MAGIC_KIND.get(blob[ram_pad_off:ram_pad_off + 3])
     print(f"  ramdisk bei {ram_off} (ohne Auffuellung): {k_plain or 'kein Magic'}; "
           f"bei {ram_pad_off} (Seitengrenze {pad}): {k_pad or 'kein Magic'}")
     # Massgeblich ist, was der Bootloader uebergibt: der rechnet den

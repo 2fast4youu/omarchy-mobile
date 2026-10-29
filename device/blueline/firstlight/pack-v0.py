@@ -110,9 +110,24 @@ def build(args):
     return len(out)
 
 
+def ramdisk_magic(blob, at):
+    """Der Kompressions-Typ, wenn dort ein bekannter Strom beginnt, sonst None."""
+    head = blob[at:at + 6]
+    if head[:3] == b"\x1f\x8b\x08":
+        return "gzip"
+    if head[:3] == b"\x28\xb5\x2f":
+        return "zstd"
+    if head == b"070701":
+        return "cpio (unkomprimiert)"
+    return None
+
+
 def verify(args, size):
     align = args.pagesize_align
-    blob = open(args.output, "rb").read(align_read(args.output))
+    # Volle Datei lesen: die Nachprüfung muss auch die Sektionen sehen, sonst
+    # meldet sie bei seitenbündig aufgefüllten Bildern eine Ramdisk "mitten in
+    # der Seite" (erste Ad-hoc-Verifikation 2026-10-29, Punkt 1, rot).
+    blob = open(args.output, "rb").read()
     problems = []
     if blob[:8] != b"ANDROID!":
         problems.append("magic fehlt")
@@ -165,14 +180,20 @@ def verify(args, size):
     if size != expected:
         problems.append(f"Dateigroesse {size} != erwartet {expected}")
     print(f"  Dateigroesse: {size} Bytes (erwartet {expected})")
+    if args.pad_sections:
+        # Die Lage ist der Fehler dieser Nacht: der Bootloader uebergibt die
+        # ramdisk ab der Seitengrenze hinter dem Kernel. Nach dem Schreiben
+        # gegenlesen, nicht nur die Groessen-Felder vertrauen.
+        rd = align + -(-os.path.getsize(args.kernel) // align) * align
+        kind = ramdisk_magic(blob, rd)
+        if kind:
+            print(f"  ramdisk-Magic ({kind}) liegt auf der Seitengrenze {rd}")
+        else:
+            print(f"  Hinweis: kein Kompressions-Magic auf der Seitengrenze {rd} "
+                  f"(die Distro-Ramdisk traegt dort keinen)")
     if problems:
         sys.exit("Packen pruefgeschlagen: " + "; ".join(problems))
     print("Packen gepackt und nachgeprueft: alle Felder am Platz.")
-
-
-def align_read(path):
-    import os as _os
-    return min(_os.path.getsize(path), 4096)
 
 
 def main():
