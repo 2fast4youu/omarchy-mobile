@@ -1430,6 +1430,35 @@ trotz fehlendem poweroff-Knoten im DTB (PSCI-Reset-Schleife schreibt ABOOTs
 SCR-Feld selbst); sonst ist der Grund tote Hose und das Panel zeigt
 Watchdog-Neustakte. Flash auf boot_a, `--set-active=a` (retry 3) läuft.
 
+## 2026-10-29 03:2x — Zwei selbstgebaute Blindheiten: no-gadget und RESTART2
+
+**RESTART2 gemessen (v0m/v0n).** v0ms `restart2` war nie im Bild (TRAILER-
+Falle, Abschnitt davor). v0n — Datei vor dem TRAILER, aus dem **fertigen**
+Bild gegenlesen (`restart2 162336 B (0755) an Position 731/732`) — rief
+`restart2 bootloader` **sofort** beim Init-Start, Watchdog an, `panic=60`.
+Ergebnis: **600 s kein Fastboot-Comeback** und in dem Fenster **keine
+einzige USB-Enumeration** am Host. Der RESTART2-Grund `"bootloader"` läuft
+ins Leere: ohne `poweroff`-Knoten im DTB (PSCI-Reset) schreibt kein
+SCR-Feld, ABOOT sieht einen ganz normalen Neustart. Panel zeigt also einen
+Neustakt-Zyklus, kein Menü — photo-confirm steht aus.
+
+**Warum NCM je dunkel war: Zeile 36.** Der v0h-Instrumentierungs-Build
+hatte `touch /etc/omamobile-nogadget` in den Init geschrieben (Zeile 36),
+und der Gadget-Block läuft hinter `if [ ! -e /etc/omamobile-nogadget ]`
+(Zeile 134). **Jeder** Build danach — v0h, i, j, k, l, m, n — lief mit
+Gadget-Bindung **AUS**, auch nachdem der Init längst bis zum Gadget lebte.
+Der Host sah nie ein `172.16.42.1`, weil wir es selbst abgeschaltet hatten,
+nicht weil das Phone es nicht konnte. Lehrstück: ein Instrumentierungs-
+Schalter, der in nachfolgende Inits kopiert wird,Blindheit überlebt den
+Grund, warum er gesetzt wurde.
+
+**v0o** (sha256 049345f7…, 20963328 B) schaltet den Schalter aus (touch
+gelöscht, Guard bleibt), stellt den restart2-Zweig auf *bleiben* um und
+misst als erstes echtes First Light: Host-Poll alle 4 s auf
+`ifconfig`-`172.16.42`-Interface, USB-Enumeration, Fastboot. Erstmals seit
+v0d (ACM) wieder ein aktives Gadget im Boot. Baurezept:
+`device/blueline/firstlight/build-v0o.sh`.
+
 ## Open questions for the maintainers
 
 1. Is `android-v2` (the Pixel 4 XL's descriptor names it) the word this
