@@ -1482,7 +1482,7 @@ kein Leeren des UDC. Beschrieben und committet war die Änderung, gebaut nie.
 Dieselbe Klasse wie die TRAILER-Falle: der Baustein erzählt sich selbst, was
 er tut, und das Bild weiß es nicht.
 
-**v0p** (sha256 `0a239edddf73094e29662dd39cfd45b109e104b22b4e14932d8b40cba89f82a2`,
+**v0p** (sha256 `5b285a6ba13505a03cff1af7a13515cab7e143f4baa513e079cdb19a458d677e`,
 20963328 B) legt den Block deshalb als Datei im Repo ab —
 `firstlight/gadget-reference.sh` — und baut ihn unverändert ein; die
 Nachprüfung verlangt den **Block als Ganzes** im fertigen Bild, nicht ein
@@ -1496,9 +1496,31 @@ Kompression braucht kein `modprobe`: `USB_LIBCOMPOSITE`, `USB_CONFIGFS*`,
 `USB_F_NCM`, `USB_F_ACM`, `USB_DWC3*` stehen im Kernel auf `=y`, und das
 Ramdisk hat keine einzige `.ko` — die Referenz modprobt nur sicherheitshalber.
 
-Zwei Builds nacheinander liefern byte-gleich dasselbe Bild. Ad-hoc-Verifikation
-gegen das fertige Bild: 30 Prüfpunkte, 0 Fehler (`hermes-verify-v0p.py`,
-nach dem Lauf gelöscht). Der Beobachter (`/private/tmp/fl-v0p/run.sh`)
+**Und noch eine selbstgemachte Versehrtheit, von den neuen Tests gefangen:**
+`gadget-reference.sh` trug in allen drei Bauten, die es gab, auf **jeder**
+Zeile eine `ZEILE|`-Ziffernfolge voran — der Datei-Rückgabewert eines
+Lese-Werkzeugs war mit seinen eigenen Zeilennummern zurückgeschrieben worden. Der
+Wortgenau-Vergleich im Bau fand den Block trotzdem, weil er denselben
+Rückgabewert einsetzte; nur der Shell-Init im Bild war verstümmelt (aus ZEILE
+12 wäre eine Pipeline in ein Kommando `12` geworden). `tests/gadget-reference`
+verankert die Referenz-Zeilen mit `^CONFIGFS=` und Zeilenanfang-`grep -qF` —
+ein praefixierter Block fällt daran sofort auf, der Wortgenau-Vergleich fiel
+nie auf.
+
+`read_cpio` prüft jetzt auch die **Leseseite** der Falle: Daten hinter dem
+`TRAILER!!!`, die kein Leser sieht — bei v0m 184 Bytes — lassen das Öffnen
+scheitern statt stille Bestände zu versprechen (`emit()` wirft beim Schreiben
+seit `1147869`). Neu `tests/gadget-reference`, in `tests/all` eingehängt:
+Referenzzeilen mit Zeilenanfang-Anker (`^CONFIGFS=` — ein praefixierter Block
+fällt durch), Reihenfolge Netzwerk vor ACM und UDC leeren vor UDC binden,
+Panelblock-Vollständigkeit, ASCII-Zwang und ein End-to-End-Durchsatz
+`emit → gzip → pack-v0 → Rücklesen` durch die eigene Kette. Kanonische
+Arch-Tonne: `tests/gadget-reference` Exit 0, `tests/newc-roundtrip` Exit 0,
+`tests/bootimg-v0` Exit 0, `tests/all` **121 ok / 0 not ok / Exit 0**. Der
+Build nach der Verschärfung liefert byte-identisch dasselbe Bild — die Prüfung
+liest unseren eigenen Null-Auffüllrest und lässt ihn gelten.
+Ad-hoc-Verifikation gegen das fertige Bild: 24 Prüfpunkte, 0 Fehler
+(`hermes-verify-v0p.py`, nach dem Lauf gelöscht). Der Beobachter (`/private/tmp/fl-v0p/run.sh`)
 sucht jetzt auch `/dev/cu.usbmodem*`: bindet `acm.GS0`, haben wir eine
 Konsole über USB und brauchten für den nächsten Befund gar kein Foto.
 Zurück nach Fastboot geht es ohne Funktionstaste nicht — RESTART2 ist hier

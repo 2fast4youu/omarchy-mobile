@@ -1,0 +1,166 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# The USB gadget sequence, pinned to postmarketos-initramfs. No phone, nothing
+# flashed: the reference functions' mandatory lines, our panel block, and the
+# packer chain's own read-back. Every build since v0h ran a gadget block we had
+# invented -- /config mount, gadget named omamobile, 0x1d6b/0x0104, the
+# controller written straight over whatever ABOOT left bound -- while commit
+# a722889 claimed the g1/0x18D1 move had happened. The flashed image said it
+# had not. These tests hold the sequence, and the panel lines a single photo
+# has to decide on, in files the read-back of the finished image can demand.
+set -euo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+FL=device/blueline/firstlight
+REF=$FL/gadget-reference.sh
+STATUS=$FL/panel-status.sh
+NEWC=$FL/newc.py
+PACK=$FL/pack-v0.py
+t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
+fail() { echo "not ok - $*" >&2; exit 1; }
+ok()   { echo "ok - $*"; }
+for f in "$REF" "$STATUS" "$NEWC" "$PACK"; do
+  [[ -s $f ]] || fail "$f missing or empty"
+done
+
+# 1) setup_usb_network_configfs / setup_usb_acm_configfs / setup_usb_configfs_udc:
+#    jede Zeile, die die Referenz schreibt.
+grep -q '^CONFIGFS=/sys/kernel/config/usb_gadget$' "$REF" || fail "configfs-Hang nicht die Referenzlage"
+grep -q 'mount -t configfs -o nodev,noexec,nosuid configfs' "$REF" || fail "configfs-Mount ohne Referenz-Optionen"
+for probe in 'mkdir "$CONFIGFS/g1"' 'echo 0x18D1 > "$CONFIGFS/g1/idVendor"' \
+             'echo 0xD001 > "$CONFIGFS/g1/idProduct"' 'netfunc=ncm.usb0' \
+             'functions/rndis.usb0' 'functions/acm.GS0' \
+             'echo "" > "$CONFIGFS/g1/UDC"' 'echo "$udc" > "$CONFIGFS/g1/UDC"' \
+             'ls /sys/class/udc' '172.16.42.1'; do
+  grep -qF -- "$probe" "$REF" || fail "Referenz-Zeile fehlt: $probe"
+done
+# Reihenfolge: Netzwerk-Funktion vor ACM, UDC leeren vor UDC binden.
+pos() { grep -nF -- "$1" "$REF" | head -1 | cut -d: -f1; }
+[[ $(pos 'functions/ncm.usb0') -lt $(pos 'functions/acm.GS0') ]] || fail "ACM vor NCM verlinkt"
+[[ $(pos 'echo "" > "$CONFIGFS/g1/UDC"') -lt $(pos 'echo "$udc" > "$CONFIGFS/g1/UDC"') ]] \
+  || fail "UDC gebunden bevor geleert"
+ok "Gadget-Sequenz folgt setup_usb_network_configfs, acm_configfs und configfs_udc"
+
+# 2) Der Panelblock: was ein einzelnes Foto über USB entscheiden muss.
+for probe in '/sys/class/udc' 'usb_gadget/*/UDC' 'data_role' '/proc/1/comm' \
+             '/proc/1/stat' 'letzter Schritt'; do
+  grep -qF -- "$probe" "$STATUS" || fail "Panelblock blind für: $probe"
+done
+LC_ALL=C grep -qP '[^\x00-\x7F]' "$STATUS" && fail "Panelblock trägt Nicht-ASCII (Panel-Konsole ist ASCII)"
+ok "Panelblock zeigt udc/UDC-Inhalt, dwc3-Rolle, pid1 comm+state, letzten Schritt"
+
+# 3) Kein Rest der erfundenen Lage. In den Blöcken — die aufs Telefon gehen —
+#    darf die alte Lage nirgends stehen; im Builder sind Nennungen erlaubt, er
+#    muss sie sogar enthalten, weil er den alten Mount-Zeilen-Text entfernt.
+# /config/usb_gadget ist Unterzeichenkette von /sys/kernel/config/usb_gadget,
+# verankert also nur mit "/config" als eigenes Pfad-Stueck vor usb_gadget.
+if grep -nP '(?<!kernel)/config/usb_gadget|0x1d6b|0x0104' "$REF" "$STATUS"; then
+  fail "erfundene Gadget-Lage (/config, omamobile, 0x1d6b/0x0104) in den Blöcken"
+fi
+# Der Builder selbst darf die alte Lage nicht mehr *setzen* — sein eigener
+# Abgleich-Code enthält den String als Suchtext, also greift hier nicht grep
+# sondern der Nachweis, dass er die Blöcke dateiweis einbaut (Zeile 4 liest
+# gadget-reference.sh, Zeile 5 den Panelblock); die alte Lage verschwindet dann
+# von selbst, und Schritt 4 liest das aus dem Bild zurueck.
+grep -q 'gadget-reference.sh' "$FL/build-v0p.sh" || fail "Builder baut den Referenzblock nicht ein"
+grep -q 'panel-status.sh' "$FL/build-v0p.sh" || fail "Builder baut den Panelblock nicht ein"
+ok "keine erfundene Gadget-Lage in den Blöcken, der Builder baut sie dateiweis ein"
+
+# 4) End-to-end durch die eigene Kette: Blöcke per newc.py in den Init, Bild
+#    per pack-v0.py packen, aus dem Bild zurücklesen. Der TRAILER muss letzter
+#    Eintrag bleiben -- v0m verlor so sein restart2 -- und der Referenzblock
+#    muss als Ganzes im Bild stehen, nicht als Handvoll Einzelzeichen.
+cat "$REF" "$STATUS" > "$t/blocks"
+cp "$t/blocks" "$t/init"   # der Fixture-Init ist der Block, unveraendert
+printf 'kernel-bytes' | gzip -n > "$t/kernel.gz"
+python3 - "$t/dtb" <<'PY'
+import struct, sys
+body = b"dtb-inhalt"
+open(sys.argv[1], "wb").write(struct.pack(">II", 0xD00DFEED, 8 + len(body)) + body)
+PY
+cat "$t/kernel.gz" "$t/dtb" > "$t/kernel-dtb"
+python3 - "$NEWC" "$t/seed.cpio" <<'PY'
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("newc", sys.argv[1])
+newc = importlib.util.module_from_spec(spec); spec.loader.exec_module(newc)
+def ent(ino, mode, name, content=b""):
+    return {"meta": {"ino": ino, "mode": mode, "uid": 0, "gid": 0, "nlink": 1,
+                     "mtime": 0, "devmajor": 0, "devminor": 0, "rdevmajor": 0,
+                     "rdevminor": 0, "check": 0},
+            "name": name, "content": content}
+open(sys.argv[2], "wb").write(newc.emit([
+    ent(1, 0o40755, "."), ent(2, 0o100644, "init", b"placeholder"),
+    ent(3, 0o100755, "bin/restart2", b"ELF" * 200), ent(9, 0, "TRAILER!!!")]))
+PY
+python3 "$NEWC" "$t/seed.cpio" "$t/new.cpio" "$t/init" > "$t/newc.log" 2>&1 \
+  || fail "newc.py lehnt den Init-Umbau ab"
+grep -q 'read-back ok' "$t/newc.log" || fail "newc.py ohne Rücklese-Bestätigung"
+# Der Init-Träger muss die Blöcke samt executable-Bit tragen.
+python3 - "$NEWC" "$t/new.cpio" "$t/blocks" <<'PY'
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("newc", sys.argv[1])
+newc = importlib.util.module_from_spec(spec); spec.loader.exec_module(newc)
+es = newc.read_cpio(sys.argv[2])
+init = next(e for e in es if e["name"] == "init")
+assert init["content"] == open(sys.argv[3], "rb").read(), "Init nicht die Blöcke"
+assert init["meta"]["mode"] & 0o111, "executable-Bit fehlt"
+assert [e["name"] for e in es][-1] == "TRAILER!!!", "TRAILER nicht zuletzt"
+PY
+gzip -n -9 -c "$t/new.cpio" > "$t/ramdisk.gz"
+python3 "$PACK" --kernel "$t/kernel-dtb" --ramdisk "$t/ramdisk.gz" \
+  --cmdline 'console=tty0 panic=60 rdinit=/init' --name '' \
+  --kernel-addr 0x8000 --ramdisk-addr 0x1000000 --tags-addr 0x1000 \
+  --pagesize-field 0 --pagesize-align 4096 -o "$t/img" > "$t/pack.log" 2>&1 \
+  || fail "Packer brach ab"
+python3 - "$NEWC" "$t/img" "$t/blocks" <<'PY'
+import gzip, importlib.util, struct, sys
+spec = importlib.util.spec_from_file_location("newc", sys.argv[1])
+newc = importlib.util.module_from_spec(spec); spec.loader.exec_module(newc)
+d = open(sys.argv[2], "rb").read()
+ksz = struct.unpack_from("<I", d, 8)[0]
+rsz = struct.unpack_from("<I", d, 16)[0]
+rd = 4096 + ((ksz + 4095) // 4096) * 4096
+assert d[40:44] == b"\x00\x00\x00\x00", "page_size-Feld verstellt"
+assert d[rd:rd + 2] == b"\x1f\x8b", "ramdisk nicht seitenbuendig"
+blob = gzip.decompress(d[rd:rd + rsz])
+open("/tmp/hermes-gref.cpio", "wb").write(blob)
+es = newc.read_cpio("/tmp/hermes-gref.cpio")
+names = [e["name"] for e in es]
+assert names[-1] == "TRAILER!!!", "TRAILER nicht letzter Eintrag im fertigen Bild"
+init = next(e["content"].decode() for e in es if e["name"] == "init")
+blocks = open(sys.argv[3]).read()
+assert blocks in init, "Referenz-Block nicht unveraendert im fertigen Bild"
+assert init.isascii(), "Init traegt Nicht-ASCII aufs Panel"
+assert init.count("mount -t configfs") == 1, "zwei configfs-Mounts"
+print("read-back: %d Eintraege, init %d Zeichen, Block unveraendert" % (len(names), len(init)))
+PY
+# 5) read_cpio: ein Archiv, dessen Rest hinter dem TRAILER kein Leser sieht,
+#    ist kein Round-Trip. Das ist die Lese-Seite der v0m-Falle -- emit() wirft
+#    beim Schreiben schon (1147869), jetzt wirft der Leser beim Lesen.
+python3 - "$NEWC" <<'PY'
+import importlib.util, os, subprocess, sys, tempfile
+spec = importlib.util.spec_from_file_location("newc", sys.argv[1])
+newc = importlib.util.module_from_spec(spec); spec.loader.exec_module(newc)
+def ent(ino, mode, name, content=b""):
+    return {"meta": {"ino": ino, "mode": mode, "uid": 0, "gid": 0, "nlink": 1,
+                     "mtime": 0, "devmajor": 0, "devminor": 0, "rdevmajor": 0,
+                     "rdevminor": 0, "check": 0},
+            "name": name, "content": content}
+with tempfile.TemporaryDirectory() as t:
+    clean = os.path.join(t, "clean.cpio")
+    blob = newc.emit([ent(1, 0o40755, "."), ent(2, 0o100644, "init", b"x"),
+                      ent(9, 0, "TRAILER!!!")])
+    open(clean, "wb").write(blob)
+    assert [e["name"] for e in newc.read_cpio(clean)] == [".", "init", "TRAILER!!!"]
+    ghost = os.path.join(t, "ghost.cpio")
+    rest = newc.emit([ent(10, 0o100755, "bin/tool", b"T" * 64)])
+    open(ghost, "wb").write(blob + rest)
+    r = subprocess.run([sys.executable, sys.argv[1], ghost, ghost, clean],
+                       capture_output=True, text=True)
+    assert r.returncode != 0, "Eintrag hinter dem TRAILER durchgewinkt"
+    assert "nach dem TRAILER" in (r.stdout + r.stderr), (r.stdout, r.stderr)
+    print("read-back: %d Bytes Geist hinter dem TRAILER verworfen"
+          % len((blob + rest)[len(blob):].strip(b"\x00")))
+PY
+ok "read_cpio weist Daten hinter dem TRAILER ab (Lese-Seite der v0m-Falle)"
+
+echo "gadget-reference: alles grin"

@@ -31,6 +31,14 @@ def read_cpio(path):
         off = (off + 3) & ~3
         entries.append({"meta": m, "name": name, "content": content})
         if name == "TRAILER!!!":
+            # Kein Leser sieht, was hinter dem TRAILER steht -- v0m verlor so
+            # sein restart2, weil emit() es anhaengte. Ein Archiv, das hier
+            # Daten laesst, die es nicht tragen kann, ist kein Round-Trip.
+            tail = data[off:]
+            if tail.strip(b"\x00"):
+                raise SystemExit(
+                    "%d Bytes nach dem TRAILER, die kein Leser sieht: %r"
+                    % (len(tail.strip(b"\x00")), tail.strip(b"\x00")[:32]))
             return entries
     raise SystemExit("no TRAILER!!! entry")
 
