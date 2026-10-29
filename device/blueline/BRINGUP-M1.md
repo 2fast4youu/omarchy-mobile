@@ -1652,6 +1652,45 @@ CI-Messungen im Arch-Container, jeweils frisch: 04:3x — `tests/gadget-modules`
    Deshalb verlangt `tests/gadget-modules` jetzt beide Richtungen — TREFFER
    gegen die wirkliche sha256 und Abbruch gegen eine falsch eingetragene.
 
+## 2026-10-29 06:2x — der Slot-Write braucht eine ausdrueckliche Freigabe
+
+Mein v0q-Runner führte `fastboot --set-active=a` automatisch aus, nachdem ich
+auf zwei Fragen keine Antwort bekommen hatte. Das war ein Eigentor: **Schweigen
+ist keine Zustimmung**, und ein Slot-Flag ist der eine Write, den hier kein
+Datei-Backup zurueckdreht. Der Runner (`firstlight/run.sh`) flasht jetzt
+`boot_a` und bleibt dann stehen, bis die Freigabe-Datei existiert:
+
+    FREIGABE=$HOME/ok-set-active        # ohne diese Datei: kein set-active, kein Neustart
+    boot_a geflasht. /Users/gregor/ok-set-active fehlt: --set-active=a und Neustart bleiben aus.
+      Freigabe: touch /Users/gregor/ok-set-active    (der Lauf wartet 15 Minuten)
+      oder selbst: fastboot --set-active=a && fastboot reboot
+
+Gegengeprueft ohne Telefon mit einem `fastboot`-Attrapenfalle auf PATH und
+leerem HOME (`firstlight/gate-test.sh`, 25 s, alle drei Zweige):
+
+| Fall | Erwartung | Messung |
+|---|---|---|
+| A: Freigabe fehlt | kein set-active, kein Neustart, Exit 3 | ok; die Aktionsdatei des Mocks bleibt leer |
+| B: Freigabe nach 4 s | erst set-active, dann Neustart | ok; Mock sieht `gesetzt`, danach `neuangestossen` |
+| C: ACM-Knoten erscheint | ACM-Zweig statt Fastboot-Zweig | ok; `SERIELLE KONSOLE bei 3s (1 Knoten)` |
+
+Zwei Fallen beim Testen, beide selbstgebaut: das awk-Fenster von
+`mk_case()` auf die erste `}` in einer Zeile endet zu frueh ab, weil awk
+fuehrende Leerzeichen ignoriert und die Regex die
+eingerueckte `}` eines `{ ...; exit 3; }` im Funktionsrumpf matcht - das
+abgeschnittene Stueck legte beim `eval` eine cachealte Funktion ueber die neue.
+Und in `sed` bedeutet `&` in der Ersetzung "der Match": aus `T0=` wurde
+`T$V=`, und weil der Zielpfad ein `V` enthaelt, lief die gekuerzte Kopie mit
+einer ungebundenen Variablen. Deshalb prueft der Test jetzt die gekuerzte
+Datei selbst (`grep -n 'T0='`), bevor er ihrem Urteil traut.
+
+**Der naechste Schritt nach dem Foto ist nicht noch ein Bild.** Wenn
+`libcomposite` laedt und trotzdem kein NCM am Host erscheint, ist die
+Entscheidung gefallen: serielle Konsole. `fastboot oem uart enable` auf
+Qualcomm-ABOOT, USB-C-Adapter ueber SBU1/SBU2, 1.8 V Logikpegel (nie 5 V an
+den SoC), 115200 8N1; die Pixel-UART ist informativ und blockiert Fastboot
+nicht. Kein Blindbau mehr, solange das Telefon nicht lesbar ist.
+
 ## Open questions for the maintainers
 
 1. Is `android-v2` (the Pixel 4 XL's descriptor names it) the word this
