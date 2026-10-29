@@ -2021,3 +2021,27 @@ Two corollaries for the next build:
 
 `console=null` also means: the panel photo and the UART are the *only* windows
 into a normal reference boot; the NCM shell exists because this boot *failed*.
+
+### Why the reference lands in a debug shell: `userdata` carries no filesystem
+
+`blkid.txt` from that same logs disk (`firstlight/evidence/blkid-reference-2026-10-29.txt`,
+dumped live over the NCM shell) answers the `Mount subpartitions` failure without
+any guessing:
+
+```
+/dev/sda21: PTUUID="33035703-47b7-4be4-8555-905469b7ec46" PTTYPE="gpt" \
+            PARTLABEL="userdata" PARTUUID="c9fe01bb-61af-4c04-895d-52bf22917764"
+```
+
+`PARTLABEL=userdata` with a GPT and **no `TYPE=`** — no filesystem signature at
+all. `partitions.txt` sizes it at 54091756 KiB, i.e. ~52 GiB of raw GPT. Every other UFS partition reports its `TYPE` (`ext4`, `vfat`).
+So postmarketOS is not failing to *read* a rootfs, it is failing to *find* one:
+`pmos_root_uuid=d3ac3603-5b30-4869-91a4-ffbd570f115b` from the reference cmdline
+exists nowhere on this handset, and the debug shell is the correct behaviour of a
+boot that has a kernel, a gadget and no distro. The whole table (LUNs `sdb`/`sdd`/`sde`/`sdf` and all 21 `sda`
+partitions) is `firstlight/evidence/partitions-reference-2026-10-29.txt`, read
+out of the logs disk (`mount -o loop /tmp/logs.img /mnt/lg` inside the phone).
+
+That reframes the goal once: to get past `Entering debug shell` this device needs
+a rootfs written into `userdata` (or a `super`/`vendor_boot` route), not more
+gadget work. The gadget is proven.
