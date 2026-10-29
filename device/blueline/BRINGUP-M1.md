@@ -2319,3 +2319,34 @@ einen Stand; ein Lauf mit leerem Protokoll beweist schon fuer gar nichts.
 Der Anruf zum Flashen steht weiter aus. v0r (`daf56a12…`) liegt gebaut, das
 Orakel laeuft unveraendert (pingbar, Port 23 offen), und es ist kein Write
 geschehen.
+
+## Die Freigabe-Frage enthielt zwei falsche Angaben (Check-in #11)
+
+Freigabe-Arbeit ist keine Nebenpfad-Arbeit: wenn die Information falsch ist,
+auf der das „ja" steht, ist das „ja" wertlos. Zwei Angaben, beide von Claude
+korrigiert und in der Datei nachgesehen, nicht im Kopf:
+
+* **„die Referenz-Version mit zwei Zeilen von mir"** — falsch. v0r ist v0q:
+  meine init, mein Ramdisk, meine sechs Module, plus Warteschleife und telnetd.
+  Mit der Referenz teilt es den Kernel. Was das Bild also zeigt, ist unser Code
+  mit einer wartenden Gadget-Einrichtung — nicht „die Referenz fast unveraendert".
+* **„du bekommst die laufende Referenz zurueck, per Kommando"** — teilweise
+  falsch. `run-flash-observe.sh` gateierte als Rueckweg gegen
+  `factory/sp1a/boot.img` (`5c1ce19e…`, Android-Urzustand), nicht gegen
+  `pmos-ref-build/ref/boot.img` (`ed2c225f…`). Stufe 1 ist jetzt die Referenz
+  selbst (Pfad und Hash im Code, gemessen 28729344 B, `584056e`); Android bleibt
+  Stufe 2. Und „per Kommando" gilt nur, wenn v0rs Telnet antwortet — bleibt das
+  Bild dunkel, was genau der Fall ist, fuer den man einen Rueckweg braucht, hilft
+  nur **Power + Leiser ~10 s** und danach mein Flash.
+
+Dabei erwischt, zum zweiten Mal an diesem Abend, dass eine Zahl in einer Meldung
+keine Pruefung ist: die Gate-Meldung behauptete 67108864 B, der Code prüfte
+>1000000 B und den Hash (`b8dba73`). Und dass eine Sonde die haeufigere
+Fehlerquelle ist: `OUT="$o" … "$@" bash …` uebergibt Umgebungsvariablen als
+Befehl (Exit 127, kein Protokoll), die Pruefung meldete „keine Meldung" wo das
+Gate laengst richtig antwortete.
+
+Nachtrag zur Freigabe-Praxis: zwischen der ersten Frage um 22:26 und dem
+Check-in lagen acht Nachfragen, jede an eine Hintergrund-Meldung angehaengt.
+Eine Frage, die auf berichtigten Fakten steht, wird einmal gestellt — dann ist
+Ruhe, bis der Besitzer antwortet.
