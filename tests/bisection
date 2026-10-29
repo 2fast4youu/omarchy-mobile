@@ -1,0 +1,186 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# Die Bisektion von der guten Seite: Bild A (Referenz-Inhalt, unser Packer) und
+# v0r (v0q plus UDC-Warteschleife und Debug-Shell). Der Orakel-Lauf hat die
+# Diagnose geliefert — die Referenz richtet ihr Gadget erst bei 1,708 s
+# Kernelzeit ein — und die Besserung ist eine Warteschleife, keine Konstante.
+# Dieser Test beweist die Werkzeuge, bevor ein Flash sie braucht:
+#   * Bild A darf sich von der Referenz nur in id[] unterscheiden (Bytes
+#     577-596); alles andere muss bytegleich sein, sonst ist die Bisektions-
+#     stufe "unser Packer" keine Einzeländerung.
+#   * patch-v0r.py muss das ausgelieferte v0r-Archiv bytegenau reproduzieren
+#     und sich in init auf die zwei Blöcke beschränken.
+#   * verify-v0r.py muss das gebaute Bild durchlassen UND das alte v0q-Bild
+#     ablehnen — ein Prüfer ohne Gegenprobe ist ein Blinder Fleck.
+#   * run-flash-observe.sh muss vor jedem Write die Hashes von Bild und
+#     Rückweg prüfen und darf ohne Fastboot-Gerät ehrlich abbrechen (Fake).
+#   * oracle-capture.py: strip_echo muss das Echo der Telefon-Shell entfernen,
+#     auch wenn die Kommandozeile am Terminal bricht.
+set -uo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+FL=device/blueline/firstlight
+WS=${WS:-/Users/gregor/hermes-workspace}
+for c in "${IMG_A:-}" /private/tmp/fl-refpacked/firstlight.img "$WS/../private/tmp/fl-refpacked/firstlight.img"; do
+  [[ -n $c && -r $c ]] && { IMG_A=$c; break; }
+done
+for c in "${IMG_V0R:-}" /private/tmp/fl-v0r/firstlight.img; do
+  [[ -n $c && -r $c ]] && { IMG_V0R=$c; break; }
+done
+for c in "${CPIO_V0Q:-}" /private/tmp/fl-v0q/new.cpio "$WS/../private/tmp/fl-v0q/new.cpio"; do
+  [[ -n $c && -r $c ]] && { CPIO_V0Q=$c; break; }
+done
+REF_IMG=${REF_IMG:-$WS/pmos-ref-build/ref/boot.img}
+[[ -r $REF_IMG ]] || for c in /pmos-ref-build/ref/boot.img; do [[ -r $c ]] && REF_IMG=$c; done
+t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
+fail() { echo "not ok - $*" >&2; exit 1; }
+ok()   { echo "ok - $*"; }
+skip() { echo "ok - # skip: $*"; }
+for f in "$FL/patch-v0r.py" "$FL/verify-v0r.py" "$FL/run-flash-observe.sh" \
+         "$FL/oracle-capture.py" "$FL/build-refpacked.sh" "$FL/build-v0r.py"; do
+  [[ -f $f ]] || { [[ $f == *.py && -f ${f%.py}.sh ]] || fail "Bisektionswerkzeug fehlt: $f"; }
+done
+
+# 1) Bild A: die Einzeländerung ist wirklich eine
+if [[ -r $IMG_A && -r $REF_IMG ]]; then
+  python3 - "$IMG_A" "$REF_IMG" <<'PY' || fail "Bild A ist keine saubere Bisektionsstufe"
+import struct, sys
+a, r = open(sys.argv[1], "rb").read(), open(sys.argv[2], "rb").read()
+assert len(a) == len(r), "Dateigroessen verschieden: %d vs %d" % (len(a), len(r))
+diff = [i for i in range(len(a)) if a[i] != r[i]]
+assert diff and all(576 <= i <= 595 for i in diff), \
+    "%d Bytes unterschiedlich, Bereich %d-%d, erwartet nur id[] (577-596)" % (
+        len(diff), (min(diff) + 1) if diff else -1, (max(diff) + 1) if diff else -1)
+ks = struct.unpack_from("<I", a, 8)[0]
+rd = 4096 + ((ks + 4095) // 4096) * 4096
+assert a[4096:4096 + ks] == r[4096:4096 + ks], "kernel+DTB-Sektion nicht bytegleich"
+rs = struct.unpack_from("<I", a, 16)[0]
+assert a[rd:rd + rs] == r[rd:rd + rs], "Ramdisk-Sektion nicht bytegleich"
+assert a[64:576].split(b"\0")[0] == r[64:576].split(b"\0")[0], "cmdline verschieden"
+assert a[48:64] == r[48:64] and a[608:1632] == r[608:1632], "name/extra_cmdline verschieden"
+print("Bild A: %d unterschiedliche Bytes, alle in id[]; Sektionen bytegleich" % len(diff))
+PY
+  ok "Bild A unterscheidet sich von der Referenz nur im id[]-Feld"
+else
+  skip "Bild A oder Referenz nicht lesbar (bauen: $FL/build-refpacked.sh)"
+fi
+
+# 2) v0r: der Patch ist rueckrechnbar und beschraenkt sich auf init
+if [[ -r $CPIO_V0Q && -r $IMG_V0R ]]; then
+  python3 - "$FL/newc.py" "$CPIO_V0Q" "$IMG_V0R" "$FL/patch-v0r.py" "$t" <<'PY' || fail "v0r-Patch nicht rueckrechnbar"
+import importlib.util, os, subprocess, sys
+spec = importlib.util.spec_from_file_location("newc", sys.argv[1])
+newc = importlib.util.module_from_spec(spec); spec.loader.exec_module(newc)
+q = {e["name"]: e for e in newc.read_cpio(sys.argv[2])}
+import gzip, struct
+d = open(sys.argv[3], "rb").read()
+page = 4096
+ks = struct.unpack_from("<I", d, 8)[0]
+rd = page + ((ks + page - 1) // page) * page
+open(sys.argv[5] + "/v0r.cpio", "wb").write(
+    gzip.decompress(d[rd:rd + struct.unpack_from("<I", d, 16)[0]]))
+rr = {e["name"]: e for e in newc.read_cpio(sys.argv[5] + "/v0r.cpio")}
+assert len(q) == len(rr), "Gliederzahl verschieden: %d vs %d" % (len(q), len(rr))
+diff = sorted(n for n in q if q[n]["content"] != rr.get(n, {}).get("content"))
+assert diff == ["init"], "andere Glieder als init veraendert: %s" % diff[:5]
+# der Patch, noch einmal auf v0q losgelassen, muss das ausgelieferte Archiv
+# auf die Bytekante treffen - sonst ist im Bild etwas, das kein Skript erzeugt
+out = sys.argv[5] + "/repatch.cpio"
+p = subprocess.run([sys.executable, sys.argv[4], sys.argv[2], out],
+                   capture_output=True, text=True)
+assert os.path.exists(out) and open(out, "rb").read() == open(sys.argv[5] + "/v0r.cpio", "rb").read(), \
+    "patch-v0r.py reproduziert das ausgelieferte Archiv nicht: " + (p.stderr.splitlines() or [""])[-1][:120]
+init = rr["init"]["content"].decode()
+assert init.count('while [ "$udc_wort" -lt 60 ]') == 1 and "sleep 0.5" in init, \
+    "Warteschleife fehlt oder mehrfach"
+assert init.count("telnetd -l /bin/sh") >= 2 and "debug shell armed" in init, "Debug-Shell fehlt"
+assert "first-light v0r" in init and "first-light v0h" not in init, "Panel-Titel nicht umgestellt"
+# udc_wort zaehlt die neue Schleife; die zwei vorhandenen _i bleiben (v0q nutzt
+# sie in der bootdev-Suche, und die Init laeuft ohne set -u - die Beschraenkung
+# "_i gar nicht" waer eine erfundene Regel gewesen)
+assert init.count("_i=") == 2 and "udc_wort=$((udc_wort + 1))" in init
+mods = sorted(n for n in rr if n.startswith("usr/lib/modules/") and n.endswith(".ko"))
+assert len(mods) == 6, "Module nicht vollstaendig: %s" % mods
+print("v0r: nur init veraendert, Patch reproduziert das Archiv bytegenau, %d Module" % len(mods))
+PY
+  ok "patch-v0r.py reproduziert das ausgelieferte v0r-Archiv bytegenau"
+else
+  skip "v0q-Archiv oder v0r-Bild nicht lesbar (bauen: $FL/build-v0r.sh)"
+fi
+
+# 3) Der Pruefer mit Gegenprobe: gebildetes Bild durch, altes Bild ab
+V0Q_IMG=${V0Q_IMG:-/private/tmp/fl-v0q/firstlight.img}
+[[ -r $V0Q_IMG ]] || V0Q_IMG="$WS/../private/tmp/fl-v0q/firstlight.img"
+if [[ -r $IMG_V0R && -r $V0Q_IMG ]]; then
+  python3 "$FL/verify-v0r.py" "$IMG_V0R" >/dev/null 2>&1 || fail "verify-v0r.py lehnt das gebaute v0r-Bild ab"
+  ok "verify-v0r.py gruen auf dem gebauten Bild"
+  if python3 "$FL/verify-v0r.py" "$V0Q_IMG" >/dev/null 2>&1; then
+    fail "verify-v0r.py lasst das alte v0q-Bild durch - Gegenprobe ohne Biss"
+  else
+    ok "verify-v0r.py lehnt das alte v0q-Bild ab (Gegenprobe)"
+  fi
+else
+  skip "v0r- oder v0q-Bild nicht lesbar"
+fi
+
+# 4) Der Laeufer: Hash-Gates und ehrlicher Abbruch, gegen ein gekuenstetes
+#    fastboot. Der Fake heisst fastboot/fastboot im PATH - der Läufer prependiert
+#    platform-tools nur, wenn noch kein fastboot da ist.
+FAKE="$t/fastboot"; mkdir -p "$FAKE"
+cat > "$FAKE/fastboot" <<'EOF'
+#!/bin/sh
+echo "anruf: $*" >> "$FBLOG"
+case "$*" in
+  *"getvar "*) echo "OKAY [  0.001s]"; echo "finished.";;
+  *devices*)  echo "PIXEL3-SERIAL  fastboot";;
+esac
+exit 0
+EOF
+chmod 755 "$FAKE/fastboot"
+if [[ -x $FAKE/fastboot ]]; then
+  sha_a() { python3 -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$1"; }
+  ANR="$t/anrufe.txt"; : > "$ANR"
+  o="$t/out1"; mkdir -p "$o"
+  FBLOG="$ANR" OUT="$o" PHONE=192.0.2.1 POLL=1 PATH="$FAKE:$PATH" \
+    bash "$FL/run-flash-observe.sh" "${IMG_A:-$FL/run-flash-observe.sh}" 0000000000000000000000000000000000000000000000000000000000000000 3 >/dev/null 2>&1
+  rc=$?
+  [[ $rc -eq 1 ]] || fail "Runner bei falschem Hash: Exit $rc, erwartet 1"
+  grep -q "not ok - Hash" "$o/protokoll.txt" || fail "Runner bei falschem Hash ohne Grund im Protokoll"
+  [[ ! -s $ANR ]] || fail "Runner hat trotz Hash-Fehler fastboot kommandiert: $(head -1 "$ANR")"
+  ok "Runner bricht bei falschem Hash ab, bevor er fastboot ruft"
+  : > "$ANR"; o="$t/out2"; mkdir -p "$o"
+  FBLOG="$ANR" OUT="$o" PHONE=192.0.2.1 POLL=1 PATH="$FAKE:$PATH" \
+    bash "$FL/run-flash-observe.sh" "$t/gibt-es-nicht.img" 00000000 3 >/dev/null 2>&1
+  grep -q "not ok - Bild fehlt" "$o/protokoll.txt" || fail "Runner meldet fehlendes Bild nicht"
+  ok "Runner bricht bei fehlendem Bild ab"
+  if [[ -r ${IMG_A:-/nonexistent} ]]; then
+    : > "$ANR"; o="$t/out3"; mkdir -p "$o"
+    FBLOG="$ANR" OUT="$o" PHONE=192.0.2.1 POLL=1 PATH="$FAKE:$PATH" \
+      bash "$FL/run-flash-observe.sh" "$IMG_A" "$(sha_a "$IMG_A")" 4 >/dev/null 2>&1
+    grep -q "Rueckweg steht: 67108864 B" "$o/protokoll.txt" || fail "Rueckweg nicht bestaetigt"
+    grep -q "flash boot_a" "$ANR"  || fail "boot_a nicht geflasht (Fake)"
+    for g in current-slot slot-retry-count:a slot-unbootable:a; do
+      grep -q "getvar $g" "$ANR" || fail "Getvar nach dem Write nicht gelesen: $g"
+    done
+    # ERGEBNIS-Zeile: die Schleife muss null Neueintraege ueberleben. Die
+    # count()-Zeile traegt || true als Versicherung; dass grep -c ohne
+    # sie die Schleife totet, war eine Fehldiagnose (head -1 macht den
+    # Pipeline-Exit 0) - die Mutation widerlegt sie, siehe BRINGUP.
+    ok "Runner: Rueckweg bestaetigt, Write + Getvars + Neustart kommandiert, Schleife ueberlebt null Treffer"
+  fi
+fi
+
+# 5) strip_echo am echten und am kuenstlichen Mitschnitt
+python3 - "$FL/oracle-capture.py" <<'PY' || fail "strip_echo fehlerhaft"
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("oc", sys.argv[1])
+oc = importlib.util.module_from_spec(spec); spec.loader.exec_module(oc)
+cmd = "ls -l /sys/class/udc"
+body = "total 0\nlrwxrwxrwx 1 0 0 0 Jan 1 00:00 a600000.usb -> ../../devices\n"
+raw = body.replace("\n", "\r\n")
+assert oc.strip_echo(cmd, cmd + "\r\n" + raw + "~ # ").strip() == body.strip(), "einfaches Echo bleibt stehen"
+wrapped = "\r\n".join(cmd[i:i + 79] for i in range(0, len(cmd), 79))
+got = oc.strip_echo(cmd, wrapped + "\r\n" + raw + "~ # ")
+assert got.strip() == body.strip(), "Echo mit Terminalbruch bleibt stehen: %r" % got[:60]
+print("strip_echo: Echo entfernt, auch bei 79-Zeichen-Umbrechung")
+PY
+ok "oracle-capture.py entfernt das Shell-Echo (auch umbrochen)"

@@ -2150,11 +2150,17 @@ not only a happy path), the runner's exit branches against a fake fastboot, and
 `strip_echo` against a real captured prompt transcript, including a wrapped
 command line. 30 ok / 0 not ok, exit 0. Two real faults fell out:
 
-1. **`run-flash-observe.sh` died on its first loop turn under `pipefail`:**
-   `fb=$(count)` where `count` ends in `grep -c`, and `grep -c` exits 1 on zero
-   matches — the exact quiet state the observer exists to watch. The loop
-   printed `not ok - kein Fastboot-Geraet` (from the *fake*) and exited. Fixed
-   with `|| true` plus a comment naming the trap.
+1. **`run-flash-observe.sh` died at its devices gate, and my first diagnosis of
+   it was wrong.** I blamed `fb=$(count)` (`grep -c` exits 1 on zero matches,
+   `pipefail` carries it). The mutation test refuted that: the raw count() had
+   `| head -1` behind the grep, so the pipeline always ended in `head` — exit 0
+   — and the mutated runner ran the full loop to `ERGEBNIS:` anyway. The real
+   kill was fault 2 below: the unconditional platform-tools prepend let the
+   *real* fastboot answer `devices` (phone running, not in fastboot) and the
+   gate exited 1. The `|| true` stays as cheap insurance, now commented as
+   precaution, not as the fix. This is the same mistake class as the
+   slot-unbootable narration: a mechanism asserted from a single reading
+   without a test that isolates it.
 2. **My own PATH-prepend trap, now inside my own runner:** the script prepended
    `platform-tools` to PATH unconditionally, so a fake placed there by a test
    lost to the real fastboot — the same fault class `tests/ref-enumeration`
@@ -2176,3 +2182,29 @@ untouched. And the honest re-scan of Claude's CJK point: the full tree holds
 
 Suite re-run for the runner fix on native arm64: 121 ok / 0 not ok / 4 skip /
 exit 0.
+
+## The ad-hoc checks became `tests/bisection` — and a mutation retracted one of my diagnoses
+
+Rather than re-running a throwaway script every round, the 30 ad-hoc checks were
+promoted into the canonical suite as `tests/bisection` (wired into `tests/all`).
+It pins: Bild A differing from the reference **only inside `id[]`** (every other
+byte of 28729344 equal), `patch-v0r.py` reproducing the shipped v0r archive
+byte-exact with `init` the only changed member, `verify-v0r.py` accepting v0r
+*and refusing* v0q (a checker without a counter-check is a blind spot), the
+runner's exit branches against a fake fastboot (hash gate before any `fastboot`
+call, missing-image gate, way-back confirmed, getvars read back after the write,
+loop surviving zero new bus entries), and `strip_echo` removing the phone shell's
+echo — including a command wrapped at 79 columns. Two mutations: a byte flipped
+outside `id[]` in Bild A, and the fake-fastboot directory removed — both caught.
+
+**The second mutation caught *me*, not the code.** When I stripped `|| true` from
+the runner's `count()`, the suite still passed — because the real `count()` ends
+in `| head -1`, and `head` exits 0 whatever `grep -c` did. So my logged cause of
+death ("`grep -c` exits 1 on zero matches, `pipefail` carried it into the loop")
+was never the killer; the unconditional platform-tools PATH prepend was — the
+*real* fastboot answered `devices` (the phone was running, not in fastboot) and
+the gate exited. I had written a postmortem from a single reading without an
+isolating test — the same fault class as the slot-unbootable narration, now
+recorded in SKILL.md both directions: assert mechanism only when a test isolates
+it, and let a mutation say which guard actually bears load. The `|| true` stays
+as labelled insurance.
