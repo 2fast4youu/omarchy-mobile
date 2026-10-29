@@ -2274,3 +2274,48 @@ Der Fake liefert jetzt echte Hashes. `inetutils` existiert in alpine:edge
 nicht und haette mit einem Pauschalfehler die ganze apk-Transaktion still
 sterben lassen: das `>/dev/null 2>&1` verbarg „unable to select packages", das
 Ergebnis war Exit 127 „bash: not found".
+
+## Der Nebenpfad hat den Strang verlassen (2026-10-29, nach Check-in #10)
+
+Vorwurf aus dem Check-in: seit 20:48 laeuft ein Nebenpfad mit 27 uncommitteten
+Dateien, darunter die install-Streifen von cheetah, felix, husky, modem und
+waydroid — Pakete anderer Geraete, nur damit `tests/all` auf der BSD-Shell des
+Rechners laeuft. Um 18:42 hatte ich selbst festgehalten, dass der Container der
+kanonische Laeufer ist. Der Vorwurf stimmt, und der Nebenpfad ist jetzt ein
+eigener Zweig: `host-portability` (`79f836e` → `7247dd3` → `c6dd6f4`),
+Arbeitsflaeche `/private/tmp/wt-hostport` (git worktree, damit kein Umschalten
+unter einem laufenden Test hindurchfaellt).
+
+Beide Zweige sind gemessen, nicht behauptet:
+
+* **Strang `4689a32`, kanonischer Laeufer** (alpine arm64, Baum bei Laufstart
+  `4689a32`, 0 Aenderungen): `SUITE: ok=129 (davon skip=4) not-ok=0 exit=0`,
+  SUITE GRUEN. Der Nebenpfad ist darin nicht enthalten — mechanisch nachgesehen
+  statt erinnert: `git show 4689a32:tests/all` kennt `tests/host-portability`
+  nicht (0 Treffer) und die Datei existiert an dem Commit nicht.
+* **Zweig `c6dd6f4` auf dem Rechner** (bash 3.2, BSD find, BSD install):
+  129 ok, 0 nackige `not ok`, Exit 0, Startzustand im Protokoll selbst
+  ausgewiesen (`Baum bei Laufstart: c6dd6f4, Aenderungen: 0`).
+
+Was der Zweig gegen den Strang einbuessen wollte und was er nicht verliert: die
+Paket-Streifen sind auf dem Zweig **wieder unangetastet** — `git diff --name-only
+4689a32 c6dd6f4 -- packages/` ist leer, der Fang ist 12 Dateien, alle unter
+`tests/` und `tools/`. Die portable install-Funktion wird zentral in `tests/all`
+aktiviert und wirkt ueber `export -f` bis in die Kind-Skripte der Paket-Tests
+(gemessen: Kind und Enkel schreiben, ohne Export fehlt jede Datei). Der Anlass
+ fuer den Rueckbau war ein `not ok - build or install reaches outside the
+package directory`: vier Paket-Tests pruefen per `grep -q '\.\./\.\.'`, dass ihr
+Skript das Paketverzeichnis nicht verlaesst, und meine Einbindezeile enthielt
+`../../` woertlich.
+
+Drei Laeufe, die ich vorher als Beleg zaehlen wollte und die keiner sind:
+129 ok und 136 ok stammen aus Container-Laeufen, die im uncommitteten Baum
+starteten und in die ich hineineditiert habe, und ein sechzigminuetiger Lauf
+endete mit **einer Zeile, Exit 137** — ich hatte ihn selbst mit `docker stop`
+ueber einen `--filter ancestor=alpine:edge` abgeschossen, der auch sein
+Container traf. Eine Suite, in die hineineditiert wird, beweist nichts fuer
+einen Stand; ein Lauf mit leerem Protokoll beweist schon fuer gar nichts.
+
+Der Anruf zum Flashen steht weiter aus. v0r (`daf56a12…`) liegt gebaut, das
+Orakel laeuft unveraendert (pingbar, Port 23 offen), und es ist kein Write
+geschehen.
