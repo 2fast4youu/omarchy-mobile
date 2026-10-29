@@ -1526,6 +1526,110 @@ Konsole über USB und brauchten für den nächsten Befund gar kein Foto.
 Zurück nach Fastboot geht es ohne Funktionstaste nicht — RESTART2 ist hier
 ein No-op (Root Cause #3), also Power + Leiser.
 
+## 2026-10-29 04:2x — dritte selbstverschuldete Dunkelheit: die Gadget-Module fehlten
+
+Der Check-in von Claude behauptete, `CONFIG_USB_F_NCM=m` in der Distro-Config
+mache unser NCM unmöglich, und unsere Aussage „USB_F_NCM steht auf =y, die
+Ramdisk braucht keine .ko" gelte nur für den Selbstbaukernel. Nachgemessen, und
+er hat recht — mit einer Verschärfung, die schlimmer ist als sein Befund.
+
+### Beweis, welcher Kernel in unseren v0-Bildern steckt
+
+`kernel-config-from-image.py` versucht den eingebetteten IKCONFIG-Block aus dem
+Bild zu lesen (wie `scripts/extract-ikconfig`): **kein IKCONFIG in beiden
+Bildern** — die Distro-Config setzt `CONFIG_IKCONFIG=n`. Aus dem Bild alone ist
+die Config also nicht beweisbar. Der Blob-Vergleich schon:
+
+| Bild | gzip-Strom des Kernels | sha256 (gekürzt) |
+|---|---|---|
+| `pmos-ref-build/ref/boot.img` | 16042611 B | `7112decbddcbe235` |
+| `fl-v0p/firstlight.img` | 16042611 B | `7112decbddcbe235` |
+| DTB-Anhang dahinter | 111641 B vs 111812 B | differs only by ramoops |
+
+Der decompilierte DTB-Unterschied sind 18 Diff-Zeilen: unser `ramoops@9f800000`
+plus its `no-map` block — sonst ist der Device Tree identisch, including
+`dr_mode = "peripheral"` at `usb_1_dwc3`.
+
+Die Config, die zu diesem Kernel gehört
+(`config-postmarketos-qcom-sdm845.aarch64`), setzt:
+`CONFIG_MODULES=y`, `USB_LIBCOMPOSITE=m`, `U_ETHER=m`, `U_SERIAL=m`,
+`USB_F_NCM=m`, `USB_F_ACM=m`, `USB_F_RNDIS=m`, `USB_CONFIGFS=m`.
+
+`android-mainline/out-blueline-kernel/.config` — die Quelle unseres „ist
+eingebaut" — ist ein **anderer Kernel** (ebenda `USB_F_NCM=y`, `USB_F_ACM=y`,
+`USB_LIBCOMPOSITE=y`). Wir haben nie mit ihm gebootet.
+
+### Was das bedeutet, und wo es still war
+
+`USB_CONFIGFS=m` heißt: ohne `libcomposite.ko` schlägt schon
+`mount -t configfs` fehl. Unser Init tat das mit `2>/dev/null` und markierte
+nur „usb_gadget not found in configfs". Die Funktions-Mkdirs themselves ran
+without redirection (Zeile 138, 152) — their error went to the kernel log, which
+we had no console for and never read. So the sequence was correct and empty.
+
+`dr_mode` als Erklärung ist damit vom Tisch (peripheral in beiden DTBs), and the
+missing `TYPEC_*` modules cannot be the difference between the reference (boots
+to login) and us: they are absent in both initramfs images, and the reference
+gets its peripheral role from the DTB, not from a driver.
+
+**RESTART2 stays unproven, not confirmed.** v0n ran with the same module
+darkness *and* the no-gadget switch, so its 600 s of silence separate two
+hypotheses no more: either ABOOT ignores the restart reason, or the restart2
+call was never reached. The PSCI argument (no `poweroff`/`qcom,pon` node in the
+DTB, so nothing writes the ABOOT SCR field) is reasoning from the tree, not a
+measurement. Only UART or a panel photo decides.
+
+### v0q: Module rein, und zwar aus der Referenz selbst
+
+`refmodules.py` liest die Schliessung aus `modules.dep` des
+**Referenz-Initramfs** (nicht abgeschrieben) und legt sie entpackt nach
+`/private/tmp/refmod`:
+
+    libcomposite.ko   149865 B   u_ether.ko   65065 B   u_serial.ko   58993 B
+    usb_f_ncm.ko       66241 B   usb_f_acm.ko 38585 B   usb_f_rndis.ko 93009 B
+
+Alle `vermagic=7.1.0-rc1-sdm845 SMP preempt mod_unload aarch64` — derselbe
+Kernel, der bootet. `patch-v0q.py` setzt sie unter dem Referenzpfad
+`usr/lib/modules/7.1.0-rc1-sdm845/kernel/drivers/usb/gadget/…` ein, Modus 0644,
+direkt vor `TRAILER!!!`, und schreibt in den Init vor den configfs-Mount:
+
+    MODDIR=/usr/lib/modules/7.1.0-rc1-sdm845/kernel/drivers/usb/gadget
+    for m in "$MODDIR/libcomposite.ko" "$MODDIR/function/u_ether.ko" \
+             "$MODDIR/function/usb_f_ncm.ko" "$MODDIR/function/u_serial.ko" \
+             "$MODDIR/function/usb_f_acm.ko"; do
+        if insmod "$m" 2>/dev/null; then mark "modul $(basename "$m") geladen"
+        else mark "modul $(basename "$m") FEHLER $?"; fi
+    done
+    mark "moduli: $(ls /proc/modules | wc -l) geladen, usb_f_ncm $(grep -c usb_f_ncm /proc/modules)"
+
+busybox-insmod ist da (sbin/insmod ist ein Hardlink auf /bin/busybox), kann
+kein zstd — deshalb ohne `.zst` — und prüft den vermagic selbst.
+Reihenfolge im fertigen Init: insmod (126) → configfs-Mount (145) →
+`functions/$netfunc` (161) → `functions/acm.GS0` (175) → UDC-Write (182).
+
+Bild: `/private/tmp/fl-v0q/firstlight.img`, 20963328 B,
+sha256 `2911e6f7666299639e0a712604fe3ae0427802f875b319f47146d93826fd3ee1`.
+`verify-v0q.py`: 28 Prüfpunkte, 0 Fehler. CI (Arch-Container):
+`tests/gadget-modules` 5 ok / 0 not ok, `tests/all` **126 ok / 0 not ok**
+(3 Skips: docker, AOSP mkbootimg, rootfs-Image).
+
+### Drei methodische Funde nebenbei
+
+1. **Heredoc ohne Quotes frisst den Init-Block.** Denselben insmod-Block einmal
+   als `<<PY` in ein Shellskript geschrieben: `$m`, `$(basename "$m")` und
+   `$?` wurden vom Shell expandiert — `SyntaxError: unterminated
+   triple-quoted string`. Baurezepte mit Init-Text gehören in Python-Dateien,
+   nicht in Shell-Heredocs.
+2. **Byte-Literale mit `bytes.fromhex()` schreiben.** In
+   `kernel-blob-from-image.py` stand das gzip-Magic-Literal mit einem
+   verdoppelten Backslash im Quelltext; der Vergleich prüfte Text gegen Bytes
+   und scheiterte, während derselbe Bytesatz eine Zeile höher korrekt gedruckt
+   wurde. `bytes.fromhex("1f8b08")` ist gegen Rückspiel-Unfälle immun.
+3. **`make-init-v0l.py` fast selbst vergiftet.** Beim Suchen dieses Escape-Fehlers
+   habe ich mit einem Flächen-Ersetzen beinahe das `tr '\\n'/'/'` des
+   Statusblocks ruiniert (Zeile 39) — zurück auf HEAD, Diff gelesen, vorher/nachher
+   verglichen. Flächen-Umbauten in Datei-Inhalten, die auf ein Telefon gehen,
+   brauchen vorab den Diff.
 ## Open questions for the maintainers
 
 1. Is `android-v2` (the Pixel 4 XL's descriptor names it) the word this

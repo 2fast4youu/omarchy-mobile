@@ -1,0 +1,232 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# Die Module hinter dem Gadget. Der Kernel in unseren v0-Bildern ist der
+# Distro-Kernel - sein gzip-Anteil ist byte-identisch zur Referenz - und dessen
+# Config baut libcomposite, u_ether, u_serial, usb_f_ncm und usb_f_acm als
+# Module (=m). Ohne sie in der Ramdisk scheitert schon das configfs-Mount
+# (USB_CONFIGFS=m), und die korrekteste Gadget-Sequenz der Welt legt kein NCM-
+# Interface an. v0p lief mit exakt dieser Dunkelheit los. Dieses Dokument hält
+# die Beweiskette und den Einbau, damit kein späterer Build die Module wieder
+# für "eingebaut" erklärt.
+set -uo pipefail
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+FL=device/blueline/firstlight
+WS=${WS:-/Users/gregor/hermes-workspace}
+# Die Referenz liegt auf dem Host und im CI-Container an verschiedenen Orten;
+# getestet wird nur, was wirklich lesbar ist - sonst meldet der Test Dunkelheit
+# als Erfolg.
+for c in "${REF_IMG:-}" /pmos-ref-build/ref/boot.img "$WS/pmos-ref-build/ref/boot.img"; do
+  [[ -r $c ]] && { REF_IMG=$c; break; }
+done
+for c in "${REF_CFG:-}" /pmos-ref-build/pmaports/device/community/linux-postmarketos-qcom-sdm845/config-postmarketos-qcom-sdm845.aarch64 \
+         "$WS/pmos-ref-build/pmaports/device/community/linux-postmarketos-qcom-sdm845/config-postmarketos-qcom-sdm845.aarch64"; do
+  [[ -r $c ]] && { REF_CFG=$c; break; }
+done
+for c in "${IMG:-}" /private/tmp/fl-v0q/firstlight.img "$WS/../private/tmp/fl-v0q/firstlight.img"; do
+  [[ -r $c ]] && { IMG=$c; break; }
+done
+REF_IMG=${REF_IMG:-/pmos-ref-build/ref/boot.img}
+REF_CFG=${REF_CFG:-/pmos-ref-build/pmaports/device/community/linux-postmarketos-qcom-sdm845/config-postmarketos-qcom-sdm845.aarch64}
+IMG=${IMG:-/private/tmp/fl-v0q/firstlight.img}
+STAGED=${STAGED:-/private/tmp/refmod}
+NEWC=$FL/newc.py
+GREF=$FL/gadget-reference.sh
+t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
+fail() { echo "not ok - $*" >&2; exit 1; }
+ok()   { echo "ok - $*"; }
+skip() { echo "ok - # skip: $*"; }
+
+[[ -s $NEWC ]] || fail "newc.py fehlt"
+[[ -s $GREF ]] || fail "gadget-reference.sh fehlt"
+for probe in 'CONFIGFS=/sys/kernel/config/usb_gadget' 'mkdir "$CONFIGFS/g1"' \
+             'netfunc=ncm.usb0' 'functions/acm.GS0'; do
+  grep -qF -- "$probe" "$GREF" || fail "Referenzblock ohne Pflichtzeile: $probe"
+done
+
+# 1) Die Config, die zu dem Kernel im Bild gehört. Ist IKCONFIG eingebettet,
+#    gilt sie aus dem Bild; wenn nicht (Distro: CONFIG_IKCONFIG=n), gilt sie nur
+#    zusammen mit Schritt 2 - identischer Kernel-Blob wie die Referenz.
+if [[ -r $REF_CFG ]]; then
+  grep -q '^CONFIG_MODULES=y$' "$REF_CFG" || fail "Distro-Config: MODULES nicht y"
+  modcount=$(grep -c '^CONFIG_\(USB_LIBCOMPOSITE\|U_ETHER\|U_SERIAL\|USB_F_NCM\|USB_F_ACM\|USB_F_RNDIS\|USB_CONFIGFS\)=m$' "$REF_CFG")
+  ycount=$(grep -c '^CONFIG_\(USB_LIBCOMPOSITE\|USB_F_NCM\|USB_F_ACM\|USB_CONFIGFS\)=y$' "$REF_CFG")
+  (( modcount >= 4 )) || fail "Distro-Config setzt die Gadget-Stuecke nicht als Module (gefunden: $modcount)"
+  (( ycount == 0 )) || fail "Distro-Config baut Gadget-Stuecke auch =y ($ycount) - Aussage neu pruefen"
+  ok "Distro-Config: MODULES=y und libcomposite/u_ether/u_serial/usb_f_ncm/usb_f_acm =m ($modcount Stellen)"
+else
+  skip "keine Distro-Config unter $REF_CFG"
+fi
+
+# 2) Dass diese Config zu UNSEREM Bild gehört, ist der Blob-Vergleich: der
+#    gzip-Strom des Kernels muss mit dem der Referenz übereinstimmen (der
+#    DTB-Anhang dahinter darf abweichen - bei uns sitzt der ramoops-Knoten drin).
+if [[ -r $REF_IMG && -r $IMG ]]; then
+  python3 - "$NEWC" "$IMG" "$REF_IMG" <<'PY' || fail "Kernel-Blob nicht die Referenz - Config-Urteil waere unbewiesen"
+import ast, struct, sys, zlib
+def gz(path):
+    d = open(path, "rb").read()
+    page = struct.unpack_from("<I", d, 40)[0] or 4096
+    if page < 512:
+        page = 4096                       # v0-Kopf: page_size-Feld 0
+    blob = d[page:page + struct.unpack_from("<I", d, 8)[0]]
+    do = zlib.decompressobj(16 + zlib.MAX_WBITS)
+    n = 0
+    while True:
+        part = blob[n:n + (1 << 20)]
+        if not part:
+            raise SystemExit("gzip-Strom ohne EOF")
+        try:
+            do.decompress(part)
+        except zlib.error:
+            raise SystemExit("gzip-Strom abbricht")
+        n += len(part)
+        if do.eof:
+            return blob[:n - len(do.unused_data)]
+a, b = gz(sys.argv[2]), gz(sys.argv[3])
+import hashlib
+assert hashlib.sha256(a).hexdigest() == hashlib.sha256(b).hexdigest(), \
+    "Kernel-gzip weicht von der Referenz ab (%d vs %d B)" % (len(a), len(b))
+print("kernel-gzip identisch: %d B, sha256 %s" % (len(a), hashlib.sha256(a).hexdigest()[:16]))
+PY
+  ok "Kernel im Bild ist gzip-genau der Distro-Kernel der Referenz"
+else
+  skip "Bild oder Referenz nicht lesbar (Bild bauen: $FL/build-v0q.sh)"
+fi
+
+# 3) Die Schliessung ist nicht abgeschrieben: sie wird aus modules.dep des
+#    Referenz-Initramfs gelesen, und die Gestaging muss genau diese Module
+#    tragen, entpackt und mit vermagic des laufenden Kernels.
+if [[ -r $REF_IMG && -d $STAGED ]] && command -v zstd >/dev/null 2>&1; then
+  python3 - "$NEWC" "$REF_IMG" "$STAGED" <<'PY' || fail "Module nicht die Schliessung aus modules.dep"
+import os, re, struct, subprocess, sys, importlib.util
+spec = importlib.util.spec_from_file_location("newc", sys.argv[1])
+newc = importlib.util.module_from_spec(spec); spec.loader.exec_module(newc)
+d = open(sys.argv[2], "rb").read()
+page = struct.unpack_from("<I", d, 40)[0] or 4096
+if page < 512:
+    page = 4096
+rs = struct.unpack_from("<I", d, 16)[0]
+raw = d[page + ((struct.unpack_from("<I", d, 8)[0] + page - 1) // page) * page:][:rs]
+work = "/tmp/hermes-gmod"
+if raw[:3] == bytes.fromhex("1f8b08"):
+    import gzip; blob = gzip.decompress(raw)
+else:
+    open(work + ".zst", "wb").write(raw)
+    blob = subprocess.run(["zstd", "-df", "-c", work + ".zst"], stdout=subprocess.PIPE, check=True).stdout
+open(work + ".cpio", "wb").write(blob)
+ent = {e["name"]: e for e in newc.read_cpio(work + ".cpio")}
+base = sorted({n.rsplit("/", 1)[0] for n in ent if n.endswith("modules.dep")
+               and n.startswith("usr/lib/modules/")})
+assert len(base) == 1, "kein eindeutiges Modulverzeichnis: %r" % base
+version = base[0].rsplit("/", 1)[-1]
+dep = ent[base[0] + "/modules.dep"]["content"].decode()
+graph = {}
+for line in dep.splitlines():
+    if ":" in line:
+        t, _, rest = line.partition(":")
+        graph[os.path.basename(t)] = rest.split()
+def closure(seed):
+    seen, stack = set(), [seed]
+    while stack:
+        n = stack.pop()
+        if n in seen: continue
+        seen.add(n); stack.extend(os.path.basename(w) for w in graph.get(n, []))
+    return seen
+need = closure("usb_f_ncm.ko.zst") | closure("usb_f_acm.ko.zst")
+staged = {f for f in os.listdir(sys.argv[3]) if f.endswith(".ko")}
+assert need - {n + ".zst" for n in staged} == set(), \
+    "Schliessung unvollstaendig: %s" % sorted(need - {n + ".zst" for n in staged})
+for f in sorted(staged):
+    blob = open(os.path.join(sys.argv[3], f), "rb").read()
+    assert blob[:4] == bytes.fromhex("7f454c46"), f + " ist kein ELF"
+    vm = re.search(rb"vermagic=([0-9.\-A-Za-z_]+)", blob)
+    assert vm and vm.group(1).decode().startswith(version), \
+        "%s: vermagic %s nicht der laufende Kernel %s" % (f, vm and vm.group(1).decode(), version)
+print("Schliessung aus modules.dep: %d Module, alle gestaged, vermagic %s" % (len(staged), version))
+PY
+  ok "gestagte Module = Schliessung aus modules.dep, ELF, vermagic gleich"
+else
+  skip " Referenz, Staging oder zstd fehlen (refmodules.py: REF_IMG=... python3 $FL/refmodules.py $STAGED)"
+fi
+
+# 4) Im fertigen Bild: Module unter dem Referenzpfad, 0644, bytegleich; Init
+#    lädt sie vor dem configfs-Mount und vor beiden Funktions-Mkdirs; die
+#    Referenz-Gadget-Sequenz bleibt unverändert stehen.
+if [[ -r $IMG ]]; then
+  python3 - "$NEWC" "$IMG" "$STAGED" "$GREF" <<'PY' || fail "Bildprüfung fehlgeschlagen"
+import gzip, importlib.util, os, re, struct, sys
+spec = importlib.util.spec_from_file_location("newc", sys.argv[1])
+newc = importlib.util.module_from_spec(spec); spec.loader.exec_module(newc)
+d = open(sys.argv[2], "rb").read()
+page = struct.unpack_from("<I", d, 40)[0] or 4096
+if page < 512:
+    page = 4096
+ks = struct.unpack_from("<I", d, 8)[0]
+rd = page + ((ks + page - 1) // page) * page
+assert d[40:44] == bytes.fromhex("00000000"), "page_size-Feld verstellt"
+assert d[rd:rd + 2] == bytes.fromhex("1f8b"), "Ramdisk nicht seitenbuendig gzip"
+open("/tmp/hermes-gmod2.cpio", "wb").write(gzip.decompress(d[rd:rd + struct.unpack_from("<I", d, 16)[0]]))
+ent = {e["name"]: e for e in newc.read_cpio("/tmp/hermes-gmod2.cpio")}
+names = list(ent)
+assert names[-1] == "TRAILER!!!", "TRAILER nicht letzter Eintrag: %s" % names[-3:]
+version = "7.1.0-rc1-sdm845"
+mods = [n for n in names if n.startswith("usr/lib/modules/" + version) and n.endswith(".ko")]
+assert len(mods) >= 5, "nur %d Module im Bild: %s" % (len(mods), mods)
+for n in mods:
+    src = os.path.join(sys.argv[3], os.path.basename(n))
+    assert os.path.isfile(src) and ent[n]["content"] == open(src, "rb").read(), "Modul im Bild nicht die Quelle: " + n
+    assert ent[n]["meta"]["mode"] & 0o777 == 0o644, "Modus nicht 0644: " + n
+init = ent["init"]["content"].decode("utf-8")
+lines = init.splitlines()
+def first(needle):
+    hits = [i for i, l in enumerate(lines) if needle in l]
+    assert hits, "felt: " + needle
+    return hits[0]
+folge = [first('insmod "$m"'), first("mount -t configfs -o nodev,noexec,nosuid"),
+         first("functions/$netfunc"), first("functions/acm.GS0"),
+         first('echo "$udc" > "$CONFIGFS/g1/UDC"')]
+assert folge == sorted(folge), "Reihenfolge insmod -> configfs -> Funktionen -> UDC nicht erfuetzt: %r" % folge
+assert "MODDIR=/usr/lib/modules/" + version in init, "Modulpfad nicht der Referenzpfad"
+assert "/proc/modules" in init, "Init meldet den Modulstand nicht"
+assert 'insmod "$m" 2>/dev/null' in init, "insmod-Aufruf nicht in der Referenzform"
+assert '|| true' not in init.split('insmod "$m"')[1].split("done")[0], \
+    "insmod-Fehler werden mit || true versteckt"
+ref = open(sys.argv[4]).read()
+assert ref in init, "Referenz-Gadget-Block nicht unveraendert im Bild"
+assert not re.search(r"(?<!kernel)/config/usb_gadget", init), "zweite configfs-Lage unter /config"
+assert init.isascii(), "Init traegt Nicht-ASCII (Panel-Konsole ist ASCII)"
+print("Bild: %d Module, Reihenfolge %r, Referenzblock unveraendert" % (len(mods), folge))
+PY
+  ok "fertiges Bild: Module am Referenzpfad, insmod vor configfs, Gadget-Sequenz unveraendert"
+else
+  skip "kein Bild $IMG (bauen mit $FL/build-v0q.sh)"
+fi
+
+# 5) Die Leseseite derselben Falle: ein Archiv, das Daten hinter dem TRAILER
+#    liegen lässt, sieht kein Kernel-Leser. Muss laut newc.py abbrechen.
+python3 - "$NEWC" "${t}/ghost.cpio" <<'PY'
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location("newc", sys.argv[1])
+newc = importlib.util.module_from_spec(spec); spec.loader.exec_module(newc)
+def ent(ino, mode, name, content=b""):
+    return {"meta": {"ino": ino, "mode": mode, "uid": 0, "gid": 0, "nlink": 1,
+                     "mtime": 0, "datasize": len(content), "devmajor": 0, "devminor": 0,
+                     "rdevmajor": 0, "rdevminor": 0, "namesize": len(name) + 1, "check": 0},
+            "name": name, "content": content}
+blob = newc.emit([ent(1, 0o100644, "init", b"x"), ent(2, 0, "TRAILER!!!")])
+open(sys.argv[2], "wb").write(blob + b"GHOST" + b"\0" * 60)
+PY
+if python3 -c "
+import importlib.util, sys
+spec = importlib.util.spec_from_file_location('newc', '$NEWC')
+newc = importlib.util.module_from_spec(spec); spec.loader.exec_module(newc)
+try:
+    newc.read_cpio('${t}/ghost.cpio')
+except SystemExit as e:
+    sys.exit(0 if 'TRAILER' in str(e) else 1)
+sys.exit(1)
+"; then
+  ok "Geisterdaten hinter dem TRAILER werden beim Lesen abgewehrt"
+else
+  fail "read_cpio schluckt Daten hinter dem TRAILER (v0m-Falle, Leseseite)"
+fi
