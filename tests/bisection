@@ -29,6 +29,14 @@ done
 for c in "${CPIO_V0Q:-}" /private/tmp/fl-v0q/new.cpio "$WS/../private/tmp/fl-v0q/new.cpio"; do
   [[ -n $c && -r $c ]] && { CPIO_V0Q=$c; break; }
 done
+# Nach den Kandidatensuchladen immer explizite Faelle: ein nacktes $IMG_V0R
+# in einem [[ -r ]] testet unter set -u auf ein ungebundenes Variable und
+# beendet den Test mit 'unbound variable' - dasselbe Grab, das dem Runner
+# den ersten Lauf nahm, nur in der Testdatei selbst.
+IMG_A=${IMG_A:-/nonexistent}
+IMG_V0R=${IMG_V0R:-/nonexistent}
+CPIO_V0Q=${CPIO_V0Q:-/nonexistent}
+V0Q_IMG=${V0Q_IMG:-/private/tmp/fl-v0q/firstlight.img}
 REF_IMG=${REF_IMG:-$WS/pmos-ref-build/ref/boot.img}
 [[ -r $REF_IMG ]] || for c in /pmos-ref-build/ref/boot.img; do [[ -r $c ]] && REF_IMG=$c; done
 t=$(mktemp -d); trap 'rm -rf "$t"' EXIT
@@ -92,6 +100,11 @@ assert os.path.exists(out) and open(out, "rb").read() == open(sys.argv[5] + "/v0
 init = rr["init"]["content"].decode()
 assert init.count('while [ "$udc_wort" -lt 60 ]') == 1 and "sleep 0.5" in init, \
     "Warteschleife fehlt oder mehrfach"
+# Claude-Punkt 2: die Rundenzahl muss im Geraet entstehen, nicht am Host
+ # (die 16 s am Bus enthalten ABOOT + Kernel-Start). Runde 0 = widerlegt.
+assert 'udc-lesung 1: uptime' in init and 'udc nach $udc_wort runden gefunden' in init, \
+    "Warteschleife misst Rundenzahl/Uptime nicht in steps.log"
+assert '/run/dmesg-${dsum}s.txt' in init, "frueher dmesg-Dump fehlt"
 assert init.count("telnetd -l /bin/sh") >= 2 and "debug shell armed" in init, "Debug-Shell fehlt"
 assert "first-light v0r" in init and "first-light v0h" not in init, "Panel-Titel nicht umgestellt"
 # udc_wort zaehlt die neue Schleife; die zwei vorhandenen _i bleiben (v0q nutzt
@@ -108,7 +121,6 @@ else
 fi
 
 # 3) Der Pruefer mit Gegenprobe: gebildetes Bild durch, altes Bild ab
-V0Q_IMG=${V0Q_IMG:-/private/tmp/fl-v0q/firstlight.img}
 [[ -r $V0Q_IMG ]] || V0Q_IMG="$WS/../private/tmp/fl-v0q/firstlight.img"
 if [[ -r $IMG_V0R && -r $V0Q_IMG ]]; then
   python3 "$FL/verify-v0r.py" "$IMG_V0R" >/dev/null 2>&1 || fail "verify-v0r.py lehnt das gebaute v0r-Bild ab"
@@ -138,10 +150,11 @@ EOF
 chmod 755 "$FAKE/fastboot"
 if [[ -x $FAKE/fastboot ]]; then
   sha_a() { python3 -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$1"; }
+  fsize_probe() { python3 -c 'import os,sys; print(os.path.getsize(sys.argv[1]))' "$1"; }
   ANR="$t/anrufe.txt"; : > "$ANR"
   o="$t/out1"; mkdir -p "$o"
   FBLOG="$ANR" OUT="$o" PHONE=192.0.2.1 POLL=1 PATH="$FAKE:$PATH" \
-    bash "$FL/run-flash-observe.sh" "${IMG_A:-$FL/run-flash-observe.sh}" 0000000000000000000000000000000000000000000000000000000000000000 3 >/dev/null 2>&1
+    bash "$FL/run-flash-observe.sh" "$IMG_A" 0000000000000000000000000000000000000000000000000000000000000000 3 >/dev/null 2>&1
   rc=$?
   [[ $rc -eq 1 ]] || fail "Runner bei falschem Hash: Exit $rc, erwartet 1"
   grep -q "not ok - Hash" "$o/protokoll.txt" || fail "Runner bei falschem Hash ohne Grund im Protokoll"
@@ -152,11 +165,30 @@ if [[ -x $FAKE/fastboot ]]; then
     bash "$FL/run-flash-observe.sh" "$t/gibt-es-nicht.img" 00000000 3 >/dev/null 2>&1
   grep -q "not ok - Bild fehlt" "$o/protokoll.txt" || fail "Runner meldet fehlendes Bild nicht"
   ok "Runner bricht bei fehlendem Bild ab"
-  if [[ -r ${IMG_A:-/nonexistent} ]]; then
+  if [[ -r $IMG_A ]]; then
     : > "$ANR"; o="$t/out3"; mkdir -p "$o"
-    FBLOG="$ANR" OUT="$o" PHONE=192.0.2.1 POLL=1 PATH="$FAKE:$PATH" \
+  RK=${RUECKWEG:-/Users/gregor/hermes-workspace/android-mainline/factory/sp1a/boot.img}
+  RKSHA=5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e
+  # Der Runner verlangt Groesse UND Hash seines Rueckwegs - die Ersatzdatei
+  # muss exakt 67108864 B und das ANDROID-Merkmal tragen (derselbe Grund,
+  # warum der Runner prueft, nicht nur beten). RKSHA vorher setzen: diese
+  # Datei laeuft mit set -u, ein unbedingtes ${RKSHA:-...} danach waert der
+  # Test selbst an der ungebundenen Variablen aus.
+  [[ -r $RK ]] || { dd if=/dev/zero of="$t/rueckweg.img" bs=67108864 count=1 2>/dev/null
+    printf ANDROID | dd of="$t/rueckweg.img" bs=1 count=6 conv=notrunc 2>/dev/null
+    RK="$t/rueckweg.img"; RKSHA=$(sha_a "$RK"); }
+  FBLOG="$ANR" OUT="$o" PHONE=192.0.2.1 POLL=1 RUECKWEG="$RK" RUECKWEG_SHA="$RKSHA" PATH="$FAKE:$PATH" \
       bash "$FL/run-flash-observe.sh" "$IMG_A" "$(sha_a "$IMG_A")" 4 >/dev/null 2>&1
-    grep -q "Rueckweg steht: 67108864 B" "$o/protokoll.txt" || fail "Rueckweg nicht bestaetigt"
+    # Die Zahl mitpruefen, nicht nur die Zeile: 'Rueckweg steht' taucht auch
+    # dann auf, wenn die portable Groessenfunktion Unsinn liefert. Auf macOS
+    # ist der Buchstabe in 'Rueckweg steht: <n> B' der Beweis, dass fsize die
+    # Plattform korrekt erkannt hat - eine Zu-Schwach-Pruefung hat hier schon
+    # zwei kaputte Fassungen durchgewinkt.
+    grep -q "Rueckweg steht" "$o/protokoll.txt" || \
+      fail "Rueckweg nicht bestaetigt; Protokoll: $(head -c 300 "$o/protokoll.txt" 2>/dev/null | tr '\n' '|')"
+    RKZEILE=$(grep "Rueckweg steht" "$o/protokoll.txt" | head -1)
+    [[ "$RKZEILE" == *"Rueckweg steht: $(fsize_probe "$RK") B "* ]] || \
+      fail "Groessenbestimmung liefert nicht $(fsize_probe "$RK") B: $RKZEILE"
     grep -q "flash boot_a" "$ANR"  || fail "boot_a nicht geflasht (Fake)"
     for g in current-slot slot-retry-count:a slot-unbootable:a; do
       grep -q "getvar $g" "$ANR" || fail "Getvar nach dem Write nicht gelesen: $g"

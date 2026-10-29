@@ -36,6 +36,15 @@ init = ent["init"]["content"].decode()
 
 # 1) die beiden Aenderungen, genau einmal
 assert init.count('while [ "$udc_wort" -lt 60 ]') == 1, "UDC-Wartesleife nicht genau einmal"
+# Die Messung im Geraet (Claude-Punkt 2): "Enumeration spaeter als 1,7 s" ist
+# vom Host nicht messbar - die 16 s enthalten ABOOT und Kernel-Start. Also
+# schreibt die Schleife Rundenzahl und Uptime in steps.log: Runde 0 = UDC war
+# sofort da = Timing-Diagnose widerlegt. Und ein frueher dmesg-Dump, weil der
+# Ring bei der Referenz schon uebergelaufen war, bevor ihn jemand las.
+assert 'udc-lesung 1: uptime' in init, "keine Uptime-Marke an der ersten Lesung"
+assert 'udc nach $udc_wort runden gefunden' in init, "keine Runden-Marke am Fund"
+assert init.count('cut -d\' \' -f1 /proc/uptime') >= 2, "Uptime wird nicht an Lesung und Fund gemessen"
+assert '/run/dmesg-${dsum}s.txt' in init, "frueher dmesg-Dump fehlt"
 assert "No UDC found in 30 s" in init, "neue Markierung fehlt"
 assert "udc=$(ls /sys/class/udc 2>/dev/null | head -1)" in init, "Leser fehlt (in der Schleife erwartet)"
 assert init.count("telnetd -l /bin/sh") >= 2, "Debug-Shell fehlt"

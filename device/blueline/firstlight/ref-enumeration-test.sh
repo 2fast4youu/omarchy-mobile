@@ -37,7 +37,13 @@ fs=$(shasum -a 256 "$FACTORY" | cut -d' ' -f1)
 say "Rueckweg ok: factory/sp1a/boot.img 67108864 B sha256 $fs"
 rs=$(shasum -a 256 "$REF" | cut -d' ' -f1)
 [ "$rs" = "$REF_SHA" ] || { say "ABBRUCH: Referenz-sha256 weicht ab: $rs"; exit 1; }
-say "Referenz ok: $REF $(stat -f %z "$REF") B sha256 $rs"
+# portables stat (derselbe Fall wie im Flash-Runner: auf Alpine ist
+# 'stat -f' GNUs --file-system, kein Fehler, sondern ein Report ins Protokoll)
+# Groessenbestimmung ohne stat-Idiom (Grenze: Alpine nimmt '-f%s' nicht,
+# macOS nimmt '-c' nicht, ein nacktes 'stat -f %z' liefert auf Linux einen
+# Filesystem-Report bei gemischtem Exit). python3 existiert auf beiden Seiten.
+fsize(){ python3 -c 'import os,sys; print(os.path.getsize(sys.argv[1]))' "$1" 2>/dev/null || echo 0; }
+say "Referenz ok: $(fsize "$REF") B sha256 $rs"
 
 # 2) Vorher-Snapshot des Busses (nach Grundlinie, vor dem Write)
 sleep 5; usbliste > "$OUT/usb-vorher.txt" 2>&1

@@ -18,16 +18,41 @@ OUT=${OUT:-/private/tmp/flash-observe}
 # Test-Fake, der den PATH von aussen setzt, verliert sonst gegen den echten
 # (dieselbe Falle, die der Runner-Test fuer ref-enumeration-test.sh dokumentiert).
 command -v fastboot >/dev/null 2>&1 || export PATH="$HOME/Library/Android/sdk/platform-tools:$PATH"
-RUECKWEG=/Users/gregor/hermes-workspace/android-mainline/factory/sp1a/boot.img
-RUECKWEG_SHA=5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e
+# Rueckweg: der echte Pfad ist der Default; RUECKWEG/RUECKWEG_SHA lassen
+# sich ueberschreiben, damit ein Test die Pruefung an einer eigenen Datei
+# fahren kann. Ohne die Datei bricht der Runner vor jedem Write ab.
+RUECKWEG=${RUECKWEG:-/Users/gregor/hermes-workspace/android-mainline/factory/sp1a/boot.img}
+RUECKWEG_SHA=${RUECKWEG_SHA:-5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e}
 mkdir -p "$OUT"; LOG="$OUT/protokoll.txt"; exec >>"$LOG" 2>&1
 say() { echo "$(date '+%H:%M:%S') $*"; }
+# Portabilitaet: shasum/stat -f sind macOS-Werkzeuge, Linux kennt sha256sum
+# und stat -c. Der harte shasum-Aufruf liess auf Alpine die Hashzeile leer
+# laufen - das Gate meldete "Hash  != ..." und stieg aus, ohne fastboot je zu
+# rufen. Das ist dasselbe Muster wie die PATH-Falle: ein Harness, der nur auf
+# seinem Heimat-OS laeuft, beweist nothing fuer das andere.
+sha()  { if command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | cut -d' ' -f1
+         else sha256sum "$1" | cut -d' ' -f1; fi; }
+# Grossenbestimmung ohne MacOS-Idiom. Achtung: auf Alpine ist 'stat -f' nicht
+# unbekannt, sondern GNU-stat mit --file-system - es liefert einen
+# Dateisystem-Report bei Exit 0. Ein '|| stat -c'-Fallback greift damit nie,
+# die Groesse wird zu einem mehrzeiligen Text und der Grossenvergleich ist
+# sinnlos. Deshalb: Variantscheck und ein numerisches Sicherheitsnetz.
+fsize(){
+    # Groessenbestimmung ohne stat-Idiom: Alpine (coreutils) kennt '-f' ohne
+    # Argument ('-f%s' => "invalid option -- '%'"), macOS kennt '-c' nicht,
+    # und ein nacktes 'stat -f %z /etc/passwd' schreibt auf Linux den
+    # Filesystem-Report bei gemischtem Exit auf stdout. Jede stat-Variante
+    # verbiegt sich woanders. Ein Groessen-Beweis, der der Pruefung nicht
+    # trauen kann, ist kein Beweis - python3 ist auf beiden Seiten vorhanden
+    # und getsize ist auf beiden Seiten dasselbe.
+    python3 -c 'import os,sys; print(os.path.getsize(sys.argv[1]))' "$1" 2>/dev/null || echo 0
+}
 
 [ -f "$IMG" ] || { say "not ok - Bild fehlt: $IMG"; exit 1; }
-ist=$(shasum -a 256 "$IMG" | cut -d' ' -f1)
+ist=$(sha "$IMG")
 [ "$ist" = "$SOLL" ] || { say "not ok - Hash $ist != $SOLL"; exit 1; }
-rb=$(stat -f %z "$RUECKWEG" 2>/dev/null || echo 0)
-rs=$(shasum -a 256 "$RUECKWEG" | cut -d' ' -f1)
+rb=$(fsize "$RUECKWEG")
+rs=$(sha "$RUECKWEG")
 [ "$rb" -gt 1000000 ] && [ "$rs" = "$RUECKWEG_SHA" ] || {
   say "not ok - Rueckweg $rb B $rs (erwartet 67108864 B, $RUECKWEG_SHA)"; exit 1; }
 say "Rueckweg steht: $rb B $rs"

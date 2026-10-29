@@ -13,11 +13,18 @@ apk add --no-cache git python3 bash perl diffutils findutils grep sed \
 cp -r /w /work
 cd /work; chmod -R u+w .
 mkdir -p /private/tmp; ln -sfn /fl-v0q /private/tmp/fl-v0q
+# Die Bisektionsbilder: ohne diese beiden Links sucht tests/bisection
+# /nonexistent und meldet Dunkelheit statt Gruen.
+for d in fl-refpacked fl-v0r; do [ -d "/$d" ] && ln -sfn "/$d" "/private/tmp/$d"; done
 mkdir -p /faktes
+# Der shasum-Fake muss die WAHREN Hashes liefern, nicht einen Pauschalwert:
+# der Flash-Runner vergleicht shasum-Ausgaben gegen erwartete sha256 von Bild
+# und Rueckweg. Ein Fake, der immer den Null-Hash meldet, liess das Gate den
+# korrekten Inhalt verwerfen - der Harness log, nicht das Geraet.
 printf '%s\n' \
   '#!/bin/sh' 'args=""' \
   'while [ $# -gt 0 ]; do' \
-  '  case "$1" in -a) shift ;; -*) ;; *) args="$args $1" ;; esac; shift' \
+  '  case "$1" in -a|-a256) shift ;; -*) ;; *) args="$args $1" ;; esac; shift' \
   'done' \
   'for f in $args; do printf "%s  %s\n" "$(sha256sum "$f" | cut -d" " -f1)" "$f"; done' \
   > /faktes/shasum

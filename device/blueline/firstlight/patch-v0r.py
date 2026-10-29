@@ -33,10 +33,18 @@ UDC_OLD = """    udc=$(ls /sys/class/udc 2>/dev/null | head -1)
 """
 
 UDC_NEW = """    udc_wort=0
+    udc_u1=""
     while [ "$udc_wort" -lt 60 ]; do
+        if [ -z "$udc_u1" ]; then
+            udc_u1=$(cut -d' ' -f1 /proc/uptime)
+            mark "udc-lesung 1: uptime ${udc_u1}s, inhalt: $(ls /sys/class/udc 2>/dev/null | tr '\\n' ' ')"
+        fi
         udc=$(ls /sys/class/udc 2>/dev/null | head -1)
-        [ -n "$udc" ] && break
-        [ "$udc_wort" -eq 0 ] && mark 'udc noch leer - warte auf dwc3 (Referenz bindet bei 1.734 s)'
+        if [ -n "$udc" ]; then
+            mark "udc nach $udc_wort runden gefunden: $udc, uptime $(cut -d' ' -f1 /proc/uptime)s"
+            break
+        fi
+        [ "$udc_wort" -eq 0 ] && mark 'udc leer - warte (Referenz bindet bei 1.734 s kernelzeit)'
         udc_wort=$((udc_wort + 1)); sleep 0.5
     done
     if [ -z "$udc" ]; then
@@ -45,6 +53,26 @@ UDC_NEW = """    udc_wort=0
 """
 
 SHELL_OLD = """mark 'dropbear start'
+"""
+
+DMESG_OLD = """mount -t devpts devpts /dev/pts || mark 'mount devpts FAILED'
+"""
+
+DMESG_NEW = """mount -t devpts devpts /dev/pts || mark 'mount devpts FAILED'
+
+# dmesg frueh nach /run (v0r): der Ring-Buffer der Referenz war beim ersten
+# Blick schon uebergelaufen - dmesg-reference.txt begann erst bei 0.075 s,
+# die Gadget-Bindung bei 1.734 s war knapp gluecklich. Drei Dump-Zeitpunkte,
+# damit ein spaeteres Ueberlaufen den Fruehzustand nicht loescht, und der
+# letzte Dump haelt die Warteschlangen-Zahlen fest.
+(
+    dsum=0
+    for s in 2 10 30; do
+        sleep "$s"; dsum=$((dsum + s))
+        dmesg > "/run/dmesg-${dsum}s.txt" 2>/dev/null
+    done
+    mark "dmesg gesichert: $(ls /run/dmesg-*.txt 2>/dev/null | tr '\\n' ' ')"
+) &
 """
 
 PANEL_OLD = "'Omarchy Mobile first-light v0h - RAM only, Watchdog-Fuetterer + Pstore'"
@@ -69,7 +97,7 @@ def main() -> int:
             continue
         text = e["content"].decode()
         for old, new in ((UDC_OLD, UDC_NEW), (SHELL_OLD, SHELL_NEW),
-                         (PANEL_OLD, PANEL_NEW)):
+                         (PANEL_OLD, PANEL_NEW), (DMESG_OLD, DMESG_NEW)):
             n = text.count(old)
             assert n == 1, "Anker %r genau %d mal, erwartet 1" % (old.splitlines()[0][:40], n)
             text = text.replace(old, new, 1)
@@ -79,11 +107,13 @@ def main() -> int:
             return (len(s.split("\n else")) - 1, len(s.split("\n" + " " * 12 + "else")) - 1)
         before = tally(e["content"].decode())
         assert text.count('while [ "$udc_wort" -lt 60 ]') == 1
-        # erlaubte Deltas: +2 'done' (UDC-Wartesleife, Shell-Nachloop), die
-        # if/else-Struktur bleibt, weil die Warteschleife den bestehenden
-        # if/else-Zweig nur innen umhängt
-        assert text.count("done") == e["content"].decode().count("done") + 2, \
-            "do/done-Balance veraendert (erlaubt: +2 fuer die zwei neuen Schleifen)"
+        # erlaubtes Delta: +3 'done' (UDC-Wartesleife, dmesg-Dump-Schleife,
+        # Debug-Shell-Nachloop). Das ausgelieferte v0r-Archiv hat +2 gegen v0q,
+        # weil es den dmesg-Dump noch nicht hatte - die Zahl ist hier gemessen
+        # (v0q 19 'done'), nicht geraten. if/else-Struktur bleibt unveraendert.
+        assert text.count("done") == e["content"].decode().count("done") + 3, \
+            "do/done-Balance veraendert (erlaubt: +3 fuer die drei neuen Schleifen, gemessen: %d)" % (
+                text.count("done") - e["content"].decode().count("done"))
         assert text.count("telnetd -l /bin/sh") >= 2
         e["content"] = text.encode()
         hit += 1

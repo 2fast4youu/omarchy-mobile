@@ -2208,3 +2208,69 @@ isolating test — the same fault class as the slot-unbootable narration, now
 recorded in SKILL.md both directions: assert mechanism only when a test isolates
 it, and let a mutation say which guard actually bears load. The `|| true` stays
 as labelled insurance.
+
+
+## Claudis Check-in #9 und die Messinstrumentierung — vier Harness-Fehler, einer pro Fassung
+
+Claudis drei Punkte, alle angenommen:
+
+1. **Bild A liefert fast keine Information.** Bei entsperrtem Bootloader prueft
+   ABOOT die `id[]` nicht; 20 Bytes, die nichts entscheiden, kosten einen
+   Bootzyklus. Empfehlung an Gregor ist deshalb **direkt v0r**, Bild A bleibt
+   Fallback, falls v0r dunkel bleibt.
+2. **Die Zeitmessung muss im Geraet entstehen.** Die 16 s am Host enthalten
+   ABOOT und Kernel-Start; „Enumeration spaeter als 1,7 s" ist von aussen nicht
+   entscheidbar. Die Warteschleife schreibt jetzt in `steps.log`:
+   `udc-lesung 1: uptime <x>s, inhalt: <ls-Ausgabe>` bei der ersten Lesung und
+   `udc nach <n> runden gefunden: <udc>, uptime <y>s` beim Fund. **Runde 0 =
+   der UDC war sofort da = die Timing-Diagnose ist widerlegt** und der Fehler
+   sitzt woanders. Dazu drei fruehe `dmesg`-Dumps nach `/run` (2/12/42 s
+   kumulierte Wartezeit), weil der Ring bei der Referenz schon uebergelaufen
+   war, bevor ihn jemand las.
+3. **v0r enthaelt zwei Aenderungen** (Warteschleife + Debug-Shell). Als
+   Instrumentierung akzeptabel, trennbar genau durch Punkt 2. Rueckweg aus der
+   Telnet-Shell: `reboot bootloader` — vorgeschlagener Standard statt
+   Tastendruecken.
+
+Das neue v0r: init 18146 B, Bild 21094400 B,
+`sha256 daf56a12cca1af3d05444eaad7008dd01e8fb14266ffc32f6f419ef0aff5060b`
+(v0r vorher: `44d4f264…`, ohne Messung). Das Balance-Assertion in
+`patch-v0r.py` steht von +2 auf +3 `done` — die Zahl ist jetzt gemessen
+(v0q hat 19 `done`), nicht aus der Erinnerung behauptet.
+
+### Vier echte Harness-Fehler, einer pro Fassung
+
+Der Runner lief auf Alpine nie, und jede Fassung meiner Korrektur hatte einen
+neuen Fehler, den der vorherige Test nicht sehen konnte:
+
+1. **`shasum` hart aufgerufen** — Linux kennt nur `sha256sum`; die Hashzeile
+   lief leer, das Gate meldete `Hash  != …` und stieg aus, ohne `fastboot` je
+   zu rufen. Fix: `sha()` mit Weiche.
+2. **`stat -f %z` als „nur macOS" missverstanden** — auf Linux ist `-f` GNUs
+   `--file-system`: kein Fehler, sondern ein mehrzeiliger Filesystem-Report auf
+   stdout. Der `|| stat -c`-Fallback griff damit nie.
+3. **Die Sonde auf `/dev/null`** — die BSD-Datei ist 0 Bytes gross, ihr
+   richtiger Wert ist von einem Fehlschlag nicht zu unterscheiden; meine
+   korrigierte Fassung meldete „Rueckweg 0 B" auf macOS.
+4. **`stat -f%s`** — Alpine lehnt `-f%s` mit `invalid option -- '%'` ab
+   (`-f` nimmt dort kein Argument), macOS kennt `-c` nicht. Jede stat-Variante
+   verbiegt sich woanders.
+
+Endstand: `fsize()` ist `python3 -c 'os.path.getsize'` — auf beiden Seiten
+dasselbe Werkzeug, dasselbe Ergebnis. Zwei Lehren:
+
+* **Ein Feature-Test muss auf einer Datei mit von 0 verschiedenem Wert
+  sondieren**, sonst ist „kein Fehler" nicht von „falsche Antwort" zu
+  unterscheiden.
+* **Eine schwache Pruefstelle verschleiert die folgende.** Der Test fragte nur
+  `grep -q "Rueckweg steht"` — die Zeile erschien auch mit kaputter Zahl.
+  Jetzt wird die Zahl selbst gegen `os.path.getsize` verglichen, und beide
+  Plattformen muessen sie liefern.
+
+Nebenbei: `RKSHA` war im Container-Zweig von `tests/bisection` ungebunden
+(`set -u`), und der shasum-Pauschal-Null-Hash in `tools/ci-arm64.sh` liess den
+Runner den *korrekten* Bild-Hash verwerfen — der Harness log, nicht das Geraet.
+Der Fake liefert jetzt echte Hashes. `inetutils` existiert in alpine:edge
+nicht und haette mit einem Pauschalfehler die ganze apk-Transaktion still
+sterben lassen: das `>/dev/null 2>&1` verbarg „unable to select packages", das
+Ergebnis war Exit 127 „bash: not found".
