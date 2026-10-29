@@ -1403,6 +1403,33 @@ nes SCR-Feld); Auftritt bei ~440 s = Grund ignoriert, wieder nur die
 Erschöpfung nach drei Zyklen. Panelfotos (Statusblock jetzt mit PID-1-Status,
 UDC-Bindung, dwc3-Rolle) lesen die Zwischenschritte.
 
+## 2026-10-29 03:2x — v0ms restart2 war nie im Bild: der TRAILER-Falle
+
+Nachlese zum v0m-Bild (Sonde 150, Kette auf `/bin/restart2 bootloader`
+umgestellt): das fertige Bild hat **731 Einträge, `bin/restart2` keins** —
+der Init rief eine Datei, die das Archiv nicht enthielt. Die
+Baustellen-Meldung „Archiv umgebaut: restart2 (162336 B)" war eine Lüge,
+die der Code sich selbst erzählte: `newc.read_cpio` liefert den
+`TRAILER!!!` als **letzten** Eintrag und `emit` schreibt, was die Liste
+hergibt — ein `es.append(tool)` landet hinter dem TRAILER, wird beim
+Rücklesen nie erreicht, und die Größen-Ketten (`wc -c`, gzip-Länge)
+stimmen trotzdem, weil das Wort „bin/restart2" als String im Init steht.
+Der 900-s-Lauf von v0m (kein Fastboot, `panic=120` = 150 s + 120 s pro
+Zyklus) war damit ein normaler, ruhender Boot — keine RESTART2-Messung.
+
+`emit` wirft jetzt, wenn der TRAILER nicht der letzte Eintrag ist
+(Falle im Code benannt, nicht nur im Log). v0n setzt die Datei **vor**
+den TRAILER und liest das **fertige Bild** gegen: `restart2 162336 B
+(0755) direkt vor TRAILER, keine Sonde, panic=60` — sha256
+c188f20ed09b6f175d79a151e6ac7391ef862265004ec3e83d975e4503ebd770,
+20963328 B, Watchdog wieder **an** (kein `nowatchdog`).
+
+Messung v0n: der Init ruft `restart2 bootloader` **sofort** (ohne Sonde).
+Erscheint das Fastboot-Menü beim Host binnen ~60 s, ehrt ABOOT RESTART2
+trotz fehlendem poweroff-Knoten im DTB (PSCI-Reset-Schleife schreibt ABOOTs
+SCR-Feld selbst); sonst ist der Grund tote Hose und das Panel zeigt
+Watchdog-Neustakte. Flash auf boot_a, `--set-active=a` (retry 3) läuft.
+
 ## Open questions for the maintainers
 
 1. Is `android-v2` (the Pixel 4 XL's descriptor names it) the word this

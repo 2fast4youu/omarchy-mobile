@@ -114,4 +114,43 @@ else
   echo "ok - # skip: no reference image $ref"
 fi
 
+# Die TRAILER-Falle: read_cpio liefert den TRAILER als letzten Eintrag. Ein
+# neu eingefuegtes Bild muss VOR den TRAILER; ein append schreibt einen
+# Archiv-Rest, den kein Leser erreicht, und die Groessen-Kette bleibt schoen.
+# Genau so verlor der v0m-Bau 2026-10-29 sein restart2.
+python3 - "$tool" <<'PY'
+import importlib.util, subprocess, sys, tempfile, os
+spec = importlib.util.spec_from_file_location("newc", sys.argv[1])
+newc = importlib.util.module_from_spec(spec); spec.loader.exec_module(newc)
+with tempfile.TemporaryDirectory() as t:
+    p = os.path.join(t, "a.cpio")
+    open(p, "wb").write(newc.emit([
+        {"meta": {"ino": 1, "mode": 0o40755, "uid": 0, "gid": 0, "nlink": 2,
+                  "mtime": 0, "devmajor": 0, "devminor": 0, "rdevmajor": 0,
+                  "rdevminor": 0, "check": 0}, "name": ".", "content": b""},
+        {"meta": {"ino": 2, "mode": 0o100755, "uid": 0, "gid": 0, "nlink": 1,
+                  "mtime": 0, "devmajor": 0, "devminor": 0, "rdevmajor": 0,
+                  "rdevminor": 0, "check": 0}, "name": "bin/x", "content": b"x"},
+        {"meta": {"ino": 9, "mode": 0, "uid": 0, "gid": 0, "nlink": 1,
+                  "mtime": 0, "devmajor": 0, "devminor": 0, "rdevmajor": 0,
+                  "rdevminor": 0, "check": 0}, "name": "TRAILER!!!",
+         "content": b""},
+    ]))
+    es = newc.read_cpio(p)
+    tool = dict(es[1]); tool["name"] = "bin/tool"; tool["content"] = b"T" * 64
+    try:
+        newc.emit(es + [tool])
+        sys.exit("append hinter den TRAILER wurde durchgewinkt")
+    except SystemExit as e:
+        assert "TRAILER" in str(e), e
+    names = [e["name"] for e in es]
+    names.insert(names.index("TRAILER!!!"), "bin/tool")
+    out = newc.emit(es[:2] + [tool] + es[2:])
+    q = os.path.join(t, "b.cpio"); open(q, "wb").write(out)
+    got = [e["name"] for e in newc.read_cpio(q)]
+    assert got == names, (got, names)
+    assert os.path.getsize(q) == len(out)
+PY
+if [ $? -eq 0 ]; then ok "TRAILER-Falle: append hinter den TRAILER wird verworfen, Einsatz davor rundgelesen"; else no "TRAILER-Falle"; fi
+
 [ "$fail" -eq 0 ] && { echo "newc: alles grin"; exit 0; } || { echo "newc: $fail Fehler"; exit 1; }

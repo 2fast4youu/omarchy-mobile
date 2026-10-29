@@ -36,6 +36,15 @@ def read_cpio(path):
 
 
 def emit(entries):
+    # read_cpio stops at TRAILER!!! and keeps it as the LAST entry; an added
+    # file must sit BEFORE it. An append after the trailer emitted a still
+    # readable archive whose restart2 entry no reader would ever reach -- the
+    # v0m image on the phone (2026-10-29 02:49) carried an init that called a
+    # /bin/restart2 the archive did not contain. Refuse the trap, and print
+    # what was written so no build can claim a file it never shipped.
+    names = [e["name"] for e in entries]
+    if "TRAILER!!!" in names and names.index("TRAILER!!!") != len(names) - 1:
+        raise SystemExit("TRAILER!!! must be the last entry")
     out = bytearray()
     for e in entries:
         m = dict(e["meta"])
