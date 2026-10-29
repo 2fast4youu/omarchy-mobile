@@ -1796,6 +1796,23 @@ zurückgelesen, 370 Zeilen):
   serielle Konsole. Kein weiterer Blindbau: v0q ist der erste Build, der Module
   und Gadget-Sequenz nachweislich im Bild hat, und er bootet gerade.
 
+## 2026-10-29 13:51 — Beobachter zu Ende: 1080 Messungen, ein Umschlag
+
+Das 10-s-Raster ist vollständig gelaufen (10:49:08 → 13:51:39, 1080 Zeilen,
+gesichert: `quarantine/2026-10-29/beobachtung-v0q-3h.txt`):
+
+* **ein** Umschlag in 3 h: `fastboot=1` → `fastboot=0` um **12:30:01**
+* **null** Umschläge bei `ncm` und `seriell` — die beiden Sonden waren nie da
+* danach 81 min bis zum Schluss ohne jedes Erscheinung am Bus
+
+Der ERGEBNIS-Text des Laufes sagte „40 min" — das war der geerbte Satz aus der
+40-min-Fassung des Skripts, gemessen waren 10951 s. In der Datei nachgezogen.
+
+Was das heißt, ohne etwas hineinzulegen: v0q ist seit 12:30 am Booten oder tot,
+und der Host kann beides nicht unterscheiden (Init endet in `sleep 60`,
+restart2 ist toter Code). Die einzige trennende Beobachtung ist das Panel.
+Kein Prozess läuft mehr; es wartet jetzt nichts auf etwas.
+
 ## Open questions for the maintainers
 
 1. Is `android-v2` (the Pixel 4 XL's descriptor names it) the word this
