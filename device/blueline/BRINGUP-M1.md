@@ -2334,14 +2334,23 @@ korrigiert und in der Datei nachgesehen, nicht im Kopf:
   falsch. `run-flash-observe.sh` gateierte als Rueckweg gegen
   `factory/sp1a/boot.img` (`5c1ce19e…`, Android-Urzustand), nicht gegen
   `pmos-ref-build/ref/boot.img` (`ed2c225f…`). Stufe 1 ist jetzt die Referenz
-  selbst (Pfad und Hash im Code, gemessen 28729344 B, `584056e`); Android bleibt
+  selbst (Pfad und Hash im Code, gemessen 28729344 B, `1951b3e`); Android bleibt
   Stufe 2. Und „per Kommando" gilt nur, wenn v0rs Telnet antwortet — bleibt das
   Bild dunkel, was genau der Fall ist, fuer den man einen Rueckweg braucht, hilft
   nur **Power + Leiser ~10 s** und danach mein Flash.
 
+*Zu den Hash-Verweisen in diesem Eintrag:* die zuerst genannten (`584056e`,
+`b8dba73`) waren nach den Textausbesserungen per `--amend` nicht mehr auf dem
+Zweig — `git cat-file -e` findet sie weiter (die Objekte leben), `git log` nicht
+mehr, und der Dateiraum raeumt sie frueher oder spaeter ein. Ein Protokoll, das
+auf ein Objekt ausserhalb der Geschichte verweist, ist nicht nachpruefbar. Regel
+dafuer: einen Commit-Hash erst dann ins Protokoll schreiben, wenn der Eintrag
+selbst mit diesem Commit landet — Ausbessern nachtraeglicher Verweise macht sie
+selbst wieder falsch.
+
 Dabei erwischt, zum zweiten Mal an diesem Abend, dass eine Zahl in einer Meldung
 keine Pruefung ist: die Gate-Meldung behauptete 67108864 B, der Code prüfte
->1000000 B und den Hash (`b8dba73`). Und dass eine Sonde die haeufigere
+>1000000 B und den Hash (`d234cfb`). Und dass eine Sonde die haeufigere
 Fehlerquelle ist: `OUT="$o" … "$@" bash …` uebergibt Umgebungsvariablen als
 Befehl (Exit 127, kein Protokoll), die Pruefung meldete „keine Meldung" wo das
 Gate laengst richtig antwortete.
