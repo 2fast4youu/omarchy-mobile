@@ -2493,7 +2493,7 @@ solange die 129 als letztes Ergebnis gelten sollen: eine Suite, die ich im
 gleichen Atemzug ändere, über die ich gerade ihre Zahl berichte, beweist
 nichts (derselbe Fall wie der Lauf, der während meines Editierens lief).
 
-## 2026-10-30 06:30 — Drei Fäden nach Check-in #16, und einer davon ist das Orakel selbst
+## 2026-10-30 13:12 — Drei Fäden nach Check-in #16, und einer davon ist das Orakel selbst
 
 Kein Write ist geschehen. Die drei Fäden waren: die Referenz mechanisch zu Ende
 lesen, den Beweis-Einsammellauf trockentesten, und das Gerät nachmessen.
@@ -2562,7 +2562,7 @@ Zyklus, mit getvar vorher/nachher.
 Die Manifestprüfung über alle 70 Bilder danach: 70/70 OK — an den Bildern hat
 heute nichts geronnen, die Änderungen betreffen nur Host-Werkzeuge und Text.
 
-## 2026-10-30 07:1x — Der letzte ungefakete Beobachtungskanal: der Einsammelblock selbst
+## 2026-10-30 13:17 — Der letzte ungefakete Beobachtungskanal: der Einsammelblock selbst
 
 Der Runner sammelt nach dem Flash die Belege über Telnet ein. Dieser Block war
 den Tests der einzige Kanal, den nichts fakte — `tests/ref-enumeration` fakte
@@ -2595,7 +2595,7 @@ UDC-Zeile und die Bindungszeile. Nach dem Rückbau wieder Exit 0. Der Test
 unterscheidet also in beide Richtungen. `tests/bisection`: 10 ok / 0 not ok /
 Exit 0 (vorher 9).
 
-## 2026-10-30 07:4x — Der Container stand 13 Minuten in einem ping, und der Buchstabe war schuld
+## 2026-10-30 13:32 — Der Container stand 13 Minuten in einem ping, und der Buchstabe war schuld
 
 Der Suite-Neulauf nach dem neuen Einsammel-Test wollte nicht enden. `docker exec`
 zeigte im laufenden Container:
@@ -2637,3 +2637,32 @@ es im Fastboot-Modus hing: Nein, und der Beweis ist die Zeichenkette nicht im
 Kopf, sondern im Aufrufprotokoll — die Runner-Zeile 22 stellt platform-tools
 nur voran, **wenn kein fastboot gefunden wird**, und der Fake gewinnt dadurch;
 derselbe Fake meldet `flash boot_a` erhalten (die Prüfung darauf ist grün).
+
+## 2026-10-30 13:39 — Dieselbe Suite ohne Bild-Mount, und warum das kein Skip wurde
+
+Dieselbe Suite, diesmal ohne die Bild-Einhängungen (mein eigener Aufruf hatte
+`$HOME` leer übergeben, also drei leere `-v`-Argumente; der Log zeigte
+`SUITE: ok=104 (davon skip=3) not-ok=1 exit=1`), meldete zwei Ausfälle: meinen
+neuen ping-Abschnitt und einen **älteren**, `Runner bei falschem Hash ohne Grund
+im Protokoll`. Die Ursache ist in beiden Fällen dieselbe und sitzt nicht im
+Runner: ohne Bild bricht der Runner vorher mit `Bild fehlt` ab, und die Prüfung
+verlangt einen Hash-Vergleich, den es dann nie gab.
+
+Beides ist kein Grund zu skippen, weil die geprüfte Eigenschaft — *der Runner
+vergleicht den mitgegebenen Hash, bevor er fastboot ruft* — an keinem Byte des
+Bildinhalts hängt. Also erzeugen sich diese Abschnitte jetzt selbst ein Bild
+(ANDROID-Merkmal, 64 KiB, Hash gemessen statt geraten) und laufen überall. Ein
+Skip wäre die halbe Antwort gewesen: auf einer Maschine ohne Artefakt bliebe
+genau der Teil des Läufers ungeprüft, der sonst immer mitläuft — dieselbe
+Klasse wie ein Prüfstein, der ins Leere läuft und Erfolg meldet.
+
+Belege: mit Bildern 11 ok / 0 not ok / Exit 0; ohne Bilder (Kopie der Datei,
+`/private/tmp`-Kandidaten umgelenkt, `WS`/`IMGD` ins Leere) 10 ok / 0 not ok /
+3 skip / Exit 0, und die drei Skips sind ausschließlich die Abschnitte, die das
+ausgelieferte Bild wirklich lesen (patch-v0r, verify-v0r, Bild-A-Vergleich).
+Eine eigene Korrektur in derselben Reihe: die vier Ueberschriften oben trugen jetzt die gemessenen Zeiten ihrer Commits (13:12, 13:17, 13:32, 13:39, aus `git log --date=format:%H:%M`). Vorher stand dort 06:30 bis 08:1x — das war die Uhr aus der Kontext-Zusammenfassung, nicht die des Rechners, und sie lag um sechs Stunden daneben. Ein Protokoll, dessen Zeitstempel aus einer Nacherzählung stammen, ist für spätere Kausalbehauptungen unbrauchbar: `date` und Commit-Zeit sind die einzige Quelle, und die älteren Überschriften (04:2x zu Commit 04:30) zeigen, dass es vorher richtig war.
+
+Nebenbefund zur Ordnung: `fastboot` und `$HOME` sind in der Hintergrund-Shell
+dieses Agents nicht gesetzt — Mounts und Telefonabfragen laufen jetzt mit
+absoluten Pfaden, weil ein leeres `$HOME` drei `-v`-Argumente still zu leeren
+Strings macht.
