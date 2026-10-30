@@ -21,8 +21,8 @@
 # USB_F_ACM und USB_DWC3* sind im Kernel =y und das Ramdisk hat keine .ko.
 # Geglaubt wird auch hier nur dem Zuruecklesen aus dem fertigen Bild.
 set -eo pipefail
-[ -f "$IMGD/fl-v0o"/new.cpio ] || { echo "v0o fehlt"; exit 1; }
-[ -f "$IMGD/fl-v0k"/kernel-blob ] || { echo "Kernel-Blob fehlt"; exit 1; }
+[ -f "$IMGD/fl-v0o/new.cpio" ] || { echo "v0o fehlt"; exit 1; }
+[ -f "$IMGD/fl-v0k/kernel-blob" ] || { echo "Kernel-Blob fehlt"; exit 1; }
 mkdir -p "$IMGD/fl-v0p"
 docker run --rm \
   -v "$IMGD/fl-v0o":/p:ro \

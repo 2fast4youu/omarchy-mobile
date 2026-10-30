@@ -13,8 +13,8 @@
 set -eu
 IMGD=${IMGD:-/Users/gregor/hermes-workspace/images}   # langlebig; /private/tmp raeumt macOS
 FL=/Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
-[ -f "$IMGD/fl-v0q"/firstlight.img ] || { echo "v0q-Bild fehlt"; exit 1; }
-[ -f "$IMGD/fl-v0q"/new.cpio ] || { echo "v0q-Archiv fehlt"; exit 1; }
+[ -f "$IMGD/fl-v0q/firstlight.img" ] || { echo "v0q-Bild fehlt"; exit 1; }
+[ -f "$IMGD/fl-v0q/new.cpio" ] || { echo "v0q-Archiv fehlt"; exit 1; }
 mkdir -p "$IMGD/fl-v0r"
 docker run --rm \
   -v "$IMGD/fl-v0q":/q:ro \

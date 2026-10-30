@@ -2406,5 +2406,37 @@ auf jeder berührten Datei), und zweimal fiel die Ersetzung in ein bereits
 quotiertes `echo "…"` — gültig, aber liest sich wie ein Fehler. Deshalb prüft
 das Umstellungsskript jetzt, dass jedes Muster genau einmal trifft, und meldet
 pro Datei: ein stilles Nichtstun sieht sonst aus wie eine fertige Wanderung.
-Der Container-Lauf über den neuen Mount läuft beim Verfassen dieses Eintrags
-noch; seine Zahl kommt im folgenden Nachtrag, nicht als Nacherzählung.
+
+**Die Nachprüfung hat eine echte Lücke gefunden, die ich selbst gerissen habe.**
+`build-v0q.sh` verlangt `fl-v0p/new.cpio`; die Datei war nicht mitgezogen —
+vorher lag sie unter `/private/tmp` und wurde dort gefunden, nach der Umstellung
+hätte der Bau am neuen Ort abgelehnt. Nachgeholt (19 297 676 B, Hash
+`36a5d711…`, Quell- und Ziel-Hash gleich, `cmp` ohne Unterschied), Manifest auf
+70 Einträge neu erzeugt, Gegenprüfung: 0 nicht-OK.
+
+Drei Fehler der Sonde selbst, jeder einzelne hätte die Lücke unsichtbar
+gemacht — und alle drei sind dieselbe Klasse wie der aus dem Kopf gesetzte
+Hash:
+
+* Der Kandidaten-Regex ließ die halb quotierte Form nicht zu und meldete
+  **null Eingaben** bei Dateien, die sieben enthielten. Eine leere Prüfung und
+  eine kaputte Prüfung sehen gleich aus; die Zahl der Prüfsteine wird jetzt aus
+  dem Text abgeleitet und gegen die Textstellen gemeldet.
+* Eine Schwelle aus dem Kopf (`>= 12` Mounts, `>= 14` Eingaben) als Erwartung —
+  durch Zählung aus den Dateien ersetzt.
+* Eine Prüfung, die verlangt, dass *sie selbst* etwas geändert hat
+  (`n >= 2` geschlossene Anführungszeichen): im zweiten Lauf richtet sie nichts
+  mehr und fällt aus, obwohl der Baum in Ordnung ist. Geprüft wird der
+  Zustand, nicht die eigene Tat.
+
+`sh -n` allein hätte die offene Anführungszeichen-Kette nicht gefangen: sie
+pairt sich mit dem Anführungszeichen des nächsten `echo`, also ist die Datei
+parsbar und trotzdem falsch. Sechs solcher Stellen. Der Nachweis läuft die
+Prüfzeile deshalb im echten Lauf und vergleicht ihre Antwort mit der Platte.
+
+Mutationstest gegen die Sonde: ein Symlink-Spiegelbaum ohne `fl-v0p/new.cpio`
+lässt sie mit Exit 1 und genau diesem Dateinamen umfallen. Eine Sonde, die nur
+grün meldet, ist kein Beweis. Stand: 55 Prüfsteine ok, 0 not ok; Manifest
+70 Einträge, 0 nicht-OK. Das ist Ad-hoc-Nachweis der Pfade, nicht das
+Suite-Ergebnis — der Containerlauf über den neuen Mount wird separat
+nachgetragen.

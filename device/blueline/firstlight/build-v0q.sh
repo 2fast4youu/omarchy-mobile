@@ -30,9 +30,9 @@
 # kaputtgegangen: <<PY ohne Quotes expandiert "$m" und "$(basename ...)" weg.
 set -eo pipefail
 FL=/Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
-[ -f "$IMGD/fl-v0p"/firstlight.img ] || { echo "v0p-Bild fehlt"; exit 1; }
-[ -f "$IMGD/fl-v0p"/new.cpio ] || { echo "v0p-Archiv fehlt"; exit 1; }
-[ -f "$IMGD/refmod"/libcomposite.ko ] || {
+[ -f "$IMGD/fl-v0p/firstlight.img" ] || { echo "v0p-Bild fehlt"; exit 1; }
+[ -f "$IMGD/fl-v0p/new.cpio" ] || { echo "v0p-Archiv fehlt"; exit 1; }
+[ -f "$IMGD/refmod/libcomposite.ko" ] || {
   echo "refmod fehlt: REF_IMG=... python3 $FL/refmodules.py $IMGD/refmod"; exit 1; }
 mkdir -p "$IMGD/fl-v0q"
 docker run --rm \
