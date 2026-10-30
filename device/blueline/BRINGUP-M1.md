@@ -2440,3 +2440,35 @@ grün meldet, ist kein Beweis. Stand: 55 Prüfsteine ok, 0 not ok; Manifest
 70 Einträge, 0 nicht-OK. Das ist Ad-hoc-Nachweis der Pfade, nicht das
 Suite-Ergebnis — der Containerlauf über den neuen Mount wird separat
 nachgetragen.
+
+### Der Containerlauf über den neuen Mount: 129 / 0 / 4 skip
+
+`docker run --rm --platform linux/arm64/v8 -v "$PWD":/w:ro
+-v ~/hermes-workspace/images:/images:ro -v $WS/pmos-ref-build:/pmos-ref-build:ro
+-v $PWD/tools/ci-arm64.sh:/v.sh:ro alpine:edge sh /v.sh` →
+**`SUITE: ok=129 (davon skip=4) not-ok=0 exit=0`, `SUITE GRUEN`**. Ein Mount für
+alle Bilder statt der fünf alten, und die Zahl ist identisch zu der von vor der
+Wanderung — die Umstellung ändert also nichts, was die Suite sieht.
+
+Zur Herkunft, weil die Regeln hier schon einmal gezahlt haben: der Container
+kopiert `/w` beim Start nach `/work`, die Zahl gehört also einem Arbeitsbaum
+*vor* den beiden folgenden Commits. Nachgesehen, nicht angenommen — der
+Unterschied zu `08f00c3` betrifft vier Dateien, und keine Zeile davon liest die
+Suite:
+
+* `BRINGUP-M1.md` — Text, liest kein Test.
+* `build-v0p/v0q/v0r.sh` — die geänderten Zeilen sind ausschließlich die sechs
+  geschlossenen Anführungszeichen. Die zwei Tests, die diese Dateien überhaupt
+  lesen, tun es mit `grep` nach `gadget-reference.sh` und `panel-status.sh`
+  (beide Treffer sitzen heute noch drin: 2 und 1) bzw. mit einer
+  Existenzprüfung. Kein Test führt die Rezepte aus.
+
+Dabei der blinde Fleck, warum `sh -n` die offene Anführungszeichen-Kette nicht
+meldete und die Suite sie durchließ: **`tests/all` parst `tests/*` und einige
+Werkzeuge, aber nie `device/blueline/firstlight/*.sh`.** Die Baurezepte — die
+einzigen Dateien, die Bilder bauen und deren Hashes vergleichen — stehen in
+keiner Parse-Schleife. Nachtrag: drei Dateien in diese Schleife, was die
+Suite-Zahl ungültig macht und einen Neulauf braucht. Bewusst *nicht* erledigt,
+solange die 129 als letztes Ergebnis gelten sollen: eine Suite, die ich im
+gleichen Atemzug ändere, über die ich gerade ihre Zahl berichte, beweist
+nichts (derselbe Fall wie der Lauf, der während meines Editierens lief).
