@@ -20,13 +20,20 @@ set -uo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 FL=device/blueline/firstlight
 WS=${WS:-/Users/gregor/hermes-workspace}
-for c in "${IMG_A:-}" /private/tmp/fl-refpacked/firstlight.img "$WS/../private/tmp/fl-refpacked/firstlight.img"; do
+# Die Bilder liegen langlebig unter $IMGD. Grund: macOS raeumt /private/tmp —
+# beim Neustart einen Teil, den Rest periodisch nach Alter. Dann zeigt das
+# Gate des Flash-Runners ins Leere und diese Tests verlieren ihre Artefakte;
+# der Runner bricht zwar ehrlich ab, aber im Ernstfall, waehrend das Telefon
+# dunkel ist. /private/tmp bleibt als Rueckfall stehen (Container-Lauefe
+# haengen die Ordner dorthin ein).
+IMGD=${IMGD:-$WS/images}
+for c in "${IMG_A:-}" "$IMGD/fl-refpacked/firstlight.img" /private/tmp/fl-refpacked/firstlight.img "$WS/../private/tmp/fl-refpacked/firstlight.img"; do
   [[ -n $c && -r $c ]] && { IMG_A=$c; break; }
 done
-for c in "${IMG_V0R:-}" /private/tmp/fl-v0r/firstlight.img; do
+for c in "${IMG_V0R:-}" "$IMGD/fl-v0r/firstlight.img" /private/tmp/fl-v0r/firstlight.img; do
   [[ -n $c && -r $c ]] && { IMG_V0R=$c; break; }
 done
-for c in "${CPIO_V0Q:-}" /private/tmp/fl-v0q/new.cpio "$WS/../private/tmp/fl-v0q/new.cpio"; do
+for c in "${CPIO_V0Q:-}" "$IMGD/fl-v0q/new.cpio" /private/tmp/fl-v0q/new.cpio "$WS/../private/tmp/fl-v0q/new.cpio"; do
   [[ -n $c && -r $c ]] && { CPIO_V0Q=$c; break; }
 done
 # Nach den Kandidatensuchladen immer explizite Faelle: ein nacktes $IMG_V0R
@@ -36,7 +43,8 @@ done
 IMG_A=${IMG_A:-/nonexistent}
 IMG_V0R=${IMG_V0R:-/nonexistent}
 CPIO_V0Q=${CPIO_V0Q:-/nonexistent}
-V0Q_IMG=${V0Q_IMG:-/private/tmp/fl-v0q/firstlight.img}
+V0Q_IMG=${V0Q_IMG:-$IMGD/fl-v0q/firstlight.img}
+[[ -r $V0Q_IMG ]] || V0Q_IMG=/private/tmp/fl-v0q/firstlight.img
 REF_IMG=${REF_IMG:-$WS/pmos-ref-build/ref/boot.img}
 [[ -r $REF_IMG ]] || for c in /pmos-ref-build/ref/boot.img; do [[ -r $c ]] && REF_IMG=$c; done
 t=$(mktemp -d); trap 'rm -rf "$t"' EXIT

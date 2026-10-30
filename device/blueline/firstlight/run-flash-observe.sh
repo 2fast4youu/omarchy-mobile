@@ -13,7 +13,9 @@ set -uo pipefail
 IMG=${1:?usage: run-flash-observe.sh <boot.img> <sha256> [dauer-s]}
 SOLL=${2:?erwartete sha256 fehlt}
 DAUER=${3:-300}
-OUT=${OUT:-/private/tmp/flash-observe}
+# Das Protokoll dieses Laufs ist der Beleg des Ernstfalls, also langlebig:
+# /private/tmp raeumt macOS beim Neustart und periodisch nach Alter.
+OUT=${OUT:-/Users/gregor/hermes-workspace/flash-observe}
 # platform-tools nur in den PATH, wenn nicht schon ein fastboot da ist: ein
 # Test-Fake, der den PATH von aussen setzt, verliert sonst gegen den echten
 # (dieselbe Falle, die der Runner-Test fuer ref-enumeration-test.sh dokumentiert).

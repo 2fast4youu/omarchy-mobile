@@ -12,9 +12,9 @@
 # 20 s, g1-Gadget (NCM+ACM) an der Referenz-Position, ramoops im DTB.
 set -eo pipefail
 docker run --rm \
-  -v /private/tmp/fl-v0o:/o \
-  -v /private/tmp/fl-v0n:/n \
-  -v /private/tmp/fl-v0k:/k \
+  -v "$IMGD/fl-v0o":/o \
+  -v "$IMGD/fl-v0n":/n \
+  -v "$IMGD/fl-v0k":/k \
   -v /Users/gregor/hermes-workspace/omarchy-mobile:/om:ro \
   -v /Users/gregor/hermes-workspace/pmos-ref-build/ref:/ref:ro \
   alpine:edge sh -euc '

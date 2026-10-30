@@ -17,7 +17,7 @@
 #
 # Die Module kommen aus dem Referenz-Initramfs selbst: refmodules.py liest die
 # Schliessung aus dessen modules.dep und legt sie entpackt nach
-# /private/tmp/refmod. busybox-insmod (sbin/insmod ist ein Hardlink auf
+# "$IMGD/refmod". busybox-insmod (sbin/insmod ist ein Hardlink auf
 # /bin/busybox) kann kein zstd, also ohne .zst; es prueft den vermagic selbst.
 #
 # dr_mode ist als Erklaerung vom Tisch: unser DTB unterscheidet sich vom
@@ -30,15 +30,15 @@
 # kaputtgegangen: <<PY ohne Quotes expandiert "$m" und "$(basename ...)" weg.
 set -eo pipefail
 FL=/Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
-[ -f /private/tmp/fl-v0p/firstlight.img ] || { echo "v0p-Bild fehlt"; exit 1; }
-[ -f /private/tmp/fl-v0p/new.cpio ] || { echo "v0p-Archiv fehlt"; exit 1; }
-[ -f /private/tmp/refmod/libcomposite.ko ] || {
-  echo "refmod fehlt: REF_IMG=... python3 $FL/refmodules.py /private/tmp/refmod"; exit 1; }
-mkdir -p /private/tmp/fl-v0q
+[ -f "$IMGD/fl-v0p"/firstlight.img ] || { echo "v0p-Bild fehlt"; exit 1; }
+[ -f "$IMGD/fl-v0p"/new.cpio ] || { echo "v0p-Archiv fehlt"; exit 1; }
+[ -f "$IMGD/refmod"/libcomposite.ko ] || {
+  echo "refmod fehlt: REF_IMG=... python3 $FL/refmodules.py $IMGD/refmod"; exit 1; }
+mkdir -p "$IMGD/fl-v0q"
 docker run --rm \
-  -v /private/tmp/fl-v0p:/p:ro \
-  -v /private/tmp/refmod:/m:ro \
-  -v /private/tmp/fl-v0q:/q \
+  -v "$IMGD/fl-v0p":/p:ro \
+  -v "$IMGD/refmod":/m:ro \
+  -v "$IMGD/fl-v0q":/q \
   -v "$FL":/om:ro \
   -v /Users/gregor/hermes-workspace/pmos-ref-build/ref:/ref:ro \
   -e SOLL_SHA=2911e6f7666299639e0a712604fe3ae0427802f875b319f47146d93826fd3ee1 \

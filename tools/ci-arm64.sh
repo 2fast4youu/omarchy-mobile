@@ -1,7 +1,7 @@
 #!/bin/sh
 # Kanonischer Suite-Lauf auf nativem arm64 (alpine:edge, --platform linux/arm64/v8).
 # Aufruf: docker run --rm --platform linux/arm64/v8 -v "$PWD":/w:ro \
-#   -v /private/tmp/fl-v0q:/fl-v0q:ro -v /private/tmp/refmod:/private/tmp/refmod:ro \
+#   -v ~/hermes-workspace/images:/images:ro \
 #   -v "$WS/pmos-ref-build":/pmos-ref-build:ro -v "$PWD/tools/ci-arm64.sh":/v.sh:ro \
 #   alpine:edge sh /v.sh
 # Zaehlt ok/total und mountet alle
@@ -12,10 +12,22 @@ apk add --no-cache git python3 bash perl diffutils findutils grep sed \
   coreutils zstd tar openssl >/dev/null 2>&1
 cp -r /w /work
 cd /work; chmod -R u+w .
-mkdir -p /private/tmp; ln -sfn /fl-v0q /private/tmp/fl-v0q
-# Die Bisektionsbilder: ohne diese beiden Links sucht tests/bisection
-# /nonexistent und meldet Dunkelheit statt Gruen.
-for d in fl-refpacked fl-v0r; do [ -d "/$d" ] && ln -sfn "/$d" "/private/tmp/$d"; done
+# Ein Mount fuer alle Bilder: ~/hermes-workspace/images (der langlebige Ort;
+# /private/tmp raeumt macOS). Die Tests suchen zuerst unter $WS/images, deshalb
+# genuegt ein Link auf den Standardpfad. Zuvor waren es fuenf Einzelmounts —
+# und ein fehlender davon meldete ein 'not ok', das Dunkelheit war, kein
+# Rueckschritt.
+if [ -d /images ]; then
+  mkdir -p /Users/gregor/hermes-workspace
+  ln -sfn /images /Users/gregor/hermes-workspace/images
+else
+  echo "nicht ok - /images fehlt: ohne Bild-Mount sind Bildpruefungen Dunkelheit"
+fi
+mkdir -p /private/tmp
+for d in fl-v0q fl-refpacked fl-v0r refmod; do
+  if [ -d "/images/$d" ]; then ln -sfn "/images/$d" "/private/tmp/$d"
+  elif [ -d "/$d" ]; then ln -sfn "/$d" "/private/tmp/$d"; fi
+done
 mkdir -p /faktes
 # Der shasum-Fake muss die WAHREN Hashes liefern, nicht einen Pauschalwert:
 # der Flash-Runner vergleicht shasum-Ausgaben gegen erwartete sha256 von Bild

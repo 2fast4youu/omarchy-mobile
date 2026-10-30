@@ -15,7 +15,7 @@ REF="/Users/gregor/hermes-workspace/pmos-ref-build/ref/boot.img"
 REF_SHA="ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82"
 FACTORY="/Users/gregor/hermes-workspace/android-mainline/factory/sp1a/boot.img"
 FAC_SHA="5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e"
-OUT="${1:-/private/tmp/ref-enum}"
+OUT="${1:-/Users/gregor/hermes-workspace/ref-enum}"   # langlebig, /private/tmp raeumt sich
 DAUER="${2:-300}"
 mkdir -p "$OUT"
 K="$OUT/enum.log"

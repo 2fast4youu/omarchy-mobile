@@ -11,16 +11,17 @@
 # Modulpfad + Referenz-Gadgetblock mit Zeilenanfang-Ankern), dann die zwei
 # neuen Blöcke, dann bash -n auf die herausgelöste Init.
 set -eu
+IMGD=${IMGD:-/Users/gregor/hermes-workspace/images}   # langlebig; /private/tmp raeumt macOS
 FL=/Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
-[ -f /private/tmp/fl-v0q/firstlight.img ] || { echo "v0q-Bild fehlt"; exit 1; }
-[ -f /private/tmp/fl-v0q/new.cpio ] || { echo "v0q-Archiv fehlt"; exit 1; }
-mkdir -p /private/tmp/fl-v0r
+[ -f "$IMGD/fl-v0q"/firstlight.img ] || { echo "v0q-Bild fehlt"; exit 1; }
+[ -f "$IMGD/fl-v0q"/new.cpio ] || { echo "v0q-Archiv fehlt"; exit 1; }
+mkdir -p "$IMGD/fl-v0r"
 docker run --rm \
-  -v /private/tmp/fl-v0q:/q:ro \
-  -v /private/tmp/refmod:/m:ro \
+  -v "$IMGD/fl-v0q":/q:ro \
+  -v "$IMGD/refmod":/m:ro \
   -v "$FL":/om:ro \
   -v /Users/gregor/hermes-workspace/pmos-ref-build/ref:/ref:ro \
-  -v /private/tmp/fl-v0r:/r \
+  -v "$IMGD/fl-v0r":/r \
   alpine:edge sh -euc '
 apk add --no-cache python3 bash gzip >/dev/null 2>&1
 python3 /om/patch-v0r.py /q/new.cpio /r/new.cpio
@@ -50,4 +51,4 @@ open("/tmp/init-v0r.sh","w").write(ent["init"]["content"].decode())
 EXTRACT
 bash -n /tmp/init-v0r.sh && echo "bash -n: Init syntaxfehlerfrei"
 sha256sum /r/firstlight.img /r/new.cpio'
-echo "bau v0r fertig: /private/tmp/fl-v0r/firstlight.img"
+echo "bau v0r fertig: $IMGD/fl-v0r/firstlight.img"

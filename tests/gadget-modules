@@ -12,6 +12,9 @@ set -uo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 FL=device/blueline/firstlight
 WS=${WS:-/Users/gregor/hermes-workspace}
+# Langlebiger Ort der Bilder (macOS raeumt /private/tmp); der alte Ort bleibt
+# als Rueckfall, weil der Container die Ordner dorthin einhaengt.
+IMGD=${IMGD:-$WS/images}
 # Die Referenz liegt auf dem Host und im CI-Container an verschiedenen Orten;
 # getestet wird nur, was wirklich lesbar ist - sonst meldet der Test Dunkelheit
 # als Erfolg.
@@ -22,13 +25,15 @@ for c in "${REF_CFG:-}" /pmos-ref-build/pmaports/device/community/linux-postmark
          "$WS/pmos-ref-build/pmaports/device/community/linux-postmarketos-qcom-sdm845/config-postmarketos-qcom-sdm845.aarch64"; do
   [[ -r $c ]] && { REF_CFG=$c; break; }
 done
-for c in "${IMG:-}" /private/tmp/fl-v0q/firstlight.img "$WS/../private/tmp/fl-v0q/firstlight.img"; do
+for c in "${IMG:-}" "$IMGD/fl-v0q/firstlight.img" /private/tmp/fl-v0q/firstlight.img "$WS/../private/tmp/fl-v0q/firstlight.img"; do
   [[ -r $c ]] && { IMG=$c; break; }
 done
 REF_IMG=${REF_IMG:-/pmos-ref-build/ref/boot.img}
 REF_CFG=${REF_CFG:-/pmos-ref-build/pmaports/device/community/linux-postmarketos-qcom-sdm845/config-postmarketos-qcom-sdm845.aarch64}
-IMG=${IMG:-/private/tmp/fl-v0q/firstlight.img}
-STAGED=${STAGED:-/private/tmp/refmod}
+IMG=${IMG:-$IMGD/fl-v0q/firstlight.img}
+[[ -r $IMG ]] || IMG=/private/tmp/fl-v0q/firstlight.img
+STAGED=${STAGED:-$IMGD/refmod}
+[[ -d $STAGED ]] || STAGED=/private/tmp/refmod
 NEWC=$FL/newc.py
 GREF=$FL/gadget-reference.sh
 t=$(mktemp -d); trap 'rm -rf "$t"' EXIT

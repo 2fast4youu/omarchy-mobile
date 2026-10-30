@@ -21,13 +21,13 @@
 # USB_F_ACM und USB_DWC3* sind im Kernel =y und das Ramdisk hat keine .ko.
 # Geglaubt wird auch hier nur dem Zuruecklesen aus dem fertigen Bild.
 set -eo pipefail
-[ -f /private/tmp/fl-v0o/new.cpio ] || { echo "v0o fehlt"; exit 1; }
-[ -f /private/tmp/fl-v0k/kernel-blob ] || { echo "Kernel-Blob fehlt"; exit 1; }
-mkdir -p /private/tmp/fl-v0p
+[ -f "$IMGD/fl-v0o"/new.cpio ] || { echo "v0o fehlt"; exit 1; }
+[ -f "$IMGD/fl-v0k"/kernel-blob ] || { echo "Kernel-Blob fehlt"; exit 1; }
+mkdir -p "$IMGD/fl-v0p"
 docker run --rm \
-  -v /private/tmp/fl-v0o:/p:ro \
-  -v /private/tmp/fl-v0k:/k:ro \
-  -v /private/tmp/fl-v0p:/q \
+  -v "$IMGD/fl-v0o":/p:ro \
+  -v "$IMGD/fl-v0k":/k:ro \
+  -v "$IMGD/fl-v0p":/q \
   -v /Users/gregor/hermes-workspace/omarchy-mobile:/om:ro \
   -v /Users/gregor/hermes-workspace/pmos-ref-build/ref:/ref:ro \
   alpine:edge sh -euc '

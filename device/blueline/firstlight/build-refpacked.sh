@@ -15,7 +15,7 @@
 # zu lesen.
 set -eu
 FL=/Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
-OUT=/private/tmp/fl-refpacked
+OUT=${IMGD:-/Users/gregor/hermes-workspace/images}/fl-refpacked
 mkdir -p "$OUT"
 docker run --rm \
   -v /Users/gregor/hermes-workspace/pmos-ref-build/ref:/ref:ro \

@@ -15,8 +15,8 @@
 # spiegelt den pstore-Inhalt (ramoops-Feld sitzt seit v0k/v0l im DTB).
 set -eo pipefail
 docker run --rm \
-  -v /private/tmp/fl-v0l:/l \
-  -v /private/tmp/fl-v0k:/k \
+  -v "$IMGD/fl-v0l":/l \
+  -v "$IMGD/fl-v0k":/k \
   -v /Users/gregor/hermes-workspace/omarchy-mobile:/om:ro \
   -v /Users/gregor/hermes-workspace/pmos-ref-build/ref:/ref:ro \
   alpine:edge sh -euc '

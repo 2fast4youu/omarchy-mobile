@@ -2359,3 +2359,52 @@ Nachtrag zur Freigabe-Praxis: zwischen der ersten Frage um 22:26 und dem
 Check-in lagen acht Nachfragen, jede an eine Hintergrund-Meldung angehaengt.
 Eine Frage, die auf berichtigten Fakten steht, wird einmal gestellt — dann ist
 Ruhe, bis der Besitzer antwortet.
+
+## 2026-10-30 04:2x — Die Bilder lagen im Räumordner (Check-in #13)
+
+Check-in von Claude: v0r, `fl-v0q`, `refmod` und `fl-refpacked` lagen unter
+`/private/tmp`. macOS räumt das beim Neustart und den Rest periodisch nach
+Alter. Das Gate hätte im Ernstfall *ehrlich* abgebrochen — nur eben in dem
+Moment, in dem das Telefon dunkel ist und zurückgeflasht werden soll, und
+`tests/gadget-modules` wie `tests/bisection` hätten ihre Artefakte verloren.
+Ein Rückweg, dessen Datei im Ordner des Betriebssystems liegt, das den Ordner
+räumt, ist kein Rückweg.
+
+Gemessen, nicht übernommen:
+
+* 69 Dateien, 0,33 GB nach `~/hermes-workspace/images` (außerhalb des Repos),
+  Kopie mit Zeitstempel, danach Quell- und Ziel-Hash jeder Datei verglichen und
+  Bytevergleich mit `cmp`: 0 Abweichungen. Gegenprüfung am neuen Ort mit
+  `shasum -a 256 -c SHA256SUMS`: 69 Einträge, 0 nicht-OK. Das Manifest
+  `images/SHA256SUMS` und `images/HERKUNFT.md` halten die Messwerte fest.
+* Die drei tragenden Werte am neuen Ort, identisch zu denen des Hash-Audits:
+  v0r `daf56a12…` (21 094 400 B), v0q `2911e6f7…` (21 094 400 B), Bild A
+  `346a96da…` (28 729 344 B). Auch die Eingaben der historischen Baurezepte
+  (`fl-v0k/kernel-blob`, `fl-v0o/new.cpio`, `new.cpio` von v0l/v0n) und die
+  0,1 MB Text-Beweise (`ERGEBNIS.txt`, `kanal.txt`) sind dabei — die wären
+  ebenfalls geräumt worden.
+* Die Kandidatenlisten wählen wirklich den neuen Ort, nicht den Rückfall:
+  `IMG_A`, `IMG_V0R`, `CPIO_V0Q`, `V0Q_IMG`, `IMG` und `STAGED` lösen alle auf
+  `~/hermes-workspace/images/...` auf (nachgestellt, weil „der Default zeigt
+  jetzt dorthin" ohne Auflösung gemessen werden muss).
+* `tests/gadget-modules` und `tests/bisection` nach der Umstellung: Exit 0.
+* Kein Write ans Handy: Telefon bei 172.16.42.1 pingbar, Port 23 offen, `boot_a`
+  hält weiter die Referenz (`ed2c225f…`).
+
+Umgestellt wurden 22 Stellen in 13 Dateien: die Kandidatenlisten der beiden
+Tests (neuer Ort zuerst, `/private/tmp` als Rückfall für Container-Läufe, die
+den alten Namen eingehängt bekommen), die Ausgabeorte von `run-flash-observe.sh`
+(`flash-observe`), `ref-enumeration-test.sh`, `gate-test.sh`,
+`build-refpacked.sh` und `refmodules.py`, die fünf Baurezepte
+`build-v0m/v0o/v0p/v0q/v0r.sh` und `tools/ci-arm64.sh` — das braucht jetzt einen
+einzigen Mount (`-v ~/hermes-workspace/images:/images:ro`) statt der fünf
+Einzelmounts, deren fehlender jeweils ein `not ok` war, das Dunkelheit war.
+
+Zwei eigene Fehler beim Umstellen, beide von den Werkzeugen gefangen: der
+Token-Tausch setzte ein öffnendes Anführungszeichen ohne schließendes (`sh -n`
+auf jeder berührten Datei), und zweimal fiel die Ersetzung in ein bereits
+quotiertes `echo "…"` — gültig, aber liest sich wie ein Fehler. Deshalb prüft
+das Umstellungsskript jetzt, dass jedes Muster genau einmal trifft, und meldet
+pro Datei: ein stilles Nichtstun sieht sonst aus wie eine fertige Wanderung.
+Der Container-Lauf über den neuen Mount läuft beim Verfassen dieses Eintrags
+noch; seine Zahl kommt im folgenden Nachtrag, nicht als Nacherzählung.

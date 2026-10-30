@@ -64,7 +64,7 @@ def closure(dep_txt):
 
 
 def main():
-    out = sys.argv[1] if len(sys.argv) > 1 else "/private/tmp/refmod"
+    out = sys.argv[1] if len(sys.argv) > 1 else "/Users/gregor/hermes-workspace/images/refmod"
     os.makedirs(out, exist_ok=True)
     work = tempfile.mkdtemp(prefix="refmod-")
     cpio_path = os.path.join(work, "ref.cpio")

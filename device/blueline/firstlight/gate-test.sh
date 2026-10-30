@@ -9,7 +9,7 @@
 set -uo pipefail
 V=$(mktemp -d "${TMPDIR:-/private/var/folders/mw/b3m3hvy12pb95lt_56zdq6rh0000gn/T}/hermes-gate-XXXXXX")
 trap 'rm -rf "$V"' EXIT
-SRC="${RUN_SH:-/private/tmp/fl-v0q/run.sh}"
+SRC="${RUN_SH:-/Users/gregor/hermes-workspace/images/fl-v0q/run.sh}"
 
 mk_case() {  # $1 = Zielordner
   mkdir -p "$1/home" "$1/mockbin"
