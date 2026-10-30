@@ -1,0 +1,295 @@
+#!/usr/bin/env python3
+"""Prueft den 'FLASH-BEREIT'-Block gegen die Platte, nicht gegen eine Erinnerung.
+
+Grund: dieser Block traegt die Flash-Prozedur fuer einen Agenten, dessen Kontext
+mitten im Bring-up kompaktiert wird (mehrfach gemessen). Wenn eine Zahl oder ein
+Pfad darin sich vom Zustand auf der Platte entfernt, ist die Prozedur falsch,
+ohne dass sie jemand falsch findet.
+
+Der Pruefer ist gegen sich selbst misstrauisch:
+* jede Zahl kommt aus dem Text, jede Vergleichsgroesse aus sha256/os.stat;
+* Pfade, die der Laeufer unter seinem OUT-Default selbst anlegt, sind keine
+  Voraussetzung — die Rolle wird aus dem Runner abgeleitet, nicht aus einem
+  Namen geraten, und die Auslassung wird ausgegeben, nicht verschwiegen;
+* Unerreichbares wird Skip mit Grund, nie ein stiller Erfolg;
+* PLAN und LAUFER sind uebergebbar, damit die Mutation den Test pruefen kann:
+  PLAN=<kopie mit versehnter ziffer> ./tests/flash-block muss not ok melden.
+
+Ausfuehren:  ./tests/flash-block   (Exit 0 = Block traegt)
+"""
+import hashlib
+import os
+import re
+import subprocess
+import sys
+import tempfile
+
+WURZEL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PLAN = os.environ.get("PLAN") or os.path.join(WURZEL, "device/blueline", "BRINGUP-M1.md")
+LAUFER = os.environ.get("LAUFER") or os.path.join(WURZEL, "device/blueline/firstlight",
+                                                 "run-flash-observe.sh")
+PRUEFUNGEN, FEHLER, SKIPS, AUSGELASSEN = [], [], [], []
+
+
+def ok(text):
+    PRUEFUNGEN.append(text)
+    print('ok - ' + text)
+
+
+def notok(text):
+    PRUEFUNGEN.append(text)
+    FEHLER.append(text)
+    print('not ok - ' + text)
+
+
+def skip(text):
+    SKIPS.append(text)
+    print('ok - # skip: ' + text)
+
+
+def sha256(pfad):
+    ha = hashlib.sha256()
+    with open(pfad, "rb") as datei:
+        for brocken in iter(lambda: datei.read(1 << 20), b""):
+            ha.update(brocken)
+    return ha.hexdigest()
+
+
+if not os.path.isfile(PLAN):
+    skip("Plan nicht lesbar: %s" % PLAN)
+    print("\npruefungen=0 fehler=0 skips=1")
+    raise SystemExit(0)
+
+plan = open(PLAN, encoding="utf-8", errors="replace").read()
+ansatz = re.search(r"^## FLASH-BEREIT.*?(?=^## |\Z)", plan, re.M | re.S)
+if not ansatz:
+    notok("kein 'FLASH-BEREIT'-Block im Plan — die Prozedur haengt dann an einer Erinnerung")
+    raise SystemExit(1)
+block = ansatz.group(0)
+ok("FLASH-BEREIT-Block gefunden (%d Zeilen)" % block.count("\n"))
+
+laeufer_text = ""
+if os.path.isfile(LAUFER):
+    laeufer_text = open(LAUFER, encoding="utf-8", errors="replace").read()
+else:
+    skip("Laeufer nicht lesbar: %s" % LAUFER)
+out_default = ""
+ausgelesen = re.search(r'OUT=\$\{OUT:-([^}]*)\}', laeufer_text)
+if ausgelesen:
+    out_default = ausgelesen.group(1).rstrip("/")
+
+# 1) Absolute Pfade. Die Zeichenklasse enthaelt kein Backtick — ein Muster, das
+#    welches einsammelte, hielt jeden in Backticks gesetzten Pfad fuer
+#    nichtexistend (gemessen: 1 von 6 Pfaden erkannt).
+pfade = []
+for treffer in re.findall(r"/(?:Users|home|var|opt|private)[A-Za-z0-9._/-]+", block):
+    treffer = treffer.rstrip(".-/")
+    if not re.search(r"\.(img|sh|md|txt|log|json)$", treffer):
+        continue
+    if out_default and treffer.startswith(out_default + "/"):
+        AUSGELASSEN.append(treffer)
+        continue
+    if treffer not in pfade:
+        pfade.append(treffer)
+if AUSGELASSEN:
+    ok("%d Pfade ausgelassen: der Laeufer legt sie unter seinem OUT-Default an "
+       "(Rolle aus %s abgeleitet)" % (len(AUSGELASSEN), "OUT=${OUT:-…}"))
+fehlend = sorted(p for p in pfade if not os.path.isfile(p))
+if not pfade:
+    notok("Block nennt keine pruefbare Datei — der Pruefer laeuft ins Leere")
+elif fehlend:
+    notok("%d genannte Dateien sind nicht lesbar: %s" % (len(fehlend), ", ".join(fehlend)[:200]))
+else:
+    ok("alle %d Dateien, die der Block nennt, sind lesbar" % len(pfade))
+
+# 2) Relativ genannte Belegdateien: ein Tippfehler in einem Belegpfad ist ein
+#    Beleg, den spaeter niemand oeffnet.
+belege = sorted(set(re.findall(r"(?:firstlight/)?evidence/[A-Za-z0-9._-]+\.txt", block)))
+if not belege:
+    skip("Block nennt keine evidence-Dateien")
+else:
+    # Wo ein nicht-praefixierter Name liegt, wird nachgeschlagen, nicht geraten:
+    # die Kandidaten werden durchprobiert und die Regel ausgegeben. Die erste
+    # Fassung dieses Pruefers hielt 'device/blueline/' fuer das Grundverzeichnis
+    # und meldete zwei vorhandene Belege als fehlend — ein Pruefer, der eine
+    # Berichtigung wegen eines eigenen Fehlers verlangt, ist teurer als keiner.
+    gründe = [os.path.join(WURZEL, "device/blueline", "firstlight"),
+              os.path.join(WURZEL, "device/blueline"), WURZEL]
+    def gefunden(name):
+        for grund in gründe:
+            if os.path.isfile(os.path.join(grund, name)):
+                return grund
+        return ""
+    kaputt = [b for b in belege if not gefunden(b)]
+    if kaputt:
+        notok("%d genannte Belegdateien fehlen (kandierte Grundverzeichnisse: %s): %s"
+              % (len(kaputt), ", ".join(os.path.relpath(g, WURZEL) for g in gründe),
+                 ", ".join(kaputt)[:180]))
+    else:
+        ok("alle %d genannten Belegdateien existieren (Grund ausprobierter Kandidaten, "
+           "nicht geraten)" % len(belege))
+
+# 3) Hash und Groesse: der naechste 64er-Hex hinter der Datei muss ihr gemessener
+#    sein, die Zahl in 'B' in demselben Umfeld ihre echte Groesse.
+for pfad in sorted(p for p in pfade if p.endswith(".img") and os.path.isfile(p)):
+    stelle = block.find(pfad)
+    umfeld = block[stelle:stelle + 900]
+    hexwort = re.search(r"\b([0-9a-f]{64})\b", umfeld)
+    if not hexwort:
+        skip("%s: kein voller Hash im selben Absatz" % os.path.basename(pfad))
+        continue
+    gesollt = hexwort.group(1)
+    gemessen = sha256(pfad)
+    if gemessen != gesollt:
+        # Die Fensteranzeige muss den Unterschied zeigen: bei einer falsch
+        # gesetzten Ziffer an Stelle 11 sahen 'erste 10 Zeichen' identisch aus,
+        # und die Meldung las sich wie ein Widerspruch.
+        ab = next((i for i in range(min(len(gesollt), len(gemessen)))
+                   if gesollt[i] != gemessen[i]), 0)
+        notok("Block sagt %s… fuer %s, gemessen %s… (erster Unterschied an Stelle %d: "
+              "%s gegen %s)"
+              % (gesollt[:8], os.path.basename(pfad), gemessen[:8], ab + 1,
+                 gesollt[ab], gemessen[ab]))
+        continue
+    zahl = re.search(r"\b(\d{6,9})\s?B\b", umfeld)
+    zusatz = ""
+    if zahl:
+        gesaget, echt = int(zahl.group(1)), os.path.getsize(pfad)
+        if gesaget != echt:
+            notok("Block sagt %d B fuer %s, die Datei hat %d B"
+                  % (gesaget, os.path.basename(pfad), echt))
+            continue
+        zusatz = ", Groesse %d B bestaetigt" % echt
+    ok("Hash und Groesse von %s stimmen (%s…%s%s)"
+       % (os.path.basename(pfad), gesollt[:8], gesollt[-6:], zusatz))
+
+# 4) Der Anruf: Bildpfad und der Hash, den der Block als Argument zeigt.
+anruf = re.search(r"(run-flash-observe\.sh)\s+(\S+)\s+([0-9a-f]{64})", block)
+if not anruf:
+    skip("kein Anruf mit Bildpfad und vollem Hash im Block")
+elif not os.path.isfile(anruf.group(2)):
+    notok("Anruf im Block zeigt auf eine fehlende Datei: %s" % anruf.group(2))
+else:
+    gemessen = sha256(anruf.group(2))
+    if gemessen == anruf.group(3):
+        ok("Anruf-Hash im Block ist der gemessene Hash des Bildes (%s…%s)"
+           % (gemessen[:8], gemessen[-6:]))
+    else:
+        notok("Anruf-Hash im Block (%s…) ist nicht der des Bildes (%s…)"
+              % (anruf.group(3)[:8], gemessen[:8]))
+
+# 5) Der Rueckweg muss der sein, den der Laeufer defaultmaessig nimmt.
+if laeufer_text:
+    default = re.search(r'RUECKWEG=\$\{RUECKWEG:-([^}]*)\}', laeufer_text)
+    stufe1 = re.search(r"Rueckweg STUFE 1[^\n]*?:\s*`([^`]+)`", block)
+    if not default:
+        notok("Laeufer hat keinen ${RUECKWEG:-…}-Default zum Vergleichen")
+    elif not stufe1:
+        notok("Block nennt Stufe 1 ohne Backtick-Pfad zum Vergleichen")
+    elif default.group(1) != stufe1.group(1):
+        notok("Stufe 1 im Block ist nicht der Runner-Default: %s gegen %s"
+              % (stufe1.group(1), default.group(1)))
+    else:
+        ok("Rueckweg Stufe 1 = Runner-Default, Zeichen fuer Zeichen")
+
+# 6) Erwartete Ausgabezeilen. zunaechst die Zeilen desEXPECT-Abschnitts; eine
+#    Zeichenkette muss im ausgelieferten Bild stehen ODER im Runner (dort als
+#    Suchmuster, z.B. 'Pixel 3' fuer die USB-Kontrolle). Ein blinder Fund nur im
+#    Bild waere falsch, denn 'Google Pixel 3 …' stammt von fastboot, nicht vom
+#    Init.
+erwartung = []
+# Die Zeilenpräfixe sind die Rollenvorstellung des Blocks selbst: was dort in
+# Backticks steht, ist eine angesagte Ausgabe. Ein Regex, der 'ERWARTUNG' und
+# 'Erwartet' zu einem Muster verwebt, hatte zweimal hintereinander die falsche
+# Stelle erwischt — zwei Zeilen vorzeichenverankert lesen ist billiger als ein
+# dritter Versuch.
+for zeile in block.splitlines():
+    if zeile.startswith("ERWARTUNG") or zeile.startswith("steps.log-Zeile"):
+        erwartung += re.findall(r"`([^`]{6,70})`", zeile)
+erwartung = [e for e in erwartung
+             if re.search(r"[a-z]{4}", e) and not e.startswith("/") and "…" not in e
+             and not re.match(r"^[0-9a-fx:.]+$", e)
+             and not re.search(r"[<>$*|]", e)]
+bild = next((p for p in pfade if p.endswith("firstlight.img") and os.path.isfile(p)), "")
+if not erwartung:
+    skip("kein 'Erwartet'-Abschnitt mit pruefbaren Backticks im Block")
+elif not bild:
+    skip("kein lesbares firstlight.img im Block, Erwartungszeilen nicht geprueft")
+else:
+    rohd = b""
+    entpacker = os.path.join(WURZEL, "device/blueline/firstlight", "unpack-bootimg.py")
+    ordner = tempfile.mkdtemp(prefix="flash-block-")
+    try:
+        subprocess.run([sys.executable, entpacker, bild, ordner], check=True,
+                       capture_output=True)
+        ramdisk = os.path.join(ordner, "ramdisk")
+        if not os.path.isfile(ramdisk):
+            ramdisk = os.path.join(ordner, "initramfs")
+        magik = open(ramdisk, "rb").read(4)
+        if magik[:2] == b"\x1f\x8b":
+            import gzip
+            rohd = gzip.decompress(open(ramdisk, "rb").read())
+        elif magik == b"\x28\xb5\x2f\xfd":
+            from shutil import which
+            werkzeug = which("zstd") or "/opt/homebrew/bin/zstd"
+            if not os.path.exists(werkzeug):
+                skip("zstd-Ramdisk, aber kein zstd auf diesem Rechner")
+            else:
+                rohd = subprocess.run([werkzeug, "-dc", ramdisk], check=True,
+                                      capture_output=True).stdout
+        else:
+            rohd = open(ramdisk, "rb").read()
+            skip("Ramdisk-Magik %s unbekannt, roh durchsucht" % magik.hex())
+    except subprocess.CalledProcessError as fehler:
+        skip("entpacker des Repos lehnte das Bild (%s)" % str(fehler.stderr)[:110])
+    except OSError as fehler:
+        skip("Ramdisk nicht zu lesen (%s)" % type(fehler).__name__)
+
+    if rohd:
+        fehlt = []
+        for text in erwartung:
+            roh = text.encode("utf-8", "replace")
+            if roh in rohd:
+                continue
+            if roh in laeufer_text.encode("utf-8", "replace"):
+                continue
+            fehlt.append(text)
+        if fehlt:
+            notok("%d Erwartungszeilen kann nichts erzeugen, sie stehen weder im Bild "
+                  "noch im Runner: %s" % (len(fehlt), "; ".join(fehlt)[:200]))
+        else:
+            ok("%d Erwartungszeilen nachgewiesen (Bild %d B entpackt, Runner als "
+               "zweite Quelle)" % (len(erwartung), len(rohd)))
+
+# 7) Die Sammeldateien: jeder Backtick-Name in der EINFANG-Zeile muss der Runner
+#    wirklich erzeugen. Fund am ersten Lauf: der Block versprach
+#    'telnet-v0r-steps.log', der Runner schreibt 'v0r-steps.log' — nach einem
+#    gelungenen Lauf waere die decisive Datei 'nicht gefunden' gewesen.
+#    Die Korrektur im selben Satz nennt den alten Namen absichtlich; sie wird am
+#    Marker '**Korrektur' abgeschnitten, damit die Berichtigung nicht selbst
+#    als kaputter Name zaehlt.
+eingang = next((l for l in block.splitlines() if l.startswith("EINFANG")), "")
+eingang = eingang.split("**Korrektur")[0]
+namen = [n for n in re.findall(r"`([a-z0-9._-]+\.(?:log|txt))`", eingang)]
+if not namen:
+    skip("EINFANG-Zeile nennt keine Backtick-Dateinamen")
+elif not laeufer_text:
+    skip("Runner nicht lesbar, Sammeldateien nicht geprueft")
+else:
+    def fehlt(n):
+        if n in laeufer_text:
+            return False
+        # der Runner nennt den Namen ohne Suffix in seiner Befehlsliste
+        kern = n.rsplit(".", 1)[0]
+        return ('"%s"' % kern) not in laeufer_text and ("'%s'" % kern) not in laeufer_text
+    kaputt = [n for n in namen if fehlt(n)]
+    if kaputt:
+        notok("%d angesagte Sammeldateien erzeugt der Runner nicht: %s"
+              % (len(kaputt), ", ".join(kaputt)))
+    else:
+        ok("alle %d angesagten Sammeldateien stehen in der Befehlsliste des Runners"
+           % len(namen))
+
+print("\npruefungen=%d fehler=%d skips=%d ausgelassen=%d"
+      % (len(PRUEFUNGEN), len(FEHLER), len(SKIPS), len(AUSGELASSEN)))
+raise SystemExit(1 if FEHLER else 0)

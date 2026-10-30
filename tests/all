@@ -10,7 +10,16 @@
 # bin/omamobile's boot-image layouts
 # and flash against a fake fastboot, omamobile-firstboot's own tests, and the
 # smoke test of the newest root image in out/ if there is one, and the
-# felix device package's own test.
+# felix device package's own test, and the FLASH-BEREIT block's guard
+# (tests/flash-block: every hash, size, path, expectation line and collect-file
+# name in the block is checked against the disk and the runner, because that
+# block is what survives a context compaction and a stale number in it would
+# send the flash at the wrong image).
+#
+# NOTE 2026-10-30: the runners are an EXPLICIT list below. A new tests/<name>
+# file is picked up by the parse loop's tests/* glob but never RUNS unless it is
+# named here -- measured when tests/flash-block parsed cleanly and stayed silent
+# for a whole suite pass.
 set -euo pipefail
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 for f in tools/install-phone tools/phone-provision tools/build-rootfs tools/build-packages tools/make-bundle \
@@ -25,7 +34,7 @@ sh -n device/flame/initramfs/init
 sh -n device/flame/initramfs/build
 bash -n tools/build-flame-probe
 echo "ok - scripts parse"
-for t in tests/pr-check tests/kernel-pr-check tests/install-phone tests/phone-provision tests/initramfs-grow tests/images-layout tests/device-overlays tests/simplefb-trigger tests/storage-guard tests/usb-product tests/boot-method tests/bootimg-v0 tests/gadget-reference tests/gadget-modules tests/ref-enumeration tests/bisection tests/flame-probe packages/omamobile-firstboot/test/all packages/omamobile-device-felix/test/all; do
+for t in tests/pr-check tests/kernel-pr-check tests/install-phone tests/phone-provision tests/initramfs-grow tests/images-layout tests/device-overlays tests/simplefb-trigger tests/storage-guard tests/usb-product tests/boot-method tests/bootimg-v0 tests/gadget-reference tests/gadget-modules tests/ref-enumeration tests/bisection tests/flash-block tests/flame-probe packages/omamobile-firstboot/test/all packages/omamobile-device-felix/test/all; do
   echo "# $t"
   "$t"
 done
