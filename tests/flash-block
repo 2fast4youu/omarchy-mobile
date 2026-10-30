@@ -395,11 +395,18 @@ else:
 #    und die eigene Zahl mitzaehlen, damit der Vergleich nicht an einer Off-by-one
 #    scheitert (die schon zweimal in dieser Datei gestanden hat).
 genannt = [int(x) for x in re.findall(r"\((\d{1,2}) Pr(?:ue|\xfc)fungen", block)]
-selbst = len(PRUEFUNGEN) + 1
+# Gezaehlt werden Pruefpunkte, nicht Erfuellungen: ein Skip ist ein Pruefpunkt,
+# der eine Aussage verweigert. Wuerde nur len(PRUEFUNGEN) zaehlen, hinge die Zahl
+# von der Umgebung ab — im Container ueberspringen zwei Pruefungen, weil dort
+# weniger eingehaengt ist, und der Wächter wuerde 'Block sagt 13, ich mache 12'
+# melden, obwohl am Block nichts fehlt. Das ist dieselbe Off-by-one-Klasse
+# wie die beiden vorher in dieser Datei.
+selbst = len(PRUEFUNGEN) + len(SKIPS) + 1
 if not genannt:
     skip("Block nennt keine Pruefzahl, die sich selbst pruefen koennte")
 elif any(g != selbst for g in genannt):
-    notok("Block sagt %s Pruefungen, der Laeufer macht %d (diese Zahl selbst mitgezaehlt)"
+    notok("Block sagt %s Pruefungen, der Laeufer hat %d Pruefpunkte (erfuellte und "
+          "uebersprungene, diese Zahl selbst mitgezaehlt)"
           % ("/".join(str(g) for g in genannt), selbst))
 else:
     ok("die Pruefzahl im Block (%d) ist die Zahl der Pruefungen, einschliesslich dieser"
