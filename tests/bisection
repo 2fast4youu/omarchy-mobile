@@ -156,6 +156,20 @@ esac
 exit 0
 EOF
 chmod 755 "$FAKE/fastboot"
+# Wenn kein ausgeliefertes Bild zu lesen ist, wird fuer die Laeufer-Abschnitte
+# ein kuenstliches erzeugt, statt sie zu ueberspringen: was dort unter Pruefung
+# steht — der Runner vergleicht den mitgegebenen Hash, bevor er fastboot ruft,
+# und flasht nur, wenn er stimmt — haengt an keinem einzigen Byte des Bildinhalts.
+# Ein fehlendes Artefakt als 'not ok' anzuklagen, das man selbst erzeugen kann,
+# macht den Lauf auf dem einen Rechner gruen und auf dem anderen zur Dunkelheit
+# (gemessen 2026-10-30: ohne Bild mountete der Container 'Runner bricht bei
+# falschem Hash ab' als not ok, obwohl nur die Hash-Pruefung getestet wird).
+if [[ ! -r $IMG_A ]]; then
+  printf ANDROID > "$t/kuenstlich.img"
+  dd if=/dev/zero bs=1024 count=64 >> "$t/kuenstlich.img" 2>/dev/null
+  IMG_A="$t/kuenstlich.img"
+  echo "# kein ausgeliefertes Bild lesbar — die Laeufer-Abschnitte laufen gegen ein kuenstliches Bild"
+fi
 if [[ -x $FAKE/fastboot ]]; then
   sha_a() { python3 -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],"rb").read()).hexdigest())' "$1"; }
   fsize_probe() { python3 -c 'import os,sys; print(os.path.getsize(sys.argv[1]))' "$1"; }
@@ -431,7 +445,7 @@ ok "Runner: ganzer Einsammel-Block laeuft gegen vorgetaeuschte Shell (Banner, Ec
 # Der Fake-ping beantwortet nichts (exit 1) und blockiert nicht, die Pruefung
 # sitzt deshalb an der Groessenordnung der uebergebenen Zahl, nicht an der
 # Laufzeit — und muss derselben Zahl je Plattform ein anderes Urteil geben.
-if [[ -x $FAKE/fastboot ]]; then
+if [[ -x $FAKE/fastboot && -r $IMG_A ]]; then
   PINGLOG="$t/pinge.txt"; : > "$PINGLOG"
   printf '#!/bin/sh\necho "$*" >> "$PINGLOG"\nexit 1\n' > "$FAKE/ping"
   chmod 755 "$FAKE/ping"
@@ -477,4 +491,10 @@ print("ping-Wartezeit: %d Aufrufe, alle innerhalb der %s-Einheit; -W2000 wird je
       "verschieden beurteilt" % (len(zeilen), "Darwin-ms" if platt == "Darwin" else "Linux-Sekunden"))
 PY
   ok "Runner: ping-Wartezeit passt zur Plattform-Einheit, -W2000 ist auf iputils ein Haenger ($laufzeit s Lauf)"
+else
+  # Ohne Bild A bricht der Runner vor der Beobachtungsschleife mit 'Bild fehlt'
+  # ab und diese Pruefung liefe ins Leere. Die Antwort ist ein Skip mit Grund,
+  # nicht ein 'ok' und nicht ein 'not ok' ueber eine Datei, die der Test sich
+  # nicht selbst beschaffen kann.
+  skip "Bild A oder Fake-fastboot nicht lesbar — der Runner erreicht den ping nicht"
 fi
