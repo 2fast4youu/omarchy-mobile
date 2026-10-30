@@ -1,0 +1,108 @@
+# Live-Messung am laufenden Referenz-Orakel, nur lesend, vor dem Reboot fuer v0r
+# aufgenommen 2026-10-30T07:26:07.485206+00:00
+#
+# LESEHINWEIS (nach der Messung eingetragen): die Telnet-Leitung bricht
+# gesendete Befehle bei ~80 Spalten um und holt sie nicht immer zurueck; zwei
+# cat-Aufrufe (MaxPower, ncm0-Status) liefen dadurch zerhackt auf und meldeten
+# 'fehlt', wo der Nachlauf unten das Gegenteil zeigt. Die gesicherten Werte
+# (udc-state configured, irq 5923, ls /sys/class/net) sind davon nicht
+# betroffen. Aufloesung im Nachlauf reference-netzwerk-vor-v0r-2026-10-30.txt:
+# configfs ist gemountet, g1/configs/c.1 existiert, g1/UDC = a600000.usb,
+# und 172.16.42.1/16 sitzt auf usb0, nicht auf ncm0 — ncm0 existiert auf der
+# Referenz ueberhaupt nicht. Das laufende Telefon ist der angehaltene
+# Initramfs-Start ('Run pmos_continue_boot to continue booting'): die Debug-
+# Shell IST das Orakel. Ein Flash auf boot_a beendet ihn; die Shell gibt es
+# erst wieder, wenn Stufe 1 zurueckgeflasht ist und erneut in den Debug-Start
+# faellt.
+# Zeitbasis: jede Kernelzeit = (Kernelzeit der Zeile) wie in v0r steps.log; wall-Zeiten sind UTC
+������postmarketOS debug shell
+https://postmarketos.org/debug-shell
+
+  Device: Google Pixel 3 (google-blueline)
+  Kernel: 7.1.0-rc1-sdm845
+  OS ver: edge
+  initrd: 3.12.5-r0
+
+Run 'pmos_continue_boot' to continue booting.
+Read the initramfs log with 'cat /pmOS_init.log'.
+Run 'pmos_logdump' to generate a log dump and expose it over USB.
+You can expose storage devices over USB with
+'setup_usb_storage_configfs /dev/DEVICE'
+~ # [6n
+@@@ uptime-kopf | cat /proc/uptime
+cat /proc/uptime
+51247.65 408608.88
+~ # [6n
+@@@ wall-kopf | date -u 2>/dev/null || date
+date -u 2>/dev/null || date
+Thu Jan  1 14:14:09 UTC 1970
+~ # [6n
+@@@ udc-liste | ls /sys/class/udc/
+ls /sys/class/udc/
+[1;36ma600000.usb[m
+~ # [6n
+@@@ udc-state | for f in /sys/class/udc/*/state; do echo "$f: $(cat $f)"; done
+for f in /sys/class/udc/*/state; do echo "$f: $(cat $f)"; done
+/sys/class/udc/a600000.usb/state: configured
+~ # [6n
+@@@ udc-maxspeed | for f in /sys/class/udc/*/maximum_speed; do echo "$f: $(cat $f)"; done
+for f in /sys/class/udc/*/maximum_speed; do echo "$f: $(cat $f)"; done
+/sys/class/udc/a600000.usb/maximum_speed: super-speed
+~ # [6n
+@@@ udc-aktiv | for f in /sys/class/udc/*/is_active; do echo "$f: $(cat $f 2>/dev/null || fehlt)"; done
+for f in /sys/class/udc/*/is_active; do echo "$f: $(cat $f 2>/dev/null || fe
+
+hlt)"; done
+/bin/sh: fehlt: not found
+/sys/class/udc/*/is_active: 
+~ # [6n
+@@@ configfs-g1-udc | echo Inhalt: $(cat /sys/kernel/config/usb_gadget/g1/UDC 2>/dev/null)
+echo Inhalt: $(cat /sys/kernel/config/usb_gadget/g1/UDC 2>/dev/null)
+Inhalt: a600000.usb
+~ # [6n
+@@@ configfs-maxpower | cat /sys/kernel/config/usb_gadget/g1/configs/c.1/MaxPower 2>/dev/null || echo fehlt
+cat /sys/kernel/config/usb_gadget/g1/configs/c.1/MaxPower 2>/dev/null || ech
+
+o fehlt
+2
+~ # [6n
+@@@ configfs-strg | ls /sys/kernel/config/usb_gadget/g1/functions/ 2>/dev/null
+ls /sys/kernel/config/usb_gadget/g1/functions/ 2>/dev/null
+[1;34macm.usb0[m        [1;34mmass_storage.0[m  [1;34mncm.usb0[m
+~ # [6n
+@@@ configfs-net | echo UDC-Link: $(cat /sys/kernel/config/usb_gadget/g1/functions/ncm.usb0/UDC 2>/dev/null || echo fehlt)
+echo UDC-Link: $(cat /sys/kernel/config/usb_gadget/g1/functions/ncm.usb0/UDC
+
+ 2>/dev/null || echo fehlt)
+UDC-Link: fehlt
+~ # [6n
+@@@ irq-dwc3 | grep -i dwc3 /proc/interrupts || keine
+grep -i dwc3 /proc/interrupts || keine
+129:       5923          0          0          0          0          0          0          0    GICv3 165 Level     dwc3
+~ # [6n
+@@@ irq-kopf | head -1 /proc/interrupts
+head -1 /proc/interrupts
+           CPU0       CPU1       CPU2       CPU3       CPU4       CPU5       CPU6       CPU7       
+~ # [6n
+@@@ ncm-state | echo operstate=$(cat /sys/class/net/ncm0/operstate 2>/dev/null) carrier=$(cat /sys/class/net/ncm0/carrier 2>/dev/null)
+echo operstate=$(cat /sys/class/net/ncm0/operstate 2>/dev/null) carrier=$(ca
+
+t /sys/class/net/ncm0/carrier 2>/dev/null)
+operstate= carrier=
+~ # [6n
+@@@ iface-liste | ls /sys/class/net/
+ls /sys/class/net/
+[1;36mlo[m    [1;36msit0[m  [1;36musb0[m
+~ # [6n
+@@@ gadget-state | echo $(cat /sys/kernel/config/usb_gadget/g1/UDC 2>/dev/null)
+echo $(cat /sys/kernel/config/usb_gadget/g1/UDC 2>/dev/null)
+a600000.usb
+~ # [6n
+@@@ uptime-fuss | cat /proc/uptime
+cat /proc/uptime
+51270.61 408791.79
+~ # [6n
+@@@ wall-fuss | date -u 2>/dev/null || date
+date -u 2>/dev/null || date
+Thu Jan  1 14:14:32 UTC 1970
+~ # [6nexit

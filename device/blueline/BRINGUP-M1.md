@@ -3,6 +3,9 @@
 
 ## FLASH-BEREIT v0r — dieser Block traegt die Prozedur, nicht das Gedaechtnis (2026-10-30; Freigabe steht aus)
 
+SCHRITT 0, vor jedem Anruf (das Telefon laeuft die Referenz, nicht Fastboot — der Runner wuerfe sonst Zeile 79, `not ok - kein Fastboot-Geraet`):
+`telnet 172.16.42.1 23` -> `reboot bootloader` -> `fastboot devices` abwarten. Gregors Ja zum Flash enthaelt diesen Reboot, er ist Teil des Laufs.
+Er beendet das Orakel: die Referenz haelt seit 51 323 s Uptime den angehaltenen Initramfs-Start mit Debug-Shell. Die letzte Live-Messung ist gesichert (firstlight/evidence/reference-live-vor-v0r-2026-10-30.txt und reference-netzwerk-vor-v0r-2026-10-30.txt: udc-state `configured`, g1/UDC `a600000.usb`, 172.16.42.1/16 auf **usb0** — ncm0 gibt es auf der Referenz nicht —, dwc3-IRQ 5 923, Uptime-Kopf und -Fuss). Was dort nicht steht, ist nach dem Reboot nicht mehr messbar.
 Anruf (ein Write auf boot_a, danach 300 s jede Enumeration zaehlen; Protokoll nach `/Users/gregor/hermes-workspace/flash-observe/protokoll.txt`):
 ```sh
 cd /Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
@@ -10,12 +13,12 @@ cd /Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
 ```
 v0r: 21094400 B. Der Runner vergleicht den Hash vor dem Write und bricht bei Abweichung ab, ohne das Handy anzufassen.
 Rueckweg STUFE 1 (Runner-Default, stellt den heutigen Zustand exakt wieder her): `/Users/gregor/hermes-workspace/pmos-ref-build/ref/boot.img`, 28729344 B, `ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82`.
-Rueckweg STUFE 2 (Android-Urzustand, loescht Nutzerdaten): `/Users/gregor/hermes-workspace/android-mainline/factory/sp1a/boot.img`, 67108864 B, `5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e`.
+Rueckweg STUFE 2 (Android-Bootimage; ein boot.img-Flash fasst userdata NICHT an — geloescht haette nur `fastboot -w` oder `flashall`): `/Users/gregor/hermes-workspace/android-mainline/factory/sp1a/boot.img`, 67108864 B, `5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e`.
 ERWARTUNG (vor dem Flash festgelegt, Abschnitt "Predicted readings" weiter unten): v0r enumuriert als `Google Pixel 3` mit `0x18d1:0xd001`, Telnet 23 antwortet mit einer Omarchy-Shell, deren `/run/steps.log` mit `debug shell armed` endet.
-steps.log-Zeile `udc nach <n> runden gefunden`: n > 0 bestaetigt die UDC-Timing-Diagnose mit einer Zahl (Referenz bindet bei 1,734 s Kernelzeit, v0q las zu frueh und blieb 83 min weg); **n = 0 widerlegt sie**, dann sitzt der Fehler anderswo in init.
-DUNKEL, Telnet antwortet: `reboot bootloader`, dann Stufe 1 auf boot_a flashen.
-DUNKEL, Telnet antwortet nicht: Power + Leiser ~10 s halten (Power allein tut nichts), dann `fastboot flash boot_a /Users/gregor/hermes-workspace/pmos-ref-build/ref/boot.img` und den Hash mit `shasum -a 256` gegen die Stufe-1-Zeile pruefen.
-Gerat ist jetzt: laeuft die Referenz, pingbar 172.16.42.1, Port 23 offen, `boot_a` haelt `ed2c225f…`. Das Statusdatum vier Zeilen unter diesem Block ist von 2026-10-27 und laengst ueberholt.
+steps.log-Zeile `udc nach <n> runden gefunden`: n > 0 bestaetigt die UDC-Timing-Diagnose mit einer Zahl (Referenz: gadget setup bei 1,708 s, HOST-MAC-Bindung bei 1,734 s Kernelzeit; v0q las zu frueh und blieb 83 min weg); **n = 0 widerlegt sie**, dann sitzt der Fehler anderswo in init.
+ERGEBNIS FALSCH (Enumeration da und Telnet antwortet, aber steps.log zeigt etwas anderes — Diagnose-Fall, kein Notfall): ueber Telnet `reboot bootloader`, dann Stufe 1 auf boot_a flashen, dann `fastboot reboot`.
+DUNKEL (nichts am Bus, Telnet antwortet nicht — der Notfall): Power + Leiser ~10 s halten (Power allein tut nichts), dann Stufe 1 auf boot_a flashen **und `fastboot reboot` — der Flash allein startet nicht neu**. Erst wenn auch die Referenz dunkel bleibt, Stufe 2.
+Gerat ist jetzt: laeuft die Referenz (Debug-Shell, Uptime ~51 300 s), pingbar 172.16.42.1, Port 23 offen, `boot_a` haelt `ed2c225f…`. Das Statusdatum vier Zeilen unter diesem Block ist von 2026-10-27 und laengst ueberholt.
 
 Status (2026-10-27): descriptor, plan and device package written; no Pixel 3
 hardware in hand yet. Nothing in this file has been run on a blueline.

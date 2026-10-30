@@ -1,0 +1,36 @@
+# Nachtrag zur Live-Messung: wo steckt 172.16.42.1, und existiert g1 noch? UTC 2026-10-30T07:26:58.588298+00:00
+������postmarketOS debug shell
+https://postmarketos.org/debug-shell
+
+  Device: Google Pixel 3 (google-blueline)
+  Kernel: 7.1.0-rc1-sdm845
+  OS ver: edge
+  initrd: 3.12.5-r0
+
+Run 'pmos_continue_boot' to continue booting.
+Read the initramfs log with 'cat /pmOS_init.log'.
+Run 'pmos_logdump' to generate a log dump and expose it over USB.
+You can expose storage devices over USB with
+'setup_usb_storage_configfs /dev/DEVICE'
+~ # [6n
+@@@ mounts-config | grep configfs /proc/mounts || keine
+grep configfs /proc/mounts || keine
+configfs /sys/kernel/config configfs rw,nosuid,nodev,noexec,relatime 0 0
+~ # [6n
+@@@b interfaces | ip -o addr show 2>/dev/null || ifconfig -a
+ip -o addr show 2>/dev/null || ifconfig -a
+3: usb0    inet 172.16.42.1/16 brd 172.16.255.255 scope global usb0\       valid_lft forever preferred_lft forever
+3: usb0    inet6 fe80::e8a3:27ff:fe58:65c4/64 scope link \       valid_lft forever preferred_lft forever
+~ # [6n
+@@@c maxpower | ls /sys/kernel/config/usb_gadget/g1/configs/ 2>/dev/null || echo kein-g1
+ls /sys/kernel/config/usb_gadget/g1/configs/ 2>/dev/null || echo kein-g1
+[1;34mc.1[m
+~ # [6n
+@@@d g1-udc | cat /sys/kernel/config/usb_gadget/g1/UDC 2>/dev/null || echo kein-g1
+cat /sys/kernel/config/usb_gadget/g1/UDC 2>/dev/null || echo kein-g1
+a600000.usb
+~ # [6n
+@@@e uptime | cat /proc/uptime
+cat /proc/uptime
+51323.23 409211.38
+~ # [6nexit
