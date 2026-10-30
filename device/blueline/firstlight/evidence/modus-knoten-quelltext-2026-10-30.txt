@@ -1,0 +1,28 @@
+Modus-Knoten von dwc3, am Quelltext gemessen (android-mainline/kernel-pmos, 6.11.0)
+=============================================================================
+Anlass: v0x liest den Modus-Knoten. Ob man ihn lesen kann, was er zeigt und was
+er annimmt, stand vorher nur als Vermutung im Block ('otg' oder 'host', naechster
+Versuch: 'peripheral'). Jetzt belegt, Zeile fuer Zeile:
+
+  debugfs.c:467  datei-Operatoren des Knotens: offnen, schreiben, LESEN (seq_read)
+                 -- Lesen ist also moeglich, die v0x-Lesung ist kein Defekt.
+  debugfs.c:438ff Anzeiger: weckt das Geraet (pm_runtime_resume_and_get), liest das
+                 Globalsteuer-Wort und meldet den Geraetefaehigkeitsteil als eines
+                 der drei Worte 'host', 'device', 'otg'. Ein Fehlschlag beim
+                 Aufwecken gibt den Fehler zurueck -> 'cat: io error'.
+  debugfs.c:482ff Schreiber: akzeptiert die Wortanfaenge 'host', 'device', 'otg'.
+                 Kein 'peripheral' - die Vokabel der Referenzdokumente existiert
+                 hier nicht. Ein unbekanntes Wort wird zu null gezwaengt und
+                 schreibt damit Geraetefaehigkeit=0 ins Globalsteuer-Wort.
+  debugfs.c:~494 Rueckgabe count auch dann, wenn der Modus nicht umgeschaltet
+                 wurde (Pruefung 'dwc3_set_mode' nicht tragend) -- der Schein 'rc=0'
+                 beweist keine Umschaltung.
+  core.c:57,1681 Grundstellung kommt aus dem Geratebaum; ohne Vorgabe gilt der
+                 OTG-Fall. Im mitgelieferten Baum steht kein dr_mode (zwei
+                 Geratebaum-Mitschnitte, je 0 Fundstellen), die Grundstellung ist
+                 also OTG - und der Schreiber ist nicht durch die
+                 'kein OTG'-Fruehkehr blockiert.
+
+Folge fuer den naechsten Versuch nach v0x: der Druck lautet 'echo device > <modus>',
+nicht 'peripheral'. Und sein rc=0 ist keine Wirkungsmeldung - die Wirkung zeigt
+nur die Wiederholung der Lesung (modewert im Herzschlag, 20-s-Rhythmus).
