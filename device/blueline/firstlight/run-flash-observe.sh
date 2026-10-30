@@ -103,8 +103,8 @@ while :; do
 done
 say "ERGEBNIS: $seen Beobachtungen mit neuen Eintraegen, $t s gelaufen"
 # Wenn die Telefon-Shell erreichbar ist: volle Beweiskammer fuellen.
-if nc -z -G 3 "${PHONE:-172.16.42.1}" 23 2>/dev/null; then
-  python3 - "$OUT" "${PHONE:-172.16.42.1}" <<'PY'
+if nc -z -G 3 "${PHONE:-172.16.42.1}" "${PHONE_PORT:-23}" 2>/dev/null; then
+  python3 - "$OUT" "${PHONE:-172.16.42.1}" "${PHONE_PORT:-23}" "${PHONE_WAIT:-4}" <<'PY'
 import os, socket, sys, time
 IAC,WILL,WONT,DO,DONT,SB,SE=255,251,252,253,254,250,240
 def neg(b):
@@ -121,7 +121,12 @@ def neg(b):
         o.append(b[i]);i+=1
     return bytes(o)
 out=sys.argv[1]; host=sys.argv[2]
-s=socket.create_connection((host,23),8); s.settimeout(4)
+# Port und Wartezeit sind Argumente mit den bisherigen Vorgaben, damit der
+# Block gegen eine vorgetaeuschte Shell lauffaehig ist (tests/bisection 5c):
+# sein Beobachtungskanal war bis dahin der einzige ungefakete im Test.
+port=int(sys.argv[3]) if len(sys.argv)>3 else 23
+s=socket.create_connection((host,port),8)
+s.settimeout(float(sys.argv[4]) if len(sys.argv)>4 else 4)
 s.sendall(b"\r\n"); time.sleep(1)
 try:
     while True: s.recv(65536)

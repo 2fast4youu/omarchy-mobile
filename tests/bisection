@@ -315,3 +315,109 @@ print("Einsammel-Filter: %d decisive Zeilen gerettet (laengster Befehl %d Zeiche
       % (len(initziel), max(len(c) for _, c in befehle), len(verloren)))
 PY
 ok "Runner: Einsammel-Filter rettet die decisive steps.log-Zeile, der alte verlor sie"
+
+# 5c) Derselbe Block als GANZES, gegen eine vorgetaeuschte Shell. Der
+# Einsammel-Block war der einzige Beobachtungskanal im Test, den nichts fakede:
+# gegen das echte Geraet laeuft er nur, wenn ein Telefon antwortet, und das
+# sitzt seit dem 30.10. im Fastboot-Modus. Die vorgebliche Shell tut, was das
+# Orakel tut — Banner vor dem ersten Echo, Echo hinter jedem Befehl, Prompt
+# danach, und bei einer fehlenden Datei die Fehlermeldung statt nichts.
+python3 - "$FL/run-flash-observe.sh" "$t" <<'PY' || fail "Einsammel-Block gegen vorgetaeuschte Shell"
+import os, re, socket, subprocess, sys, threading, time
+
+runner, arbeit = sys.argv[1], sys.argv[2]
+text = open(runner, encoding="utf-8").read()
+block = re.search(r"<<'PY'\n(.*?)\nPY\n", text, re.S)
+assert block, "Einsammel-Block im Runner nicht gefunden"
+block = block.group(1)
+assert "port=int(sys.argv[3])" in block, \
+    "Block nimmt keinen Test-Port mehr, sein Kanal ist ungefakebt und hier nicht pruefbar"
+
+ANTWORT = {
+    "": [],
+    "uname -r": ["7.1.0-rc1"],
+    "cat /run/steps.log": [
+        "udc=$(ls /sys/class/udc 2>/dev/null) gebunden=$(cat /sys/kernel/config/usb_gadget/g1/UDC)",
+        "UDC steht auf: $(cat /sys/kernel/config/usb_gadget/g1/UDC)",
+        "udc nach 3 runden gefunden: a600000.usb",
+        "debug shell armed"],
+    "tail -20 /run/steps.log": ["udc nach 3 runden gefunden: a600000.usb", "debug shell armed"],
+    "cat /sys/kernel/config/usb_gadget/g1/UDC": ["a600000.usb"],
+    "ls /sys/kernel/config/usb_gadget/g1/functions": ["acm.usb0", "ncm.usb0"],
+    "ls /sys/class/udc": ["a600000.usb"],
+    "cat /sys/class/udc/*/state": ["configured"],
+    "cat /proc/uptime": ["1.708 0.0"],
+    "lsmod": [],
+    "ps": ["  PID UTS NAME    COMMAND", "    1 root     0 ash /init"],
+}
+
+def shell(verb):
+    try:
+        verb.sendall(b"PMOS debug shell (vorgegeben)\r\nKernel: 7.1.0-rc1\r\n~ # \r\n")
+        puffer = b""
+        while True:
+            daten = verb.recv(4096)
+            if not daten:
+                break
+            puffer += daten
+            while b"\n" in puffer:
+                zeile, puffer = puffer.split(b"\n", 1)
+                cmd = zeile.decode(errors="replace").strip()
+                verb.sendall((cmd + "\r\n").encode())
+                for ant in ANTWORT.get(cmd, ["cat: can't open '%s': No such file or directory" % cmd]):
+                    verb.sendall((ant + "\r\n").encode())
+                verb.sendall(b"~ # \r\n")
+    except (BrokenPipeError, ConnectionResetError):
+        pass
+    finally:
+        verb.close()
+
+hor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+hor.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+hor.bind(("127.0.0.1", 0))
+hor.listen(1)
+port = hor.getsockname()[1]
+threading.Thread(target=lambda: shell(hor.accept()[0]), daemon=True).start()
+
+pfad = os.path.join(arbeit, "einfang-block.py")
+open(pfad, "w").write(block)
+out = os.path.join(arbeit, "kammer")
+os.makedirs(out, exist_ok=True)
+ab = subprocess.run([sys.executable, pfad, out, "127.0.0.1", str(port), "0.7"],
+                    capture_output=True, text=True, timeout=180)
+
+def inhalt(name):
+    p = os.path.join(out, name)
+    return open(p, encoding="utf-8", errors="replace").read() if os.path.exists(p) else None
+
+geprueft, fehler = [], []
+def pruefung(bedingung, text):
+    geprueft.append(text)
+    if not bedingung:
+        fehler.append(text)
+pruefung(ab.returncode == 0, "Block endet mit Exit 0, nicht Fehler (Fehlerausgabe: %s)" % ab.stderr.strip()[:120])
+dateien = sorted(f for f in os.listdir(out)) if os.path.isdir(out) else []
+pruefung(len(dateien) >= 10, "alle Einfangdateien geschrieben (%d)" % len(dateien))
+steps = inhalt("telnet-v0r-steps.log") or ""
+pruefung("udc=$(ls /sys/class/udc 2>/dev/null) gebunden=$(cat" in steps,
+         "die decisive UDC-Zeile liegt in telnet-v0r-steps.log")
+pruefung("UDC steht auf:" in steps, "die Bindungszeile liegt da")
+pruefung("cat /run/steps.log" not in steps, "das Echo des eigenen Befehls ist nicht im Protokoll")
+pruefung("~ #" not in steps, "kein Prompt im Protokoll")
+ident = inhalt("telnet-identitaet.txt") or ""
+pruefung(ident.strip() == "7.1.0-rc1", "identitaet traegt die Antwort (%r)" % ident.strip()[:40])
+pruefung("Kernel:" not in ident and "debug shell" not in ident,
+         "das Greeting-Banner ist nicht in die Antwort gerutscht")
+pruefung((inhalt("telnet-v0r-udc-state.txt") or "").strip() == "configured", "udc-state = configured")
+pruefung(bool((inhalt("telnet-v0r-modules.txt") or "").strip()) == False,
+         "lsmod blieb leer, weil die Shell leer antwortete")
+pruefung("ACHTUNG leer: telnet-v0r-modules.txt" in ab.stdout,
+         "die leere Datei ist beim Namen gemeldet, nicht als Erfolg gebucht")
+if fehler:
+    raise SystemExit("\n".join("  nicht ok - " + f for f in fehler))
+print("Einsammel-Block gegen vorgebliche Shell: %d Pruefungen bestanden, %d Fehler, %d Dateien, "
+      "laengster Einsammelbefehl %d Zeichen"
+      % (len(geprueft), len(fehler), len(dateien),
+         max(len(c) for _, c in re.findall(r'\("([a-z0-9.-]+\.txt)",\s*"([^"]+)"\)', text))))
+PY
+ok "Runner: ganzer Einsammel-Block laeuft gegen vorgetaeuschte Shell (Banner, Echo, leere Datei)"

@@ -2561,3 +2561,36 @@ Vorschlag da und nicht als ausgeführter Schritt. Belegbar ist es erst nach dem
 Zyklus, mit getvar vorher/nachher.
 Die Manifestprüfung über alle 70 Bilder danach: 70/70 OK — an den Bildern hat
 heute nichts geronnen, die Änderungen betreffen nur Host-Werkzeuge und Text.
+
+## 2026-10-30 07:1x — Der letzte ungefakete Beobachtungskanal: der Einsammelblock selbst
+
+Der Runner sammelt nach dem Flash die Belege über Telnet ein. Dieser Block war
+den Tests der einzige Kanal, den nichts fakte — `tests/ref-enumeration` fakte
+fastboot, system_profiler und ioreg, `tests/bisection` fakte fastboot, und die
+Einschleusung in die Szene geschah über `PHONE=192.0.2.1`, damit das echte
+Telefon nie hineintestet. Der Block selbst lief dadurch nur gegen das lebende
+Orakel, und das sitzt seit dem Vormittag im Fastboot-Modus: bei `v0r` wäre es
+sein erster Lauf am echten Gerät.
+
+Deshalb jetzt Abschnitt 5c in `tests/bisection`: eine vorgebliche Shell auf
+127.0.0.1, die das Orakel nachspielt — Banner **vor** dem ersten Echo, Echo
+hinter jedem Befehl, Prompt danach, und bei einer fehlenden Datei die
+Fehlermeldung statt nichts. Der Block wird aus dem Runner **herausgelöst** und
+gegen diese Shell ausgeführt, nicht nachgebaut. Er läuft, seit er Port und
+Wartezeit als Argumente nimmt (`${PHONE_PORT:-23}`/`${PHONE_WAIT:-4}`, Vorgabe
+unverändert, auch die `nc`-Vorprüfung fragt jetzt denselben Port ab).
+
+Elf Prüfungen, alle bestanden, 26 s für die ganze Datei: die decisive UDC-Zeile
+landet in der Datei, ihr Echo nicht, kein Prompt darin, `telnet-identitaet.txt`
+trägt die Antwort und **nicht** das Banner (die Greeting-Banner-Falle, hier als
+Prüfung statt als Erzählung), und die leer antwortende `lsmod`-Datei bleibt leer
+**und** wird als `ACHTUNG leer` gemeldet. Die Zahl der Prüfungen kommt aus einem
+Zähler, nicht aus einem Text — die erste Fassung druckte eine ausgedachte `11`
+und eine ausgedachte `0`, dieselbe Klasse wie die Fehlermeldung, die eine
+Erwartung behauptet, die der Code nicht prüft.
+
+Gegenbeweis geführt: denselben Gegenlauf mit dem **alten** Filter in der
+Kratz-Kopie — Exit 1, und die beiden benannten Ausfälle sind genau die decisive
+UDC-Zeile und die Bindungszeile. Nach dem Rückbau wieder Exit 0. Der Test
+unterscheidet also in beide Richtungen. `tests/bisection`: 10 ok / 0 not ok /
+Exit 0 (vorher 9).
