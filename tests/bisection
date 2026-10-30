@@ -451,7 +451,14 @@ if [[ -x $FAKE/fastboot && -r $IMG_A ]]; then
   chmod 755 "$FAKE/ping"
   : > "$ANR"; o="$t/out4"; mkdir -p "$o"
   start=$(date +%s)
-  FBLOG="$ANR" OUT="$o" PHONE=192.0.2.1 POLL=1 PINGLOG="$PINGLOG" PATH="$FAKE:$PATH" \
+  # RUECKWEG mitgeben, nicht den Default des Runners vertrauen: der Default ist
+  # ein absoluter Host-Pfad, und in einem Container ohne diese Baumstruktur bricht
+  # der Runner am Rueckweg-Tor ab, bevor er ueberhaupt pingt — gemessen im
+  # arm64-Container am 30.10. (not ok - Der Beobachtungslauf hat nie gepinggt),
+  # waehrend derselbe Test auf dem Rechner durchlief. $RK ist weiter oben
+  # garantiert lesbar (echtes Bild oder selbst erzeugtes).
+  FBLOG="$ANR" OUT="$o" PHONE=192.0.2.1 POLL=1 PINGLOG="$PINGLOG" \
+    RUECKWEG="$RK" RUECKWEG_SHA="$RKSHA" PATH="$FAKE:$PATH" \
     bash "$FL/run-flash-observe.sh" "$IMG_A" "$(sha_a "$IMG_A")" 3 >/dev/null 2>&1
   laufzeit=$(( $(date +%s) - start ))
   pingzahl=$(grep -c . "$PINGLOG" 2>/dev/null || true)
