@@ -1,0 +1,57 @@
+DTB-Vergleich: Referenz und v0t haben denselben Device Tree, ein Knoten Unterschied
+
+Messung vom 30.10.2026, 17:21-17:35, Belege unter
+~/.hermes/cache/scratch/dtbvergleich/ (dtb.dtb, ref.dts, v0t.dts, Exit-Codes).
+
+Belegstuecke, mit firstlight/dtb-schneiden.py herausgeschnitten (Magic d0 0d fe ed,
+Geuenschaft ueber die im Block stehende Gesamtlaenge, Kandidaten unter 400 Byte
+verworfen):
+
+  pmos-ref-build/ref/boot.img        28 729 344 B  DTB bei 0x00f4da73, 111 641 B
+  images/fl-v0t/firstlight.img       21 094 400 B  DTB bei 0x00f4da73, 111 812 B
+
+Derselbe Offset in beiden Bildern: v0t tragt den DTB der Referenz, mit einem
+Zusatz. Decompiliert mit DTC 1.7.2 (Alpine arm64, Paket dtc-1.7.2-r2, Exit 0 auf
+beiden Dateien, 6290 gegen 6299 Zeilen). Der gesamte Unterschied:
+
+    @@ -945,6 +945,15 @@
+    +               ramoops@9f800000 {
+    +                       compatible = "ramoops";
+    +                       reg = <0x00 0x9f800000 0x00 0x100000>;
+    +                       no-map;
+    +                       record-size = <0x10000>;
+    +                       console-size = <0x80000>;
+    +                       pmsg-size = <0x40000>;
+    +               };
+
+Das ist unser eigener pstore-Knoten (v0t/v0r Spiegel fuer den letzten Boot), von
+uns selbst eingefuegt. Kein USB-Knoten, kein PHY, keine Stromversorgung, kein
+Typ-C-Port unterscheidet die beiden Baeume.
+
+Was das fuer die USB-Frage heisst:
+  Der Device Tree ist als Ursache ausgeschlossen. Der gemeldete
+  Controller-Zustand 'not attached' (Ablesung panelablesung-v0t-doppelknoten-
+  2026-10-30.txt) kann also nicht an einem fehlenden Knoten liegen, auch nicht
+  am geloeschten dtbo_a: die Referenz lief mit demselben Baum und erreichte
+  'configured' (reference-live-vor-v0r-2026-10-30.txt, Uptime 51 247 s,
+  /sys/class/udc/a600000.usb/state = configured, maximum_speed = super-speed,
+  nach 'setup_usb_storage_configfs /dev/DEVICE').
+
+  Es bleiben drei Klassen, und nur eine ist von aussen messbar:
+    a) Binden fehlgeschlagen (configfs): sichtbar an der nachbinden-Zeile.
+    b) Gebunden, aber keine Verbindung erkannt: Typ-C-Rolle, VBUS, Kabel, Port.
+    c) Die Ablesung ist veraltet (Panel laeuft mit, letzte Zeile ist nicht die
+       aktuelle): sichtbar an der Uptime-Zahl im laufenden Herzschlag.
+  Alle drei beantwortet dasselbe Bild, deshalb ist ein Foto oder das Abtippen
+  von zwei Zeilen jetzt der kuerzeste Weg - nicht ein weiterer Bau.
+
+Zwei eigene Fehler auf dem Weg, beide waren Dunkelheit, nicht Fehlermeldung:
+  1) dtb-schneiden.py setzte ein Leerzeichen in den Dateinamen (' dtb-….dtb').
+     dtc meldete 'No such file or directory', beide .dts waren 0 Zeilen, und der
+     erste Vergleich meldete '0 Zeilen Unterschied' - ein vorgetaeuschter Befund.
+     Erst ein Blick auf die Dateigroesse (0 Zeilen, 82 Byte Fehlermeldung) hat
+     es entlarvt. Ein Diff zweier leerer Dateien ist kein Beweis.
+  2) apk add in einem Wegwerf-Container schlug fehl ('no such package'), weil
+     der Index in dieser Frische nicht geladen war; 'apk update' vorher macht es
+     richtig. Ein fehlendes Paket ist kein Beweis dafuer, dass es das Paket nicht
+     gibt - der Index-Stand haelt die Wahrheit, nicht der erste Aufruf.

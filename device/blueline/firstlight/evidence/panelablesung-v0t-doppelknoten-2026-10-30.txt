@@ -1,0 +1,57 @@
+Panel-Ablesung von v0t, 30.10.2026 ca. 17:15 — zwei Werte, wortlich uberliefert
+
+Uberliefert (Gregor, vom Display abgelesen, Wortlaut unverandert):
+  1) "state=not attatched ≤bDeviceeState="
+  2) "udc= a600000.usb gebunden= (leer)≤"
+
+Eingeordnet in die v0t-Herzschlagzeilen (init-Zeilen 63–76 und die v0t-Doppel-
+zeile), damit klar ist, welcher Textstuck gemeint sein muss:
+  Zeile "beide Knoten: state=<wert> bDeviceState=<wert> udcdateien=<liste>"
+  Zeile "udc=<ls /sys/class/udc> gebunden=<cat /sys/kernel/config/usb_gadget/*/UDC>"
+  Zeile "dwc3 rolle=<typec data_role> typec=<ls /sys/class/typec> vbus=<power_supply/usb/online>"
+  Zeile "letzter Schritt: <tail -1 /run/steps.log>"
+
+Was daraus gemessen ist — vier Tatsachen, drei davon neu:
+
+1. DER CONTROLLER IST DA. /sys/class/udc enthaelt a600000.usb, exakt der Knoten,
+   den die Referenz-Livemessung hatte (evidence/reference-live-vor-v0r-2026-10-30.txt
+   Zeile 46: /sys/class/udc/a600000.usb/state = configured). Damit ist die
+   v0q-Diagnose ("zu fruh gelesen, 83 min Dunkelheit") endgultig erledigt: die
+   UDC-Wartesleife von v0r/v0t braucht nicht einmal zu warten, der Knoten ist da.
+
+2. DAS GADGET IST NICHT GEBUNDEN. /sys/kernel/config/usb_gadget/*/UDC ist leer.
+   Ein nicht gebundenes Gadget zeigt sich dem Host gegenuber als nichts — der
+   Bus bleibt dunkel, ohne dass ein Treiber sterben muss. Das erklaert die zwei
+   Messlaufe mit 0 Beobachtungen (v0r, v0t) unmittelbar.
+
+3. bDeviceState EXISTIERT AUF DIESEM KERNEL NICHT. Das Feld bleibt leer,
+   waehrend dasselbe Bild am Nachbarknoten state einen Wert liest. Die Lese-
+   entscheidung von v0t (beide Knoten zu lesen, weil einer unbelegt war) hat
+   damit ein Ergebnis: der unbelegte Knoten ist der fehlende, der belegte
+   (state) liefert.
+
+4. state = "not attatched" (wortlich so uberliefert; Gross-/Kleinschreibung und
+   Schreibweise des letzten Wortes sind NICHT gesichert, ich habe es nicht am
+   Bild gemessen und erfinde keine Schreibweise). Der Wert stammt aus
+   /sys/class/udc/a600000.usb/state, also vom Controller selbst und nicht vom
+   configfs-Gadget. Inhaltlich heisst das: der Controller meldet "kein Host
+   angeschlossen", obwohl ein Kabel an einem Mac haengt.
+
+Was diese Ablesung NICHT entscheidet, und warum das kein Lesefehler ist:
+  Die Nachbind-Schleife von v0s/v0t (init ab Zeile 341) schreibt alle 20 s
+  'echo none > g1/UDC', wartet 1 s, dann 'echo $udc > g1/UDC'. Der Herzschlag
+  laeuft in derselben 20-s-Fensterung. Eine leere gebunden=-Zeile kann daher ein
+ _race_ sein: Herzschlag liest in der Sekunde zwischen abbinden und binden.
+  Ob es ein race ist oder ein echtes Binden-Fehlschlagen, entscheidet eine
+  einzige Panel-Zeile, die schon existiert: 'letzter Schritt: …' (der letzte
+  Eintrag von /run/steps.log, init-Zeile 73). Steht dort 'UDC steht auf:
+  a600000.usb', war das Binden erfolgreich und die leere Zeile ist der race.
+  Steht dort 'UDC binden fehlgeschlagen', schlagen die writes fehl - und die
+  Nachbind-Zeilen 'nachbinden <n>: UDC steht auf …, state=…' zeigen fur jede
+  Runde, welcher Fehler textlich zuruckkommt (resource busy, invalid argument,
+  no such device - drei verschiedene Ursachen, drei verschiedene Texte).
+
+Naechster Bau (v0u) macht genau diese Unterscheidung von allein, ohne Ablesen
+zu mussen: nach jedem Bind den Rueckgabewert und 5 s Spaeter nochmals den
+gebunden=-Wert in steps.log und auf dem Panel, damit drei zeitlich getrennte
+Stiche in derselben Runde zeigen, ob binden uberhaupt durchkommt.
