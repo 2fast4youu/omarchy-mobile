@@ -102,7 +102,7 @@ fi
 #    Referenz-Initramfs gelesen, und die Gestaging muss genau diese Module
 #    tragen, entpackt und mit vermagic des laufenden Kernels.
 if [[ -r $REF_IMG && -d $STAGED ]] && command -v zstd >/dev/null 2>&1; then
-  python3 - "$NEWC" "$REF_IMG" "$STAGED" <<'PY' || fail "Module nicht die Schliessung aus modules.dep"
+  python3 - "$NEWC" "$REF_IMG" "$STAGED" "$t/gmod-ref" <<'PY' || fail "Module nicht die Schliessung aus modules.dep"
 import os, re, struct, subprocess, sys, importlib.util
 spec = importlib.util.spec_from_file_location("newc", sys.argv[1])
 newc = importlib.util.module_from_spec(spec); spec.loader.exec_module(newc)
@@ -112,7 +112,12 @@ if page < 512:
     page = 4096
 rs = struct.unpack_from("<I", d, 16)[0]
 raw = d[page + ((struct.unpack_from("<I", d, 8)[0] + page - 1) // page) * page:][:rs]
-work = "/tmp/hermes-gmod"
+# Entpackte Ramdisks (~46 MiB zusammen) in den Lauf-Ordner der Datei, nicht
+# verstreut in /tmp: ein Werkzeug, das jede von einem Skript referenzierte Datei
+# als Skript scannen will, blieb an einem dieser Reste haengen und verweigerte
+# danach jeden Aufruf des Tests — mit dem Namen einer Datei, die der Befehl nie
+# nannte. $t hat schon Zeile 39, und ein trap raeumt sie.
+work = sys.argv[4]
 if raw[:3] == bytes.fromhex("1f8b08"):
     import gzip; blob = gzip.decompress(raw)
 else:
@@ -158,7 +163,7 @@ fi
 #    lädt sie vor dem configfs-Mount und vor beiden Funktions-Mkdirs; die
 #    Referenz-Gadget-Sequenz bleibt unverändert stehen.
 if [[ -r $IMG ]]; then
-  python3 - "$NEWC" "$IMG" "$STAGED" "$GREF" <<'PY' || fail "Bildprüfung fehlgeschlagen"
+  python3 - "$NEWC" "$IMG" "$STAGED" "$GREF" "$t/gmod" <<'PY' || fail "Bildprüfung fehlgeschlagen"
 import gzip, importlib.util, os, re, struct, sys
 spec = importlib.util.spec_from_file_location("newc", sys.argv[1])
 newc = importlib.util.module_from_spec(spec); spec.loader.exec_module(newc)
@@ -170,8 +175,8 @@ ks = struct.unpack_from("<I", d, 8)[0]
 rd = page + ((ks + page - 1) // page) * page
 assert d[40:44] == bytes.fromhex("00000000"), "page_size-Feld verstellt"
 assert d[rd:rd + 2] == bytes.fromhex("1f8b"), "Ramdisk nicht seitenbuendig gzip"
-open("/tmp/hermes-gmod2.cpio", "wb").write(gzip.decompress(d[rd:rd + struct.unpack_from("<I", d, 16)[0]]))
-ent = {e["name"]: e for e in newc.read_cpio("/tmp/hermes-gmod2.cpio")}
+open(sys.argv[5], "wb").write(gzip.decompress(d[rd:rd + struct.unpack_from("<I", d, 16)[0]]))
+ent = {e["name"]: e for e in newc.read_cpio(sys.argv[5])}
 names = list(ent)
 assert names[-1] == "TRAILER!!!", "TRAILER nicht letzter Eintrag: %s" % names[-3:]
 version = "7.1.0-rc1-sdm845"
