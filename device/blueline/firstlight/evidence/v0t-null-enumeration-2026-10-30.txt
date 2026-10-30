@@ -1,0 +1,43 @@
+v0t-Boot: wieder null Enumerationen in 302 s, Panel jetzt mit Doppel-Knoten-Lesung
+
+Write (Gregors Freigabe "Ist im Fastboot-Modus, flash v0t" um 16:56):
+  16:56:26  Runner gestartet, Vorpruefung durchlaufen (Bild 4e25b525…, Rueckweg
+            ed2c225f… auf Platte bestaetigt, Waechter 12 Pruefpunkte / 0 Fehler)
+  16:56:28  Neustart kommandiert, 300 s Beobachtung
+  17:01:30  ERGEBNIS: 0 Beobachtungen mit neuen Eintraegen, 302 s gelaufen
+  RUNNER EIGENER EXIT=0 (ohne Pipe gemessen)
+Unabhaengige Leser waehrend und nach dem Fenster: 0 Treffer auf "pixel|omarchy|
+android" in der USB-Produktliste, ping 100 % Verlust (17:01:33).
+
+Damit zum zweiten Mal dasselbe Bild: das Geraet enumiriert nicht, weder als
+fastboot noch als Gadget, weder mit 0xD001 (v0r) noch mit 0xD002 (v0t). Die
+neue Produktzahl hat also nichts geändert und war auch nicht als Reparatur
+gemeint — sie macht einen Erfolg nur unterscheidbar von einem fruheren Boot.
+
+Was v0t neu mitbringt und jetzt am Panel ablesbar ist (die entscheidende
+Messung, bisher nicht abgelesen):
+  Panel-Titel   'Omarchy Mobile first-light v0t - RAM only, Doppel-Knoten-Lesung
+                 am Panel'  -> beweist, dass genau dieses Bild laeuft
+  Herzschlag    'beide Knoten: state=<wert> bDeviceState=<wert>
+                 udcdateien=<liste>' alle ~20 s
+                 dazu die v0s-Zeilen udc=, gebunden=, dwc3 rolle=, vbus=
+  nachbinden    'nachbinden <n>: UDC steht auf …, state=…, interfaces=…' alle
+                 20 s ueber 30 Runden
+
+Die vier Faelle, die diese eine Zeile unterscheidet — ohne jeden Bus:
+  beide Werte leer, udcdateien nennt Knoten  → die Dateien existieren nicht
+      unter dem geleichen Pfad, Suche geht an die Knotenliste
+  state gefüllt                              → der Controller meldet seinen
+      USB-Zustand, und der Wert ist lesbar (configured = Host hat
+      durchenumeriert)
+  beide gefüllt, Bus trotzdem leer            → Panel-Ausgabe komplett, Suche
+      an Typ-C-Rolle / VBUS / Kabel
+  Titel da, kein Herzschlag                   → PID 1 stirbt zwischen Titel-
+      Zeile und Herzschlag-Unterpunkt
+
+NEBENBEFUND, gemessen: `fastboot getvar` haengt, wenn kein Geraet im
+Fastboot-Modus ist. Ein Schleife aus drei getvars in einem Vorwärtsbefehl lief
+300 s bis zum Timeout, ohne eine einzige Zeile auszugeben. Grund: fastboot wartet
+auf ein Geraet, ohne Suchfrist.Regel: erst `fastboot devices` zaehlen (schnell,
+meldet null), und getvars nur bei einem Geraet — sonst die Beobachtung dem
+Runner ueberlassen, der sie selbst protokolliert (Zeile 81–83).
