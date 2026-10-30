@@ -31,7 +31,7 @@ mkdir -p /private/tmp
 # sondern eine Pruefung, die geschlafen hat - gemessen: 144 ok mit skip gegen
 # 145 ok, weil der Pfad dort abgekuerzt war. Also wird der Datenbaum
 # einghaengt, statt den Anlass der Pruefung zu kuerzen.
-if [ -d /factory-spiegel ]; then ln -sfn /factory-spiegel /factory; fi
+if [ -d /factory-spiegel ] && ! [ -e /factory ]; then ln -sfn /factory-spiegel /factory 2>/dev/null || true; fi
 # Die Liste war auf v0r stehengeblieben: ein Ordner, der hier fehlt, ist
 # kein Ausfall, sondern Dunkelheit (eine Pruefung sucht ihr Bild nicht).
 for d in fl-v0q fl-refpacked fl-v0r fl-v0s fl-v0t fl-v0u fl-v0v fl-v0w fl-v0x refmod; do
