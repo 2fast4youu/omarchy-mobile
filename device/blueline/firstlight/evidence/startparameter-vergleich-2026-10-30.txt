@@ -1,0 +1,26 @@
+Startparameter der drei Bilder, aus den Koepfen gelesen (nicht aus dem Kopf)
+
+Beide Bilder traegen Header-Version 0 im Feld bei 48, ihre Parameter liegen im
+cmdline-Feld 96..511; ein vendor_ramdisk (v3/v4-Feld) ist in beiden 0 B.
+
+  referenz  console=ttyMSM0,115200  pmos_boot_uuid=57588fc3-…  pmos_root_uuid=d3ac3603-…
+            plymouth.prefer-fbcon, …
+  v0r       console=tty0  loglevel=8  printk.devkmsg=on  panic=60
+            androidboot.hardware=qcom  androidboot.board=blueline  rdinit=/init
+  fabrik    (boot.img, 67108864 B, echter AOSP-Kopf, von uns nie gepackt)
+
+Zwei Folgen, beide aus den Parametern selbst erklärt:
+  - Die Referenz konnte auf dem Display nichts ausgeben: ihre Konsole ist
+    ttyMSM0, ein UART, an dem kein Kabel haengt (keine serielle Konsole im Aufbau).
+    "Referenz zeigt nichts aufs Panel" war daher nie ein Beweis ueber die
+    Referenz — die Nachricht ging auf einen toten Kanal.
+  - v0r schreibt dmesg auf tty0, und genau deshalb ist der Herzschlag auf dem
+    Panel lesbar. Panel-Sicht ist damit der erste Arbeitskanal, den wir wirklich
+    besitzen, und nicht ein Notbehelf.
+
+Nebenbefund aus derselben Suche: mein eigenes Pruefskript behauptete kurz, die
+Magie der Bilder sei "ANDRIOD" statt "ANDROID". Das war ein Schreibfehler in
+MEINEM Skript (MUSTER-Feld), nicht an den Dateien. Bytegenau, Buchstabe fuer
+Buchstabe gegen zwei Muster gepriesen, traegen Referenz, v0r und Fabrik alle
+65 78 68 82 79 73 68 33 = ANDROID!. Groessen unveraendert: 28729344 /
+21094400 / 67108864 B.
