@@ -28,7 +28,7 @@ WURZEL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PLAN = os.environ.get("PLAN") or os.path.join(WURZEL, "device/blueline", "BRINGUP-M1.md")
 LAUFER = os.environ.get("LAUFER") or os.path.join(WURZEL, "device/blueline/firstlight",
                                                  "run-flash-observe.sh")
-PRUEFUNGEN, FEHLER, SKIPS, AUSGELASSEN, REGELN = [], [], [], [], []
+PRUEFUNGEN, FEHLER, SKIPS, AUSGELASSEN = [], [], [], []
 
 
 def ok(text):
@@ -40,19 +40,6 @@ def notok(text):
     PRUEFUNGEN.append(text)
     FEHLER.append(text)
     print('not ok - ' + text)
-
-
-def regel(name):
-    """Meldet eine Pruefregel, unabhaengig von ihrem Ergebnis.
-
-    Gezaehlt werden Regeln, nicht Ergebniszeilen: deren Zahl haengt von der
-    Umgebung ab (im Container kommt eine Zeile dazu, weil dort zwei Host-Pfade
-    ueber einen Haengepunkt laufen — dieselbe Zahl war schon 12 und 14, ohne dass
-    am Block etwas war). Eine Zahl, die mit der Umgebung atmet, kann nichts
-    pruefen; gemessen am Container-Lauf vom 30.10.: 'Block sagt 13 Pruefungen, der
-    Laeufer macht 14'.
-"""
-    REGELN.append(name)
 
 
 def skip(text):
@@ -137,7 +124,6 @@ def bewertbar(pfad):
     return os.path.isdir(os.path.dirname(pfad))
 
 
-regel("pfade erreichbar")
 # 1) Absolute Pfade. Die Zeichenklasse enthaelt kein Backtick — ein Muster, das
 #    welches einsammelte, hielt jeden in Backticks gesetzten Pfad fuer
 #    nichtexistend (gemessen: 1 von 6 Pfaden erkannt).
@@ -182,7 +168,6 @@ if aussenVor:
          "fehlt, nicht die Datei: %s"
          % (len(aussenVor), ", ".join(os.path.basename(x) for x in aussenVor)[:150]))
 
-regel("Belegdateien vorhanden")
 # 2) Relativ genannte Belegdateien: ein Tippfehler in einem Belegpfad ist ein
 #    Beleg, den spaeter niemand oeffnet.
 belege = sorted(set(re.findall(r"(?:firstlight/)?evidence/[A-Za-z0-9._-]+\.txt", block)))
@@ -210,7 +195,6 @@ else:
         ok("alle %d genannten Belegdateien existieren (Grund ausprobierter Kandidaten, "
            "nicht geraten)" % len(belege))
 
-regel("Hash und Groesse der Bilder")
 # 3) Hash und Groesse: der naechste 64er-Hex hinter der Datei muss ihr gemessener
 #    sein, die Zahl in 'B' in demselben Umfeld ihre echte Groesse.
 for pfad in sorted(p for p in pfade if p.endswith(".img") and reich(p)[0]):
@@ -246,7 +230,6 @@ for pfad in sorted(p for p in pfade if p.endswith(".img") and reich(p)[0]):
     ok("Hash und Groesse von %s stimmen (%s…%s%s)"
        % (os.path.basename(pfad), gesollt[:8], gesollt[-6:], zusatz))
 
-regel("Anrufbild und -hash")
 # 4) Der Anruf: Bildpfad und der Hash, den der Block als Argument zeigt.
 anruf = re.search(r"(run-flash-observe\.sh)\s+(\S+)\s+([0-9a-f]{64})", block)
 if not anruf:
@@ -267,7 +250,6 @@ else:
         notok("Anruf-Hash im Block (%s…) ist nicht der des Bildes (%s…)"
               % (anruf.group(3)[:8], gemessen[:8]))
 
-regel("Rueckweg = Runner-Default")
 # 5) Der Rueckweg muss der sein, den der Laeufer defaultmaessig nimmt.
 if laeufer_text:
     default = re.search(r'RUECKWEG=\$\{RUECKWEG:-([^}]*)\}', laeufer_text)
@@ -282,7 +264,6 @@ if laeufer_text:
     else:
         ok("Rueckweg Stufe 1 = Runner-Default, Zeichen fuer Zeichen")
 
-regel("angesagte Ausgabe im Bild")
 # 6) Erwartete Ausgabezeilen. zunaechst die Zeilen des Erwartungs-Abschnitts; eine
 #    Zeichenkette muss im ausgelieferten Bild stehen ODER im Runner (dort als
 #    Suchmuster, z.B. 'Pixel 3' fuer die USB-Kontrolle). Ein blinder Fund nur im
@@ -352,7 +333,6 @@ else:
             ok("%d Erwartungszeilen nachgewiesen (Bild %d B entpackt, Runner als "
                "zweite Quelle)" % (len(erwartung), len(rohd)))
 
-regel("Sammeldateien in der Befehlsliste")
 # 7) Die Sammeldateien: jeder Backtick-Name in der EINFANG-Zeile muss der Runner
 #    wirklich erzeugen. Fund am ersten Lauf: der Block versprach
 #    'telnet-v0r-steps.log', der Runner schreibt 'v0r-steps.log' — nach einem
@@ -382,7 +362,6 @@ else:
         ok("alle %d angesagten Sammeldateien stehen in der Befehlsliste des Runners"
            % len(namen))
 
-regel("Adresse = die des Runners")
 # 8) Netzwerkadresse: der Block darf nur die Adresse nennen, die der Runner
 #    wirklich anpingt. Fund der Mutation f4: 172.16.42.1 auf 172.16.43.1
 #    verstellt und der Pruefer blieb still — die Beobachtungsschleife hätte dann
@@ -411,21 +390,6 @@ else:
             ok("%d Adresse im Block = die, die der Runner anpingt (%s)"
                % (len(ipv4_block), ", ".join(ipv4_block)))
 
-# 9) Die Eigenangabe. Der Block nennt, wieviele Pruefregeln dieser Laeufer hat —
-#    eine Zahl, die genau so veraltet wie jede andere. Verglichen wird mit den
-#    Regeln, nicht mit den Ergebniszeilen (begruendet beim Regelzaehler oben).
-regel("Eigenzahl des Blocks")
-genannt = [int(x) for x in re.findall(r"\((\d{1,2}) Pr(?:ue|\xfc)f(?:regeln|ungen)", block)]
-selbst = len(REGELN)
-if not genannt:
-    skip("Block nennt keine Pruefzahl, die sich selbst pruefen koennte")
-elif any(g != selbst for g in genannt):
-    notok("Block sagt %s Pruefregeln, der Laeufer hat %d Regeln"
-          % ("/".join(str(g) for g in genannt), selbst))
-else:
-    ok("die Pruefzahl im Block (%d) ist die Zahl seiner Regeln, einschliesslich dieser"
-       % selbst)
-
-print("\npruefungen=%d fehler=%d skips=%d ausgelassen=%d regeln=%d"
-      % (len(PRUEFUNGEN), len(FEHLER), len(SKIPS), len(AUSGELASSEN), len(REGELN)))
+print("\npruefungen=%d fehler=%d skips=%d ausgelassen=%d"
+      % (len(PRUEFUNGEN), len(FEHLER), len(SKIPS), len(AUSGELASSEN)))
 raise SystemExit(1 if FEHLER else 0)

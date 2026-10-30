@@ -1,0 +1,71 @@
+Übergang der Referenz in den Fastboot-Modus — Sendeprotokoll und Kandidaten (30.10., ungeklärt)
+
+Frage: Wie ist die Referenz zwischen der letzten Lebendmessung und der Sicherung
+im Fastboot-Modus gelandet? Kein `fastboot flash`, kein `reboot` von mir ist in
+dem Fenster gelaufen; gesichert ist der Zustand um 13:09:33 (Datei-Metadatum von
+evidence/fastboot-modus-statt-orakel-2026-10-30.txt).
+
+ZEITLINIE (Metadaten und Commit-Zeiten, nicht Erinnerung):
+- 08:25:33  oracle-live.py geschrieben; ihre 17 Befehle (cat/ls/grep/head, nur
+            lesend) gegen das Orakel, Beleg reference-live-vor-v0r…txt (08:27:40).
+- 10:20     Commit fa34088 (Schritt-0-Busybox-Messung per Telnet, lesend).
+- 12:22:36  evidence/pid1-und-signale-referenz…txt geschrieben. Gesendet laut
+            Datei: `cat /proc/1/comm`, `readlink /proc/1/exe`, SigCgt/SigIgn,
+            `cat /init_2nd.sh` — alles Lesens. Commit 582c39d um 12:23.
+- 12:57:29  trockenlauf-kammer.py (mtime). Gegenbeweis am laufenden Gerät: ein
+            `echo`-Kommando (`sh-lebt-und-echo`) ging im alten Filter verloren —
+            das Orakel antwortete, der Filter warf die Zeile weg.
+- 13:07:20  kammer-live.py (mtime): den EINGEBAUTEN Einsammelblock aus dem Runner
+            (Stand fa34088) herausgelöst und gegen das Orakel ausgeführt. Das ist
+            die letzte bekannte Sendung an das Orakel, fünf Befehle, alle
+            lesend, kein exit/reboot in der Liste (aus dem Commit ausgelesen):
+              echo IDENTITAET $(uname -r); cat /run/steps.log 2>/dev/null | tail -40
+              cat /run/steps.log 2>/dev/null
+              cat /sys/kernel/config/usb_gadget/g1/UDC 2>/dev/null; ls /sys/kernel/config/usb_gadget/g1/functions/ 2>/dev/null
+              ls /sys/class/udc; cat /sys/class/udc/*/state 2>/dev/null
+              ps | head -40
+- 13:08:45  zaehler-vor-flash.sh (mtime): die vier fastboot-getvar-Leser.
+- 13:09:33  Beweisdatei geschrieben: Geraet im FASTBOOT-MODUS, ping 100 %
+            Verlust, Port 23/5555 zu, `fastboot devices` meldet PIXEL3-SERIAL.
+
+EINWAND gegen "mein Senden von 13:07 war die Ursache": Um 13:07 hat das Geraet
+noch auf Telnet geantwortet (der Block lief durch, seine Dateien kamen gefuellt
+zurück — sonst stünde dort Verbindung abgelehnt). Zwischen 13:08:45 (getvar
+funktioniert, das meldet den Bootloader-Modus) und 13:09:33 muss der Umschwung
+also passiert sein — oder das Geraet sass schon vorher im Fastboot und die
+13:07-Antworten stammten aus der vorgetaeuschten Shell. Das ist der einzige
+open-ended Punkt der Zeitleiste: ich kann die Antwort von 13:07 nicht gegen eine
+Fake-Shell absichern, weil das Laufzeitverzeichnis (tempfile, prefix
+kammer-probe.) vom Aufraeumen des TMP-Verzeichners weg ist.
+
+KANDIDATEN (Stand 14:16, un Sortierung nach Ausschlusskraft):
+1. TASTEN DRÜCKEN (bleibt): Power + Leiser ~10 s ist der einzige
+   belegte Weg in den Fastboot-Modus, und er braucht kein Kommando. Ein
+   versehentliches Halten erklaert sowohl das Ende der Referenz OHNE verbrauchten
+   Fehlstart ( retry-Zaehler unveraendert 2 — ein ABOOT-Zwangstart nach
+   Fehlversuch haette runtergezaehlt).
+2. Senden von 13:07: nur ausgeschlossen, wenn die 13:07-Antworten echt waren —
+   siehe offener Punkt. Keiner der fünf Befehle kann rebooten (nur cat/ls/ps);
+   es sei denn, die Leitung hat ein Spaetecho verworfen und nach traeger
+   Eingabe ausgewertet.
+3. Strom/Ueberspannung: ausgeschlossen — battery-voltage: 4255 mV (14:16:28,
+   direkt im Bootloader gelesen), ein Spannungsfall haette das Geraet ausgeloescht
+   statt in den Fastboot-Modus gelegt. battery-current-maxfast: von ABOOT nicht
+   beantwortet ('variable not found'), also ueber den Ladestrom nichts gesagt.
+4. Kernel/Watchdog der Referenz: nicht ausgeschlossen, aber unbelegt; die
+   Referenz lief 58 014 s mit angehaltenem init, ein Watchdog haette frueher
+   schlagen muessen.
+
+BILLIGSTER BELEG FÜR DIE URSACHE: FOTO-LESETABELLE — Gregor fotografiert den
+Bootloader-Bildschirm. Der Fastboot-Bildschirm des Pixel 3 zeigt oben den
+Bootloader-Grund (startet fastboot wegen 'power key', 'reboot', 'coldboot'
+oder aehnlich), seriennummer- und retry-Zeilen unten. Ein Foto entscheidet
+Kandidat 1 gegen 2 in einer Sekunde. Bis dahin steht die Ursache als UNGEKLAERT
+im Plan, nicht als "Gerät ist einfach umgekippt".
+
+Nebenbefund: waehrend das Geraet im Fastboot sitzt, kann nichts an der Referenz
+gemessen werden (initramfs ist RAM — ein Fastboot-Verlassen ohne Boot in die
+Referenz verwirft pmOS_init.log, steps.log und den Rest). Die Referenz ist erst nach
+einem Rueckweg-Flash (Stufe 1, boot_a) wieder messbar; ein `fastboot reboot`
+startet, was in boot_a steht (die Referenz selbst, ed2c225f…) — waere ein
+sauberer Weg, zurueckzukehren, aber das ist Gregors Entscheidung, nicht meine.
