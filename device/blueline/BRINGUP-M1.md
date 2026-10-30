@@ -1,6 +1,22 @@
 <!-- SPDX-License-Identifier: MIT -->
 # Pixel 3 (blueline): first light
 
+## FLASH-BEREIT v0r — dieser Block traegt die Prozedur, nicht das Gedaechtnis (2026-10-30; Freigabe steht aus)
+
+Anruf (ein Write auf boot_a, danach 300 s jede Enumeration zaehlen; Protokoll nach `/Users/gregor/hermes-workspace/flash-observe/protokoll.txt`):
+```sh
+cd /Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
+./run-flash-observe.sh /Users/gregor/hermes-workspace/images/fl-v0r/firstlight.img daf56a12cca1af3d05444eaad7008dd01e8fb14266ffc32f6f419ef0aff5060b 300
+```
+v0r: 21094400 B. Der Runner vergleicht den Hash vor dem Write und bricht bei Abweichung ab, ohne das Handy anzufassen.
+Rueckweg STUFE 1 (Runner-Default, stellt den heutigen Zustand exakt wieder her): `/Users/gregor/hermes-workspace/pmos-ref-build/ref/boot.img`, 28729344 B, `ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82`.
+Rueckweg STUFE 2 (Android-Urzustand, loescht Nutzerdaten): `/Users/gregor/hermes-workspace/android-mainline/factory/sp1a/boot.img`, 67108864 B, `5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e`.
+ERWARTUNG (vor dem Flash festgelegt, Abschnitt "Predicted readings" weiter unten): v0r enumuriert als `Google Pixel 3` mit `0x18d1:0xd001`, Telnet 23 antwortet mit einer Omarchy-Shell, deren `/run/steps.log` mit `debug shell armed` endet.
+steps.log-Zeile `udc nach <n> runden gefunden`: n > 0 bestaetigt die UDC-Timing-Diagnose mit einer Zahl (Referenz bindet bei 1,734 s Kernelzeit, v0q las zu frueh und blieb 83 min weg); **n = 0 widerlegt sie**, dann sitzt der Fehler anderswo in init.
+DUNKEL, Telnet antwortet: `reboot bootloader`, dann Stufe 1 auf boot_a flashen.
+DUNKEL, Telnet antwortet nicht: Power + Leiser ~10 s halten (Power allein tut nichts), dann `fastboot flash boot_a /Users/gregor/hermes-workspace/pmos-ref-build/ref/boot.img` und den Hash mit `shasum -a 256` gegen die Stufe-1-Zeile pruefen.
+Gerat ist jetzt: laeuft die Referenz, pingbar 172.16.42.1, Port 23 offen, `boot_a` haelt `ed2c225f…`. Das Statusdatum vier Zeilen unter diesem Block ist von 2026-10-27 und laengst ueberholt.
+
 Status (2026-10-27): descriptor, plan and device package written; no Pixel 3
 hardware in hand yet. Nothing in this file has been run on a blueline.
 M1.1, the host-only first-light build, is done and evidenced below; no
