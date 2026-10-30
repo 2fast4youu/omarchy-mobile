@@ -1,0 +1,67 @@
+#!/bin/sh
+# Befund: v0v ist gebaut, und was der Bau an Fehlern gezeigt hat.
+#
+# Diese Datei hoert auf den Blockwaechter (tests/flash-block): er verlangt von
+# Backtick-Strings in Beweiszzeilen, dass sie nachweisbar sind. Alles hier ist
+# aus einem gelaufenen Bau abgeschrieben, nichts aus dem Plan.
+set -eu
+
+echo '== v0v-Baufund, 2026-10-30, 20:0x =='
+echo
+echo 'Anlass (gemessen, nicht vermutet):'
+echo '  v0r und v0t: je 0 Beobachtungen in 302 s, Panel zeigt Titel und Herzschlag.'
+echo '  Gregors Ablesung von v0t: state=not attatched, udc= a600000.usb, gebunden= leer.'
+echo '  Device Tree ausgeschlossen: Referenz und v0t haben denselben Baum'
+echo '  (dtc 1.7.2, 6290 gegen 6299 Zeilen, einziger Unterschied: unser ramoops-Knoten).'
+echo
+echo 'Am Kernel-Binary gemessen (kernel-zeichen.py, 44 498 944 Byte entpackt):'
+echo '  soft_connect   3 Fundstellen: 0x01becd05, 0x022360c8, 0x022c9162'
+echo '                 dazugehoerige Symbolnamen: dwc3_gadget_soft_connect,'
+echo '                 dwc3_gadget_soft_disconnect, soft_connect_store'
+echo '  usb/%s         1 Fundstelle: 0x01c21594 -> der debugfs-Ordner heisst nach dem'
+echo '                 Gerit, nicht nach dem UDC. v0v sucht beide Kandidaten und'
+echo '                 schreibt den verwendeten in pfad=.'
+echo '  bDeviceState   0 Fundstellen -> v0us leere Doppel-Knoten-Zeile ist erklaert:'
+echo '                 gelesen, immer leer, Dunkelheit statt Messwert.'
+echo
+echo 'Gebaut:'
+echo '  Bild  2d19241e88f61921716e3b176fdded0772e24257da894563a0e0874d5f1bd316  21 098 496 B'
+echo '  Archiv 447e250e064888790cac89e3fd8f892503cce752aea66fecb948be454d982a8d  19 776 648 B'
+echo '  Init (herausgeloest) 21 417 B / 449 Zeilen, v0u: 20 297 B / 436 Zeilen'
+echo '  Pfad zum Knopf: /sys/kernel/debug/usb/<gerit>/soft_connect, mit Platzhalter-'
+echo '  suche ueber /sys/kernel/debug/usb/*/soft_connect als zweiten Kandidaten.'
+echo
+echo 'Pruefungen am fertigen Bild, alle gelaufen:'
+echo '  verify-v0q.py    28 Pruefpunkte / 0 Fehler'
+echo '  verify-v0v.py    25 Beweismale / 0 Fehler'
+echo '  bash -n          Init syntaxfehlerfrei'
+echo '  pruefe-binde-reihenfolge.py  0 Fehler (Mutation gegen v0u: 2 Fehler, Exit 1)'
+echo '  tests/flash-block (eingefrorener Blockwaechter)  fehler=0'
+echo
+echo 'Vier Anlaeufe brauchte der Bindblock-Anker. Was jeder kaputt machte:'
+echo '  1. ein fehlendes Anfuehrungszeichen in tr \n (gemessen mit anker-vergleich.py)'
+echo '  2. ein Fortsetzungszeichen hinter einem String, der selbst einen Backslash'
+echo '     traegt: ... tr \n  )" > /dev/kmsg -> EOL while scanning string literal'
+echo '  3. ein Loesch-Anker, der mitten in einer anderen Konstanten traf -> die'
+echo '     Konstante war weg, der naechste Lauf meldete BINDE_ALT is not defined'
+echo '  4. eine Pro-Zeile-Klammerpruefung, die 28 echte Zeilen anklagte, weil'
+echo '     ( ... ) & ueber Zeilen balanciert'
+echo
+echo 'Was davon haette frueher auffallen muessen, und warum nicht:'
+echo '  - Zwei Baue meldeten Trockenlauf Exit 0, obwohl der Init kaputt war. Der'
+echo '    Trockenlauf zaehlte Anwesenheit (weicher-bind zweimal da?), nie'
+echo '    Reihenfolge. Eine Beweiszeile, die rc1 vor ihrem Setzer nennt, ist so ein'
+echo '    Fall, und ein fehlendes done erst recht.'
+echo '  - Der Ersatz fuer die Nachbind-Zeile schluckte write rc=, also genau die'
+echo '    Messgroesse, die v0u eingefuehrt hatte. verify-v0v.py (die Beweiskette des'
+echo '    Vorgaengers) fand es; der Pruefer hatte recht, mein Text hatte unrecht.'
+echo '  - Der Blockwaechter fand im Protokoll zwei Backtick-Strings, die kein Bild'
+echo '    schreibt. Auch er hatte recht; der Text ist berichtigt, nicht der Waechter.'
+echo
+echo 'Entscheid fuer v0v, tragend: soft_connect ist der eine Knopf, den dieser Kernel'
+echo 'fuer der Host sieht nichts hat, und er ist erreichbar. Bleibt state= auf'
+echo 'not attached trotz rc0=0 und rc1=0, ist die Verbindung physikalisch weg'
+echo '(VBUS, CC, Kabel, Port) und kein Softwareweg schuld.'
+echo
+echo 'Stand des Geraets am Bau (20:07:56): laeuft v0t, an keinem Bus, fastboot-Geraet'
+echo 'fehlt, ping antwortet nicht. v0v wartet auf einen Tastendruck.'
