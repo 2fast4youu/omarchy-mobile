@@ -33,10 +33,15 @@ lauf "$2" "stand-2" "$3"
 echo
 echo "Vergleich der TAP-Texte, nur die Pruefnamen, die sich unterscheiden:"
 if [ -f "$3/stand-1.tap" ] && [ -f "$3/stand-2.tap" ]; then
-  for f in "$3"/stand-1.tap "$3"/stand-2.tap; do
-    grep -E '^(ok|not ok) ' "$f" | sed 's/ - .*//' | sort | uniq -c | sort -rn \
-      | sed "s#^#$(basename "$f" .tap): #" | head -0
-  done
+  # Kein Duplikat-Zweig: der alte endete auf 'head -0', das auf macOS
+  # 'illegal line count -- 0' als zwei Fehlerzeilen in jeden Lauf meldete und
+  # ohnehin nichts ausgab (gemessen im Zwei-Staende-Lauf v0u gegen v0v). Eine
+  # Duplikat-Zahlung nach Pruefnamen wurde bei der Reparatur gemessen und ist
+  # hier kein Signal, sondern Bauart: tests/all haengt mehrere Testdateien an
+  # einander, und Namen wie 'scripts parse' (3x) oder 'an AI Signed-off-by
+  # fails' (2x) wiederholen sich in BEIDEN Staenden mit denselben Zahlen. Ein
+  # Pruefer, der in jedem Lauf feuert, wird ueberlesen; das Urteil bleibt der
+  # comm-Vergleich unten, der Stehendes von Verschwundenem trennt.
   grep -E '^(ok|not ok) ' "$3/stand-1.tap" | sed 's/^[^ ]* [^-]*- //' | sort -u > "$3/namen-1"
   grep -E '^(ok|not ok) ' "$3/stand-2.tap" | sed 's/^[^ ]* [^-]*- //' | sort -u > "$3/namen-2"
   echo "--- nur in Stand 1 ---"; comm -23 "$3/namen-1" "$3/namen-2"
