@@ -1,0 +1,52 @@
+# Kann die laufende Referenz-Shell sich selbst in den Bootloader schubsen?
+# Messung 2026-10-30, nur lesend per Telnet. Stand 1 (Uptime 58 014 s):
+# Stand 2, dieselbe Sitzung (Uptime 65 234 s): /init_2nd.sh vollstaendig
+# vorgelesen (2 866 B) und die Signalmasken von PID 1 gelesen.
+
+$ cat /proc/1/comm
+init_2nd.sh                      <- comm = der letzte Programmname, nicht der Interpreter
+$ readlink /proc/1/exe
+/usr/bin/busybox
+$ tr '\0' ' ' < /proc/1/cmdline
+/bin/busybox ash /init_2nd.sh    <- PID 1 ist Busybox-ASH mit einem Skript, nicht busybox init
+$ grep Sig /proc/1/status
+SigIgn: 0000000000000004
+SigCgt: 0000000000014a02
+
+# Maske nach Kernel-Konvention dekodiert (Signal n belegt Bit n-1; der
+# Dekoder ist an SigIgn 0x4 selbstgetestet, das exakt QUIT(3) ergeben muss —
+# busybox-init verwirft QUIT, verbürgte Zeile). Ergebnis:
+#   SigCgt 0x14a02 = 2(INT), 10(USR1), 12(USR2), 15(TERM), 17(CHLD)
+#   SigIgn 0x4     = 3(QUIT)
+# Die drei trap-Zeilen des Skripts sind USR1, USR2, TERM — gedeckt. INT und
+# CHLD sind ash-eigen (Job-Control eines interaktives Shell gleichen PID).
+# Zwei eigene Lesfehler auf dem Weg, beide notiert: ein Dekoder mit Bit =
+# Signal meldete {1,9,11,14,16}, ein Textentwurf daraus {9,11,14,16,17}; die
+# Zahl entscheidet, nicht die Gewohnheit — die Selbsttestzeile der Maske
+# (SigIgn 0x4 = QUIT) ist die Stelle, an der ein falscher Dekoder auffaellt.
+
+# Und das Drehbuch selbst, aus dem laufenden Geraet vorgelesen (ash fuehrt
+# trap-Erklaerungen beim Erreichen aus, der Debug-Shell-Aufruf steht 25
+# Zeilen spaeter — die Handlers sind also im laufenden Zustand installiert):
+#   trap 'halt -f' USR1
+#   trap 'poweroff -f' USR2
+#   trap 'reboot -f' TERM
+# Die drei gefangenen Signale der Maske sind genau diese drei, der Rest
+# (STKFLT, CHLD) ist ash-eigenes.
+
+# Urteil, ehrlich in beide Richtungen:
+# Clau­des Verdacht hatte den richtigen Mechanismus (nacktes reboot geht den
+# Signalweg, nicht den Syscall) aber die falsche Praemisse: hier ist ein
+# Handler vorhanden, gemessen ZWEIMAL (Maske und Skripttext). Nacktes
+# 'reboot' in dieser Shell wuerde vermutlich funktionieren.
+# Es bleibt trotzdem bei 'sync; reboot -f': -f ist der direkte
+# reboot()-Syscall in diesem Prozess, ohne Kette. Die Kette ist hier zwar
+# nachgewiesen, aber ihr Vorhandensein ist eine Eigenschaft DIESES
+# Initramfs-Drehbuchs — das v0r-init (firstlight/) enthaelt gemessen null
+# trap-Zeilen, und wer dort nacktes 'reboot' eintippt, weiss nicht, ob
+# busybox den Syscall selbst macht (lebte) oder PID 1 terminiert
+# (Kernel-Panik 'Attempted to kill init'). Genau diese Nicht-Wetterbarkeit
+# ist der Grund fuer -f, nicht die abgewiesene Handler-Luecke.
+# Alles hier ist RAM (root = tmpfs/ramoops-Kammer, Partitionen ro), 'sync'
+# ist daher Pflicht-Dekor statt Rettung — es haelt nichts aufser die Regel,
+# vor einem Neustart zu synchronisieren.
