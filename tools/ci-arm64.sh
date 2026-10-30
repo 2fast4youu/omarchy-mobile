@@ -24,7 +24,9 @@ else
   echo "nicht ok - /images fehlt: ohne Bild-Mount sind Bildpruefungen Dunkelheit"
 fi
 mkdir -p /private/tmp
-for d in fl-v0q fl-refpacked fl-v0r refmod; do
+# Die Liste war auf v0r stehengeblieben: ein Ordner, der hier fehlt, ist
+# kein Ausfall, sondern Dunkelheit (eine Pruefung sucht ihr Bild nicht).
+for d in fl-v0q fl-refpacked fl-v0r fl-v0s fl-v0t refmod; do
   if [ -d "/images/$d" ]; then ln -sfn "/images/$d" "/private/tmp/$d"
   elif [ -d "/$d" ]; then ln -sfn "/$d" "/private/tmp/$d"; fi
 done
