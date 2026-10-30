@@ -2594,3 +2594,46 @@ Kratz-Kopie — Exit 1, und die beiden benannten Ausfälle sind genau die decisi
 UDC-Zeile und die Bindungszeile. Nach dem Rückbau wieder Exit 0. Der Test
 unterscheidet also in beide Richtungen. `tests/bisection`: 10 ok / 0 not ok /
 Exit 0 (vorher 9).
+
+## 2026-10-30 07:4x — Der Container stand 13 Minuten in einem ping, und der Buchstabe war schuld
+
+Der Suite-Neulauf nach dem neuen Einsammel-Test wollte nicht enden. `docker exec`
+zeigte im laufenden Container:
+
+```
+ 3813  12:58  bash device/blueline/firstlight/run-flash-observe.sh …/fl-refpacked/firstlight.img 346a96da… 4
+ 3867  12:58  ping -c1 -W2000 192.0.2.1
+```
+
+`-W2000` war auf macOS immer gut: BSD-ping misst die Antwortfrist in
+**Millisekunden**. iputils — der Container — misst sie in **Sekunden**, und
+192.0.2.1 (TEST-NET-1, bewusst ohne Antwort) war damit ein Blocker von 33
+Minuten pro Poll, in der Schleife mit vier Polls.
+
+Gemessen statt Man-Page geglaubt, beide Seiten:
+
+* iputils/alpine, `ping -c1 -W2000 192.0.2.1`: nach 6 s noch nicht beendet (von
+  mir abgebrochen; im echten Lauf 13 min), `ping -c1 -W 2 -w 3 …`: **exit 1 nach
+  2 s**.
+* macOS, vier Polls mit `-W2000` in einem kompletten `tests/bisection` von 26 s:
+  dort blockierte kein Poll auch nur ansatzweise sekundenlang.
+* Nebenbefund, weil er die Verführung zeigt: `ping -c1 -W 1 8.8.8.8` bekam auf
+  macOS eine Antwort trotz gemessenem Hinweg von 9,9–19,7 ms. Die macOS-Zahl ist
+  also keine scharfe Antwortfrist, und ich behaupte ihre Einheit auf
+  Antwortebene nicht — belegt ist nur, dass 2000 dort nicht blockiert.
+
+Der Runner setzt die Frist jetzt nach `uname -s`: `Darwin → -W 1500`, sonst
+`-W 2 -w 3` (Einzelantwort und Gesamtfrist). Neu ist Abschnitt 5d in
+`tests/bisection`: ein Fake-`ping` zeichnet die Argumente auf, und die Prüfung
+muss dieselbe Zeile je Plattform **verschieden** beurteilen — `-W2000` ist auf
+macOS legitim und auf iputils der gemessene Hänger. Ohne diesen Gegenbeweis wäre
+die Zahl nur eine Erwartung, die ich mir ausgedacht habe. Der Fake zeichnet auch
+auf, **dass** überhaupt gepingelt wurde: eine Prüfung, die ins Leere läuft, ist
+dieselbe Fehlerklasse wie ein Prüfstein ohne Datei.
+
+`tests/bisection`: 11 ok / 0 not ok / Exit 0 (33 s, vorher 10 ok/27 s).
+Nebenbei die Frage, ob meine Testläufe dem Telefon etwas geschrieben haben, als
+es im Fastboot-Modus hing: Nein, und der Beweis ist die Zeichenkette nicht im
+Kopf, sondern im Aufrufprotokoll — die Runner-Zeile 22 stellt platform-tools
+nur voran, **wenn kein fastboot gefunden wird**, und der Fake gewinnt dadurch;
+derselbe Fake meldet `flash boot_a` erhalten (die Prüfung darauf ist grün).

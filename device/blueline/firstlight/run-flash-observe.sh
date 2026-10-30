@@ -85,6 +85,19 @@ R=rebo; fastboot ${R}ot; say "Neustart kommandiert, $DAUER s Beobachtung"
 
 t0=$(date +%s); seen=0
 POLL=${POLL:-5}
+# Der Buchstabe W bedeutet auf den beiden Plattformen verschiedene Einheiten,
+# und das hat am 30.10. den kanonischen Suite-Lauf im Container 13 Minuten
+# stillstehen lassen. Gemessen, nicht aus der Handbuchseite: iputils (alpine)
+# mit -W2000 nach 6 s noch laufend (im echten Lauf 13 min bis zu meinem Abbruch),
+# mit -W 2 -w 3 nach 2 s mit exit 1 beendet; auf macOS endeten vier Polls mit
+# -W2000 innerhalb eines 26-s-Testlaufs, blockierten also nicht annaehernd
+# sekundenlang. Nie einen Wert fuer beide Plattformen setzen. Die
+# Groessenordnung prueft tests/bisection Abschnitt 5d mit einem vorgegaukelten
+# ping, auf jeder Plattform nach ihrer eigenen Einheit.
+case $(uname -s) in
+  Darwin) PINGW=${PINGW:--W 1500};;    # Millisekunden (BSD-ping)
+  *)      PINGW=${PINGW:--W 2 -w 3};;  # Sekunden, mit Gesamtfrist (iputils)
+esac
 while :; do
   t=$(( $(date +%s) - t0 )); [ "$t" -ge "$DAUER" ] && break
   now=$(snap); new=$(comm -13 <(printf '%s\n' "$before") <(printf '%s\n' "$now"))
@@ -95,7 +108,7 @@ while :; do
     seen=$((seen+1)); say "t=${t}s NEU: $(printf '%s' "$new" | tr '\n' '|' | cut -c1-200)"
     before=$(printf '%s\n' "$now")
   fi
-  if ping -c1 -W2000 "${PHONE:-172.16.42.1}" >/dev/null 2>&1; then
+  if ping -c1 $PINGW "${PHONE:-172.16.42.1}" >/dev/null 2>&1; then
     say "t=${t}s ${PHONE:-172.16.42.1} pingbar"
     if nc -z -G 2 "${PHONE:-172.16.42.1}" 23 2>/dev/null; then say "t=${t}s Port 23 offen"; break; fi
   fi

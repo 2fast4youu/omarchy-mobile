@@ -421,3 +421,60 @@ print("Einsammel-Block gegen vorgebliche Shell: %d Pruefungen bestanden, %d Fehl
          max(len(c) for _, c in re.findall(r'\("([a-z0-9.-]+\.txt)",\s*"([^"]+)"\)', text))))
 PY
 ok "Runner: ganzer Einsammel-Block laeuft gegen vorgetaeuschte Shell (Banner, Echo, leere Datei)"
+
+# 5d) Die Groessenordnung des ping, nach der Einheit der jeweiligen Plattform.
+# Grund: der kanonische Container-Lauf am 30.10. stand 13 Minuten in
+#   ping -c1 -W2000 192.0.2.1
+# und war danach immer noch nicht fertig. Auf iputils sind 2000 **Sekunden**,
+# auf macOS Millisekunden — gemessen: iputils nach 6 s noch laufend, mit
+# -W 2 -w 3 nach 2 s beendet (exit 1); auf macOS vier Polls in einem 26-s-Lauf.
+# Der Fake-ping beantwortet nichts (exit 1) und blockiert nicht, die Pruefung
+# sitzt deshalb an der Groessenordnung der uebergebenen Zahl, nicht an der
+# Laufzeit — und muss derselben Zahl je Plattform ein anderes Urteil geben.
+if [[ -x $FAKE/fastboot ]]; then
+  PINGLOG="$t/pinge.txt"; : > "$PINGLOG"
+  printf '#!/bin/sh\necho "$*" >> "$PINGLOG"\nexit 1\n' > "$FAKE/ping"
+  chmod 755 "$FAKE/ping"
+  : > "$ANR"; o="$t/out4"; mkdir -p "$o"
+  start=$(date +%s)
+  FBLOG="$ANR" OUT="$o" PHONE=192.0.2.1 POLL=1 PINGLOG="$PINGLOG" PATH="$FAKE:$PATH" \
+    bash "$FL/run-flash-observe.sh" "$IMG_A" "$(sha_a "$IMG_A")" 3 >/dev/null 2>&1
+  laufzeit=$(( $(date +%s) - start ))
+  pingzahl=$(grep -c . "$PINGLOG" 2>/dev/null || true)
+  [[ $pingzahl -ge 1 ]] || fail "Der Beobachtungslauf hat nie gepinggt — diese Pruefung misst nichts"
+  [[ "$laufzeit" -lt 60 ]] || fail "Beobachtungslauf dauerte ${laufzeit}s, ein ping blockiert"
+  python3 - "$PINGLOG" "$(uname -s)" <<'PY' || fail "ping-Wartezeit passt nicht zur Plattform-Einheit"
+import re, sys
+zeilen = [l.strip() for l in open(sys.argv[1], encoding="utf-8", errors="replace") if l.strip()]
+platt = sys.argv[2]
+def grenzen(p):
+    # Die Zahl in -W ist auf macOS Millisekunden, auf iputils Sekunden (gemessen
+    # 30.10.: iputils bei -W2000 nach 6 s noch laufend, bei -W 2 -w 3 nach 2 s
+    # fertig; macOS vier Polls mit -W2000 in einem 26-s-Lauf).
+    return (200, 6000, "ms") if p == "Darwin" else (1, 5, "s")
+def pruefe(zeile, plattform):
+    niedrig, hoch, einheit = grenzen(plattform)
+    w = re.search(r"(?:^|\s)-W\s*(\d+)(?:\s|$)", zeile)
+    if not w:
+        return "kein -W in %r, die Wartezeit ist unkontrolliert" % zeile
+    wert = int(w.group(1))
+    if not (niedrig <= wert <= hoch):
+        return "-W%d ist ausserhalb von %d..%d %s fuer %s" % (wert, niedrig, hoch, einheit, plattform)
+    if plattform != "Darwin" and not re.search(r"(?:^|\s)-w\s*(\d+)", zeile):
+        return "iputils ohne Gesamtfrist -w: ein ping kann den ganzen Lauf stilllegen"
+    return None
+fehler = [m for m in (pruefe(z, platt) for z in zeilen) if m]
+# Der Gegenbeweis: dieselbe Zeile muss je Plattform verschieden beurteilt
+# werden, sonst prueft die Zahl gegen einer Größe, die ich mir ausgedacht habe.
+beispiel = "-c1 -W2000 192.0.2.1"
+urteil_darwin = pruefe(beispiel, "Darwin")
+urteil_linux = pruefe(beispiel, "Linux")
+assert urteil_darwin is None, "auf macOS sind 2000 ms legitim, die Pruefung verwirft sie: %s" % urteil_darwin
+assert urteil_linux is not None, "auf iputils sind 2000 s der gemessene Haenger, die Pruefung laesst ihn durch"
+if fehler:
+    raise SystemExit("\n".join("  nicht ok - " + m for m in fehler))
+print("ping-Wartezeit: %d Aufrufe, alle innerhalb der %s-Einheit; -W2000 wird je Plattform "
+      "verschieden beurteilt" % (len(zeilen), "Darwin-ms" if platt == "Darwin" else "Linux-Sekunden"))
+PY
+  ok "Runner: ping-Wartezeit passt zur Plattform-Einheit, -W2000 ist auf iputils ein Haenger ($laufzeit s Lauf)"
+fi
