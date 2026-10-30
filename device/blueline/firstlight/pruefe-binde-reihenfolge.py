@@ -112,12 +112,19 @@ def haupt():
         print("not ok - auf den Bindblock folgen keine done")
         fehler += 1
 
-    # 6) Herzschlag: eine Zeile, die den Knopf als erreichbar ausweist.
-    herz = [x for x in zeilen if "weicher-bind=debugfs-geoffnet" in x]
+    # 6) Herzschlag: eine Zeile, die den Knopf als erreichbar ausweist. Der
+    #    Merkmalssatz waechst mit jedem Bild, das ein anderes Feld meldet; die
+    #    Zahl bleibt eine. Gemessen: v0v meldete 'weicher-bind=debugfs-geoffnet',
+    #    v0w meldt 'debugfs=' und 'usb=' und haelt damit dieselbe Aussage. Wer
+    #    hier nur den alten Text sucht, meldet einen umbenannten Beweis als
+    #    fehlenden - dasselbe Muster wie das 'write rc='->'binde rc='-Missverstaendnis.
+    HERZMERKMALE = ("weicher-bind=debugfs-geoffnet", "debugfs=$(ls /sys/kernel/debug")
+    herz = [x for x in zeilen if any(k in x for k in HERZMERKMALE)]
     if len(herz) == 1:
         print("ok - Herzschlag-Zeile: %s" % herz[0].strip()[:74])
     else:
-        print("not ok - Herzschlag-Zeile %d mal" % len(herz))
+        print("not ok - Herzschlag-Zeile %d mal (Merkmale: %s)"
+              % (len(herz), ", ".join(HERZMERKMALE)))
         fehler += 1
 
     print("%d Fehler, %d Zeilen, soft_connect %d, bDeviceState %d"

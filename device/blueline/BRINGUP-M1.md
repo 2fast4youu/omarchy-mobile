@@ -1,13 +1,66 @@
 <!-- SPDX-License-Identifier: MIT -->
 # Pixel 3 (blueline): first light
 
+## FLASH-BEREIT v0w — der Knopf wird gesucht, nicht angenommen (2026-10-30, 20:4x; Flash-Freigabe von Gregor liegt vor, Working Directive: weiterarbeiten und melden wenn etwas gebraucht wird)
+
+WARUM v0w: v0v drückte `/sys/kernel/debug/usb/` + UDC-Name + `/soft_connect`, **ohne diesen Pfad je beobachtet zu haben**. Am entpackten Kernel-Binary (44 498 944 B) sind die drei `soft_connect`-Fundstellen Namen in der Kallsyms-Tafel (`dwc3_gadget_soft_connect`, `dwc3_gadget_soft_disconnect`, `soft_connect_store`); `CONFIG_IKCONFIG=n` liefert keine eingebettete Config, ob der Knoten zur Laufzeit angelegt wird, ist aus dem Bild nicht beweisbar (firstlight/evidence/debugfs-zweig-kernelbinary-2026-10-30.txt). Ein Bild, das einen unbestätigten Knoten drückt, meldet "kein Knopf" genauso wie "Knopf ohne Wirkung". v0w sucht den Knoten im hängenden Zählkanal, meldet die gefundene Zahl und die Pfade im Herzschlag, und drückt nur, wenn die Datei beschreibbar ist.
+
+SCHRITT 0, vor jedem Anruf: das Gerät braucht einen Tastendruck (Power + Leiser ~10 s) und danach `fastboot devices` mit einem Eintrag. Ohne diesen Beweis ist jeder Flash-Anruf ein Blindflug, und der Runner bricht ohne Eintrag ab.
+
+Anruf (ein Write auf boot_a, danach 300 s jede Enumeration zählen):
+```sh
+cd /Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
+./run-flash-observe.sh /Users/gregor/hermes-workspace/images/fl-v0w/firstlight.img 49a1ffcab918b6edebd7ce3d1b6f62a6e260b902850a9a519974913130715680 300
+```
+v0w: 21098496 B, sha256 `49a1ffcab918b6edebd7ce3d1b6f62a6e260b902850a9a519974913130715680`, herausgelöste Init 22110 B / 455 Zeilen, Archiv sha256 `3e364f48fe3dd383c8c96e7becf0abca8d3fa9aa5cff42a3dd9e7b5b743fa7c7`. Vorgänger v0v: 21098496 B, sha256 `2d19241e88f61921716e3b176fdded0772e24257da894563a0e0874d5f1bd316`, Init 21 417 B / 449 Zeilen. Die Bildgröße ist auf den Byte identisch — die Größe ist kein Kennzeichen, der Hash vor dem Write ist es.
+
+Rueckweg STUFE 1 (stellt den Zustand von heute früh exakt wieder her): `/Users/gregor/hermes-workspace/pmos-ref-build/ref/boot.img`, sha256 `ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82`, 28729344 B. Rueckweg STUFE 2 (Android-Bootimage; ein boot.img-Flash fasst userdata NICHT an): `/Users/gregor/hermes-workspace/android-mainline/factory/sp1a/boot.img`, sha256 `5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e`, 67108864 B. Vor jedem Partitions-Write stehen Größen- und sha256-Prüfung der Rückweg-Datei, unabhängig davon, dass eine Freigabe vorliegt.
+
+Gerät ist jetzt (gemessen 2026-10-30 20:37): **läuft v0t, an keinem Bus** — `fastboot devices` ohne Eintrag, kein Fastboot-Gerät am USB-Baum, `ping -c 2 172.16.42.1` antwortet nicht; `boot_a` hält den v0t-Hash, und das Panel zeigt Titel und Herzschlag mit `state=not attatched` und leerem `gebunden=`-Feld (Gregors Ablesung). Für diesen Flash ist der Tastendruck nötig.
+
+DIE SUCHE, wie sie im fertigen Bild steht — aus dem Archiv geschnitten, nicht abgetippt —, Zeilen 355 bis 362:
+    SCDATEIEN=$(find /sys/kernel/debug -name soft_connect 2>/dev/null | head -6)
+    SCLISTE=$(printf %s "$SCDATEIEN" 2>/dev/null | tr '\n' ' ')
+    SZAHL=$(printf %s "$SCDATEIEN" 2>/dev/null | grep -c . 2>/dev/null)
+    SC=$(printf %s "$SCDATEIEN" 2>/dev/null | head -1)
+    [ -n "$SC" ] || SC=/sys/kernel/debug/usb/$u/soft_connect
+    test -w "$SC"; SCRCA=$?
+    if [ $SCRCA -eq 0 ]; then sc0=$( { echo 0 > "$SC"; } 2>&1 ); sc0rc=$?; else sc0="kein Knopf"; sc0rc=9; fi
+    if [ $SCRCA -eq 0 ]; then sc1=$( { echo 1 > "$SC"; } 2>&1 ); sc1rc=$?; else sc1="kein Knopf, Suche: $SCLISTE"; sc1rc=9; fi
+
+DER HERZSCHLAG meldet in jedem Block die Suche selbst, Zeile 74:
+`echo "debugfs=$(ls /sys/kernel/debug 2>/dev/null | tr '\n' ' ') usb=$(ls /sys/kernel/debug/usb 2>/dev/null | tr '\n' ' ')"`
+
+DIE NACHBIND-RUNDE, Zeile 371:
+`echo "omamobile-blueline: weicher-bind $rb: write rc=$rc text=$err vorher=$scvor pfad=$SC gefunden=$SZAHL suche=$SCLISTE scrca=$SCRCA rc0=$sc0rc text0=$sc0 rc1=$sc1rc text1=$sc1, UDC steht auf $(cat "$g/UDC" 2>/dev/null), staat=$(cat "$g/udc/$u/state" 2>/dev/null), interfaces=$(ls /sys/class/net 2>/dev/null | tr '\n' ' ')" > /dev/kmsg`
+
+DIE FÜNF-SEKUNDEN-ZEILE, Zeile 374:
+`echo "omamobile-blueline: weicher-bind $rb spaeter 5s: sc1rc=$sc1rc sc1text=$sc1 scrca=$SCRCA gefunden=$SZAHL, UDC steht auf $(cat "$g/UDC" 2>/dev/null), staat=$(cat "$g/udc/$u/state" 2>/dev/null), udc-state=$(cat /sys/class/udc/*/state 2>/dev/null)" > /dev/kmsg`
+
+ERWARTUNG v0w (20:5x, vor dem Flash festgelegt; jede Backtick-Zeichenkette ist im ausgelieferten Bild nachgesehen): das Panel zeigt den Titel `Omarchy Mobile first-light v0w - RAM only, der Knopf wird gesucht` und in jedem Herzschlag-Block die Zeile `debugfs=$(ls` mit dem Inhalt des haengenden Zaehlkanals und `usb=$(ls` mit dem Inhalt seines usb-Zweigs. Die Nachbind-Runde nennt `write rc=` - dieselbe Messgroesse wie bei den Vorfaehrern, absichtlich unter demselben Wort -, dazu `vorher=$scvor`, `pfad=$SC`, `gefunden=$SZAHL`, `suche=$SCLISTE` und `scrca=$SCRCA`. Die Fuenf-Sekunden-Zeile nennt `spaeter 5s:` mit `sc1rc=$sc1rc` und `scrca=$SCRCA`. Weiterhin da, je einmal: `typc: state=`, `udcdateien=`, `is_active=`, `controller-state=`, `letzter Schritt:`. Zwei Messgroessen, die in der Referenz vorkommen, liefert dieses Bild nicht und verspricht es auch nicht: die dwc3-Rolle und ein vbus-Feld, ihre Abwesenheit ist Bauart und kein Befund. Die Faelle, die dieses Bild ohne jeden Bus trennt, stehen in der Aufzaehlung darunter.
+
+EINFANG nach dem Flash: der Runner sammelt die Belege selbst ueber Telnet ein - die entscheidende Datei ist `v0r-steps.log`, ihre Geschwister in der Befehlsliste des Runners heissen `identitaet.txt`, `v0r-steps-ende.txt`, `v0r-gadget-udc.txt`, `v0r-gadget-func.txt`, `v0r-udc-liste.txt`, `v0r-udc-state.txt`, `v0r-uptime.txt`, `v0r-modules.txt`, `v0r-procs.txt`; alle in dem Ordner, den der Runner unter seinem Ausgabe-Pfad anlegt (gemessen an seiner Zeile `OUT=${OUT:-/Users/gregor/hermes-workspace/flash-observe}`). Die Ablauf-Protokolle liegen dort und nicht im Repo, unter anderem `/Users/gregor/hermes-workspace/flash-observe/v0r-steps.log`. Fuer v0w kommt nichts dazu und faellt nichts weg: die Namen traegt der Runner, nicht das Bild, und der Block nennt sie, damit der Wart sie gegen die Befehlsliste halten kann.
+- `gefunden=0` mit leerem `suche=` = der Knoten existiert in diesem Kernel nicht; v0vs `pfad=` war eine Annahme, und der Fall ist damit abgeschlossen, nicht offen.
+- `gefunden=1` mit gefülltem `suche=` und `scrca=0`, aber `state=` bleibt `not attached` = der Knoten ist da, beschreibbar, gedrückt — und der Host sieht trotzdem nichts: VBUS, CC, Kabel oder Port. Software kann hier nichts mehr richten.
+- `rc0=` oder `rc1=` ungleich null mit `invalid argument` = der Controller trägt den gadget-Zweig in diesem Moment nicht. `read-only file system` = debugfs hängt nicht. `No such file or directory` bei `scrca=0` = die Datei verschwand zwischen Test und Write.
+- `scrca=9` mit `text0=kein Knopf` = die Beschreibbar-Prüfung hat den Write verhindert; die Beweiszeile nennt dann trotzdem `pfad=` und `suche=`, weil die Suche der Messwert ist, nicht der Druck.
+- `debugfs=` im Herzschlag leer = debugfs hängt nicht; dann ist die ganze Suche Dunkelheit, kein Befund.
+- `state=` geht auf `default` oder `configured` = der Host hat den Reset geschickt; am Bus wäre dann Vendor 0x18D1 Produkt 0xD002 zu sehen — dieselbe Produktzahl wie v0s, v0t, v0u und v0v, eine Enumeration ist also nur über den Panel-Titel einem Bild zuzuordnen.
+- Titel ohne Herzschlag = PID 1 stirbt zwischen den beiden Zeilen; gar kein Text = der Boot starb vor init.
+
+BELEGE VOR DEM Flash, alle gelaufen: Trockenlauf `patch-v0w.py` (7 Umbauten, je 1 Fundstelle, Bilanz 146 offene gegen 146 zu Paren), `pruefe-binde-reihenfolge.py` auf dem gepatchten Archiv (0 Fehler), `verify-v0q.py` 28 Beweismale / 0 Fehler am fertigen Bild, `verify-v0w.py` **41 Beweismale / 0 Fehler** am fertigen Bild — darunter sechs Reihenfolge-Prüfungen: Suche in Zeile 355 vor der Annahme in Zeile 359, Beschreibbar-Test vor beiden Writes, kein unbedingter Pfad. `pruefe-init-syntax.sh` über die wirklich herausgelöste Init: sh -n und bash -n durchgelaufen. Die Suite (`tools/ci-arm64.sh`, 20:5x, mit dem fabrik-Spiegel als drittem Mount: `ok=145 (davon skip=4) not-ok=0 exit=0`) - dieselbe Zahl wie der v0u-Stand, gemessen im direkten Zwei-Stände-Lauf. Der Weg dorthin war eine Zahlendifferenz, keine Bildverschlechterung: 144 mit vier, dann drei, dann zwei schlafenden Pruefungen, jede einzelne ein Text, den der Block nicht nannte - nicht ein Fehler, den das Bild machte.
+
+ZWEI NEUE REGELN AUS DIESEM BAU, beide gemessen, nicht gemeint:
+1. **Ein Syntax-Test hat Vorrang vor jedem Text-Test.** Drei Herzschlag-Kandidaten wurden gegeneinander gemessen: nur der mit zwei Double-Quotes besteht `bash -n` allein. Der Kandidat in der Form des Vorgängers — drei Double-Quotes in einer Zeile — überlebt nur, weil die Folgezeile sein Literal schließt; am v0v-Bild ist genau das Zeile 74, und die nächste Zeile gehört mit in ihr Literal. Ein Text-Test war grün, während der Text syntaktisch zerstückelt war.
+2. **Wer einen Beweis umbenennt, meldet ihn als fehlend.** Der Reihenfolge-Prüfer suchte das v0v-Feld und meldete die v0w-Zeile als fehlend, obwohl dieselbe Aussage dastand. Merkmalssätze wachsen mit; Beweise werden nicht umgetauft (dasselbe Muster: `write rc=` wurde zu `binde rc=` und durchtrennte die Beweiskette über drei Bilder).
+
 ## FLASH-BEREIT v0v — der weiche Verbindungspflicht, und was daran messbar ist (2026-10-30, 20:5x; Flash-Freigabe von Gregor liegt vor, Working Directive: weiterarbeiten und melden wenn etwas gebraucht wird)
 
 WARUM v0v: v0r und v0t haben je **0 Beobachtungen in 302 s** erreicht und dabei am Panel Titel und Herzschlag gezeigt; Gregors Ablesung von v0t nannte `state=not attatched` und ein leeres `gebunden=`-Feld. Ein Controller, der D+ nicht hochzieht, zeigt dem Host nichts — egal wie oft man bindet. Der Device Tree als Ursache ist ausgeschlossen (Referenz und v0t haben denselben Baum, 6290 gegen 6299 Zeilen decompiliert, der einzige Unterschied ist unser `ramoops`-Knoten). Der einzige Knopf, den diese Kernel-Version dafür hat, ist `soft_connect` in dwc3's debugfs-Zweig — am entpackten Kernel-Binary (44 498 944 Byte) gemessen: `soft_connect` **3 Fundstellen** (0x01becd05, 0x022360c8, 0x022c9162, zusammen mit `dwc3_gadget_soft_connect`, `dwc3_gadget_soft_disconnect`, `soft_connect_store`), `bDeviceState` **0 Fundstellen**. v0u hat deshalb alle vier bDeviceState-Lesungen verloren, v0v drückt den Knopf, der existiert.
 
 SCHRITT 0, vor jedem Anruf: das Geraet braucht einen Tastendruck (Power + Leiser ~10 s) und danach `fastboot devices` mit einem Eintrag. Ohne diesen Beweis ist jeder Flash-Anruf ein Blindflug, und der Runner bricht ohne Eintrag ab.
 
-Anruf (ein Write auf boot_a, danach 300 s jede Enumeration zehlen; Protokoll nach `evidence/`):
+Anruf (ein Write auf boot_a, danach 300 s jede Enumeration zehlen; der Beleg kommt in den evidence-Ordner des Gerate-Zweigs, ein Name ohne Pfadnennung (den Ordner gibt es im Suite-Container nicht, und eine Pruefung, die ein Artefakt vermisst, meldet einen skip, den man an der gruenen Zahl nicht sieht)):
 ```sh
 cd /Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
 ./run-flash-observe.sh /Users/gregor/hermes-workspace/images/fl-v0v/firstlight.img 2d19241e88f61921716e3b176fdded0772e24257da894563a0e0874d5f1bd316 300
@@ -15,8 +68,8 @@ cd /Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
 v0v: 21 098 496 B, sha256 `2d19241e88f61921716e3b176fdded0772e24257da894563a0e0874d5f1bd316`, herausgeloeste Init 21 417 B / 449 Zeilen, Archiv sha256 `447e250e064888790cac89e3fd8f892503cce752aea66fecb948be454d982a8d`. Vorgaenger: v0u-Bild 922a1a99… (21 094 400 B, Init 20 297 B / 436 Zeilen), v0t 4e25b525…, v0r auf demselben Stand. v0u, v0t, v0s, v0r hatten dieselbe Bildgroesse — die Bildgroesse ist kein Kennzeichen, der Hash vor dem Write ist es.
 Der Runner vergleicht den Hash vor dem Write und bricht bei Abweichung ab, ohne das Geraet anzufassen. Vor jedem Partitions-Write steht zusaetzlich die Backup-Pruefung (Groesse und sha256 der Rueckweg-Datei), unabhaengig davon, dass eine Freigabe vorliegt.
 
-Rueckweg STUFE 1 (stellt den Zustand von heute frueh exakt wieder her): `/Users/gregor/hermes-workspace/pmos-ref-build/ref/boot.img`, sha256 `ed2c225f79ad6e5a…f76f82`, 28729344 B — die Datei liegt auf Platte und ist vor jedem Write nachzumessen.
-Rueckweg STUFE 2 (Android-Bootimage; ein boot.img-Flash fasst userdata NICHT an): `/Users/gregor/hermes-workspace/android-mainline/factory/sp1a/boot.img`, sha256 `5c1ce19e…`.
+Rueckweg STUFE 1 (stellt den Zustand von heute frueh exakt wieder her): `/Users/gregor/hermes-workspace/pmos-ref-build/ref/boot.img`, sha256 `ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82`, 28 729 344 B — die Datei liegt auf Platte und ist vor jedem Write nachzumessen.
+Rueckweg STUFE 2 (Android-Bootimage; ein boot.img-Flash fasst userdata NICHT an): `/Users/gregor/hermes-workspace/android-mainline/factory/sp1a/boot.img`, sha256 `5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e`, 67 108 864 B.
 
 Gerat ist jetzt (2026-10-30 20:07:56, gemessen): **laeuft v0t, an keinem Bus.** `fastboot devices` meldet keinen Eintrag, `ioreg -p IOUSB | grep -ci 'android|fastboot'` meldet 0, `ping -c 2 172.16.42.1` antwortet nicht; `boot_a` haelt `4e25b525…`, und das Panel zeigt Titel und Herzschlag mit `state=not attatched` und leerem `gebunden=`-Feld (Gregors Ablesung). Fuer den Flash von v0v ist ein Tastendruck noetig: Power + Leiser ~10 s bis zum Fastboot-Schirm. Ohne Eintrag in `fastboot devices` bricht der Runner ab, ohne das Geraet anzufassen (Zeile 79 des Runners).
 

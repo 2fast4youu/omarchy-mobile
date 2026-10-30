@@ -1,0 +1,48 @@
+Befund: was am Kernel-Binary ueber den debugfs-Zweig von dwc3 beweisbar ist
+Gemessen: 2026-10-30, kernel-zeichen.py am Kernel-Blob von fl-v0u
+Werkzeug: firstlight/kernel-zeichen.py, Ausgabe im Text
+
+Kernel-Blob:
+  komprimiert 16 154 423 B (gzip 1f8b08), entpackt 44 498 944 B, ein Glied
+  Config: keine eingebettet (CONFIG_IKCONFIG=n) -> build-config aus dem Bild
+  nicht beweisbar; die Config des Baums ist eine Annahme, kein Befund
+
+Zeichenketten, gezaehlt und mit ihrem Umfeld:
+  soft_connect   3 Fundstellen, alle in der Kallsyms-Namenstafel:
+    0x01becd05  ...HW is deprecated.soft_connect.snps_udc_core.Disable e
+    0x022360c8  ..._test_mode.dwc3_gadget_soft_connect.dwc3_gadget_soft_discon
+    0x022c9162  ...soft_cursor.soft_connect_store.soft_
+  usb/%s         1 Fundstelle:
+    0x01c21594  ...robe.retrying intr urb..usb/%s.device control field no
+  usb/%d         0 Fundstellen
+  dwc3_debugfs   4 Fundstellen (Namenstafel: dwc3_debugfs_create_endpoint_dir,
+                 dwc3_debugfs_exit, dwc3_debugfs_init, dwc3_debugfs_remove_endpoint_dir)
+  devices/%s     1 Fundstelle, und die gehoert zu vfio: 0x01b5ecfe
+  a600000        0 Fundstellen (die UDC-Adresse steht nicht als String im Bild)
+
+Was das bedeutet, und was nicht:
+  - Der Code fuer den Zweig ist im Bild (dwc3_debugfs_init in der Namenstafel).
+    Ob er ausgefuehrt wird, ist damit nicht gesagt: die Namenstafel nennt auch
+    Funktionen, die nie aufgerufen werden, und sie nennt sie auch dann, wenn
+    ihr Zweig uebersprungen wird.
+  - 'soft_connect' als Datei-Name ist NICHT bewiesen. Die drei Fundstellen sind
+    Funktionsnamen. Zwischen 'soft_connect_store' (dem Schreibhandler) und einer
+    debugfs-Datei desselben Namens liegt eine Zeile Code, die ich am Binary nicht
+    lese: ein debugfs_create_file("soft_connect", ...) taegt als String im
+    Lesestoff auf, und 'soft_connect' allein ist in der Namenstafel nicht von ihr
+    zu unterscheiden.
+  - 'usb/%s' ist ein Format-String, der Einsatz ist unbekannt. Ein Ordnername,
+    den ich daraus ablese, ist eine Annahme mit einem Fundstellenbeleg.
+
+Folge fuer das naechste Bild (v0w):
+  - Der Pfad wird nicht angenommen, sondern gesucht, und das Ergebnis der Suche
+    steht auf dem Panel: ein Herzschlag-Feld debugfs=mit|ohne und die Liste der
+    gefundenen soft_connect-Pfade (maximal sechs, damit das Panel lesbar bleibt).
+  - Der weiche Verbindner wird nur gedrueckt, wenn eine gefundene Datei
+    beschreibbar ist; sonst meldet der Herzschlag 'kein Knopf im Bild' statt
+    'No such file or directory', und der Leser unterscheidet die Faelle selbst.
+
+Regel, die aus diesem Befund waechst:
+  Ein String im Kernel-Binary ist ein Name, kein Beweis, dass der Name an der
+  erwarteten Stelle liegt. Wer einen Pfad aus dem Binary ableitet, messen ihn
+  am laufenden Kernel oder laesst das Bild ihn suchen.
