@@ -1,6 +1,72 @@
 <!-- SPDX-License-Identifier: MIT -->
 # Pixel 3 (blueline): first light
 
+## FLASH-BEREIT v0x — debugfs früh, und der Knopf, der wirklich existiert (2026-10-30, 23:0x; Flash-Freigabe von Gregor liegt vor, Working Directive: weiterarbeiten und melden wenn etwas gebraucht wird)
+
+WARUM v0x: drei Befunde an der Quelle `android-mainline/kernel-pmos`, alle gemessen nach dem v0w-Bau. Erstens: `soft_connect` als Datei existiert in diesem Kernel nicht — die Suche über den ganzen Kernelbaum nach dem Dateinamen als String meldet 0 Dateien; die drei Fundstellen im Kernel-Binary sind Namen in der Kallsyms-Tafel, die Datei selbst wird nie angelegt, und v0vs Druck sowie v0ws Fallback liefen ins Phantom (deshalb meldete v0w im Feld `text0=` ein `No such file or directory` ohne Aussagewert). Zweitens: real ist der Modus — die Quelldatei des debugfs-Zweigs setzt den Modus-Knoten (Zeile 1029, 0644) unter dem Gerätenamen im usb-Zweig, und dieser Zweig entsteht bedingungslos in `drivers/usb/common/common.c:422`; `CONFIG_USB_DWC3_DUAL_ROLE=y` und `CONFIG_DEBUG_FS=y` stehen in der Konfiguration dieses Baums, derselbe Baum, aus dem die laufende Referenz stammt (Zeile 698 oben). Drittens: v0w hing debugfs erst in Zeile 350 ein, mitten in der Bind-Runde — die Herzschläge davor waren Dunkelheit, nicht Befund. Der erste v0x-Bau zeigte überdies einen Eigenfehler, der erst dem neuen Beweismal auffiel: der nackte `test -w` des Vorgängers blieb unter dem bedingten stehen und schrieb `SCRCA=9` (kein Fund) zu `SCRCA=1` um, stumm und unterhalb jedes Beweises.
+
+SCHRITT 0, vor jedem Anruf: das Gerät braucht einen Tastendruck (Power + Leiser ~10 s) und danach `fastboot devices` mit einem Eintrag. Ohne diesen Beweis ist jeder Flash-Anruf ein Blindflug, und der Runner bricht ohne Eintrag ab.
+
+SCHRITT 0b, in Fastboot VOR dem Write, zwei Lesungen und ein Leseversuch:
+(1) `fastboot getvar slot-retry-count:a` und `getvar partition-size:boot_a` —
+der Zähler stand 13:09 auf 2 und 16:07 vor dem Write auf 3, ohne isolierte
+Ursache; erst diese Lesung sagt, ob ein Start den Versuch verbraucht
+(`evidence/retry-zaehler-korrektur-2026-10-30.txt`). (2) `fastboot fetch boot_a` in eine Datei und die Größe prüfen — am 27.10. kam ein Fetch als 0-Byte-Datei zurück, also zählt die Dateigröße, nicht der Exit-Code. Der Rohlog-Block (1 MiB bei 63 MiB, alle 10 s, in allen fünf gebauten Bildern) konnte von den 21 098 496 B großen Writes nicht erreicht werden und trägt den letzten Auswurf des zuletzt gestarteten Bildes. (3) Erst danach der Write.
+
+Anruf (ein Write auf boot_a, danach 300 s jede Enumeration zählen):
+```sh
+cd /Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
+./run-flash-observe.sh /Users/gregor/hermes-workspace/images/fl-v0x/firstlight.img efa25838fc7ffc215fc0757ba90063977af6fc34199b9ac8a26079140d76ba17 300
+```
+v0x: 21098496 B, sha256 `efa25838fc7ffc215fc0757ba90063977af6fc34199b9ac8a26079140d76ba17`, herausgelöste Init 22775 B / 462 Zeilen, Archiv sha256 `7bfb4f84fba1716bc450868df0aca8496e1e9614734e641a5657dcd5f02376ac`. Vorgänger v0w: 21098496 B, sha256 `49a1ffcab918b6edebd7ce3d1b6f62a6e260b902850a9a519974913130715680`, Init 22 110 B / 455 Zeilen. Die Bildgröße ist auf den Byte identisch — die Größe ist kein Kennzeichen, der Hash vor dem Write ist es.
+
+Rueckweg STUFE 1 (stellt den Zustand von heute früh exakt wieder her): `/Users/gregor/hermes-workspace/pmos-ref-build/ref/boot.img`, sha256 `ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82`, 28729344 B. Rueckweg STUFE 2 (Android-Bootimage; ein boot.img-Flash fasst userdata NICHT an): `/Users/gregor/hermes-workspace/android-mainline/factory/sp1a/boot.img`, sha256 `5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e`, 67108864 B. Vor jedem Partitions-Write stehen Größen- und sha256-Prüfung der Rückweg-Datei, unabhängig davon, dass eine Freigabe vorliegt.
+
+Gerät ist jetzt (gemessen 2026-10-30, zuletzt 21:07): **läuft v0t, an keinem Bus** — `fastboot devices` ohne Eintrag, kein Pixel am USB-Baum, `ping -c 2 172.16.42.1` antwortet nicht; das Panel zeigte bei v0t Titel und Herzschlag mit `state=not attatched` und leerem `gebunden=`-Feld (Gregors Ablesung). Für diesen Flash ist der Tastendruck nötig.
+
+DER FRÜHE EINHANG, Zeile 19, noch vor jedem Herzschlag:
+`mount -t debugfs none /sys/kernel/debug 2>/dev/null || true`
+Der zweite Einhang in der Runde (Zeile 353) bleibt stehen; hängt der Zweig schon, schlägt er fehl, und sein Rückgabewert ist der Bericht darüber.
+
+DIE SUCHE, wie sie im fertigen Bild steht — aus dem Archiv geschnitten, nicht abgetippt —, Zeilen 358 bis 367:
+    SCDATEIEN=$(find /sys/kernel/debug -name soft_connect 2>/dev/null | head -6)
+    SCLISTE=$(printf %s "$SCDATEIEN" 2>/dev/null | tr '\n' ' ')
+    SZAHL=$(printf %s "$SCDATEIEN" 2>/dev/null | grep -c . 2>/dev/null)
+    SC=$(printf %s "$SCDATEIEN" 2>/dev/null | head -1)
+    [ -n "$SC" ] || SC=""   # v0x: der v0w-Fallback war ein Phantom
+    if [ -n "$SC" ]; then test -w "$SC"; SCRCA=$?; else SCRCA=9; fi
+    MODEPFAD=$(find /sys/kernel/debug -name mode 2>/dev/null | head -2)
+    MODENEUGEFUNDEN=$(printf %s "$MODEPFAD" 2>/dev/null | grep -c . 2>/dev/null)
+    MODE=$(printf %s "$MODEPFAD" 2>/dev/null | head -1)
+    MODW=$( { cat "$MODE"; } 2>&1 ); MODWRC=$?
+Der Modus wird gelesen, nie geschrieben: ihn auf `peripheral` zu stellen ist ein eigener Versuch und gehört nicht in ein Bild, das erst messen soll. Der Zähler der Modusfunde nutzt dieselbe Zählweise wie `SZAHL` (Zeilen anzahl, nicht Umbruchzahl) — mit `wc -l` hätte ein einziger Fund null gemeldet, weil eine Befehlsersetzung den Abschiedsumbruch frisst.
+
+DER HERZSCHLAG meldet in jedem Block die Suche und den Modus, Zeile 77:
+`echo "debugfs=$(ls /sys/kernel/debug 2>/dev/null | tr '\n' ' ') usb=$(ls /sys/kernel/debug/usb 2>/dev/null | tr '\n' ' ') modewert=$(cat $(find /sys/kernel/debug -name mode 2>/dev/null | head -1) 2>/dev/null)"`
+
+DIE NACHBIND-RUNDE, Zeile 378:
+`echo "omamobile-blueline: weicher-bind $rb: write rc=$rc text=$err vorher=$scvor pfad=$SC gefunden=$SZAHL suche=$SCLISTE scrca=$SCRCA modepfad=$MODENEUGEFUNDEN modewert=$MODW rc0=$sc0rc text0=$sc0 rc1=$sc1rc text1=$sc1, UDC steht auf $(cat "$g/UDC" 2>/dev/null), staat=$(cat "$g/udc/$u/state" 2>/dev/null), interfaces=$(ls /sys/class/net 2>/dev/null | tr '\n' ' ')" > /dev/kmsg`
+
+DIE FÜNF-SEKUNDEN-ZEILE, Zeile 381:
+`echo "omamobile-blueline: weicher-bind $rb spaeter 5s: sc1rc=$sc1rc sc1text=$sc1 scrca=$SCRCA gefunden=$SZAHL modewert=$MODW, UDC steht auf $(cat "$g/UDC" 2>/dev/null), staat=$(cat "$g/udc/$u/state" 2>/dev/null), udc-state=$(cat /sys/class/udc/*/state 2>/dev/null)" > /dev/kmsg`
+
+ERWARTUNG v0x (23:0x, vor dem Flash festgelegt; jede Backtick-Zeichenkette ist im ausgelieferten Bild nachgesehen): das Panel zeigt den Titel `Omarchy Mobile first-light v0x` und in jedem Herzschlag-Block die Zeile `debugfs=$(ls` mit dem Inhalt des hängenden Zählkanals, `usb=$(ls` mit dem Inhalt seines usb-Zweigs und `modewert=$(cat` mit dem Inhalt des Modus-Knotens. Die Nachbind-Runde nennt `write rc=` - dieselbe Messgröße wie bei den Vorfahren, absichtlich unter demselben Wort -, dazu `vorher=$scvor`, `pfad=$SC`, `gefunden=$SZAHL`, `suche=$SCLISTE`, `scrca=$SCRCA`, `modepfad=$MODENEUGEFUNDEN` und `modewert=$MODW`. Die Fuenf-Sekunden-Zeile nennt `spaeter 5s:` mit `sc1rc=$sc1rc` und `modewert=$MODW`. Weiterhin da, je einmal: `typc: state=`, `udcdateien=`, `is_active=`, `controller-state=`, `letzter Schritt:`. Die Fälle, die dieses Bild ohne jeden Bus trennt, stehen in der Aufzählung darunter.
+
+EINFANG nach dem Flash: der Runner sammelt die Belege selbst über Telnet ein - die entscheidende Datei ist `v0r-steps.log`, ihre Geschwister in der Befehlsliste des Runners heissen `identitaet.txt`, `v0r-steps-ende.txt`, `v0r-gadget-udc.txt`, `v0r-gadget-func.txt`, `v0r-udc-liste.txt`, `v0r-udc-state.txt`, `v0r-uptime.txt`, `v0r-modules.txt`, `v0r-procs.txt`; alle in dem Ordner, den der Runner unter seinem Ausgabe-Pfad anlegt (gemessen an seiner Zeile `OUT=${OUT:-/Users/gregor/hermes-workspace/flash-observe}`). Die Ablauf-Protokolle liegen dort und nicht im Repo, unter anderem `/Users/gregor/hermes-workspace/flash-observe/v0r-steps.log`. Für v0x kommt nichts dazu und fällt nichts weg: die Namen trägt der Runner, nicht das Bild.
+- `usb=` im Herzschlag enthält einen Ordnernamen = der usb-Zweig ist da; sein Name ist dann gemessen, nicht mehr aus `usb/%s` gefolgert. Leer bei nicht-leerem `debugfs=` = der dwc3-Zweig wurde nie angelegt, und der Modus-Fall ist entschieden, ohne ihn gedrückt zu haben.
+- `modewert=` mit einem Wert wie `otg` oder `host` = der Controller hält sich für etwas anderes als Peripherie; das ist der stärkste einzelne Messwert, den dieses Bild liefern kann, und die Entscheidung für den nächsten Versuch (ihn auf `peripheral` zu stellen). `modewert=` leer bei vorhandenem Zweig = Dunkelheit, kein Befund.
+- `gefunden=0` mit leerem `suche=` und `scrca=9` mit `text1=`-Text `kein Knopf` = der Phantombefund ist amtlich; v0vs `pfad=` war eine Annahme, der Fall ist abgeschlossen, nicht offen.
+- `rc0=` oder `rc1=` ungleich null mit `read-only file system` = debugfs hängt nicht (dann ist der frühe Einhang fehlgeschlagen, Zeile 19); `invalid argument` = der Controller trägt den gadget-Zweig in diesem Moment nicht.
+- `state=` geht auf `default` oder `configured` = der Host hat den Reset geschickt; am Bus wäre dann Vendor 0x18D1 Produkt 0xD002 zu sehen — dieselbe Produktzahl wie v0s bis v0w, eine Enumeration ist also nur über den Panel-Titel einem Bild zuzuordnen.
+- Titel ohne Herzschlag = PID 1 stirbt zwischen den beiden Zeilen; gar kein Text = der Boot starb vor init.
+
+BELEGE VOR DEM Flash, alle gelaufen: Trockenlauf des einen Umbau-Blocks (7 Schritte, je 1 Fundstelle, Bilanz 153 offene gegen 153 zu Paren — die Zahl ist am fertigen Archiv gemessen, nicht erwartet), `pruefe-binde-reihenfolge.py` auf dem gepatchten Archiv (0 Fehler), `verify-v0q.py` 28 Beweismale / 0 Fehler am fertigen Bild (mit den Mounts des Baurezepts; der ad-hoc-Aufruf ohne Modulmount meldete 6 Dunkelheiten, kein Bildfehler), `verify-v0x.py` **52 Beweismale / 0 Fehler** am fertigen Bild — darunter die Reihenfolge: früher Einhang Zeile 19 vor Herzschlag Zeile 77 und Bind-Runde Zeile 378, Suche Zeile 358 vor der bedingten Setzung Zeile 362, Modus-Suche Zeile 364, Lesung Zeile 367, Meldung Zeile 378 378/381, und der einzige `test -w` in seiner Bedingung. `pruefe-init-syntax.sh` über die wirklich herausgelöste Init: sh -n und bash -n durchgelaufen.
+
+DREI REGELN AUS DIESEM BAU, alle gemessen:
+1. **Ein Löschschritt, der einen Anker löscht, macht den nächsten Blind.** Mein erster v0x-Tilgungsschritt entfernte die Zeile, die der Folgeschritt als Anker zählte, und meldete dessen 0 Fundstellen als fehlenden Text. Wer in einem Durchlauf löscht und einfügt, sortiert die Einfügung vor die Löschung desselben Textes.
+2. **Wer eine Messung bedingt macht, muss die Bedingung mitzählen.** Der bedingte Beschreibbar-Test liegt in derselben Zeile wie der Test selbst; eine Prüferin, die den nackten Zeilenanfang sucht, fand null Zeilen und hätte den Defekt übersehen, den sie melden sollte.
+3. **Ein Zeilenzähler, der auf Umbrüche schaut, misst eine Befehlsersetzung zu null.** `wc -l` zählt Umbrüche, und die Ersetzung frisst den letzten; die Beweiszeile desselben Bildes zählte schon längst mit `grep -c .` — die vorhandene Zählweise ist die, die man erbt, nicht die, die man als erstes schreibt.
+
 ## FLASH-BEREIT v0w — der Knopf wird gesucht, nicht angenommen (2026-10-30, 20:4x; Flash-Freigabe von Gregor liegt vor, Working Directive: weiterarbeiten und melden wenn etwas gebraucht wird)
 
 WARUM v0w: v0v drückte `/sys/kernel/debug/usb/` + UDC-Name + `/soft_connect`, **ohne diesen Pfad je beobachtet zu haben**. Am entpackten Kernel-Binary (44 498 944 B) sind die drei `soft_connect`-Fundstellen Namen in der Kallsyms-Tafel (`dwc3_gadget_soft_connect`, `dwc3_gadget_soft_disconnect`, `soft_connect_store`); `CONFIG_IKCONFIG=n` liefert keine eingebettete Config, ob der Knoten zur Laufzeit angelegt wird, ist aus dem Bild nicht beweisbar (firstlight/evidence/debugfs-zweig-kernelbinary-2026-10-30.txt). Ein Bild, das einen unbestätigten Knoten drückt, meldet "kein Knopf" genauso wie "Knopf ohne Wirkung". v0w sucht den Knoten im hängenden Zählkanal, meldet die gefundene Zahl und die Pfade im Herzschlag, und drückt nur, wenn die Datei beschreibbar ist.
