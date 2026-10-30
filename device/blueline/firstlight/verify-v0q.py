@@ -92,7 +92,14 @@ def main():
           and "/proc/modules" in init,
           "Init meldet Modul-Dunkelheit und Zaehlt /proc/modules")
     check(init.isascii(), "Init ist reines ASCII (Panel ohne UTF-Konsole)")
-    for probe in ("CONFIGFS=/sys/kernel/config/usb_gadget", "echo 0x18D1", "echo 0xD001",
+    # idProduct erwartet: aus dem Panel-Titel abgeleitet, nicht geraten. Der
+    # Titel nennt die Bildversion, und jede Version ab v0s traegt bewusst eine
+    # neue Produktzahl (0xD002), damit eine Enumeration am Bus keinem
+    # frueheren Bild zugeordnet werden kann. Ein Pruefer, der beide Zahlen
+    # akzeptiert, prueft nichts — deshalb steht hier genau eine Erwartung.
+    titel = re.search(r"first-light (v0[0-9a-z]+)", init)
+    erwartet = "echo 0xD001" if (titel and titel.group(1) in ("v0h", "v0n", "v0q", "v0r")) else "echo 0xD002"
+    for probe in ("CONFIGFS=/sys/kernel/config/usb_gadget", "echo 0x18D1", erwartet,
                   "netfunc=ncm.usb0", "functions/rndis.usb0", "functions/acm.GS0",
                   'echo "" > "$CONFIGFS/g1/UDC"', "172.16.42.1"):
         check(probe in init, "Referenz-Gadget-Pflichtzeile: " + probe)

@@ -1,0 +1,29 @@
+Panel-Ablesung um ~16:20, 30.10.2026 — der einzige Beweis seit dem Write
+
+Was Gregor am Display abgelesen hat (Antwort auf die Anfrage nach dem Panel,
+wörtlich): "v0r-Titel und laufend Text (Herzschlag-Zeilen)". Auf die Frage, was
+das Display zeige, mit Auswahlmöglichkeit "dunkel / Titel ohne weiteren Text /
+Titel und laufende Herzschlag-Zeilen / Panic-Text".
+
+Was daran gemessen ist und was nicht:
+  GEMESSEN: Der Panel-Titel von v0r steht auf dem Display, und es laufen
+    weiterhin Herzschlag-Blöcke (Zeile 63–76 des Inits, alle ~20 s). Der Titel
+    wird von Zeile 96 des Inits geschrieben, die NACH dem Gadget-Block liegt —
+    PID 1 hat also den Gadget-Abschnitt erreicht und ist nicht vorher gestorben.
+  ZEITLICH: Der Write war 16:07:34, der Neustart 16:07:36, die Ablesung ~16:20,
+    also über zwölf Minuten nach dem Neustart. Zu diesem Zeitpunkt war das Gerät
+    an keinem Bus (16:11:37, 16:13:53, 16:33:18: kein fastboot, kein Pixel in der
+    USB-Liste, ping 100 % Verlust, Port 23 zu, adb leer).
+  NICHT GEMESSEN: die einzelnen Werte in den Herzschlagzeilen (udc=, gebunden=,
+    dwc3 rolle=, controller-state=). Sie sind die entscheidende Messung und sind
+    bisher nicht abgeschrieben — nur die Textform "es läuft mit" ist belegt.
+
+Was der Text belegt, ohne jede Messung am Bus: Kernel lebt, init lebt,
+Watchdog wird gefüttert (sonst hätte der ABOOT-Zwang nachgelaufen), kein Panic
+(bei panic=60 wäre längst ein Warmstart mit fastboot-Sichtbarkeit da gewesen),
+und pstore hat nichts ausgespien, was den Panic-Text-Fall ausschliesst.
+
+Was daraus folgt: der Fehler sitzt im USB-Datenweg (Controller-Bindung,
+Typ-C-Rolle, VBUS, Kabel), nicht im Init-Pfad bis zum Gadget. Die einzelnen
+Werte der Herzschlagzeile entscheiden, welche dieser vier Stellen es ist — sie
+sind die naechste Bitte an Gregors Augen, weil kein anderer Kanal existiert.
