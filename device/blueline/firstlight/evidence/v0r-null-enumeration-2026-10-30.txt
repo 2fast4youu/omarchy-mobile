@@ -12,10 +12,15 @@ WAS GETAN WURDE (ein Write, Freigabe von Gregor 16:0x):
   Runner-Exit 0. Protokoll: flash-observe/protokoll.txt, v0r-flash-2026-10-30.log.
 
 BEOBACHTUNG UNTERWEGS, nicht erst am Ende:
-  slot-retry-count:a war beim Write 3, nicht 2. Der `fastboot reboot` von 13:08
-  hatte den Zaehler von 2 auf 3 aufgefuellt — ein Reset ueber die Taste gilt ABOOT nicht als Fehlstart, ein reboot fuellt das Budget neu auf. Es gab also drei
-  Versuche, nicht null. (Haelt den Block-Schritt-0-Satz "unveraendert 2" fuer
-  ueberholt; korrigiert unten im Plan.)
+  slot-retry-count:a war beim Write 3, nicht 2. Die urspruengliche Zuschreibung
+  ("der fastboot reboot von 13:08 hatte den Zaehler von 2 auf 3 aufgefuellt") ist
+  am 30.10. abends falsifiziert: dieselbe Datei-Gruppe misst 13:09 den Wert 2,
+  und der Write von 16:07 fand den Wert 3 VOR sich, nachdem 16:07:35 erneut 3
+  gemeldet wurde — ein reboot von 13:08 kann keine Fuellung vor der eigenen
+  Messung von 13:09 erzeugt haben. Nachtrag und alle Lesungen:
+  evidence/retry-zaehler-korrektur-2026-10-30.txt. Der Kernsatz "drei Versuche,
+  nicht null" bleibt richtig, aber unbelegt; die trennende Messung (ein getvar
+  vor dem naechsten Write) steht aus.
 
 ZUSTAND NACH DEM FENSTER (16:13:53, direkt gemessen, vier Leser):
   fastboot devices      -> keine Zeile

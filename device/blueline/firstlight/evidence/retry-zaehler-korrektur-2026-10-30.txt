@@ -1,0 +1,66 @@
+Korrektur am retry-Zaehler — gemessen an den Protokollzeilen, nicht am Gespraech
+================================================================================
+Datum: 2026-10-30, 21:1x. Anlass: Check-in von Claude (nach dem Stand 16:12),
+der zwei Zuschreibungen rueberichtigte. Nachgemessen an den erhaltenen Dateien.
+
+DREI LESUNGEN, die in Dateien stehen (jeweils mit ihrer Fundstelle):
+  a) 28.10., fl-v0a/getvar-all.txt:      slot-retry-count:a 2, unbootable no,
+     successful no
+  b) 30.10., 13:0x, evidence/fastboot-modus-statt-orakel-2026-10-30.txt
+     (Datei-Stempel 13:09):              slot-retry-count:a 2, unbootable no,
+     successful no, current-slot a
+  c) 30.10., 16:07:34 und 16:56:26, flash-observe/protokoll.txt, Zeilen 9, 26,
+     direkt vor den Writes auf v0r bzw. v0t:  slot-retry-count:a 3,
+     unbootable no — in BEIDEN Laeufen derselbe Wert VOR dem Write.
+
+BEHANG 1 (Claude, wörtlich: "retry 2→3 durch fastboot reboot aufgefüllt stimmt
+nicht – die getvars wurden NACH dem Flash und VOR Rebooting gelesen, also hat
+der Flash oder etwas davor den Zähler gesetzt"). Teilweise berechtigt, in der
+Sache aber durch c) widerlegt: beim v0r-Write um 16:07:34 stand der Zaehler
+SCHON auf 3, und die Zeile gleich danach (16:07:35, derselbe Lauf) meldet
+wieder 3. Dasselbe Bild beim v0t-Write: 16:56:26 steht 3 vor dem Write. Der
+Flash von 16:07 hat den Zaehler also nicht gesetzt, und der von 16:56 auch
+nicht — zwischen den beiden Writes liegt ein vollständiger v0r-Start mit
+Neustart, und der Zaehler ruehrte sich nicht.
+
+BEHANG 2 (dieaelte Notiz in evidence/v0r-null-enumeration-2026-10-30.txt,
+"der fastboot reboot von 13:08 hatte den Zaehler von 2 auf 3 aufgefuellt").
+Die Notiz ist gegen b) und c) falsifiziert, und zwar schon durch ihre eigene
+Zeit: die 13:09-Datei meldet 2, eine Fuellung auf 3 kann nicht vor der Messung
+von 2 stattgefunden haben. Was die Notiz richtig einfing: der Zaehler stand
+beim Write in der Tat auf 3, nicht auf 2.
+
+WAHRER BESTAND. Die Uebergaenge 3 -> 2 (zwischen 29.10. 10:48 und 30.10. 13:09)
+und 2 -> 3 (zwischen 13:09 und 16:07) haben in keiner erhaltenen Datei eine
+isolierte Ursache. Zwischen 13:09 und 16:07 liegen: ein Tastendruck in den
+Fastboot-Modus, der v0r-Write von 16:07 und sein Neustart — und die Write-Zeile
+selbst zeigt, dass der Zaehler VOR diesem Write schon 3 war, der Write kann es
+also nicht gewesen sein; uebrig bleiben ein Boot des Slots in dem Fenster oder
+eine Actives-Setzung, fuer die in keinem Log dieses Tages eine Aktion
+protokolliert ist (grep ueber flash-observe/: keine einzige --set-active-Zeile).
+Eine Zuschreibung waere geraten, nicht gemessen.
+
+FOLGE FUER DAS BUDGET. Die Regel "ein regulärer Boot des Slots verbraucht
+einen Versuch" ist an c) NICHT widerlegt, aber auch nicht bestaetigt: der
+v0r-Start (16:07–16:12, 302 s, kein boot_completed) hinterliess vor dem
+v0t-Write denselben Stand 3. Moeglich ist beides — der Start verbraucht nichts,
+oder er hat aufgefuellt und verbraucht. Die trennende Messung ist eine einzige
+getvar-Zeile VOR dem naechsten Write: steht der Zaehler jetzt auf 3, hat der
+v0t-Start (der einzige Vorgang seit der letzten Lesung) nichts verbraucht;
+steht er auf 2, verbraucht jeder Start einen, und es war der letzte mit
+garantiertem Neustart-Pfad. Vor jeder Aussage ueber das Restbudget steht diese
+Lesung.
+
+ROHLOG-KANAL, machbar gemessen: logflush steht in der Init ALLE vier gebauten
+Bilder (v0r, v0t, v0v, v0w; je Zeile ~277 des Init, dd bs=131072 seek=504 =
+Offset 66 060 288 B = 63,0 MiB, 1 MiB Block, alle 10 s, Inhalt: steps.log,
+udc-Liste, devices_deferred, gadget-Zustand, fb/vt, pstore-Stand, dmesg-Ende).
+Die geflashten Bilder sind 21 098 496 B gross — der Write von 16:56 konnte den
+Block bei 63 MiB nicht erreicht haben. Der Schwanz von boot_a traegt damit den
+letzten Flush des zuletzt laufenden Bildes (v0t, bis zu 302 s lang, alle 10 s).
+Lesbar ist er nur in Fastboot, und die eine bekannte Messung dazu: am 27.10.
+kam ein fastboot fetch mit 0 Byte zurueck (ABOOT verweigert; siehe Skill
+qualcomm-mainline-bringup, "no fastboot fetch/OEM read"). Ein zweiter Versuch
+ist billig — Ergebnis an der Dateigroesse pruefen, nicht am Exit-Code.
+Die Partitionsgroesse von boot_a ist in keiner erhaltenen Datei gemessen; vor
+dem Fetch steht getvar partition-size:boot_a.

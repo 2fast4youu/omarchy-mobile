@@ -7,6 +7,17 @@ WARUM v0w: v0v drückte `/sys/kernel/debug/usb/` + UDC-Name + `/soft_connect`, *
 
 SCHRITT 0, vor jedem Anruf: das Gerät braucht einen Tastendruck (Power + Leiser ~10 s) und danach `fastboot devices` mit einem Eintrag. Ohne diesen Beweis ist jeder Flash-Anruf ein Blindflug, und der Runner bricht ohne Eintrag ab.
 
+SCHRITT 0b, in Fastboot VOR dem Write, zwei Lesungen und ein Leseversuch:
+(1) `fastboot getvar slot-retry-count:a` und `getvar partition-size:boot_a` —
+der Zaehler stand 13:09 auf 2 und 16:07 vor dem Write auf 3, ohne isolierte
+Ursache; erst diese Lesung sagt, ob ein Start den Versuch verbraucht
+(evidence/retry-zaehler-korrektur-2026-10-30.txt). (2) `fastboot fetch boot_a
+/tmp/boot_a.raw` und die Größe prüfen — am 27.10. kam ein Fetch als 0-Byte-Datei
+zurueck, also zählt die Dateigröße, nicht der Exit-Code. Der logflush-Block
+(1 MiB bei 63 MiB, alle 10 s, in allen vier gebauten Bildern) konnte von den
+21 098 496 B grossen Writes nicht erreicht werden und trägt den letzten Flush
+des zuletzt gestarteten Bildes. (3) Erst danach der Write.
+
 Anruf (ein Write auf boot_a, danach 300 s jede Enumeration zählen):
 ```sh
 cd /Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
