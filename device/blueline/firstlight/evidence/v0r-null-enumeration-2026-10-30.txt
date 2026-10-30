@@ -1,0 +1,87 @@
+v0r-Boot: null Enumerationen in 302 s, Geraet danach dunkel (30.10.2026, 16:07–16:14)
+
+WAS GETAN WURDE (ein Write, Freigabe von Gregor 16:0x):
+  16:07:33  Runner gestartet, Vorpruefung durchlaufen
+  16:07:34  Rueckweg bestaetigt: 28729344 B ed2c225f79ad6e5a…f76f82 (Stufe 1)
+  16:07:34  Sending 'boot_a' OKAY 0.590 s, Writing OKAY 0.227 s, fertig 1.207 s
+  16:07:35  flash boot_a /Users/gregor/hermes-workspace/images/fl-v0r/firstlight.img
+            (daf56a12cca1af3d…f5060b, 21094400 B, vor dem Write verglichen)
+  16:07:36  fastboot reboot kommandiert, 300 s Beobachtung
+  16:12:38  ERGEBNIS: 0 Beobachtungen mit neuen Eintraegen, 302 s gelaufen
+  16:12:41  Hinweis im Protokoll: Panel nicht vergessen
+  Runner-Exit 0. Protokoll: flash-observe/protokoll.txt, v0r-flash-2026-10-30.log.
+
+BEOBACHTUNG UNTERWEGS, nicht erst am Ende:
+  slot-retry-count:a war beim Write 3, nicht 2. Der `fastboot reboot` von 13:08
+  hatte den Zaehler von 2 auf 3 aufgefuellt — ein Reset ueber die Taste gilt ABOOT nicht als Fehlstart, ein reboot fuellt das Budget neu auf. Es gab also drei
+  Versuche, nicht null. (Haelt den Block-Schritt-0-Satz "unveraendert 2" fuer
+  ueberholt; korrigiert unten im Plan.)
+
+ZUSTAND NACH DEM FENSTER (16:13:53, direkt gemessen, vier Leser):
+  fastboot devices      -> keine Zeile
+  ioreg -p IOUSB        -> 0 "Pixel 3"
+  ping 172.16.42.1      -> 100 % Verlust
+  nc -z 172.16.42.1 23  -> exit 1
+  adb devices           -> Liste ohne Geraet
+  Das Geraet ist an KEINEM Bus. Nicht im Bootloader, nicht als Gadget, nicht tot
+  am Hub (es taucht nicht einmal ohne Treiber auf).
+
+ERSTES URTEIL: die Hypothese des v0r-Umbaus ist NICHT bestaetigt, und der Fehler
+ist eine Stufe frueher als gedacht. v0q enumirierte immerhin als USB-Geraet
+(Producer-Zustand, ohne NCM); v0r zeigt ueberhaupt keine USB-Praesenz. Damit kann
+die UDC-Warteschleife ihr Ziel nicht erreicht haben — das Bild bringt den Bus
+nicht dazu, auch nur zu zählen. Zwei Lesarten, ohne Messung nicht zu trennen:
+  (a) Der Kernel stirbt/frueh blockiert, bevor der UDC registriert wird. Bei
+      panic=60 haette ein Panic spaetestens 60 s nach dem Tod in FASTBOOT
+      landen muessen; 6 min nach dem Neustart war kein fastboot da. Also entweder
+      kein Panic (Haenge-Tod, kein Timer), oder der Panic-Timer wurde nie
+      erreicht, oder ABOOT startet nach dem Panic ohne fastboot-Modus neu.
+  (b) Der Weg in den Fastboot-Modus um 13:08 hat die Typ-C-Rolle am Host
+      veraendert, und seitdem verhandelt das Telefon keine Daten-Rolle mehr. Dann
+      waere v0r womoeglich langst am Leben, nur unsichtbar — die Rolle koennte
+      erst nach einem Stromlos-Zyklus (Kabel ab, 10 s, dran) oder einem
+      Kaltstart wieder auf source gehen. Diese Leserkette erklaert, warum die
+      Referenz vor dem Umschalten auf 172.16.42.1 antwortete und seither kein
+      Bild am Bus war, auch das zurueckgemeldete v0q nicht neu getestet wurde.
+
+WAS DAS BILD SELBST ALS INSTRUMENT MITBRINGT (aus dem ausgelieferten new.cpio
+gelesen, nicht aus dem Kopf):
+  Zeile 96   Panel-Titel 'Omarchy Mobile first-light v0r - RAM only,
+             UDC-Warteschleife + Debug-Shell' -> Paneltext = Beweis, dass PID 1
+             die Gadget-Zeile erreicht hat.
+  Zeile 63–76 Herzschlag-Unterprozess: alle ~20 s ein Block auf /dev/console mit
+             wdt bootstatus, udc=(ls /sys/class/udc), gebunden=(gadget/UDC),
+             dwc3 rolle=(typec data_role), pid1/state/kinder, letzter Schritt.
+             Laeuft in einer while-Schleife mit sleep 1, fuehrt den Watchdog-knoten
+             mit 'V' — bei Panel-Sicht ist das die Live-Messung ohne Bus.
+  Zeile 80–89 pstore-Spiegel: der Panic-Text des letzten Bootes auf dem Panel.
+  Zeile 18–22 mark() schreibt '/run/steps.log' mit Kernelzeit, entscheidende
+             Zeile: 'udc nach <n> runden gefunden'.
+  Kurz: wenn das Panel etwas zeigt, ist die ganze Diagnose bereits lesbar, ohne
+  dass das Geraet je am Host angehaengt waere.
+
+
+WAS DAS PANEL SAGEN KANN (vier Faelle, entschieden in einer Sekunde):
+  dunkel                 Panel nie erreicht: init vor Zeile 96 gestorben, oder
+                         Panel/Display in diesem Boot nicht initialisiert, oder
+                         das Panel ist einfach aus — einmal kurz Power tippen
+                         (ein Tipp bootet nicht, ein Halten von ~10 s schon).
+  v0r-Titel, kein Herzschlag  PID 1 erreicht die Gadget-Zeile, stirbt aber in
+                         der Warteschleife — die UDC wird nie registriert.
+  v0r-Titel + Herzschlag Herzschlag lesen: udc=<leer> bestaetigt die
+                         Timing-Diagnose mit Zahl, udc=a600000.usb und
+                         gebunden=<leer> legt den Fehler ins configfs,
+                         rolle=sink erklaert alles durch die Typ-C-Rolle.
+  Panic-Text (pstore)    der letzte Boot hat einen Grund hinterlassen, und der
+                         steht dann als console-ramoops auch nach dem naechsten
+                         Boot wieder zur Verfuegung.
+
+BRAUCHT GREGOR, zwei Dinge, beide Sekundenarbeit:
+  1. Panel ansehen, Foto schicken. Die vier Faelle und ihre Bedeutung stehen im
+     selben Dokument unten unter "Was das Panel sagen kann".
+  2. Erlaubnis fuer einen Stromlos-Zyklus (Kabel ab, 10 s, wieder dran) als
+     Naechstes, falls das Panel dunkel bleibt. Das ist kein Schreiben ans Handy,
+     aber ein Eingriff, den ich nicht ungefragt tue.
+
+KEINERLEI Datenverlust moeglich: userdata nie angefasst, nur boot_a geschrieben,
+Rueckweg Stufe 1 (die Referenz, ed2c225f…) liegt unveraendert auf der Platte.
