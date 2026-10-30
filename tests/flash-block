@@ -78,6 +78,52 @@ ausgelesen = re.search(r'OUT=\$\{OUT:-([^}]*)\}', laeufer_text)
 if ausgelesen:
     out_default = ausgelesen.group(1).rstrip("/")
 
+def einhaenge():
+    """Verzeichnis-Einhaengepunkte, die dieser Rechner als Datenbaum sieht.
+
+    Der Container haengt die Bilder unter /images und /pmos-ref-build ein, der
+    Rechner kennt sie unter ihren Host-Pradixen. Auf dem Rechner gibt es kein
+    /proc/mounts in dieser Form, deshalb die dokumentierten Kandidaten zusaetzlich.
+    """
+    punkte = []
+    try:
+        with open("/proc/mounts", encoding="utf-8", errors="replace") as datei:
+            for zeile in datei:
+                teile = zeile.split()
+                if len(teile) > 2 and teile[1].startswith("/") and teile[2] != "proc":
+                    if teile[2] not in ("sysfs", "devtmpfs", "devpts", "cgroup2", "mqueue",
+                                        "tmpfs", "overlay", "bind4", "ext4", "xfs"):
+                        punkte.append(teile[1])
+    except OSError:
+        pass
+    for k in ("/images", "/pmos-ref-build", "/factory", "/artefakte"):
+        if os.path.isdir(k) and k not in punkte:
+            punkte.append(k)
+    return sorted({p for p in punkte if os.path.isdir(p)})
+
+
+def reich(pfad):
+    """(aufloesbarer Pfad, Grund) — der Host-Pfad zuerst, dann seine Schwanz-
+    formen unter den Einhängepunkten. Leer, wenn nichts da ist."""
+    if os.path.isfile(pfad):
+        return pfad, ""
+    teile = [t for t in pfad.split("/") if t]
+    enden = ["/".join(teile[i:]) for i in range(max(1, len(teile) - 3), len(teile))]
+    for punkt in einhaenge():
+        for ende in enden:
+            kandidat = os.path.join(punkt, ende)
+            if os.path.isfile(kandidat):
+                return kandidat, "gefunden unter %s" % punkt
+    return "", ""
+
+
+def bewertbar(pfad):
+    """Kann dieser Rechner ueberhaupt pruefen, ob die Datei da sein muesste?
+    Nein heisst: nicht einmal ihr Ordner existiert — dann fehlt hier der Baum,
+    nicht die Datei im Block. Das ist ein Skip mit Grund, kein not ok."""
+    return os.path.isdir(os.path.dirname(pfad))
+
+
 # 1) Absolute Pfade. Die Zeichenklasse enthaelt kein Backtick — ein Muster, das
 #    welches einsammelte, hielt jeden in Backticks gesetzten Pfad fuer
 #    nichtexistend (gemessen: 1 von 6 Pfaden erkannt).
@@ -94,13 +140,33 @@ for treffer in re.findall(r"/(?:Users|home|var|opt|private)[A-Za-z0-9._/-]+", bl
 if AUSGELASSEN:
     ok("%d Pfade ausgelassen: der Laeufer legt sie unter seinem OUT-Default an "
        "(Rolle aus %s abgeleitet)" % (len(AUSGELASSEN), "OUT=${OUT:-…}"))
-fehlend = sorted(p for p in pfade if not os.path.isfile(p))
+fehlend, uebermount, aussenVor = [], [], []
+for p in pfade:
+    ziel, grund = reich(p)
+    if ziel == p:
+        continue
+    if ziel:
+        uebermount.append((p, ziel))
+    elif bewertbar(p):
+        fehlend.append(p)
+    else:
+        aussenVor.append(p)
+fehlend, uebermount, aussenVor = sorted(fehlend), sorted(uebermount), sorted(aussenVor)
 if not pfade:
     notok("Block nennt keine pruefbare Datei — der Pruefer laeuft ins Leere")
 elif fehlend:
     notok("%d genannte Dateien sind nicht lesbar: %s" % (len(fehlend), ", ".join(fehlend)[:200]))
 else:
-    ok("alle %d Dateien, die der Block nennt, sind lesbar" % len(pfade))
+    ok("alle %d Dateien, die der Block nennt, sind erreichbar" % len(pfade))
+if uebermount:
+    ok("%d davon über einen Einhängepunkt erreichbar (der Block nennt Host-Pfade, "
+       "dieser Rechner sieht sie eingebunden): %s"
+       % (len(uebermount), ", ".join(os.path.basename(h) + "->" + z for h, z in uebermount)[:180]))
+if aussenVor:
+    skip("%d genannte Dateien sind hier weder unter ihrem Pfad noch unter einem "
+         "Einhängepunkt zu finden, und ihr Ordner existiert nicht — der Datenbaum "
+         "fehlt, nicht die Datei: %s"
+         % (len(aussenVor), ", ".join(os.path.basename(x) for x in aussenVor)[:150]))
 
 # 2) Relativ genannte Belegdateien: ein Tippfehler in einem Belegpfad ist ein
 #    Beleg, den spaeter niemand oeffnet.
@@ -131,7 +197,8 @@ else:
 
 # 3) Hash und Groesse: der naechste 64er-Hex hinter der Datei muss ihr gemessener
 #    sein, die Zahl in 'B' in demselben Umfeld ihre echte Groesse.
-for pfad in sorted(p for p in pfade if p.endswith(".img") and os.path.isfile(p)):
+for pfad in sorted(p for p in pfade if p.endswith(".img") and reich(p)[0]):
+    quelle = reich(pfad)[0]        # NICHT 'echt' heissen: unten ist 'echt' die Groesse
     stelle = block.find(pfad)
     umfeld = block[stelle:stelle + 900]
     hexwort = re.search(r"\b([0-9a-f]{64})\b", umfeld)
@@ -139,7 +206,7 @@ for pfad in sorted(p for p in pfade if p.endswith(".img") and os.path.isfile(p))
         skip("%s: kein voller Hash im selben Absatz" % os.path.basename(pfad))
         continue
     gesollt = hexwort.group(1)
-    gemessen = sha256(pfad)
+    gemessen = sha256(quelle)
     if gemessen != gesollt:
         # Die Fensteranzeige muss den Unterschied zeigen: bei einer falsch
         # gesetzten Ziffer an Stelle 11 sahen 'erste 10 Zeichen' identisch aus,
@@ -154,7 +221,7 @@ for pfad in sorted(p for p in pfade if p.endswith(".img") and os.path.isfile(p))
     zahl = re.search(r"\b(\d{6,9})\s?B\b", umfeld)
     zusatz = ""
     if zahl:
-        gesaget, echt = int(zahl.group(1)), os.path.getsize(pfad)
+        gesaget, echt = int(zahl.group(1)), os.path.getsize(quelle)
         if gesaget != echt:
             notok("Block sagt %d B fuer %s, die Datei hat %d B"
                   % (gesaget, os.path.basename(pfad), echt))
@@ -167,10 +234,15 @@ for pfad in sorted(p for p in pfade if p.endswith(".img") and os.path.isfile(p))
 anruf = re.search(r"(run-flash-observe\.sh)\s+(\S+)\s+([0-9a-f]{64})", block)
 if not anruf:
     skip("kein Anruf mit Bildpfad und vollem Hash im Block")
-elif not os.path.isfile(anruf.group(2)):
-    notok("Anruf im Block zeigt auf eine fehlende Datei: %s" % anruf.group(2))
+elif not reich(anruf.group(2))[0]:
+    if bewertbar(anruf.group(2)):
+        notok("Anruf im Block zeigt auf eine fehlende Datei: %s" % anruf.group(2))
+    else:
+        skip("Anruf-Bild hier nicht erreichbar und sein Ordner fehlt: %s"
+             % os.path.basename(anruf.group(2)))
+        gemessen = ""
 else:
-    gemessen = sha256(anruf.group(2))
+    gemessen = sha256(reich(anruf.group(2))[0])
     if gemessen == anruf.group(3):
         ok("Anruf-Hash im Block ist der gemessene Hash des Bildes (%s…%s)"
            % (gemessen[:8], gemessen[-6:]))
@@ -289,6 +361,49 @@ else:
     else:
         ok("alle %d angesagten Sammeldateien stehen in der Befehlsliste des Runners"
            % len(namen))
+
+# 8) Netzwerkadresse: der Block darf nur die Adresse nennen, die der Runner
+#    wirklich anpingt. Fund der Mutation f4: 172.16.42.1 auf 172.16.43.1
+#    verstellt und der Pruefer blieb still — die Beobachtungsschleife hätte dann
+#    ein funktionierendes Bild als 'nirgends enumariert' verworfen, weil sie im
+#    falschen Teilnetz sucht. Ein Zahlendrecher an einer Adresse ist also genau
+#    so gefaehrlich wie an einem Hash, wurde aber bisher nie geprueft.
+ipv4_block = sorted(set(re.findall(r"\b\d{1,3}(?:\.\d{1,3}){3}\b", block)))
+if not laeufer_text:
+    skip("Runner nicht lesbar, Adresse nicht geprueft")
+elif not ipv4_block:
+    skip("Block nennt keine IPv4-Adresse")
+else:
+    kaputt = [a for a in ipv4_block
+              if not all(int(t) <= 255 for t in a.split("."))]
+    if kaputt:
+        notok("%d ungueltige IPv4-Adresse im Block: %s" % (len(kaputt), ", ".join(kaputt)))
+    else:
+        fremd = [a for a in ipv4_block if a not in re.findall(
+            r"\b\d{1,3}(?:\.\d{1,3}){3}\b", laeufer_text)]
+        if fremd:
+            notok("%d Adresse im Block, die der Runner nie anpingt: %s (Runner kennt nur: %s)"
+                  % (len(fremd), ", ".join(fremd),
+                     ", ".join(sorted(set(re.findall(r"\b\d{1,3}(?:\.\d{1,3}){3}\b",
+                                                     laeufer_text)))) or "keine"))
+        else:
+            ok("%d Adresse im Block = die, die der Runner anpingt (%s)"
+               % (len(ipv4_block), ", ".join(ipv4_block)))
+
+# 9) Die Eigenangabe. Der Block nennt, wieviele Pruefungen dieser Läufer macht —
+#    eine Zahl, die genau so veraltet wie jede andere. Also: messen, vergleichen,
+#    und die eigene Zahl mitzaehlen, damit der Vergleich nicht an einer Off-by-one
+#    scheitert (die schon zweimal in dieser Datei gestanden hat).
+genannt = [int(x) for x in re.findall(r"\((\d{1,2}) Pr(?:ue|\xfc)fungen", block)]
+selbst = len(PRUEFUNGEN) + 1
+if not genannt:
+    skip("Block nennt keine Pruefzahl, die sich selbst pruefen koennte")
+elif any(g != selbst for g in genannt):
+    notok("Block sagt %s Pruefungen, der Laeufer macht %d (diese Zahl selbst mitgezaehlt)"
+          % ("/".join(str(g) for g in genannt), selbst))
+else:
+    ok("die Pruefzahl im Block (%d) ist die Zahl der Pruefungen, einschliesslich dieser"
+       % selbst)
 
 print("\npruefungen=%d fehler=%d skips=%d ausgelassen=%d"
       % (len(PRUEFUNGEN), len(FEHLER), len(SKIPS), len(AUSGELASSEN)))
