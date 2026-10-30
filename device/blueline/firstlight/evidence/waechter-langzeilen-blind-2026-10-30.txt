@@ -1,0 +1,73 @@
+Der Erwartungs-Pruefer des Blockwaechters war fuer lange Zeilen blind (30.10.2026)
+
+ENTDECKT beim Eintragen von v0t in den FLASH-BEREIT-Block: der Waechter meldete
+`not ok - Erwartungszeilen kann nichts erzeugen:  und in jedem Herzschlag-Block
+die Zeile`. Der gemeldete String ist ein Prosa-Satz aus meinem Block, keine
+erwartete Ausgabe — und die wirklich erwartete Ausgabe, der Panel-Titel, tauchte
+in der Meldung gar nicht auf.
+
+URSACHE, gemessen und nicht interpretiert: die Laengengrenze stand in der
+MENGEN-KLAMMER des Extraktionsmusters, `([^{`6,70})`. Ist ein Backtick-Paar
+laenger als die Obergrenze, liefert dasselbe Muster eine VERSCHOBENE PAARUNG
+zurueck: es findet den Text zwischen zwei Paaren, und das lange Paar selbst wird
+nicht geprueft. Kleinstversuch
+(.hermes/cache/scratch/muster-kleinstversuch.py, Python 3.9.6 / re 2.2.1,
+kuenstliche Zeilen ohne deutschen Text, damit an der Rechtschreibung nichts
+haengen bleiben kann):
+
+  zwei gute Paare      mit {6,70}: 2 Funde      ohne: 2 Funde      — gleich
+  erstes Paar 73 Z.    mit {6,70}: 1 Fund       ohne: 2 Funde      — ABWEICHEND
+  erstes Paar 70 Z.    mit {6,70}: 2 Funde      ohne: 2 Funde      — gleich
+  zweites Paar 73 Z.   mit {6,70}: 1 Fund       ohne: 2 Funde      — ABWEICHEND
+  fuenf Zeichen Paar   mit {6,70}: 1 Fund       ohne: 2 Funde      — ABWEICHEND
+
+Zwei getrennte Defekte, beide belegt:
+  1. Paare ueber der Obergrenze werden nicht geprueft UND verschieben die
+     Paarung der folgenden Paare.
+  2. Paare unter der Untergrenze (z.B. `state=`) fallen ersatzlos durch beide
+     Raster, ohne Meldung.
+Reproduziert an der echten Datei: derselbe String, zweimal hintereinander
+ausgelesen, vier Backticks bei 92/165/207/228 — `[^`]*` findet die beiden
+erwarteten Ausgaben, `[^`]{6,70}` findet stattdessen den Prosa-Satz dazwischen.
+Keine Kodierungsfrage: der Block traegt keine Nicht-ASCII-Zeichen ausser five
+Einzelfaellen (8212, 252, 228, 223), und die Mutation arbeitet ASCII-rein.
+
+BELEG DER BLINDHEIT (ohne das Werkzeug selbst zu aendern, durch
+wortgetreue Nachbildung beider Raster in
+.hermes/cache/scratch/blindheit-vor-der-reparatur.py):
+
+  Fall               alt: Titel geprueft   alt: Meldung            neu: Meldung
+  unangetastet       NEIN                   Prosa-Satz              keine (0 Fehler)
+  Mutation 78 Z.     NEIN                   PROSA-SATZ (gleich!)    Titel fehlt (1 Fehler)
+
+Die alte Fassung reagierte auf die Mutation also mit exakt derselben Ausgabe wie
+auf den gesunden Block. Der Panel-Titel — die wichtigste Erwartung dieses Bildes,
+73 Zeichen — war seit v0t im Block nie gegen das Bild gehalten worden.
+
+REPARATUR im Waechter selbst (tests/flash-block, Abschnitt 6): Grenze vom Muster
+in den Python-Code verlegt — alle Paare finden, dann nach belegten Kriterien
+aussortieren (Laenge 6..140, kein Gedankenstrich als Prosa-Merkmal). Regelzahl
+unveraendert: es kommt kein Pruefpunkt dazu, nur ein bestehender pruft jetzt,
+was er schon immer pruefen sollte. Vier Laeufe mit PLAN=<kopie>
+(.hermes/cache/scratch/titel-mutation.sh):
+
+  1 Kopie unangetastet   Exit 0   12 Pruefpunkte / 0 Fehler   Titel nachgewiesen
+  2 Titel 78 Z., 1 Wort  Exit 1   12 / 1                      Titel kann nichts erzeugen
+  3 Titel 63 Z.          Exit 0   12 / 0                      (korrekt: 63-Zeichen-
+                                                               Titel steht wirklich im Bild)
+  4 Kontrolle der Kopie  Exit 0   12 / 0
+
+Fall 3 ist kein Fehlalarm: ein gekuerzter Titel, der im Bild existiert, ist
+keine Luege. Die Unterscheidungsfaehigkeit bewiesen Fall 2 gegen Fall 1 und 4.
+
+EIGENE FEHLER auf dem Weg, alle gemessen: (a) zweimal an der falschen
+Zeilenzahl genagt, weil ich Index- und Zahlzahlungen vermischt habe; (b) ein
+Gedankenstrich (U+2014) in einer Init-Kommentarzeile, gefangen vom Punkt
+"Init ist reines ASCII"; (c) dieselbe Flucht in meinem Pruefer: `"\\u2014"` wird
+durch die Patch-Schicht zu einem wörtlichen Backslash-u, verglich also mit
+`\u2014` statt mit dem Zeichen — erst die AST-Ruecklesung hat gezeigt, was im
+Code steht; (d) ein Dollarzeichen in einem Alpine-Heredoc, das die
+v0s-Rezept-Regel "kein Dollarzeichen im Heredoc" brach (ash kennt die
+bash-Escapeform backslash-quote nicht, `set -u` brachte den Pruefer um, nachdem
+der Bautest schon 28/0 gemeldet hatte); (e) eine Erwartungszeile doppelt in den
+Block gesetzt statt zu ersetzen.

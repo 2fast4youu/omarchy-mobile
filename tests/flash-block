@@ -277,7 +277,21 @@ erwartung = []
 # dritter Versuch.
 for zeile in block.splitlines():
     if zeile.startswith("ERWARTUNG") or zeile.startswith("steps.log-Zeile"):
-        erwartung += re.findall(r"`([^`]{6,70})`", zeile)
+        # Die Obergrenze stand frueher in der MENGEN-KLAMMER des Musters
+        # ({6,70}) und hat damit mehr kaputt als geprueft, gemessen mit
+        # .hermes/cache/scratch/muster-kleinstversuch.py: ist ein Paar laenger
+        # als die Grenze, gibt dasselbe Muster eine ANDERE Paarung zurueck —
+        # naemlich den Text ZWISCHEN zwei Paaren — und das lange Paar wird
+        # stillschweigend nicht geprueft. Genau das ist meinem Block passiert:
+        # der Panel-Titel mit 73 Zeichen wurde nie gegen das Bild gehalten,
+        # waehrend der Pruefer stattdessen einen Prosa-Satz zwischen den beiden
+        # Backticks als "erwartete Ausgabe" anmeckerte. Ein zweiter gemessener
+        # Defekt derselben Klammer: Paare unter 6 Zeichen (z.B. 'state=') fallen
+        # durch beide Raster und bleiben ungeprueft, ohne dass eine Meldung das
+        # sagt. Grenze jetzt im Python, nicht im Muster: alle Paare finden, dann
+        # nach belegten Kriterien aussortieren (Laenge, Prosa-Merkmale).
+        erwartung += [p for p in re.findall(r"`([^`]*)`", zeile)
+                      if 6 <= len(p) <= 140 and "\u2014" not in p]
 erwartung = [e for e in erwartung
              if re.search(r"[a-z]{4}", e) and not e.startswith("/") and "…" not in e
              and not re.match(r"^[0-9a-fx:.]+$", e)
