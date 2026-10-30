@@ -15,46 +15,82 @@ ZEITLINIE (Metadaten und Commit-Zeiten, nicht Erinnerung):
 - 12:57:29  trockenlauf-kammer.py (mtime). Gegenbeweis am laufenden Gerät: ein
             `echo`-Kommando (`sh-lebt-und-echo`) ging im alten Filter verloren —
             das Orakel antwortete, der Filter warf die Zeile weg.
-- 13:07:20  kammer-live.py (mtime): den EINGEBAUTEN Einsammelblock aus dem Runner
-            (Stand fa34088) herausgelöst und gegen das Orakel ausgeführt. Das ist
-            die letzte bekannte Sendung an das Orakel, fünf Befehle, alle
-            lesend, kein exit/reboot in der Liste (aus dem Commit ausgelesen):
+- 13:07:20  kammer-live.py (mtime): sollte den EINGEBAUTEN Einsammelblock aus dem
+            Runner (Stand fa34088) gegen das Orakel fuehren. Ist er nie — die
+            Sonde brach vor der Verbindung ab (AssertionError, unten KORREKTUR).
+            Die Liste ihrer Befehle, die das Orakel NIE erreicht haben:
               echo IDENTITAET $(uname -r); cat /run/steps.log 2>/dev/null | tail -40
               cat /run/steps.log 2>/dev/null
-              cat /sys/kernel/config/usb_gadget/g1/UDC 2>/dev/null; ls /sys/kernel/config/usb_gadget/g1/functions/ 2>/dev/null
+              cat /sys/kernel/config/usb_gadget/g1/UDC 2>/dev/null; ls .../functions/ 2>/dev/null
               ls /sys/class/udc; cat /sys/class/udc/*/state 2>/dev/null
               ps | head -40
-- 13:08:45  zaehler-vor-flash.sh (mtime): die vier fastboot-getvar-Leser.
+- 13:07:49  (abgeleitet aus der Sitzungs-Timestamp-Differenz) Orakel tot gemessen:
+            ping 100 % Verlust, nc 23 exit 1, nc 5555 exit 1, ARP leer.
+- 13:08:07  ioreg listet weiter `Pixel 3` an USB — das Geraet ist nicht weg.
+- 13:08:45  zaehler-vor-flash.sh (mtime), die vier getvar-Leser. `fastboot` war in
+            dieser Shell erst ab 13:08:07 bekannt (zuvor `command not found`),
+            ihre Antworten (retry 2, unbootable no, successful no) sind also der
+            erste positive Beleg fuer den Bootloader-Modus, fruehestens 13:08:45.
 - 13:09:33  Beweisdatei geschrieben: Geraet im FASTBOOT-MODUS, ping 100 %
             Verlust, Port 23/5555 zu, `fastboot devices` meldet PIXEL3-SERIAL.
 
-EINWAND gegen "mein Senden von 13:07 war die Ursache": Um 13:07 hat das Geraet
-noch auf Telnet geantwortet (der Block lief durch, seine Dateien kamen gefuellt
-zurück — sonst stünde dort Verbindung abgelehnt). Zwischen 13:08:45 (getvar
-funktioniert, das meldet den Bootloader-Modus) und 13:09:33 muss der Umschwung
-also passiert sein — oder das Geraet sass schon vorher im Fastboot und die
-13:07-Antworten stammten aus der vorgetaeuschten Shell. Das ist der einzige
-open-ended Punkt der Zeitleiste: ich kann die Antwort von 13:07 nicht gegen eine
-Fake-Shell absichern, weil das Laufzeitverzeichnis (tempfile, prefix
-kammer-probe.) vom Aufraeumen des TMP-Verzeichners weg ist.
+KORREKTUR (15:2 aus der Sitzungsvorgeschichte gelesen statt gefolgert): der
+Satz "um 13:07 hat das Geraet noch geantwortet" war falsch. Die Sonde
+(hashcheck/kammer-live.py, mtime 13:07:20) hat das Orakel NIE erreicht; sie brach
+vor der Verbindung ab:
+    AssertionError: Einsammel-Block im Runner nicht gefunden   (Exit 1)
+Grund: ihr regex suchte `python3 - "$OUT" "$PHONE" <<'PY'`, der Runner schrieb
+da schon `python3 - "$OUT" "${PHONE:-172.16.42.1}" <<'PY'` (Zeile 107). Sie hat
+also nichts gesendet und nichts empfangen. 29 s spaeter (aus der
+Sitzungs-Timestamp-Differenz zu 13:07:20 abgeleitet, nicht gemessen) war das
+Orakel bereits tot, direkt gemessen: ping 100 % Verlust, `nc -z 172.16.42.1 23`
+exit 1, `nc -z 172.16.42.1 5555` exit 1, ARP leer. Der letzte Kontakt war damit
+12:57/12:58, und der Umschwung liegt zwischen 12:58 und ~13:07:49.
 
-KANDIDATEN (Stand 14:16, un Sortierung nach Ausschlusskraft):
-1. TASTEN DRÜCKEN (bleibt): Power + Leiser ~10 s ist der einzige
-   belegte Weg in den Fastboot-Modus, und er braucht kein Kommando. Ein
-   versehentliches Halten erklaert sowohl das Ende der Referenz OHNE verbrauchten
-   Fehlstart ( retry-Zaehler unveraendert 2 — ein ABOOT-Zwangstart nach
-   Fehlversuch haette runtergezaehlt).
-2. Senden von 13:07: nur ausgeschlossen, wenn die 13:07-Antworten echt waren —
-   siehe offener Punkt. Keiner der fünf Befehle kann rebooten (nur cat/ls/ps);
-   es sei denn, die Leitung hat ein Spaetecho verworfen und nach traeger
-   Eingabe ausgewertet.
-3. Strom/Ueberspannung: ausgeschlossen — battery-voltage: 4255 mV (14:16:28,
-   direkt im Bootloader gelesen), ein Spannungsfall haette das Geraet ausgeloescht
-   statt in den Fastboot-Modus gelegt. battery-current-maxfast: von ABOOT nicht
-   beantwortet ('variable not found'), also ueber den Ladestrom nichts gesagt.
-4. Kernel/Watchdog der Referenz: nicht ausgeschlossen, aber unbelegt; die
-   Referenz lief 58 014 s mit angehaltenem init, ein Watchdog haette frueher
-   schlagen muessen.
+KANDIDATEN (Stand 14:4 sortiert nach Ausschlusskraft):
+1. TASTENDRUCK Power + Leiser (bleibt uebrig, erklaert alles): der erzwungene
+   Reset uerber die Taste braucht kein Kommando und ist der einzige Mechanismus,
+   der alle vier Beobachtungen traegt — Geraet in FASTBOOT, Referenz weg ohne
+   Bootversuch, retry-Zaehler unveraendert 2 (ABOOT sieht keinen fehlgeschlagenen
+   Boot, es hat ja nie ein Boot neu begonnen), und kein flash von mir.
+2. Mein Senden (AUSGESCHLOSSEN, an zwei Stellen gemessen):
+   - 13:07: nie gesendet, siehe KORREKTUR oben.
+   - 12:57/12:58 (trockenlauf-kammer.py): gesendet wurden `cat /proc/uptime`,
+     `cat /pmOS_init.log`, `ls /sys/class/udc; cat /sys/class/udc/*/state`,
+     `ps | head -40`, ein Gegenbeweis-echo und zuletzt `exit` (Zeile 73 der
+     Sonde). Keines davon kann neustarten — das laesst sich jetzt an der Quelle
+     belegen statt aus der Sprache: debug_shell() der Referenz
+     (init_functions.sh, aus der entpackten Referenz-Ramdisk gelesen) startet die
+     Telnet-Shell als Kind des daemons, Zeile 1194:
+       telnetd -b "${HOST_IP}:23" -l /sbin/pmos_getty &
+     mit pmos_getty = `/bin/sh -l` (Zeile 1119–1122). PID 1 haelt derweil nur die
+     Warteschleife, Zeile 1200–1201:
+       while ! [ -e /tmp/continue_boot ]; do sleep 0.2; done
+     Mein `exit` beendet dieses Kind, nicht PID 1. Weiter bootet ausschliesslich
+     ueber /sbin/pmos_continue_boot (`touch /tmp/continue_boot`), und das ist nie
+     gelaufen. Waere PID 1 doch geendet, waere init_2nd.sh Zeile 106
+     `exec switch_root /sysroot /sbin/init` gefolgt — ohne /sysroot =
+     fail_halt_boot (Zeile 111), ein Halt, kein Fastboot.
+3. Panic mit Warmstart in den Bootloader (fuer die Referenz AUSGESCHLOSSEN):
+   evidence/cmdline.txt — die am laufenden Geraet gelesene Cmdline — enthaelt
+     kein `panic=`, der Kernel-Fallback ist panic=0: ein Panic haelt, ohne
+     neu zu starten. Der Warmstart-Mechanismus existiert nur in meinen eigenen
+     Bildern: build-v0q.sh Zeile 53 und build-v0r.sh Zeile 33 setzen `panic=60`.
+     (Nachtrag zum Lesen von Spaetergebnissen: die Kommentarzeile 106 im
+     v0r-init sagt `panic=10` und stammt aus einem frueheren Stand — von der
+     Panik bis zum Neustart sind es 60 s, nicht 10.)
+4. Strom: ausgeschlossen — battery-voltage: 4255 mV (14:16:28, direkt im
+   Bootloader gelesen). battery-current-maxfast beantwortet ABOOT nicht
+   ('variable not found'), ueber den Ladestrom ist nichts gesagt.
+
+VERPASSTE LESE (haette den Fall frueher geschlossen): debug_shell mountet pstore
+selbst (Zeile 1078–1080: `mount -t pstore pstore /sys/fs/pstore`). Die Referenz
+hatte pstore also die ganze Zeit gemountet, und ich habe das Verzeichnis nie
+gelistet. Ein Grund eines frueheren Panics haette dort als console-ramoops
+gelegen. Nach der Rueckkehr in die Referenz ist `ls /sys/fs/pstore` dieselbe
+Lesung; ein leerer Ordner schliesst einen Panic nicht aus (ein Tastenreset
+hinterlaesst dort nichts), er waere also Bestaetigung fuer Kandidat 1, kein
+Gegenbeweis.
 
 BILLIGSTER BELEG FÜR DIE URSACHE: FOTO-LESETABELLE — Gregor fotografiert den
 Bootloader-Bildschirm. Der Fastboot-Bildschirm des Pixel 3 zeigt oben den
