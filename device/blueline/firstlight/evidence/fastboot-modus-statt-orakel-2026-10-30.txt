@@ -1,0 +1,57 @@
+Zustand des Geraets am 30.10.2026, vor jedem Write — Grund: ping und telnet
+waren plotzlich dunkel, nachdem die Referenz 18 h geantwortet hatte
+(letzte Uptime-Messung 65 490 s, evidence/reference-live-vor-vor-v0r-2026-10-30.txt).
+
+== Was gemessen wurde (alle vier Leser, jeweils mit Exit-Code) ==
+ping -c 2 -t 6 172.16.42.1      2 packets transmitted, 0 received, 100% loss
+nc -z -G 5 172.16.42.1 23        exit=1  (telnetd antwortet nicht mehr)
+nc -z -G 3 172.16.42.1 5555      exit=1
+arp -a | grep 172.16.42          (kein Eintrag)
+ifconfig -a                      keine USB-NCM-Schnittstelle des Telefons da
+adb devices                      Liste leer
+ioreg -p IOUSB                   "USB Vendor Name" = "Google", "USB Product
+                                 Name" = "Pixel 3"  -> das Telefon haengt an USB
+fastboot devices                 PIXEL3-SERIAL   fastboot     <- der eigentliche Befund
+
+== Deutung, und was sie nicht ist ==
+Das Geraet sitzt im FASTBOOT-MODUS, nicht in der Referenz. Die Netzwerkfunktion
+fehlt, weil der Linux-Kernel nicht laeuft; dunkel am Host heisst hier nicht
+'weg', sondern 'im Bootloader'. Ping alone haette das als 'Geraet verloren'
+gelesen — erst ioreg (Praesenz) und fastboot devices (Modus) trennen die Faelle.
+
+WARUM, ist NICHT belegt. Zwei Erklaerungen bleiben, und die Platte sagt
+nicht, welche stimmt:
+  a) Jemand hat Power+Leiser gedrueckt (der Weg in den Bootloader).
+  b) Die Referenz endete von selbst und der Bootloader hielt das Geraet an.
+Fuer b) waere ein heruntergezaehlter Retry-Zaehler zu erwarten gewesen; er ist
+unveraendert (unten). Ein RESTART2-Neustart in den Bootloader zaehlt den
+Retry-Zaehler nicht herunter, ein regulärer Boot des Slots schon — damit ist
+auch das kein Beweis. Kein Ereignis dieser Sitzung hat auf das Geraet
+geschrieben; die letzten Telnet-Aktionen waren cat/ps/uname/tail/lsmod.
+
+== A/B-Zaehler, gelesen mit fastboot getvar (reines Lesen) ==
+  current-slot           a
+  slot-retry-count:a     2
+  slot-unbootable:a      no
+  slot-successful:a      no
+  unlocked               yes
+  secure                 yes
+  product                blueline
+  version-bootloader     b1c1-0.4-7617406
+  variant                SDM UFS
+  battery-status         FAILED (remote: 'variable not found')
+Identisch mit dem, was vor der Referenz in cmdline.txt stand. Es sind also
+noch zwei Fehlstarts moeglich, bevor ABOOT den Slot als unbootable markieren
+koennte — der Flash von v0r waere der dritte Versuch.
+
+== Folge fuer den Flash-Plan ==
+1) Schritt 0 (Tastenkombination) ist eruebrigend, wenn das Geraet schon in
+   fastboot steckt: erst 'fastboot devices' lesen, dann kombinieren.
+2) Weil nur zwei Fehlstarts bleiben, steht im Plan ein optionaler Vorgriff
+   'fastboot --set-active=a', der den Retry-Zaehler nachweislich auffuellen
+   soll. FUER DIESEN BOOTLOADER UNBELEGT, und es ist ein Meta-Daten-Schreib-
+   vorgang — deshalb nicht ausgefuehrt, sondern Gregor zur Entscheidung
+   vorgeschlagen. Belegbar waere er erst nach dem Zyklus (getvar vorher/nachher).
+3) Ein 'fastboot reboot' nur zum Zurueckholen der Referenz kostet einen der
+   zwei Fehlstarts. Deshalb nicht getan; das Geraet bleibt, wie es ist, bis
+   Gregor entscheidet.

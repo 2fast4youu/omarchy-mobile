@@ -224,3 +224,94 @@ assert got.strip() == body.strip(), "Echo mit Terminalbruch bleibt stehen: %r" %
 print("strip_echo: Echo entfernt, auch bei 79-Zeichen-Umbrechung")
 PY
 ok "oracle-capture.py entfernt das Shell-Echo (auch umbrochen)"
+
+# 5b) Der Einsammel-Filter des Flash-Beobachters, am echten Inhalt gemessen.
+# Fund aus dem Trockenlauf gegen das laufende Orakel 2026-10-30: die alte Form
+# warf jede Zeile, die das ERSTE WORT des Befehls enthielt. Der decisive
+# Befehl heisst 'cat /run/steps.log', und fuenf Texte unseres eigenen init
+# enthalten 'cat' - darunter die beiden, fuer die der ganze Zyklus gemacht
+# wird. Gegen den Trockenlauf gemeldet: 'sh-lebt-und-echo' ging verloren.
+python3 - "$FL/run-flash-observe.sh" "$IMG_V0R" "$FL/newc.py" "$FL/unpack-bootimg.py" <<'PY' || fail "Einsammel-Filter fehlerhaft"
+import importlib.util, os, re, subprocess, sys, tempfile
+
+runner, bild, newc_pfad, unpack_pfad = sys.argv[1:5]
+text = open(runner, encoding="utf-8", errors="replace").read()
+
+def lade(name, pfad):
+    spec = importlib.util.spec_from_file_location(name, pfad)
+    mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod)
+    return mod
+
+# 1) Der Filter wird aus dem Runner HERAUSGELESEN und ausgefuehrt, nicht als
+#    Textangabe kopiert: eine still geaenderte Funktion faellt hier durch.
+heb = re.search(r"^# HEBER-ANFANG\n(.*?)^# HEBER-ENDE", text, re.S | re.M)
+assert heb, "kein als HEBER-ANFANG/HEBER-ENDE abgegrenzter Filter im Runner"
+umgebung = {}
+exec(heb.group(1), umgebung)
+heben = umgebung["heben"]
+
+# 2) Die Befehlsliste des Runners: jeder Befehl muss unter 60 Zeichen bleiben,
+#    sonst bricht die Leitung ihn um und die exakte Echo-Zeile ist nicht mehr
+#    entscheidbar (die pmOS-Leitung bricht bei ~80 Spalten).
+befehle = re.findall(r'\("([a-z0-9.-]+\.txt)",\s*"([^"]+)"\)', text)
+assert len(befehle) >= 5, "Befehlsliste nicht gelesen: %d" % len(befehle)
+lang = [(n, len(c)) for n, c in befehle if len(c) >= 60]
+assert not lang, "Befehle ueber 60 Zeichen, ihr Echo ist nicht mehr sicher zu erkennen: %s" % lang
+
+# 3) Die entscheidenden Zeilen kommen aus dem ausgelieferten Bild, nicht aus
+#    einem Text, den ich mir ausdenke. Entpackt wird mit dem im Repo vorhande-
+#    nen unpack-bootimg.py, die Kompression wird am Magik-Byte entschieden und
+#    mit Namen genannt (ein 'lz4' fuers Referenz-Initramfs war schon falsch).
+if not os.path.isfile(bild):
+    print("Bild nicht lesbar (%s), Gegenprobe mit den beiden Originalzeilen" % bild)
+    init = ('mark "udc=$(ls /sys/class/udc 2>/dev/null) gebunden=x"\n'
+            'mark "UDC steht auf: $(cat "$CONFIGFS/g1/UDC")"')
+else:
+    neu = lade("newc", newc_pfad)
+    zielordner = tempfile.mkdtemp()
+    subprocess.run([sys.executable, unpack_pfad, bild, zielordner], check=True,
+                   capture_output=True)
+    rd = os.path.join(zielordner, "ramdisk")
+    mag = open(rd, "rb").read(4)
+    if mag[:2] == b"\x1f\x8b":
+        import gzip; rohd = gzip.decompress(open(rd, "rb").read())
+    elif mag == b"\x28\xb5\x2f\xfd":
+        # Kein zstandard-Modul auf diesem Rechner (gemessen). Also das
+        # Kommandozeilenwerkzeug, und wenn das fehlt, eine Antwort mit Namen
+        # statt eines Importfehlers mitten im Test.
+        import shutil, subprocess
+        pz = shutil.which("zstd") or shutil.which("/opt/homebrew/bin/zstd")
+        if not pz:
+            raise SystemExit("zstd-Initramfs, aber kein zstd-Werkzeug und kein zstandard-Modul")
+        rohd = subprocess.run([pz, "-dc", rd], check=True, capture_output=True).stdout
+    else:
+        raise SystemExit("Initramfs-Kompression nicht erkannt: %s" % mag.hex())
+    mit = os.path.join(zielordner, "rd.cpio")
+    open(mit, "wb").write(rohd[:len(rohd) - (len(rohd) % 4)])
+    init = next(e["content"] for e in neu.read_cpio(mit)
+                if e["name"].lstrip("/") == "init").decode("utf-8", "replace")
+
+initziel = [l.split('"', 1)[1].rsplit('"', 1)[0] for l in init.splitlines()
+            if re.search(r'^\s*(mark|echo)\s+"(udc=\$\(ls|UDC steht auf:)', l)]
+assert initziel, "die decisive steps.log-Zeile steht nicht mehr im Bild"
+
+# 4) Der Gegenbeweis: an denselben Zeilen muss der ALTE Filter verlieren,
+#    sonst beweist der neue nichts.
+def vorher(txt, cmd):
+    return [l for l in txt.split("\n") if cmd.split()[0] not in l and not l.startswith("~ #")]
+cmd = "cat /run/steps.log"
+strom = "\r\n".join([cmd] + initziel + ["~ # ", "debug shell armed"])
+gerettet = heben(strom, cmd)
+for z in initziel:
+    assert any(z[:40] in l for l in gerettet), "der neue Filter wirft eine decisive Zeile: %r" % z[:60]
+assert cmd not in gerettet, "das Echo bleibt stehen"
+assert not any(l.startswith("~ #") for l in gerettet), "Prompt bleibt stehen"
+assert gerettet[-1].strip() == "debug shell armed", "letzte inhaltliche Zeile nicht zuletzt: %r" % gerettet[-1:]
+vorher_out = vorher(strom, cmd)
+verloren = [z for z in initziel if not any(z[:40] in l for l in vorher_out)]
+assert verloren, "der Gegenbeweis unterscheidet nicht: der alte Filter verliert hier nichts"
+print("Einsammel-Filter: %d decisive Zeilen gerettet (laengster Befehl %d Zeichen), "
+      "der alte verlor %d davon"
+      % (len(initziel), max(len(c) for _, c in befehle), len(verloren)))
+PY
+ok "Runner: Einsammel-Filter rettet die decisive steps.log-Zeile, der alte verlor sie"

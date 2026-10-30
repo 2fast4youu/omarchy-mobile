@@ -121,18 +121,41 @@ def neg(b):
         o.append(b[i]);i+=1
     return bytes(o)
 out=sys.argv[1]; host=sys.argv[2]
-s=socket.create_connection((host,23),8); s.settimeout(15)
+s=socket.create_connection((host,23),8); s.settimeout(4)
 s.sendall(b"\r\n"); time.sleep(1)
 try:
     while True: s.recv(65536)
 except socket.timeout: pass
-cmds=[("shell-banner.txt","echo IDENTITAET $(uname -r); cat /run/steps.log 2>/dev/null | tail -40"),
-      ("v0r-steps.log","cat /run/steps.log 2>/dev/null"),
-      ("v0r-gadget.txt","cat /sys/kernel/config/usb_gadget/g1/UDC 2>/dev/null; ls /sys/kernel/config/usb_gadget/g1/functions/ 2>/dev/null"),
-      ("v0r-udc.txt","ls /sys/class/udc; cat /sys/class/udc/*/state 2>/dev/null"),
-      ("v0r-procs.txt","ps | head -40")]
+cmds=[("identitaet.txt","uname -r"),
+      ("v0r-steps.log","cat /run/steps.log"),
+      ("v0r-steps-ende.txt","tail -20 /run/steps.log"),
+      ("v0r-gadget-udc.txt","cat /sys/kernel/config/usb_gadget/g1/UDC"),
+      ("v0r-gadget-func.txt","ls /sys/kernel/config/usb_gadget/g1/functions"),
+      ("v0r-udc-liste.txt","ls /sys/class/udc"),
+      ("v0r-udc-state.txt","cat /sys/class/udc/*/state"),
+      ("v0r-uptime.txt","cat /proc/uptime"),
+      ("v0r-modules.txt","lsmod"),
+      ("v0r-procs.txt","ps")]
+# Ein Read pro Befehl, jeder unter 60 Zeichen: die pmOS-Leitung bricht bei
+# ~80 Spalten um, und ein zerrissenes Echo ist nicht mehr sicher zu erkennen.
+# 2>/dev/null ist absichtlich weg — 'cat: can't open' ist Beleg, nicht Muell.
+# Die alte Form warf jede Zeile, die das ERSTE WORT des Befehls enthielt, und
+# haette damit genau die Zeilen vernichtet, fuer die der Zyklus gemacht wird:
+# 'udc=$(ls /sys/class/udc 2>/dev/null) gebunden=$(cat ...)' und 'UDC steht
+# auf: $(cat ...)' (fuenf solche Texte im eigenen init; Gegenbeweis am
+# laufenden Geraet: 'sh-lebt-und-echo' ging verloren).
+# HEBER-ANFANG
+def heben(txt, cmd):
+    r=[]
+    for l in txt.split("\n"):
+        if l == cmd: continue
+        if l.startswith("~ #") or l.startswith("# ") or l == "$": continue
+        r.append(l)
+    while r and not r[-1].strip(): r.pop()
+    return r
+# HEBER-ENDE
 for name,cmd in cmds:
-    s.sendall((cmd+"\r\n").encode()); time.sleep(1.5)
+    s.sendall((cmd+"\r\n").encode()); time.sleep(0.6)
     buf=bytearray()
     try:
         while True:
@@ -141,9 +164,15 @@ for name,cmd in cmds:
             buf+=c
     except socket.timeout: pass
     txt=neg(bytes(buf)).decode(errors="replace").replace("\r\r\n","\n").replace("\r\n","\n")
-    lines=[l for l in txt.split("\n") if cmd.split()[0] not in l and not l.startswith("~ #")]
+    lines=heben(txt,cmd)
     open(os.path.join(out,"telnet-"+name),"w").write("\n".join(lines))
-    print("geschrieben: telnet-%s (%d B)" % (name, len(txt)))
+    if not [l for l in lines if l.strip()]:
+        # Ein leeres Protokoll muss beim Namen stehen: 'loest zu nichts auf und
+        # meldet Erfolg' ist dieselbe Fehlerklasse wie ein Pruefstein, der eine
+        # fehlende Datei als 'ok' verbucht.
+        print("ACHTUNG leer: telnet-%s (gab es die Datei, antwortete die Shell?)" % name)
+    else:
+        print("geschrieben: telnet-%s (%d Zeilen)" % (name, len(lines)))
 s.close()
 PY
 fi

@@ -3,7 +3,7 @@
 
 ## FLASH-BEREIT v0r — dieser Block traegt die Prozedur, nicht das Gedaechtnis (2026-10-30; Freigabe steht aus)
 
-SCHRITT 0, vor jedem Anruf (das Telefon laeuft die Referenz, nicht Fastboot — der Runner wuerfe sonst Zeile 79, `not ok - kein Fastboot-Geraet`). **Kein bootloader-Kommando, ein Tastenvorgang** — gemessen 2026-10-30 (firstlight/evidence/reboot-faehigkeit-referenz-2026-10-30.txt): das Wort `bootloader` kommt im Busybox-Binary der Referenz (v1.38.0) nullmal vor; PID 1 ist dort nicht busybox init, sondern `/bin/busybox ash /init_2nd.sh` (firstlight/evidence/pid1-und-signale-referenz-2026-10-30.txt — dessen trap-Zeile 'reboot -f' TERM haelt den Signalweg offen, aber verlass dich nicht darauf: nacktes `reboot` ist eine Kette, deren Vorhandensein diesem Drehbuch eigen ist). So: im Telnet `sync` dann `reboot -f` eintippen (der `-f`-Syscall, ohne Kette; alles ist RAM, sync ist Regel-Dekor) und **dabei sofort LEISER druecken und halten, bis FASTBOOT MODE im Display steht** (Ausrede falls verschlafen: Power + Leiser ~10 s). Dann `fastboot devices` abwarten.
+SCHRITT 0, vor jedem Anruf: **erst `fastboot devices` lesen.** Steckt das Geraet schon in fastboot, entfaellt der Tastenvorgang — so gemessen am 30.10.2026: die Referenz ist dunkel (ping 100 % Verlust, Port 23 und 5555 zu, ARP und adb leer), das Telefon haengt an USB und `fastboot devices` meldet `PIXEL3-SERIAL  fastboot` (firstlight/evidence/fastboot-modus-statt-orakel-2026-10-30.txt). Warum, ist unbelegt; der Retry-Zaehler ist unveraendert 2, es war also kein verbrauchter Fehlstart. Wuerfe der Runner sonst Zeile 79 raus (`not ok - kein Fastboot-Geraet`), ist Schritt 0 ein **Tastenvorgang, kein bootloader-Kommando** — gemessen 2026-10-30 (firstlight/evidence/reboot-faehigkeit-referenz-2026-10-30.txt): das Wort `bootloader` kommt im Busybox-Binary der Referenz (v1.38.0) nullmal vor; PID 1 ist dort nicht busybox init, sondern `/bin/busybox ash /init_2nd.sh` (firstlight/evidence/pid1-und-signale-referenz-2026-10-30.txt — dessen trap-Zeile 'reboot -f' TERM haelt den Signalweg offen, aber verlass dich nicht darauf: nacktes `reboot` ist eine Kette, deren Vorhandensein diesem Drehbuch eigen ist). So: im Telnet `sync` dann `reboot -f` eintippen (der `-f`-Syscall, ohne Kette; alles ist RAM, sync ist Regel-Dekor) und **dabei sofort LEISER druecken und halten, bis FASTBOOT MODE im Display steht** (Ausrede falls verschlafen: Power + Leiser ~10 s). Dann `fastboot devices` abwarten.
 Er beendet das Orakel: die Referenz haelt den angehaltenen Initramfs-Start mit Debug-Shell (Uptime zuletzt 58 014 s). Die letzte Live-Messung ist gesichert (firstlight/evidence/reference-live-vor-v0r-2026-10-30.txt und reference-netzwerk-vor-v0r-2026-10-30.txt: udc-state `configured`, g1/UDC `a600000.usb`, 172.16.42.1/16 auf **usb0** — ncm0 gibt es auf der Referenz nicht —, dwc3-IRQ 5 923, Uptime-Kopf und -Fuss). Was dort nicht steht, ist nach dem Reboot nicht mehr messbar.
 Anruf (ein Write auf boot_a, danach 300 s jede Enumeration zaehlen; Protokoll nach `/Users/gregor/hermes-workspace/flash-observe/protokoll.txt`):
 ```sh
@@ -11,14 +11,15 @@ cd /Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
 ./run-flash-observe.sh /Users/gregor/hermes-workspace/images/fl-v0r/firstlight.img daf56a12cca1af3d05444eaad7008dd01e8fb14266ffc32f6f419ef0aff5060b 300
 ```
 v0r: 21094400 B. Der Runner vergleicht den Hash vor dem Write und bricht bei Abweichung ab, ohne das Handy anzufassen.
-NACH DEM FLASH die drei getvars in Zeile 81–83 lesen (der Runner tut es selbst und protokollert sie): Vorher stand in der Referenz-Cmdline `slot_retry_count=2`, `slot_successful=no` (evidence/cmdline.txt) — jeder Fehlstart von Slot a zaehlt den Zaehler runter, bei 0 probiert ABOOT Slot a nicht mehr. Ein Flash-Zyklus ist ein Boot-Versuch; vor einem naechsten Versuch erst den aktuellen Zaehlerstand im Protokoll lesen, nicht raten.
+NACH DEM FLASH die drei getvars in Zeile 81–83 lesen (der Runner tut es selbst und protokollert sie): Vorher stand in der Referenz-Cmdline `slot_retry_count=2`, `slot_successful=no` (evidence/cmdline.txt), und am 30.10. direkt in fastboot nachgelesen: unveraendert `retry:a 2`, `unbootable:a no` (evidence/fastboot-modus-statt-orakel-2026-10-30.txt). Es bleiben also **zwei Fehlstarts**, bevor ABOOT Slot a nicht mehr probiert; jeder Boot von Slot a zaehlt runter, bei 0 nicht mehr. Ein Auffuellen mit `fastboot --set-active=a` waere der uebliche Weg, ist fuer diesen Bootloader aber **UNBELEGT** und ein Meta-Daten-Write — deshalb nicht getan, sondern Gregors Entscheidung. Vor einem naechsten Versuch erst den Zaehlerstand im Protokoll lesen, nicht raten.
+EINFANG nach dem Flash: der Runner sammelt die Belege selbst ueber Telnet ein — die decisive Datei ist `telnet-v0r-steps.log` (dazu identitaet, steps-ende, gadget-udc, gadget-func, udc-liste, udc-state, uptime, modules, procs). Ihr Filter warf frueher jede Zeile, die das ERSTE WORT des Befehls enthielt, und haette damit die beiden UDC-Zeilen vernichtet, um die es geht; der neue ist am ausgelieferten Bild geprueft (tests/bisection Abschnitt 5b: 2 decisive Zeilen gerettet, der alte verlor beide) und war gegen das laufende Orakel getrockengelaufen. Eine leere Datei meldet `ACHTUNG leer` statt still Erfolg — leer ist eine Antwort, kein Bestehen.
 Rueckweg STUFE 1 (Runner-Default, stellt den heutigen Zustand exakt wieder her): `/Users/gregor/hermes-workspace/pmos-ref-build/ref/boot.img`, 28729344 B, `ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82`.
 Rueckweg STUFE 2 (Android-Bootimage; ein boot.img-Flash fasst userdata NICHT an — geloescht haette nur `fastboot -w` oder `flashall`): `/Users/gregor/hermes-workspace/android-mainline/factory/sp1a/boot.img`, 67108864 B, `5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e`.
-ERWARTUNG (vor dem Flash festgelegt, Abschnitt "Predicted readings" weiter unten): v0r enumuriert als `Google Pixel 3` mit `0x18d1:0xd001`, Telnet 23 antwortet mit einer Omarchy-Shell, deren `/run/steps.log` mit `debug shell armed` endet.
+ERWARTUNG (vor dem Flash festgelegt, Abschnitt "Predicted readings" weiter unten): v0r enumuriert als `Google Pixel 3` mit `0x18d1:0xd001`, Telnet 23 antwortet mit einer Omarchy-Shell, deren `telnet-v0r-steps.log` mit `debug shell armed` endet.
 steps.log-Zeile `udc nach <n> runden gefunden`: n > 0 bestaetigt die UDC-Timing-Diagnose mit einer Zahl (Referenz: gadget setup bei 1,708 s, HOST-MAC-Bindung bei 1,734 s Kernelzeit; v0q las zu frueh und blieb 83 min weg); **n = 0 widerlegt sie**, dann sitzt der Fehler anderswo in init.
 ERGEBNIS FALSCH (Enumeration da und Telnet antwortet, aber steps.log zeigt etwas anderes — Diagnose-Fall, kein Notfall): im v0r-Telnet `/bin/restart2 bootloader` (steht gemessen im v0r-Initramfs, 737 Mitglieder; ob ABOOT den Grund ehrt, ist NIE beobachtet — gilt erst als bewiesen, wenn `fastboot devices` danach antwortet; tut es das nicht, Tastenvorgang wie in Schritt 0), dann Stufe 1 auf boot_a flashen, dann `fastboot reboot`.
 DUNKEL (nichts am Bus, Telnet antwortet nicht — der Notfall): Power + Leiser ~10 s halten (Power allein tut nichts), dann Stufe 1 auf boot_a flashen **und `fastboot reboot` — der Flash allein startet nicht neu**. Erst wenn auch die Referenz dunkel bleibt, Stufe 2.
-Gerat ist jetzt: laeuft die Referenz (Debug-Shell, Uptime zuletzt 58 014 s), pingbar 172.16.42.1, Port 23 offen, `boot_a` haelt `ed2c225f…`. Das Statusdatum vier Zeilen unter diesem Block ist von 2026-10-27 und laengst ueberholt.
+Gerat ist jetzt (30.10.2026): **steckt im FASTBOOT-MODUS**, Referenz dunkel, `boot_a` haelt `ed2c225f…`, Zaeher retry 2 / unbootable no / successful no, Grund unbekannt und nicht nachgeprueft (evidence/fastboot-modus-statt-orakel-2026-10-30.txt). Kein Write ist geschehen. Das Statusdatum vier Zeilen unter diesem Block ist von 2026-10-27 und laengst ueberholt.
 
 Status (2026-10-27): descriptor, plan and device package written; no Pixel 3
 hardware in hand yet. Nothing in this file has been run on a blueline.
@@ -2491,3 +2492,72 @@ Suite-Zahl ungültig macht und einen Neulauf braucht. Bewusst *nicht* erledigt,
 solange die 129 als letztes Ergebnis gelten sollen: eine Suite, die ich im
 gleichen Atemzug ändere, über die ich gerade ihre Zahl berichte, beweist
 nichts (derselbe Fall wie der Lauf, der während meines Editierens lief).
+
+## 2026-10-30 06:30 — Drei Fäden nach Check-in #16, und einer davon ist das Orakel selbst
+
+Kein Write ist geschehen. Die drei Fäden waren: die Referenz mechanisch zu Ende
+lesen, den Beweis-Einsammellauf trockentesten, und das Gerät nachmessen.
+
+**Faden 1, die mechanische Diagnose ist fertig.** Die Referenz-Initramfs liegt
+als **zstd** (Magik `28b52ffd`) und ist zwei aneinandergesetzte cpio-Archive;
+entpackt mit dem Repo-eigenen Verifizierer, dessen Feldsatz den Kopf erklärt
+(`ramdisk_size` bei Offset **16**, nicht 20 — den Wert 0 bei 20 hatte ich aus dem
+Kopf gesetzt). In ihrer `init_functions.sh` steht:
+
+* `get_usb_udc()` (Zeile 810): `ls /sys/class/udc | head -1` — **einmal, ohne
+  Warteschleife**, exakt wie v0q es tut.
+* `setup_usb_network_configfs` (Zeile 840–843): bei leerem UDC
+  `No UDC found, skipping gadget setup` und Rückkehr.
+* Die "zweite Chance", die ich vermutet hatte (Zeilen 1014–1057), gehört
+  `setup_usb_storage_configfs` — dem USB-Speicher, nicht dem Netzwerk.
+
+Die Referenz gewinnt also nicht, weil sie wiederholt, sondern weil
+`pmOS_init.sh` die Funktion erst bei 1,708 s aufruft, nachdem dwc3 bei ~1,7 s
+probiert hat. v0rs Warteschleife ist deshalb eine **Verbesserung, keine
+Kopie** — und die Runden Zahl bleibt die entscheidende Messung: Runde 0 oder 1
+heißt, dass dwc3 unter v0r nie throughkommt, und dann ist das Gadget selbst
+der Fehler, nicht sein Timing.
+
+**Faden 2, der Trockenlauf hat einen echten Fehler im Runner gefunden.** Der
+Einsammelblock hat jede Zeile verworfen, die das **erste Wort** ihres Befehls
+enthielt, um das Echo loszuwerden. Sein entscheidender Befehl heißt
+`cat /run/steps.log`, und fünf Texte unseres eigenen init enthalten `cat` —
+darunter `udc=$(ls /sys/class/udc 2>/dev/null) gebunden=$(cat …)` und
+`UDC steht auf: $(cat …)`. Die zwei Zeilen, um die es im ganzen Zyklus geht,
+wären **spurlos verschwunden**. Gegenbeweis am lebenden Gerät: ein Befehl,
+dessen Ausgabe sein eigenes erstes Wort enthält, verlor genau diese Zeile.
+Der neue Filter (Zeichen `# HEBER-ANFANG`/`-ENDE` im Runner) wirft nur noch
+die Zeile, die **exakt** dem Befehl gleichkommt, und Prompt-Zeilen; jeder
+Einsammelbefehl bleibt unter 60 Zeichen, weil die pmOS-Leitung bei ~80 Spalten
+bricht und ein zerrissenes Echo nicht mehr entscheidbar ist.
+Der neue Test (Abschnitt 5b in `tests/bisection`) liest die Funktion **aus dem
+ausgelieferten Runner heraus und führt sie aus**, und holt sich die zwei
+decisiven Zeilen aus dem ausgelieferten **Bild** (Kompression am Magik-Byte
+entschieden, nicht im Kopf), statt sie abzutippen; er verlangt außerdem, dass
+der **alte** Filter an denselben Zeilen verliert — sonst beweist der neue
+nichts. Läuft: `2 decisive Zeilen gerettet (längster Befehl 45 Zeichen), der
+alte verlor 2 davon`. Eine leere Datei heißt jetzt `ACHTUNG leer` statt
+schweigend Erfolg (dieselbe Fehlerklasse wie ein Prüfstein, der eine fehlende
+Datei als "ok" bucht). `tests/bisection`: 9 ok / 0 not ok / Exit 0 (vorher 8,
+einer ist der neue). Die Container-Zahl 129 gilt nicht mehr — nach dieser
+Änderung wäre ein Neulauf nötig, und den gab es hier nicht.
+
+**Faden 3, das Orakel ist dunkel, das Gerät sitzt im Fastboot-Modus.**
+Ping 100 % Verlust, Port 23 und 5555 zu, ARP und adb leer — aber `ioreg` zeigt
+"Google / Pixel 3" an USB, und `fastboot devices` meldet `PIXEL3-SERIAL  fastboot`.
+Die Zähler unverändert (getvar: retry:a 2, unbootable:a no, successful:a no,
+current-slot a, unlocked yes, bootloader b1c1-0.4-7617406). **Ein Grund ist
+nicht belegt**, und ich habe keinen gesucht; die letzten Telnet-Aktionen von
+mir waren ausschließlich `cat`/`tail`/`ls`/`ps`/`lsmod`. Nichts angefasst: ein
+Wiederanlaufen der Referenz über `fastboot reboot` hätte einen der zwei
+verbleibenden Fehlstarts gekostet, und das ist Gregors Entscheidung, nicht
+mein Aufräumen. Folgen für das Verfahren, beide im Block nachgezogen: Schritt 0
+ist jetzt **fallback**, weil das Gerät schon in fastboot steckt — erst
+`fastboot devices` lesen —, und die Zahl der verbleibenden Fehlstarts ist eine
+Bedingung für das Vorgehen geworden. `fastboot --set-active=a` soll die Zahl
+auffüllen und die unbootable-Markierung löschen; **für diesen Bootloader ist
+das unbelegt**, es ist ein Meta-Daten-Write, und deshalb liegt es als
+Vorschlag da und nicht als ausgeführter Schritt. Belegbar ist es erst nach dem
+Zyklus, mit getvar vorher/nachher.
+Die Manifestprüfung über alle 70 Bilder danach: 70/70 OK — an den Bildern hat
+heute nichts geronnen, die Änderungen betreffen nur Host-Werkzeuge und Text.
