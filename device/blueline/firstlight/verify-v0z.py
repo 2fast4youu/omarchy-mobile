@@ -178,6 +178,27 @@ def haupt() -> int:
             fehler += 1
 
     fehler += selbstmessung()
+
+    # Das Nebenarchiv, an dem der Reihenfolgepruefer haengt, darf nicht gegen das
+    # Bild veraltet sein: sonst misst ein Pruefer einen Stand, und ausgeliefert und
+    # geflasht wird ein anderer. Der Vergleich fuehrt beide Hellen zum Init
+    # zusammen - init_text() entpackt das Bild, newc ließt das Archiv.
+    neben = os.path.join(os.path.dirname(os.path.abspath(sys.argv[1])), "new.cpio")
+    if os.path.isfile(neben):
+        ordner = tempfile.mkdtemp(prefix="v0z-archiv-")
+        zielpfad = os.path.join(ordner, "a.cpio")
+        with open(neben, "rb") as quelle, open(zielpfad, "wb") as ziel:
+            ziel.write(quelle.read())
+        archiv_init = {e["name"]: e for e in newc.read_cpio(zielpfad)}["init"]["content"].decode()
+        pruef(archiv_init == neu,
+              "Nebenarchiv und Bild fuehren denselben Init (beide %d B, bytegleich)" % len(neu)
+              if archiv_init == neu else
+              "Nebenarchiv und Bild fuehren verschiedenen Init (Bild %d B / Archiv %d B)"
+              % (len(neu), len(archiv_init)))
+    else:
+        pruef(False, "Nebenarchiv nicht erreichbar, Reihenfolgepruefer misst einen "
+                     "anderen Stand: " + neben)
+
     alts, neus = alt.splitlines(), neu.splitlines()
     diff = list(difflib.ndiff(alts, neus))
     geaendert = [z for z in diff if z.startswith("- ")]
