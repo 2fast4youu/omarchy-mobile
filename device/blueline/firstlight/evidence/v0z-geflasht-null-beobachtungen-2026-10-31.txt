@@ -1,0 +1,61 @@
+v0z geflasht, 0 Beobachtungen in 307 s — die Null zum vierten Mal, die Antwort liegt jetzt nur noch auf dem Panel
+=================================================================================================================
+Gemessen im Ablaufprotokoll des Runners, /Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight/run-flash-observe.sh,
+geschrieben nach /Users/gregor/hermes-workspace/flash-observe/protokoll.txt (Zeile 35 des Runners lenkt um).
+
+1. DER VORAB-CHECK, von Gregors Regel verlangt
+   14:40:34, read-only in Fastboot:
+     slot-retry-count:a: 2      slot-unbootable:a: no      current-slot: a
+     version-bootloader: b1c1-0.4-7617406
+   Rueckweg Stufe 1 vor dem Write auf Groesse und Hash geprueft:
+     /Users/gregor/hermes-workspace/pmos-ref-build/ref/boot.img
+     28729344 B  ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82
+   und der Vergleich lief gegen den Hash, der im Protokollblock steht und gegen die
+   Platte gemessen ist, nicht gegen eine Notiz: identisch.
+   Erste Fassung dieses Checks verglich mit einem Hash aus der Erinnerung und fand
+   eine Scheinabweichung - derselbe Fehler, den der Skill schon nennt.
+
+2. DER WRITE
+   14:41:00  Rueckweg steht: 28729344 B ed2c225f...f76f82
+   14:41:01  Vorher: 29 Zeilen
+   14:41:02  Sending/Writing 'boot_a' OKAY, Finished. Total time: 1.238s
+   14:41:02  Bild: firstlight.img, 21098496 B, sha256 ba18304d745e23c210b64c614420ccc03b0133b4fcc3bc60554e2db152c77154
+   14:41:02  Nachernte des Runners, dieselben getvars nach dem Write:
+               current-slot: a    slot-retry-count:a: 3    slot-unbootable:a: no
+   Das ist die entschiedene Zählerregel zum zweiten Mal intrauf gemessen: der
+   Write auf boot_a setzt den Zaehler auf seinen Anfangswert, ein erfolgreicher
+   Start verbraucht ihn. Vor dem Write 2, nach dem Write 3.
+   14:41:03  Neustart kommandiert, 300 s Beobachtung
+
+3. DAS ERGEBNIS
+   14:46:10  ERGEBNIS: 0 Beobachtungen mit neuen Eintraegen, 307 s gelaufen
+   14:49:01  nachgelesen: fastboot devices ohne Eintrag (Gerat ist nicht
+             zuruegekehrt, haengt also im laufenden System), ifconfig -a | grep -c
+             172.16.42 = 0, kein neuer Belegdatei-Eintrag im Ausgabeordner (die
+             aealteren Dateien stammen vom 30.10.).
+   Vier Bootes, viermal dieselbe Null: v0r 302 s, v0t, v0y 305 s, v0z 307 s.
+   Kernel und Init leben (Panel zeigt Titel und Herzschlag), der Bus zeigt nichts.
+
+4. WAS V0Z NEU LIEFERT UND WO ES ZU LESEN IST
+   v0z unterscheidet drei Saetze, die bisher nicht trennbar waren, und alle drei
+   stehen nur auf dem Panel:
+   a) 'g1 NEU angelegt' oder 'g1 war da'   -> ob die spaete Runde das Gadget
+      ueberhaupt angelegt hat, oder ob configfs/Modul dagegen arbeitet
+   b) 'binden rc=' mit text=              -> ob der Controller die Bindung annimmt
+      oder mit 'device or resource busy' auf eine fremde Bindung zeigt
+   c) 'connect rc=' mit text= und danach  -> ob der weiche Knopf in der UDC-Klasse
+      'state=' / 'netz='                     wirken durfte: rc=0 mit text=ohne und
+                                              state= default/addressed/configured ist
+                                              ein Host-Reset, text= mit
+                                              'soft-connect without a gadget driver'
+                                              ist der Widerspruch zur Bindung
+   Dazu 'haengt:' mit den Haengelisten aus /proc/self/mountinfo (wie oft debugfs
+   und configfs wirklich haengen) und 'schritte:' mit den letzten sechs Schritten
+   statt nur dem letzten, damit die Antwort der Anlage nicht mehr hinter dem
+   dmesg-Block bei 42 s verschwindet.
+
+5. WAS NICHT GEMESSEN IST
+   Kein Panel-Foto von v0z, also keine der Zeichenketten in 4 abgelesen. Kein
+   Telnet, kein ACM, kein seriallesegeraet. Der Rohlog-Kanal aus Fastboot ist zu
+   ('Device does not support fetch command', 0 Byte Datei). Die Null auf dem Bus
+   ist damit nach wie vor keine Widerlegung von etwas Bestimmtem.
