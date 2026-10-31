@@ -1,0 +1,51 @@
+Statische Modulpruefung: die .ko in new.cpio gegen den Kernel im Bild
+Datum: 2026-10-31. Kein Telefon, keine Flash-Freigabe.
+
+== Kernel im Bild ==
+
+Kernel-Blob 16154423 B aus images/fl-v0z/firstlight.img; gzip-Strom entpackt:
+"Linux version 7.1.0-rc1-sdm845 (pmos@build) (Alpine clang version 22.1.8,
+LLD 22.1.8) #5-postmarketos-qcom-sdm845 SMP PREEMPT ..."
+Der gzip-Anteil ist byte-identisch zur Referenz (build-v0q.sh: SOLL_SHA
+2911e6f7666299639e0a712604fe3ae0427802f875b319f47146d93826fd3ee1).
+
+== Die Module in new.cpio (sechs, davon fuenf von der Init geladen) ==
+
+libcomposite.ko 149865 B, u_ether.ko 65065 B, usb_f_ncm.ko 66241 B,
+u_serial.ko 58993 B, usb_f_acm.ko 38585 B, usb_f_rndis.ko 93009 B.
+
+vermagic (voll): "7.1.0-rc1-sdm845 SMP preempt mod_unload aarch64"
+-> Version 7.1.0-rc1-sdm845 passt zur Kernel-Versionzeile; SMP/preempt/
+mod_unload/aarch64 passen zum Kernel (SMP PREEMPT, ARM64).
+Signatur-Marker "~Module signature appended~" in allen sechs vorhanden.
+
+== Byte-Gleichheit gegen die Referenz ==
+
+Die .ko.zst der Referenz-Ramdisk mit zstd -d entpackt und sha256 verglichen
+mit den .ko in new.cpio und den entpackten Dateien in images/refmod:
+6/6 byte-gleich (libcomposite 6421e2d4..., u_ether 3b1be56c...,
+usb_f_ncm 59e639ab..., u_serial 5b60bae3..., usb_f_acm 1cbc36d0...,
+usb_f_rndis d7c35b92...).
+
+== Kernel-Config (Referenz-Config = Kernel im Bild) ==
+
+CONFIG_MODULES=y
+CONFIG_MODULE_SIG=y
+CONFIG_MODULE_SIG_ALL=y
+CONFIG_MODULE_SIG_SHA512=y, CONFIG_MODULE_SIG_HASH="sha512"
+CONFIG_MODULE_SIG_FORCE: nicht gesetzt (Zeile 935 "# CONFIG_MODULE_SIG_FORCE is not set")
+CONFIG_MODULE_COMPRESS=y, CONFIG_MODULE_COMPRESS_ZSTD=y, CONFIG_MODULE_COMPRESS_ALL=y
+
+== Urteil ==
+
+Kein vermagic-Fehler, kein Signaturfehler zu erwarten: Die Module sind die
+Referenzmodule (byte-gleich), ihre vermagic passt zum Referenz-Kernel, und
+der Kernel prueft Signaturen (MODULE_SIG=y), erzwingt sie aber nicht
+(FORCE=n). Ein "FEHLER" im Panel kann daher nicht aus vermagic oder Signatur
+kommen; wahrscheinlich ist dann die Ursache woanders (insmod-Applet, fehlende
+Moduldatei, oder die Init erreicht den Block gar nicht).
+
+== Nebenbefund ==
+
+Zeile 156 der Init (alte Form ls /proc/modules | wc -l) zeigt immer 1; in
+patch-v0q.py repariert zu wc -l < /proc/modules (wirkt beim naechsten Bau).

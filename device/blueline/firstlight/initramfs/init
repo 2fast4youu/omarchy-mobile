@@ -5,7 +5,9 @@
 # Modelled on the Pixel 4 first light (device/flame/initramfs/init) but for
 # this gate the guard is absolute: an EMPTY allowlist ships with the image
 # and init fails closed, so even userdata, boot_b and dtbo_b stay read-only.
-# No modules are loaded, no watchdog is taken over, no rootfs handoff runs.
+# USB gadget modules (libcomposite, u_ether, usb_f_ncm, u_serial, usb_f_acm)
+# are loaded from /usr/lib/modules; no watchdog is taken over, no rootfs
+# handoff runs.
 #
 # Bring-up order (2026-10-27): this handset's kernel died within ~5 s on
 # each of three boots, so the ACM console is set up FIRST and every later
