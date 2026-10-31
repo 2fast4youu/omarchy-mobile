@@ -1,0 +1,75 @@
+v0y, gemessen 2026-10-31 (Fastboot-Modus von Gregor um ~12:45)
+=============================================================
+
+GERAET
+  Pixel 3 (blueline), Seriennummer PIXEL3-SERIAL, Fastboot-Modus um 12:46 bestaetigt
+  (`fastboot devices`: ein Eintrag), Bootloader b1c1-0.4-7617406, current-slot: a.
+
+SCHRITT 0b, die zwei Lesungen VOR dem Write (12:46:22-12:46:30, fastboot-eigene Ausgabe)
+  slot-retry-count:a:   2
+  partition-size:boot_a: 0x04000000 = 67108864 B  (64 MiB)
+  current-slot:         a
+  version-bootloader:   b1c1-0.4-7617406
+
+  Vergleich zu den drei aelteren Lesungen in Dateien (28.10.: 2 | 30.10. 13:09: 2 |
+  30.10. 16:07 und 16:56, beide VOR dem jeweiligen Write: 3). Die aeltere
+  Zuschreibung 'der Reboot um 13:08 hat den Zaehler von 2 auf 3 aufgefuellt' war
+  damit schon falsifiziert; diese Runde liefert die trennende Lesung.
+
+DER LIESEVERSUCH, gemessen statt angenommen (12:46:48)
+  $ fastboot fetch boot_a boot_a.fetch
+  fastboot: error: Unable to get max-fetch-size. Device does not support fetch command.
+  Dateigroesse danach: 0 B, Laufzeit 1 s.
+  -> Diese ABOOT-Generation kennt kein fetch. Der Rohlog-Kanal (1 MiB bei 63 MiB
+     Offset in boot_a) ist aus Fastboot HERAUS nicht lesbar, nicht nur
+     'moeglicherweise als 0-Byte-Datei zurueckkommend'. Ein Bild, das seinen
+     Grund auf diesem Kanal ablegen will, muss ihn selbst mitbringen koennen -
+     der lesende Zweig ist fuer dieses Geraet geschlossen.
+     Ablage: /Users/gregor/hermes-workspace/flash-observe/schritt-0b-124648/boot_a.fetch (0 B)
+
+DER EINE WRITE (12:47:04-12:47:05, Runner-eigener Log /Users/gregor/hermes-workspace/flash-observe/protokoll.txt)
+  Rueckweg vor dem Write geprueft: 28729344 B ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82
+  Sending 'boot_a' (20604 KB)   OKAY [0.590s]
+  Writing 'boot_a'              OKAY [0.235s]
+  Bild: /Users/gregor/hermes-workspace/images/fl-v0y/firstlight.img, 21098496 B,
+        sha256 ee2b9cb4e88e11f50353277fae1fd745eebc92e9bc288df2c719d25eea158dca (vor dem Write nachgemessen)
+
+DIE TRENNENDE LESUNG: der Zaehler intrauf gemessen, 2 -> 3
+  12:46:22  slot-retry-count:a: 2      (VOR dem Write)
+  12:47:05  slot-retry-count:a: 3      (NACH dem Write, VOR 'Rebooting')
+  Damit ist die Frage entschieden, die zwei Flash-Zyklen lang offen war: der
+  Write auf boot_a setzt den Zaehler, nicht ein Reboot und nicht ein Start.
+ _Deckungsregel_: ABOOT setzt den boot-limit-Zaehler beim Flashen auf seinen
+  Anfangswert; ein erfolgreicher Start verbraucht einen. Das erklaert jede
+  einzelne Lesung der vergangenen vier Tage ohne weitere Annahme:
+    28.10. und 30.10. 13:09 = 2  -> nach erfolgreichen Starts, llang her geflasht
+    30.10. 16:07 und 16:56 = 3   -> jeweils direkt nach einem Flash
+    31.10. 12:46 = 2             -> sechsundzwanzig Stunden nach dem Flash von v0t
+    31.10. 12:47 = 3             -> direkt nach dem Flash von v0y
+  Ein Start, der den Zaehler verbraucht, ist also ein Hinweis auf einen
+  abgeschlossenen Boot; ein Zaehlerstand von 3 sagt nur 'frisch geflasht'.
+
+ERGEBNIS (12:52:11, Runner): 0 Beobachtungen mit neuen Eintraegen, 305 s gelaufen
+  Nachkontrolliert 12:52:57, Vier-Kanal-Diskriminator:
+    fastboot devices      0 Eintraege   (kein Zurueckfallen in Fastboot)
+    ioreg -p IOUSB        0 Treffer     (keine Enumeration, kein ABOOT)
+    ping 172.16.42.1      0 Antworten   (kein NCM-Link)
+  Muster identisch zu v0r (302 s) und v0t: Kernel und Init laufen, der Panel
+  zeigt Titel und Herzschlag, der Controller meldet keine Bindung.
+
+WAS V0Y DAFUER NEU LIEFERT (nur auf dem Panel lesbar, noch nicht abgelesen)
+  Zeile 77 des Herzschlags, in v0y zum ersten Mal mit geschlossener
+  Standardeingabe, also ohne die Gefahr, im Fehlerfall stumm zu blockieren:
+    debugfs=$(ls /sys/kernel/debug)  usb=$(ls /sys/kernel/debug/usb)  modewert=$(cat ...)
+  Die vier Faelle, die der Panel-Schnappschuss trennt:
+    usb= mit einem Ordnernamen      -> der dwc3-Zweig ist da, sein Name ist gemessen
+    usb= leer bei debugfs= gefuellt -> der dwc3-debugfs-Zweig wurde nie angelegt
+    modewert= otg|host|device       -> die Rollenentscheidung des Controllers, am Knoten gemessen
+    modewert= 'cat: io error'       -> der Anzeiger weckte das Geraet nicht (selbst ein Messwert)
+  Panel-Titel dieser Runde: 'Omarchy Mobile first-light v0y' (derselbe
+  Produkt-Code 0xD002 wie v0s-v0x, ein Bild ist am Bus nicht unterscheidbar).
+
+STAND
+  Repo /Users/gregor/hermes-workspace/omarchy-mobile, Branch device-blueline,
+  HEAD 06c9cc2, Baum sauber. Suite 145 ok / 0 not-ok / 4 skip / Exit 0,
+  Blockwart 12 / 0 / 0 skips, verify-v0y 33 Beweismale / 0 Fehler.

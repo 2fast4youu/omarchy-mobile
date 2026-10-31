@@ -11,7 +11,9 @@ SCHRITT 0b, in Fastboot VOR dem Write, zwei Lesungen und ein Leseversuch:
 (1) `fastboot getvar slot-retry-count:a` und `getvar partition-size:boot_a` —
 der Zähler stand 13:09 auf 2 und 16:07 vor dem Write auf 3, ohne isolierte
 Ursache; erst diese Lesung sagt, ob ein Start den Versuch verbraucht
-(`evidence/retry-zaehler-korrektur-2026-10-30.txt`). (2) `fastboot fetch boot_a` in eine Datei und die Größe prüfen — am 27.10. kam ein Fetch als 0-Byte-Datei zurück, also zählt die Dateigröße, nicht der Exit-Code. Der Rohlog-Block (1 MiB bei 63 MiB, alle 10 s) liegt hinter jedem dieser Writes und trägt den letzten Auswurf des zuletzt gestarteten Bildes. (3) Erst danach der Write.
+(`evidence/retry-zaehler-korrektur-2026-10-30.txt`). (2) `fastboot fetch boot_a` in eine Datei und die Größe prüfen: gemessen am 31.10. um 12:46 meldet diese ABOOT-Generation `Unable to get max-fetch-size. Device does not support fetch command.` und die Datei bleibt 0 Byte. Der lesende Zweig ist auf diesem Gerät also geschlossen, nicht etwa nur unzuverlässig; der Versuch bleibt trotzdem vor jedem Write stehen, weil nur die Datei selbst das belegt. Ein Bild, das seinen Grund über einen Partitions-Schwanz ablegen will, muss den Leser mitbringen. (3) Erst danach der Write.
+
+DER ZÄHLER IST ENTSCIEDEN, intrauf gemessen (31.10., ein einziger Lauf): 12:46:22 vor dem Write `slot-retry-count:a: 2`, 12:47:05 nach dem Write `slot-retry-count:a: 3`, beides die fastboot-Ausgabe desselben Runner-Laufs (`evidence/v0y-null-enumeration-und-retry-entschieden-2026-10-31.txt`). Der Write auf boot_a setzt den Zähler auf seinen Anfangswert, ein erfolgreicher Start verbraucht ihn. Das erklärt jede Lesung der letzten vier Tage ohne weitere Annahme, und es heilt den Lesewert: 3 bedeutet frisch geflasht, nicht vier fehlgeschlagene Versuche.
 
 Anruf (ein Write auf boot_a, danach 300 s jede Enumeration zählen):
 ```sh
