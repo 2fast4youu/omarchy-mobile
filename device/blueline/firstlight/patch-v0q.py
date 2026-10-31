@@ -60,7 +60,7 @@ for m in "$MODDIR/libcomposite.ko" "$MODDIR/function/u_ether.ko" \\
         mark "modul $(basename "$m") FEHLER $?"
     fi
 done
-mark "moduli: $(ls /proc/modules 2>/dev/null | wc -l) geladen, usb_f_ncm $(grep -c usb_f_ncm /proc/modules 2>/dev/null)"
+mark "moduli: $(wc -l < /proc/modules 2>/dev/null) geladen, usb_f_ncm $(grep -c usb_f_ncm /proc/modules 2>/dev/null)"
 
 '''
 ANCHOR = "mark 'usb gadget setup (reference sequence)'\n"

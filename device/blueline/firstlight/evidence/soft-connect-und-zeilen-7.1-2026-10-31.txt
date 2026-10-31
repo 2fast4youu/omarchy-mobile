@@ -1,0 +1,42 @@
+Punkt 2 und 3: soft_connect und Zeilenangaben an der 7.1er-Quelle
+Datum: 2026-10-31. Quelle: gitlab.com/sdm845-mainline/linux, Tag sdm845-7.1-rc1-r0
+(das ist der pmOS-Kernel, der auf dem Telefon laeuft; APKBUILD-Quelle).
+
+== Punkt 2: Binden startet und verbindet von selbst ==
+
+drivers/usb/gadget/udc/core.c, Tag sdm845-7.1-rc1-r0:
+  Zeile 1609: static int gadget_bind_driver(struct device *dev)
+  Zeile 1635: usb_gadget_udc_start_locked(udc)          # startet den UDC
+  Zeile 1641: udc->allow_connect = true
+  Zeile 1642: usb_udc_connect_control_locked(udc)       # verbindet von selbst
+
+Das bestaetigt den Check-in: Das Binden an den UDC (echo UDC > g1/UDC, das
+gadget_bind_driver ausloest) startet den UDC und verbindet ihn. soft_connect
+ist nicht noetig; es ist ein separater Weg (Zeile 1771-1805) fuer den Fall,
+dass man ohne Neubinden connect/disconnect ausloesen will.
+
+== Punkt 3: Zeilenangaben an der 7.1er-Quelle ==
+
+Meine frueheren Zitate stammen aus kernel-pmos 6.11. Die 7.1er-Quelle hat:
+  Zeile 1771: static ssize_t soft_connect_store(...)
+  Zeile 1779: dev_err(dev, "soft-connect without a gadget driver\n")
+  Zeile 1780: ret = -EOPNOTSUPP
+  Zeile 1784: if (sysfs_streq(buf, "connect")) {
+  Zeile 1785: mutex_lock(&udc->connect_lock);
+  Zeile 1787: usb_gadget_connect_locked(udc->gadget);
+  Zeile 1789: } else if (sysfs_streq(buf, "disconnect")) {
+  Zeile 1791: usb_gadget_disconnect_locked(udc->gadget);
+  Zeile 1795: dev_err(dev, "unsupported command '%s'\n", buf)
+  Zeile 1796: ret = -EINVAL
+  Zeile 1805: static DEVICE_ATTR_WO(soft_connect);
+
+Vergleich mit meinen 6.11er-Zitaten (1750/1753/1763/1768/1774/1784): alle um
++21 bzw. +26 Zeilen verschoben. Die 7.1er-Zeilen sind die gueltigen.
+
+== Widerspruch torvalds v7.1-rc1 vs. Panel-Knoten ==
+
+Die torvalds-Quelle v7.1-rc1 (1736 Zeilen) hat keinen soft_connect-Treffer.
+Das Telefon laeuft aber den pmOS-Fork sdm845-7.1-rc1-r0 (1950 Zeilen), der
+soft_connect bei 1771/1805 hat. Der Panel-Knoten ist also korrekt; meine
+torvalds-Messung war die falsche Quelle. Die richtige Quelle ist der
+pmOS-Fork, nicht torvalds.

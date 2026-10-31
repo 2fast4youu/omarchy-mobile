@@ -1,0 +1,122 @@
+UDC-Timing und Modulliste: Referenz-Ramdisk vs. eigene Images
+Datum: 2026-10-31. Quelle: /Users/gregor/.hermes/cache/scratch/ref-ramdisk (zstd entpackt aus
+pmos-ref-build/ref/boot.img, Offset 16158720, ramdisk_size=12569303).
+
+== 1. Wer lädt wann welche Module (Referenz-Ramdisk) ==
+
+init Zeile 52:        load_modules /lib/modules/initramfs.load
+init Zeile 54:        setup_usb_network        (Gadget anlegen + UDC binden)
+init Zeile 55:        start_unudhcpd
+
+init_functions.sh Zeile 280 (mount_proc_sys_dev):
+    modprobe libcomposite 2>/dev/null || true
+    mount -t configfs -o nodev,noexec,nosuid configfs "$(dirname "$CONFIGFS")"
+
+init_functions.sh Zeile 316 (load_modules):
+    modprobe -a $modules          # Liste aus /lib/modules/initramfs.load
+
+init_functions.sh Zeile 900 (setup_usb_network):
+    setup_usb_network_android
+    setup_usb_network_configfs
+
+init_functions.sh Zeile 831 (setup_usb_network_configfs):
+    mkdir $CONFIGFS/g1
+    echo idVendor/idProduct, strings, functions/ncm.usb0, configs/c.1, symlink
+    setup_usb_configfs_udc
+
+init_functions.sh Zeile 816 (setup_usb_configfs_udc):
+    echo "$(get_usb_udc)" > $CONFIGFS/g1/UDC     # <-- die Bindung
+    (Kommentar im Quelltext: "This activates the gadget.")
+
+Reihenfolge: libcomposite (Zeile 280) -> 7 Module (Zeile 52/316) -> Gadget (Zeile 831)
+-> UDC-Bindung (Zeile 816). Die Bindung ist im Protokoll bei 1,734 s gemessen
+(BRINGUP-M1.md Zeile 2279/2361/2368: "the gadget bind at 1.734 s").
+
+== 2. Die 7 Module aus initramfs.load (69 B) ==
+
+i2c_qcom_geni
+rmi_core
+rmi_i2c
+qcom_fg
+qcom_pmi8998_charger
+gpi
+ftm5
+
+Diese Liste enthaelt NICHT usb_f_acm/ncm/mass_storage/evdev. Die Funktionen sind
+im Referenz-Kernel eingebaut (CONFIG_USB_CONFIGFS_ACM=y, NCM=y, MASS_STORAGE=y,
+SERIAL=y, OBEX=y, ECM=y, EEM=y, RNDIS=y, F_FS=y, F_HID=y); die Module usb_f_*
+sind zusaetzliche Kopien (CONFIG_USB_F_*=m) und werden von der Init nicht
+geladen. libcomposite ist ein Modul (CONFIG_USB_LIBCOMPOSITE=m) und wird in
+Zeile 280 geladen. CONFIG_USB_DWC3=y und CONFIG_USB_DWC3_QCOM=y (kein Modul).
+
+== 3. Vergleich mit evidence/lsmod.txt (Referenz im Betrieb) ==
+
+Geladen: usb_f_acm, u_serial, usb_f_mass_storage, usb_f_ncm, u_ether, gpi,
+evdev, libcomposite.
+
+- gpi: von initramfs.load (Zeile 52) geladen; meine Init laedt es nicht.
+- evdev: von udev/mdev ueber MODALIAS geladen (mdev.conf Zeile 9:
+  "$MODALIAS=.* 0:0 0660 @modprobe -q -b \"$MODALIAS\""); meine Init hat
+  weder mdev noch udev-Regel.
+- usb_f_*: von udev/mdev ueber die usbfunc:-Aliase geladen (modules.alias
+  Zeilen 3196-3207: usbfunc:acm -> usb_f_acm, usbfunc:ncm -> usb_f_ncm,
+  usbfunc:mass_storage -> usb_f_mass_storage); meine Init legt kein Gadget an,
+  also erscheint kein usbfunc-Geraet und kein Modul wird geladen.
+- libcomposite: Zeile 280; meine Init laedt es nicht.
+
+== 4. Eigene Init (v0z, images/fl-v0z/new.cpio, 528 Zeilen / 27516 B) ==
+
+Die Init LAEDT sehr wohl Module - mein frueherer grep lief auf eine andere
+Datei und war falsch. Tatsaechliche Zeilen (aus new.cpio gelesen):
+
+Zeile 141: MODDIR=/usr/lib/modules/7.1.0-rc1-sdm845/kernel/drivers/usb/gadget
+Zeile 142-146: Verzeichnispruefung, mark 'gadget-module-dir gefunden' bzw.
+               'KEIN /usr/lib/modules/7.1.0-rc1-sdm845 - Gadget-Module fehlen'
+Zeile 147-150: for m in libcomposite.ko, function/u_ether.ko,
+               function/usb_f_ncm.ko, function/u_serial.ko,
+               function/usb_f_acm.ko; do insmod "$m" 2>/dev/null
+Zeile 151-154: mark "modul $(basename "$m") geladen" bzw.
+               mark "modul $(basename "$m") FEHLER $?"
+Zeile 156:     mark "moduli: $(ls /proc/modules | wc -l) geladen, ..."
+               (BUG: ls | wc -l ergibt immer 1; in patch-v0q.py repariert zu
+               wc -l < /proc/modules, wirkt beim naechsten Bau; das v0z-Archiv
+               hat noch die alte Zeile)
+Zeile 169:     mount -t configfs -o nodev,noexec,nosuid configfs "$(dirname "$CONFIGFS")"
+Zeile 220:     echo "$udc" > "$CONFIGFS/g1/UDC"   # die Bindung
+Zeile 189:     mark 'No UDC found in 30 s, skipping gadget setup' (nur wenn
+               kein UDC gefunden wurde)
+
+Die Init lädt also libcomposite, u_ether, usb_f_ncm, u_serial, usb_f_acm,
+mountet configfs und bindet den UDC - dieselbe Reihenfolge wie die Referenz
+(libcomposite -> Funktionen -> configfs -> UDC). Der Unterschied zur Referenz:
+Die Init laedt die Module per insmod aus dem Referenz-Modulverzeichnis, nicht
+per modprobe -a aus initramfs.load; gpi und evdev werden nicht geladen.
+
+== 5. Die eigentliche Frage: Schlagen die insmod-Aufrufe fehl? ==
+
+Die Module im Archiv sind entpackte ELF-Dateien (build-v0q.sh entpackt die
+.ko.zst der Referenz zu .ko; im Archiv: libcomposite.ko 149865 B, u_ether.ko
+65065 B, usb_f_ncm.ko 66241 B, u_serial.ko 58993 B, usb_f_acm.ko 38585 B,
+usb_f_rndis.ko 93009 B - alle ELF, kein zstd). Die vermagic aller sechs ist
+7.1.0-rc1-sdm845, der laufende Kernel ist 7.1.0-rc1 - passt.
+
+Die insmod-Aufrufe sollten also funktionieren. Ob sie es auf dem Geraet tun,
+steht in /run/steps.log: Zeile 151 markiert 'modul ... geladen', Zeile 153
+'modul ... FEHLER $?'. Das v0z-Panel zeigt die letzten sechs Schritte - genau
+diese Zeilen muss Gregor fotografieren, um den Fehlercode zu sehen.
+
+Moegliche Fehlursachen, falls dort FEHLER steht:
+- vermagic-Mismatch (hier nicht, 7.1.0-rc1-sdm845 vs. 7.1.0-rc1 passt)
+- Abhaengigkeit fehlt: libcomposite muss zuerst geladen sein (Reihenfolge stimmt)
+- Moduldatei fehlt im Archiv (hier: alle sechs da)
+- insmod selbst nicht vorhanden/defekt (busybox-Applet pruefen)
+
+Der Fix fuer das naechste Bild, falls insmod scheitert: modprobe verwenden
+(kmod kann .ko.zst lesen) oder die Reihenfolge/vermagic pruefen.
+
+== 6. Konsequenz ==
+
+Die Init ist im Prinzip richtig aufgebaut (libcomposite, Funktionen, configfs,
+UDC-Bind). Die Diagnose muss an den insmod-Zeilen ansetzen: /run/steps.log
+zeigt, ob 'modul ... geladen' oder 'modul ... FEHLER' steht. Ohne dieses
+Panel-Foto ist die Frage nicht beantwortbar.
