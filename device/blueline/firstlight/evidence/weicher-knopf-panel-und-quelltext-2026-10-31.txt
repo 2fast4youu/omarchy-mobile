@@ -1,0 +1,85 @@
+Der weiche Verbindungsknopf, am Panel abgelesen und am Quelltext gemessen
+=========================================================================
+Ablesung: Gregor, Panel des Pixel 3 (blueline), 2026-10-31, Bild v0y, Uptime 1482-1494 s.
+Quelle:   /Users/gregor/hermes-workspace/android-mainline/kernel-pmos (6.11.0),
+          dieselbe, aus der das gelieferte Kernel-Blob stammt.
+
+1. DER ABGELESENE KNOTENBESTAND (Feld udcdateien= im Herzschlag)
+   Der Herzschlag listet /sys/class/udc/*/:
+
+     a_alt_hnp_support  a_hnp_support  b_hnp_enable  current_speed  device
+     function  gadget  is_a_peripheral  is_otg  is_selfpowered  maximum_speed
+     power  soft_connect  srp  state  subsystem  uevent
+
+   soft_connect steht in dieser Liste. Das ist die UDC-Klasse, nicht debugfs.
+   Damit ist die Behauptung aus v0v und v0w falsifiziert, der Knoten existiere
+   nicht: er existiert, nur an einem anderen Ort, und die Suche von v0w
+   (`find /sys/kernel/debug -name soft_connect`) konnte ihn nie finden.
+
+2. DER SCHREIBHANDLER, Zeile für Zeile am Quelltext (drivers/usb/gadget/udc/core.c)
+   Zeile 1750  static ssize_t soft_connect_store(...)
+   Zeile 1753    if (!udc->driver) {
+   Zeile 1754      dev_err(dev, "soft-connect without a gadget driver\n");
+   Zeile 1755      ret = -EOPNOTSUPP;  goto out; }
+   Zeile 1763    if (sysfs_streq(buf, "connect"))    -> udc_start + gadget_connect
+   Zeile 1768    else if (sysfs_streq(buf, "disconnect")) -> disconnect + udc_stop
+   Zeile 1774    else { dev_err("unsupported command '%s'"); ret = -EINVAL; }
+   Zeile 1784  static DEVICE_ATTR_WO(soft_connect);
+   Zeile 1845    &dev_attr_soft_connect.attr,   (im Attributfeld der Klasse)
+
+   Drei Folgen, jede einzelne hätte einen Versuch gekostet:
+   a) Das Wort ist `connect` oder `disconnect`. v0vs Fallback hätte `1`
+      geschrieben, das gibt -EINVAL und ist kein Verbindungsversuch.
+   b) Der Knoten ist WO (write-only). Ein Leseversuch darauf ist unmöglich,
+      die Herzschlagfelder konnten ihn nie anzeigen.
+   c) Ohne gebundenes Gadget antwortet der Handler mit -EOPNOTSUPP und der
+      Kernelmeldung 'soft-connect without a gadget driver' im Ring-Buffer.
+      Der Knopf ist also NACH der Bindung zu drücken, nicht davor, und die
+      Meldung ist die Messung, wenn er trotzdem nicht wirkt.
+
+3. DER ANDERE FUND AUS DER ABLESUNG: DAS GADGET FEHLT
+   Dieselbe Ablesung meldet `gadgetordner=` leer, `controller-state=not attached`,
+   `gebunden=` leer, `gadgetordner` (die Liste von /sys/kernel/config/usb_gadget)
+   leer, `debugfs=` leer, `usb=` leer, `modewert=` leer.
+   Die Anlage im Init wartet höchstens 30 s auf den UDC (Zeile 172, von der
+   Referenz übernommen, die bei 1.734 s bindet) und überspringt sonst alles
+   mit dem Mark 'No UDC found in 30 s, skipping gadget setup'.
+   Die Nachbind-Runde von v0s beginnt mit 'for g in /sys/kernel/config/usb_gadget/*'
+   und '[ -e "$g/UDC" ] || continue': ohne Gadget läuft sie am nicht erweiterten
+   Platzhalter durch, ohne je eine Beweiszeile zu drucken. Das erklärt, warum in
+   vier Bootes keine 'weicher-bind'-Zeile auf dem Panel erschien - nicht, dass
+   sie fehlgeschlagen wäre, sondern dass sie nie lief.
+
+4. WARUM DIE ANTWORT BISLANG NICHT ZU SEHEN WAR
+   Die Marks der Anlage stehen in /run/steps.log, aber die Herzschlagzeile
+   'letzter Schritt:' zeigt nur $(tail -1 /run/steps.log), und die letzte Zeile
+   schreibt der dmesg-Block bei 42 s ('dmesg gesichert: /run/dmesg-2s.txt
+   /run/dmesg-12s.txt /run/dmesg-42s.txt'). Deshalb stand in zwei Bootes
+   derselbe 'steps:[43s]' da - kein Stehenbleiben des Schritt-Schreibers,
+   sondern die letzte von mehreren Zeilen. Die Dateinamen sind genau die
+   aufaddierten Schlafzeiten 2 s, 10 s, 30 s des Blocks (Zeile 46 bis 49).
+   v0z liest deshalb die letzten SECHS Zeilen vor, die vorhandene
+   'letzter Schritt:'-Zeile bleibt stehen.
+
+5. WAS V0Z DAFÜR ÄNDERT (eingefügt, nicht ersetzt)
+   * Herzschlag: Haengelifste aus /proc/self/mountinfo (debugfs, configfs),
+     Gadgetezustand (Ordner, readlink /sys/class/udc/*/gadget, is_active,
+     current_speed, netz) und 'schritte:' mit tail -6.
+   * eine eigene Runde alle 15 s: debugfs und configfs häengen (Rückgabewerte
+     notiert), das Gadget anlegen WENN KEINS DA IST (dieselbe Folge wie oben,
+     ncm.usb0 mit rndis-Fallback, acm.GS0 daneben), binden wenn ungebunden
+     (Rückgabewert und Fehlertext), dann 'connect' auf /sys/class/udc/*/soft_connect
+     und nach 5 s state und netz zurücklesen. Ergebnis in /run/steps.log, damit
+     es das Panel zeigt, und nach /dev/kmsg.
+   * nichts entfernt: Zeilendiff gegen v0y = eine geaenderte Zeile (der Titel),
+     67 eingefügte, jede Messung des Vorgängers wortgleich erhalten.
+
+6. PRÜFUNG DES PRÜFERS, gemessen
+   Die erste Fassung des Leserscanners meldete die ungedeckte v0x-Zeile als
+   sauber, weil '2>/dev/null' den Teilstring '</dev/null' enthält und das deckt
+   nur den Fehlerausgang. Nach der Umstellung auf Token-Klassen (Umleitung
+   beginnt mit '<' oder '0<', ein Argument ist kein Token der Form [0-9*]*[<>])
+   misst der Prüfer sich selbst an fünf Formen und meldet 5/5. Der Pty-Versuch
+   dazu: ungeschützt bleibt 'NACH dem cat' aus (blockiert), geschützt kommt es,
+   und ein leerer Fund liefert ein leeres Feld - die Deckung legt also nichts
+   still, was vorher gemessen wurde.
