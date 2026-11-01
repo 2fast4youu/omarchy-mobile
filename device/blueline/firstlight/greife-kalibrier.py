@@ -135,7 +135,7 @@ def hole(s, notiz, name, quelle, sektoren, start=0):
         "klarsha=$(sha256sum %s 2>/dev/null | cut -d' ' -f1)" % GRUND)) + " 2>/dev/null")
     grund = abfrage(s, "dd if=%s bs=512 skip=%d count=%d of=%s 2>/dev/null; "
                        "gzip -9 -f -c %s > %s 2>/dev/null; %s"
-                    % (quelle, 0, sektoren, GRUND, GRUND, GRUND + ".gz", antwort),
+                    % (quelle, start, sektoren, GRUND, GRUND, GRUND + ".gz", antwort),
                     "grund-%s" % name)
     if grund is None:
         notiz("  %-30s keine Grunddaten" % name)
@@ -238,6 +238,7 @@ def main() -> int:
                     "lun-karte")
     knoten = {}
     sektoren = {}
+    scheiben = {}
     if karte:
         with open(os.path.join(ZIEL, "lun-karte.txt"), "w") as f:
             f.write(karte + "\n")
@@ -246,10 +247,13 @@ def main() -> int:
             m = re.match(r"^/sys/block/(\S+?)/(\S+)/uevent:PARTNAME=(\S+)$", zeile.strip())
             if m:
                 knoten[m.group(3)] = "/dev/" + m.group(2)
-            m = re.match(r"^/sys/block/(\S+)/(\S+)/size (\d+)$", zeile.strip())
+            m = re.match(r"^/sys/block/\S+/(\S+)/size (\d+)$", zeile.strip())
             if m:
-                sektoren["/dev/" + m.group(2)] = int(m.group(3))
-        notiz("  Karte: %d Partitionsnamen, %d Groessen" % (len(knoten), len(sektoren)))
+                sektoren["/dev/" + m.group(1)] = int(m.group(2))
+            m = re.match(r"^/sys/block/([^/]+)/size (\d+)$", zeile.strip())
+            if m:
+                scheiben["/dev/" + m.group(1)] = int(m.group(2))
+        notiz("  Karte: %d Partitionsnamen, %d Partitions-groessen, %d Scheiben" % (len(knoten), len(sektoren), len(scheiben)))
     else:
         notiz("  keine Karte — Kalibrier-Bereiche koennen nicht adresiert werden")
     # GPT: Header und Eintragssatz am Anfang jedes LUN; die sichere Kopfzeile
@@ -257,7 +261,20 @@ def main() -> int:
     for lun in "abcdef":
         hole(s, notiz, "gpt-lun%s-kopf.bin" % lun, "/dev/sd%s" % lun, 64, 0)
     # Die kleinen Kalibrier-Partitionen, ueber den Partitionsnamen gesucht.
-    for part in ("modemst1", "modemst2", "persist", "frp", "misc", "devinfo", "dtbo_b"):
+    # Der zweite GPT-Kopf liegt ganz hinten — ohne die Scheibengroesse ist er
+    # nicht zu adresieren, und ohne ihn ist eine Partitionstabelle nicht heilbar.
+    for lun in "abcdef":
+        platte = "/dev/sd%s" % lun
+        ende = scheiben.get(platte, 0)
+        if ende >= 64:
+            hole(s, notiz, "gpt-lun%s-ende.bin" % lun, platte, 64, max(0, ende - 64))
+    # Vor einem Write auf boot_a muss die Sicherung von boot_a da sein, und zwar
+    # mit gepruefter Groesse und geprueftem sha (Gregors Regel vor jedem Write).
+    # boot_b fehlt hier mit Absicht: sein Inhalt ist per Konstruktion die
+    # Referenzdatei pmos-ref-build/ref/boot.img (sha ed2c225f...), und 64 MiB
+    # ueber diese Leitung kosten eine Viertelstunde Haltezeit pro Bild.
+    for part in ("boot_a", "dtbo_a", "vbmeta_a", "vbmeta_b",
+                 "modemst1", "modemst2", "persist", "frp", "misc", "devinfo", "dtbo_b"):
         pfad = knoten.get(part)
         if not pfad:
             notiz("  %-30s nicht in der Karte — uebersprungen" % ("kalibrier-%s.bin" % part))

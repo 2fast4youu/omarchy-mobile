@@ -1,0 +1,16 @@
+23:54:12 Telefon erreichbar nach 0s
+23:54:12 === Kalibrier- und GPT-Abgriff, Ziel evidence/kalibrier ===
+23:54:12   lun-karte.txt 27012 B
+23:54:12   Karte: 70 Partitionsnamen, 70 Partitions-groessen, 76 Scheiben
+23:54:12   gpt-luna-kopf.bin                   32768 B Klar  dicht  sha 3496067fb2a8ce26  (1149 B gepackt, 1 Bloecke)
+23:54:12   gpt-lunb-kopf.bin                   32768 B Klar  dicht  sha 818d31d140dfa829  (3422 B gepackt, 1 Bloecke)
+23:54:13   gpt-lunc-kopf.bin                   32768 B Klar  dicht  sha 96c28040b1458ae9  (3423 B gepackt, 1 Bloecke)
+23:54:13   gpt-lund-kopf.bin                   32768 B Klar  dicht  sha 60d848cd2cf6c773  (583 B gepackt, 1 Bloecke)
+23:54:13   gpt-lune-kopf.bin              Entpacken fehlgeschlagen (EOFError) — LUECKERIG
+23:54:13   gpt-lunf-kopf.bin                   32768 B Klar  dicht  sha b72698e2565e9956  (988 B gepackt, 1 Bloecke)
+23:54:13   gpt-luna-ende.bin                   32768 B Klar  dicht  sha 43a9e7c5c599a98f  (1219 B gepackt, 1 Bloecke)
+23:54:13   gpt-lunb-ende.bin                   32768 B Klar  dicht  sha 6b677c5a82006fef  (348 B gepackt, 1 Bloecke)
+23:54:13   gpt-lunc-ende.bin                   32768 B Klar  dicht  sha b0f3fbc592d684e6  (345 B gepackt, 1 Bloecke)
+23:54:13   gpt-lund-ende.bin                   32768 B Klar  dicht  sha 5b6fb126010b0837  (565 B gepackt, 1 Bloecke)
+23:54:14   gpt-lune-ende.bin                   32768 B Klar  dicht  sha e50f07c8ca850d82  (1244 B gepackt, 1 Bloecke)
+23:54:14   gpt-lunf-ende.bin                   32768 B Klar  dicht  sha b316b82116355067  (969 B gepackt, 1 Bloecke)

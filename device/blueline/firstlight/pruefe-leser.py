@@ -40,7 +40,11 @@ spec.loader.exec_module(gk)
 fehlt = []
 
 
+PUNKTE = [0]
+
+
 def pruefung(name, waehr, erwartet):
+    PUNKTE[0] += 1
     if waehr == erwartet:
         print("ok - %s" % name)
     else:
@@ -162,6 +166,31 @@ for z in ZEILEN:
 print("Leitung:")
 for b, t in protokol:
     print("   > " + repr(b) + "\n     " + repr(t))
+def lauf_schwanz(start):
+    """Ein Schwanz-Lesung durch die nachgebaute Shell, nur nach dem skip gefragt."""
+    corrupt[0] = False
+    kleben[0] = False
+    vorher = len(protokol)
+    a, b = socket.socketpair()
+    a.settimeout(5)
+    threading.Thread(target=antworte, args=(b,), daemon=True).start()
+    try:
+        gk.hole(a, notiz, "lun-schwanz.bin", "/dev/sda", 64, start)
+    finally:
+        a.close()
+    return any(("skip=%d " % start) in befehl for befehl, _ in protokol[vorher:])
+
+
+pruefung("Schwanz-Lesung betritt den gerechneten Sektor", lauf_schwanz(122147776), True)
+
+# Die Karten-Regeln muessen Platte und Partition trennen: ein \S+ frisst das
+# "sda/sda11" und legt die Platten-Groesse in die Partitionsgroessen.
+KARTE = open(os.path.join(HERE, "greife-kalibrier.py"), encoding="utf-8").read()
+pruefung("Plattenregel schliesst den Schraegstrich aus", "[^/]+" in KARTE, True)
+muster = re.compile(r"^/sys/block/([^/]+)/size (\d+)$")
+treffer = [bool(muster.match(z)) for z in ("/sys/block/sda/size 122147840",
+                                          "/sys/block/sda/sda11/size 65536")]
+pruefung("Plattenzeile naechst nur der Platte, nicht der Partition", treffer, [True, False])
 shutil.rmtree(zielpfad, ignore_errors=True)
-print("\n%d Pruefpunkte, %d Fehler" % (13 - len(fehlt) + len(fehlt), len(fehlt)))
+print("\n%d Pruefpunkte, %d Fehler" % (PUNKTE[0], len(fehlt)))
 sys.exit(1 if fehlt else 0)
