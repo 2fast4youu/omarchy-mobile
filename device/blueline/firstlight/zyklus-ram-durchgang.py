@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""v0aa: RAM-Boot + Protokoll, bis das Bild sich selbst zurueckbringt.
+"""RAM-Boot + Protokoll, bis das Bild sich selbst zurueckbringt.
+
+Aufruf: zyklus-ram-durchgang.py <evidence-pfad> [bildpfad]
+Das Bild ist mitgebbbar, weil der Durchgang die Messung ist, nicht das Bild:
+  python3 zyklus-ram-durchgang.py evidence/v0ab-ram-2026-11-01.log \
+      /Users/gregor/hermes-workspace/images/fl-v0ab/firstlight.img
 
 Was gemessen wird: der Augenblick, in dem das Gadget am Mac erscheint
 (USB-Produkt-Nummer am ioreg-Baum), und der Augenblick, in dem das Bild
@@ -11,7 +16,7 @@ Beides erscheint im Protokoll, keiner der zwei Faelle wird uebergangen:
 import datetime, re, socket, subprocess, sys, time
 
 FB = "/Users/gregor/Library/Android/sdk/platform-tools/fastboot"
-IMG = "/Users/gregor/hermes-workspace/images/fl-v0aa/firstlight.img"
+IMG = sys.argv[2] if len(sys.argv) > 2 else "/Users/gregor/hermes-workspace/images/fl-v0ab/firstlight.img"
 EV = sys.argv[1] if len(sys.argv) > 1 else "/Users/gregor/.hermes/cache/scratch/v0aa-ram.log"
 
 
@@ -54,7 +59,7 @@ def fb_ready():
         return False
 
 
-log("=== v0aa RAM-Zyklus beginnt (Ziel boot_a, boot_b unangetastet) ===")
+log("=== RAM-Zyklus beginnt: %s (boot_b + dtbo_b bleiben die Referenz) ===" % IMG)
 if not fb_ready():
     log("kein Fastboot — Abbruch, nichts gerampt")
     sys.exit(1)

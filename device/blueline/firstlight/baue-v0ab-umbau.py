@@ -55,6 +55,36 @@ while [ "$warte" -lt 48 ]; do
 done
 mark 'warten beendet nach '$((warte * 5))'s, runde ' $(kill -0 "$runden_pid" 2>/dev/null && echo laeuft-noch || echo fertig)"""
 
+# Die Ablesung am Panel ist der einzige Leseweg, der nach einem eigenen
+# Kernel-Lauf noch offen ist: der Mac sieht das Geraet erst nach einem harten
+# Reset wieder (gemessen 2026-11-01, 16:55-17:20 und 17:25/17:31 dunkel). Das
+# Herzschlagfeld zeigt immer genau eine Zeile, die letzte aus /run/steps.log.
+# Darum stehen die drei Entscheidungen einzeln da und werden danach in einer
+# Schleife 12 x wiederholt, damit sie bei 2 s Herzschlag nicht vorbeilaufen.
+ABLESUNG = """UDCN=$(ls /sys/class/udc 2>/dev/null | xargs)
+MODN=$(wc -l < /proc/modules 2>/dev/null)
+DUNK=$(cat /sys/kernel/debug/devices_deferred 2>/dev/null | xargs)
+mark "udc=${UDCN:-KEINER} module=${MODN:-0} dunkel=${DUNK:-leer}"
+logflush
+LFRZ=$?
+sync
+DEV=$(readlink -f /dev/disk/by-partlabel/boot_a 2>/dev/null)
+LESE=$(dd if=${DEV:-/dev/null} bs=131072 skip=504 count=1 2>/dev/null | grep -ac OMAMOBILE-LOG)
+mark "logflush rc=$LFRZ rueckgelesen=${LESE:-0} geraet=${DEV:-KEINER}"
+zr=0
+while [ "$zr" -lt 12 ]; do
+    mark "ABLESUNG udc=${UDCN:-KEINER} module=${MODN:-0} rueckgelesen=${LESE:-0} zyklus=$zr"
+    sleep 3
+    zr=$((zr + 1))
+done"""
+
+
+ZIEL_AN = """mark 'v0aa Ziel erreicht: letztes logflush, dann Selbst-Rueckweg'
+logflush
+sync"""
+ZIEL_NEU = """mark 'v0ab Ziel erreicht: letztes logflush, dann Ablesung, dann Selbst-Rueckweg'
+""" + ABLESUNG
+
 
 def einzige(text: str, teil: str) -> str:
     treffer = [z for z in text.splitlines() if teil in z]
@@ -66,6 +96,7 @@ def umbau(text: str, vorher: str) -> str:
     arbeit = [
         (einzige(text, TITEL_AN), einzige(text, TITEL_AN).replace("v0aa", "v0ab")),
         (WARTEN_AN, WARTEN_NEU),
+        (ZIEL_AN, ZIEL_NEU),
     ]
     assert text.count(RUNDEN_ENDE_AN) == 1, "Runden-Ende: %d Fundstellen" % text.count(RUNDEN_ENDE_AN)
     arbeit.append((RUNDEN_ENDE_AN, RUNDEN_ENDE_NEU))
@@ -80,15 +111,15 @@ def umbau(text: str, vorher: str) -> str:
     assert "_wt" not in text, "Sonderparameter-Name _wt ist im Text (Bash: leer)"
     assert "runden_pid=$!" in text, "die Prozessnummer der Runde fehlt"
     assert 'kill -0 "$runden_pid"' in text, "das Nachsehen fehlt"
-    assert "logflush\nsync" in text, "der Selbst-Rueckweg ist nicht mehr heil"
+    assert "logflush" in text and "sync" in text, "der Selbst-Rueckweg ist nicht mehr heil"
+    assert "rueckgelesen=" in text, "die Ruecklese-Ablesung fehlt"
     assert "OMAMOBILE-LOG" in text and "seek=504" in text, "der Lesekanal ist nicht mehr heil"
-    # Zahlenspur: das neue Wartefenster bringt einen Kopf und ein Ende, das
-    # alte Fenster hatte beides schon — Differenz also 0, und die runde Zahl
-    # der Messschritte bleibt unangetastet.
-    assert text.count("; do") - vorher.count("; do") == 0, \
-        "Schleifenkoepfe: Differenz %d, erwartet 0" % (text.count("; do") - vorher.count("; do"))
-    assert text.count("\ndone") - vorher.count("\ndone") == 0, \
-        "done: Differenz %d, erwartet 0" % (text.count("\ndone") - vorher.count("\ndone"))
+    # Zahlenspur: die Ablesung bringt genau einen Schleifenkopf und ein Ende
+    # (die Wiederholung am Panel), das Wartefenster tauscht nur seinen Inhalt.
+    assert text.count("; do") - vorher.count("; do") == 1, \
+        "Schleifenkoepfe: Differenz %d, erwartet 1 (Panel-Wiederholung)" % (text.count("; do") - vorher.count("; do"))
+    assert text.count("\ndone") - vorher.count("\ndone") == 1, \
+        "done: Differenz %d, erwartet 1" % (text.count("\ndone") - vorher.count("\ndone"))
     assert text.count("mark ") >= vorher.count("mark "), "Marks sind weggefallen"
     return text
 

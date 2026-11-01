@@ -72,6 +72,18 @@ if r.returncode != 0:
     log("kein Fastboot — nichts gelesen. Naechster Schritt: Tastenaktion.")
     sys.exit(1)
 log("Fastboot: " + (r.stdout + r.stderr).splitlines()[0])
+# Slot b vor jedem Versuch auffuellen (Anweisung im Check-in, und die beiden
+# belegten Gadget-Sichtungen der Referenz — 15:06 und 15:35 — liefen mit
+# current-slot=b, wo dtbo_b voll ist). RAM-Boot schreibt nichts an Partitionen,
+# --set-active aendert nur die Bootloader-Metadaten.
+for v in ["slot-retry-count:b", "slot-unbootable:b"]:
+    g = fb(["getvar", v], timeout=8)
+    log("vorher: " + (g.stdout + g.stderr).splitlines()[0])
+a = fb(["--set-active=b"], timeout=30)
+log("set-active=b: " + (a.stdout + a.stderr).replace("\n", " ").strip()[-60:])
+for v in ["current-slot", "slot-retry-count:b", "slot-unbootable:b"]:
+    g = fb(["getvar", v], timeout=8)
+    log("nachher: " + (g.stdout + g.stderr).splitlines()[0])
 r = fb(["boot", REF], timeout=180)
 log("fastboot boot ref: " + (r.stdout + r.stderr).replace("\n", " ")[-60:])
 t0 = time.time()
