@@ -8,3 +8,11 @@
 21:57:07   gpt-lund-kopf.bin                   32768 B Klar  dicht  sha 60d848cd2cf6c773  (583 B gepackt, 1 Bloecke)
 21:57:07   gpt-lune-kopf.bin              Entpacken fehlgeschlagen (EOFError) — LUECKERIG
 21:57:08   gpt-lunf-kopf.bin                   32768 B Klar  dicht  sha b72698e2565e9956  (988 B gepackt, 1 Bloecke)
+21:57:33   kalibrier-modemst1.bin            2097152 B Klar  dicht  sha 15c6cc7aeffb7d9c  (2097069 B gepackt, 512 Bloecke)
+21:58:00   kalibrier-modemst2.bin            2097152 B Klar  dicht  sha 0995a2301f69115a  (2097070 B gepackt, 512 Bloecke)
+21:58:12   kalibrier-persist.bin            41943040 B Klar  dicht  sha 56204d3734f34be4  (795351 B gepackt, 195 Bloecke)
+21:58:13   kalibrier-frp.bin                  524288 B Klar  dicht  sha dac3c8d49b33e07c  (703 B gepackt, 1 Bloecke)
+21:58:13   kalibrier-misc.bin                1048576 B Klar  dicht  sha f5f22730aa58099d  (1069 B gepackt, 1 Bloecke)
+21:58:13   kalibrier-devinfo.bin                4096 B Klar  dicht  sha 6983b4df61d31bea  (102 B gepackt, 1 Bloecke)
+21:58:20   kalibrier-dtbo_b.bin              8388608 B Klar  dicht  sha ff7bd6daa08351a3  (378859 B gepackt, 93 Bloecke)
+21:58:20 === Abgriff fertig: evidence/kalibrier ===

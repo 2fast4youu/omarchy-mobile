@@ -1,0 +1,4 @@
+*.bin
+# die Bereiche selbst liegen ausserhalb des Repos in
+# ~/hermes-workspace/backups/blueline-2026-11-01 — 56 MB Gehaeuse
+# gehoeren nicht in die Geschichte; Manifest und Rohtone bleiben.
