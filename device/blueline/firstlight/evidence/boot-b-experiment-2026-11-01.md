@@ -192,3 +192,12 @@ current-slot: a
 16:35:14 t= 47s usb=0xD001 telnet=zu
 16:35:43 UEBERLEBT: Telnet offen bei t=76s (Gadget war ab dem ersten Guck da)
 16:35:44 Nachweis laufend: cat /proc/cmdline | tr ' ' '\n' | grep -E 'slot_suffix|dtbo_idx' | postmarketOS debug shell | https://postmarketos.org/debug-shell |  |   Device: Google Pixel 3
+16:38:42 Referenz: sync; reboot gesendet (Boot-to-bootloader -> Fastboot)
+16:40:25 Fastboot bereit: False nach 103s
+2026-11-01 16:42:31 — GERAET schweigt: 'sync; reboot' aus der Referenz-Shell (16:38:42)
+liess es vollstaendig vom Baum verschwinden (0 Google-Geraete, kein ACM, kein Telnet,
+kein Fastboot, 4+ Minuten). Naechster naher Grund: die Referenz-PID-1-Kette traegt
+Traps (pmos_getty/init_2.sh), nacktes reboot ist dort ein Münzwurf — Regel: nur
+'sync; reboot -f' oder /tmp/restart2. Wächter läuft; bis dahin Tastenaktion noetig.
+16:45:32 GERÄT WIEDER DA usb-produkt=50475
+16:45:32 Wächter aus
