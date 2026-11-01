@@ -69,7 +69,7 @@ blind=[]
 for z in init.splitlines():
     if z.startswith(anfang):
         erster=z[len(anfang):].split(q)[0]
-        if \"$(\" in erster:
+        if (chr(36)+chr(40)) in erster:
             blind.append(z)
 print(\"Marks mit Messung in einfachen Anfuehrungszeichen: %d\" % len(blind))
 for z in blind[:3]:

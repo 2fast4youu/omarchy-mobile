@@ -23,6 +23,7 @@ Geruecht: die Kernel-Konfiguration kam um 20:45 zerstuelt an.
 """
 import base64
 import binascii
+import gzip
 import hashlib
 import os
 import re
@@ -38,43 +39,60 @@ GRUND = "/run/ab.bin"
 Q = chr(39)
 
 
-def rahmen(wort):
-    """Markierung, die das Echo der Shell nicht selbst erzeugen kann."""
-    return "@@%s${''}%s" % (wort[:2], wort[2:])
+def rahmen(wort, merkmal):
+    """Befehl, der eine Markierung druckt, ohne dass das Echo sie enthaelt.
+
+    Zwei Fallen, beide gemessen:
+      * ein geschriebenes `@@ANFANG` kommt im Echo des Befehls zurueck, der
+        Sammler haelte das Echo fuer die Antwort (20:45, sieben Artefakte
+        verrutscht);
+      * die Concatenation `${''}` gilt in dieser Shell als offenes Anführungs-
+        zeichen — jedes Kommando haengt danach im Fortsetzungsprompt `> ` fest
+        und es kommt gar keine Antwort (21:06, alle Bereiche „keine
+        Grunddaten").
+    printf druckt die Markierung, im Echo steht nur die Formatkette.
+    """
+    return "printf '@@%s\\n' " + wort + "_" + merkmal
 
 
 def sammle(s, bis_zu, frist_s):
-    ende, out = time.time() + frist_s, ""
+    """Sammle bis die Markierung da ist. Zeitüberschreitung ist kein Abbruch.
+
+    Eine Leere von acht Sekunden heisst nur, dass das Telefon noch rechnet (ein
+    dd ueber 32 MiB dauert), nicht, dass die Leitung kaputt ist.
+    """
+    ende, out = time.time() + frist_s, b""
     while time.time() < ende:
         try:
             d = s.recv(65536)
-        except (socket.timeout, OSError):
+        except socket.timeout:
+            continue
+        except OSError:
             break
         if not d:
             break
-        out += d.decode("utf-8", "replace")
-        if bis_zu in out:
-            return out
+        out += d
+        if bis_zu.encode() in out:
+            return out.decode("utf-8", "replace")
     return None
 
 
 def abfrage(s, befehl, merkmal, frist_s=180):
     """Befehl im Rahmen senden, die Antwort ohne Echo zurueckgeben, oder None."""
-    anfang, ende = rahmen("ANFANG"), rahmen("ENDE")
-    s.sendall(("echo %s %s\r\n" % (anfang, merkmal)).encode())
-    if sammle(s, "@@ANFANG %s" % merkmal, 60) is None:
+    s.sendall((rahmen("ANFANG", merkmal) + "\r\n").encode())
+    if sammle(s, "@@ANFANG_%s" % merkmal, 60) is None:
         return None
     s.sendall((befehl + "\r\n").encode())
-    s.sendall(("echo %s %s\r\n" % (ende, merkmal)).encode())
-    antwort = sammle(s, "@@ENDE %s" % merkmal, frist_s)
+    s.sendall((rahmen("ENDE", merkmal) + "\r\n").encode())
+    antwort = sammle(s, "@@ENDE_%s" % merkmal, frist_s)
     if antwort is None:
         return None
-    teil = antwort.split("@@ANFANG %s" % merkmal, 1)[-1]
-    teil = teil.split("@@ENDE %s" % merkmal)[0]
+    teil = antwort.split("@@ANFANG_%s" % merkmal, 1)[-1]
+    teil = teil.split("@@ENDE_%s" % merkmal)[0]
     zeilen = []
     for z in teil.split("\n"):
         z = z.strip("\r").strip()
-        if not z or z.startswith("~ #") or z == befehl:
+        if not z or z.startswith("~ #") or z.startswith(">") or z == befehl:
             continue
         zeilen.append(z)
     return "\n".join(zeilen)
@@ -110,10 +128,20 @@ def knoten(partname):
 
 
 def hole(s, notiz, name, quelle, sektoren, start=0):
-    """Bereich nach /run/ab.bin holen, in Bloecken ablesen, mit Hash beglaubigen."""
+    """Bereich nach /run/ab.bin holen, gzippen, in Bloecken ablesen, beglaubigen.
+
+    Dasgzippen ist kein Schmuck: die Kalibrier-Partitionen sind groesstenteils
+    Nullen, und eine gepackte Datei geht in zwei Bloecken ueber die Leitung, wo die
+    rohe 8000 Bloecke brauchte. Geprueft wird der Hash der gepackten Datei; der
+    Klartext-Hash steht zusaetzlich im Manifest, weil M1.3 den haben will.
+    """
     grund = abfrage(s, "dd if=%s bs=512 skip=%d count=%d of=%s 2>/dev/null; "
-                       "echo groesse=%s sha=%s" % (
-                           quelle, start, sektoren, GRUND,
+                       "gzip -9 -f -c %s > %s 2>/dev/null; "
+                       "echo groesse=%s sha=%s; "
+                       "echo klartext=%s klarsha=%s" % (
+                           quelle, start, sektoren, GRUND, GRUND, GRUND + ".gz",
+                           "wc -c < %s.gz" % GRUND,
+                           "sha256sum %s.gz | cut -d%s -f1" % (GRUND, Q),
                            "wc -c < %s" % GRUND,
                            "sha256sum %s | cut -d%s -f1" % (GRUND, Q)),
                 "grund-%s" % name)
@@ -121,39 +149,49 @@ def hole(s, notiz, name, quelle, sektoren, start=0):
         notiz("  %-30s keine Grunddaten" % name)
         return False
     m = re.search(r"groesse=(\d+)\s+sha=([0-9a-f]{64})", grund.replace("\n", " "))
+    k = re.search(r"klartext=(\d+)\s+klarsha=([0-9a-f]{64})", grund.replace("\n", " "))
     if not m:
         notiz("  %-30s Grunddaten unlesbar: %r" % (name, grund[:90]))
         return False
     groesse, shall = int(m.group(1)), m.group(2)
+    klar_g, klar_sha = (int(k.group(1)), k.group(2)) if k else (0, "")
     if groesse == 0:
         notiz("  %-30s am Telefon leer" % name)
-        return False
-    if groesse > 200 * 1048576:
-        notiz("  %-30s %d B — zu gross fuer diese Leitung" % (name, groesse))
         return False
     brocken = (groesse + BLOCK - 1) // BLOCK
     daten = {}
     for nr in range(brocken):
-        befehl = "dd if=%s bs=%d skip=%d count=1 2>/dev/null | base64" % (GRUND, BLOCK, nr)
+        # Jede Base64-Zeile bekommt ein Ausrufezeichen vorangestellt. Die Shell
+        # wiederholt den Befehl im Echo, und bei ~80 Spalten bricht das Echo um —
+        # die Bruchstuecke waeren sonst Payload, und ein `count=1` ist
+        # zufaellig ein gueltiges Base64-Stueck. Eine Zeile, die mit ! beginnt,
+        # kann das Echo nicht hervorbringen.
+        befehl = "dd if=%s.gz bs=%d skip=%d count=1 2>/dev/null | base64 | sed %s" % (
+            GRUND, BLOCK, nr, chr(34) + "s/^/!/" + chr(34))
         text = abfrage(s, befehl, "block-%s-%d" % (name, nr))
         if text is None:
             notiz("  %-30s Block %d/%d ohne Antwort" % (name, nr, brocken))
             return False
-       # Zeilen, die der gesendete Befehl selbst war, koennen Base64-Buchstaben
-        # enthalten; alles andere ist Payload.
-        rein = "".join(z for z in text.split("\n") if "base64" not in z)
+        rein = "".join(z[1:] for z in text.split("\n") if z.startswith("!"))
         rein = "".join(re.findall(r"[A-Za-z0-9+/=]+", rein))
         try:
             daten[nr] = base64.b64decode(rein + "=" * (-len(rein) % 4))
         except (binascii.Error, ValueError):
             daten[nr] = b""
-    gefuegt = b"".join(daten[i] for i in sorted(daten))
-    sha = hashlib.sha256(gefuegt).hexdigest()
-    dicht = len(gefuegt) == groesse and sha == shall
+    gepackt = b"".join(daten[i] for i in sorted(daten))
+    sha = hashlib.sha256(gepackt).hexdigest()
+    try:
+        klartext = gzip.decompress(gepackt)
+    except (OSError, EOFError):
+        klartext = gepackt
+    dicht = len(gepackt) == groesse and sha == shall
+    if k:
+        dicht = dicht and len(klartext) == klar_g and hashlib.sha256(klartext).hexdigest() == klar_sha
     with open(os.path.join(ZIEL, name), "wb") as f:
-        f.write(gefuegt)
-    notiz("  %-30s %10d B  %s  sha %s (Grunddatei %d B, sha %s)" % (
-        name, len(gefuegt), "dicht" if dicht else "LUCKERIG", sha[:16], groesse, shall[:16]))
+        f.write(klartext)
+    notiz("  %-30s %10d B Klar  %s  sha %s  (%d B gepackt, %d Bloecke)" % (
+        name, len(klartext), "dicht" if dicht else "LUCKERIG",
+        hashlib.sha256(klartext).hexdigest()[:16], groesse, brocken))
     return dicht
 
 

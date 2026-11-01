@@ -1,0 +1,16 @@
+21:04:28 Telefon erreichbar nach 28s
+21:04:28 === Kalibrier- und GPT-Abgriff, Ziel evidence/kalibrier ===
+21:04:44   gpt-luna-kopf.bin              keine Grunddaten
+21:04:52   gpt-lunb-kopf.bin              keine Grunddaten
+21:05:00   gpt-lunc-kopf.bin              keine Grunddaten
+21:05:08   gpt-lund-kopf.bin              keine Grunddaten
+21:05:16   gpt-lune-kopf.bin              keine Grunddaten
+21:05:24   gpt-lunf-kopf.bin              keine Grunddaten
+21:05:32   kalibrier-modemst1.bin         keine Grunddaten
+21:05:40   kalibrier-modemst2.bin         keine Grunddaten
+21:05:48   kalibrier-persist.bin          keine Grunddaten
+21:05:56   kalibrier-frp.bin              keine Grunddaten
+21:06:04   kalibrier-misc.bin             keine Grunddaten
+21:06:13   kalibrier-devinfo.bin          keine Grunddaten
+21:06:21   kalibrier-dtbo_b.bin           keine Grunddaten
+21:06:21 === Abgriff fertig: evidence/kalibrier ===
