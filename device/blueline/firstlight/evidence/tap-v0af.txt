@@ -1,2 +1,181 @@
-SUITE: ok=145 (davon skip=4) not-ok=0 exit=0
-SUITE GRUEN
+ok - scripts parse
+# tests/pr-check
+ok - a clean change passes, with a made-up MAC and an AI Co-Authored-By
+ok - a real MAC fails
+ok - RFC 7042's documentation range and all zeros pass
+ok - an exempt MAC doesn't hide a real one on the same line
+ok - getprop output fails
+ok - a serial fails, a placeholder passes
+ok - an IMEI fails
+ok - a firmware blob fails, an image passes
+ok - an AI Signed-off-by fails
+ok - a script that doesn't parse fails
+ok - no commits, nothing to check
+# tests/kernel-pr-check
+ok - a signed-off, prefixed, clean commit passes (Assisted-by is fine)
+ok - a commit without a sign-off fails
+ok - a sign-off that isn't the author's fails
+ok - an AI Signed-off-by fails
+ok - a subject without a subsystem prefix fails
+ok - a checkpatch error fails
+ok - a relative -C still reaches the kernel tree
+ok - a missing -C is reported
+ok - --build is refused inside the kernel tree, relative or not
+ok - --merge passes a branch that merges cleanly onto a newer base, and writes nothing to the tree
+ok - --merge fails a conflicting branch as 'rebase needed', and still checks its commits
+# tests/install-phone
+skip: no debugfs
+# tests/phone-provision
+ok - dry run: old paths mapped to new names and the user's home, phone untouched, fingerprint warning
+ok - opt-in steps stay off by default; a bad backup checksum or a missing factory image is refused
+ok - # skip: no docker or archlinux:latest image for the end-to-end run
+# tests/initramfs-grow
+skip: no mkfs.ext4
+# tests/images-layout
+ok - # skip: no AOSP mkbootimg under SRC_DIR=/root/android/omamobile
+# tests/device-overlays
+ok - # skip: no dtc (DTC=path/to/dtc) to compile 40 overlays
+ok - every DTB_OVERLAYS name is an overlay of its device
+# tests/simplefb-trigger
+ok - packer guards the trigger and builds reboot-to for every device
+ok - matching board writes its own trigger
+ok - another board's image writes nothing
+ok - a trigger file without COMPATIBLE writes nothing
+ok - no trigger file writes nothing
+ok - matching board runs the bring-up probe
+ok - another board's image does not probe
+ok - a probe marker without COMPATIBLE does not probe
+ok - no probe marker does not probe
+# tests/storage-guard
+ok - cheetah and felix pack the six-name list, oriole its three boot images and userdata
+ok - refuses persist
+ok - refuses efs
+ok - refuses a slot A boot image
+ok - refuses modem_b
+ok - refuses vbmeta_b
+ok - refuses bootloader_b
+ok - refuses radio_b
+ok - refuses a list without userdata
+ok - refuses a name twice
+ok - refuses upper case
+ok - refuses a glob
+ok - refuses a boot image missing
+ok - cheetah's packed list: the same six partitions writable as the old hard-coded list
+ok - the hand-over check reports a late or reopened partition, and runs before SSH is stopped
+ok - oriole's packed list: boot_b, vendor_boot_b, dtbo_b and userdata writable
+ok - no allowlist file: every partition read-only
+ok - an empty allowlist file: every partition read-only
+ok - a blank allowlist: every partition read-only
+ok - a two-line allowlist: every partition read-only
+ok - a glob in the allowlist: every partition read-only
+ok - shell syntax in the allowlist: every partition read-only
+ok - persist in the allowlist: every partition read-only
+ok - a slot A name in the allowlist: every partition read-only
+# tests/usb-product
+ok - cheetah keeps 'Pixel 7 Pro (M1)'; felix and oriole use their NAME
+ok - a descriptor without NAME or USB_PRODUCT packs no product string
+ok - refuses a product string that is too long or not ASCII
+ok - the init prints the packed string, or Omarchy Mobile without one
+# tests/boot-method
+ok - BOOT_METHOD='ram-only' refused by images/flash/push and both installer modes before phone access
+ok - BOOT_METHOD='uboot-ext4' refused by images/flash/push and both installer modes before phone access
+ok - BOOT_METHOD='unknown' refused by images/flash/push and both installer modes before phone access
+ok - BOOT_METHOD='' refused by images/flash/push and both installer modes before phone access
+ok - the shipped flame descriptor has no persistent installer path
+# tests/bootimg-v0
+ok - v0 layout: header fields, sections at the offsets the header implies
+ok - a header_version where page_size belongs is refused by the reader
+ok - --strict-reference aborts on a page_size that deviates from the known-good image
+ok - a ramdisk off the page boundary is refused, the way ABOOT reads it
+ok - a kernel blob that does not end at kernel_size fails
+# tests/gadget-reference
+ok - Gadget-Sequenz folgt setup_usb_network_configfs, acm_configfs und configfs_udc
+ok - Panelblock zeigt udc/UDC-Inhalt, dwc3-Rolle, pid1 comm+state, letzten Schritt
+ok - keine erfundene Gadget-Lage in den Blöcken, der Builder baut sie dateiweis ein
+read-back: 4 Eintraege, init 3895 Zeichen, Block unveraendert
+read-back: 184 Bytes Geist hinter dem TRAILER verworfen
+ok - read_cpio weist Daten hinter dem TRAILER ab (Lese-Seite der v0m-Falle)
+gadget-reference: alles grin
+# tests/gadget-modules
+ok - Distro-Config: MODULES=y und libcomposite/u_ether/u_serial/usb_f_ncm/usb_f_acm =m (5 Stellen)
+kernel-gzip identisch: 16042611 B, sha256 7112decbddcbe235
+ok - Kernel im Bild ist gzip-genau der Distro-Kernel der Referenz
+Schliessung aus modules.dep: 6 Module, alle gestaged, vermagic 7.1.0-rc1-sdm845
+ok - gestagte Module = Schliessung aus modules.dep, ELF, vermagic gleich
+Bild: 6 Module, Reihenfolge [126, 145, 161, 175, 182], Referenzblock unveraendert
+ok - fertiges Bild: Module am Referenzpfad, insmod vor configfs, Gadget-Sequenz unveraendert
+ok - Bild-sha256 gegen Vorgabe: TREFFER (2911e6f7666299639e0a712604fe3ae0427802f875b319f47146d93826fd3ee1)
+ok - Gegenprobe: falsche sha256 bricht ab (die Pruefung sieht hin)
+ok - Geisterdaten hinter dem TRAILER werden beim Lesen abgewehrt
+# tests/ref-enumeration
+ok - Runner prueft beide sha256 und pollt ioreg + system_profiler
+ok - beide sha256-Vergleiche liegen vor dem einzigen Write (Zeile 60)
+ok - falscher-rueckweg-hash
+ok - falscher-referenz-hash
+ok - neuer-usb-eintrag
+ok - der neue Enumerationseintrag steht im Protokoll
+ok - bus-unveraendert
+# tests/bisection
+Bild A: 20 unterschiedliche Bytes, alle in id[]; Sektionen bytegleich
+ok - Bild A unterscheidet sich von der Referenz nur im id[]-Feld
+v0r: nur init veraendert, Patch reproduziert das Archiv bytegenau, 6 Module
+ok - patch-v0r.py reproduziert das ausgelieferte v0r-Archiv bytegenau
+ok - verify-v0r.py gruen auf dem gebauten Bild
+ok - verify-v0r.py lehnt das alte v0q-Bild ab (Gegenprobe)
+ok - Runner bricht bei falschem Hash ab, bevor er fastboot ruft
+ok - Runner bricht bei fehlendem Bild ab
+ok - Runner: Rueckweg bestaetigt, Write + Getvars + Neustart kommandiert, Schleife ueberlebt null Treffer
+strip_echo: Echo entfernt, auch bei 79-Zeichen-Umbrechung
+ok - oracle-capture.py entfernt das Shell-Echo (auch umbrochen)
+Einsammel-Filter: 2 decisive Zeilen gerettet (laengster Befehl 45 Zeichen), der alte verlor 2 davon
+ok - Runner: Einsammel-Filter rettet die decisive steps.log-Zeile, der alte verlor sie
+Einsammel-Block gegen vorgebliche Shell: 11 Pruefungen bestanden, 0 Fehler, 10 Dateien, laengster Einsammelbefehl 45 Zeichen
+ok - Runner: ganzer Einsammel-Block laeuft gegen vorgetaeuschte Shell (Banner, Echo, leere Datei)
+ping-Wartezeit: 3 Aufrufe, alle innerhalb der Linux-Sekunden-Einheit; -W2000 wird je Plattform verschieden beurteilt
+ok - Runner: ping-Wartezeit passt zur Plattform-Einheit, -W2000 ist auf iputils ein Haenger (3 s Lauf)
+# tests/flash-block
+ok - FLASH-BEREIT-Block gefunden (49 Zeilen)
+ok - 1 Pfade ausgelassen: der Laeufer legt sie unter seinem OUT-Default an (Rolle aus OUT=${OUT:-…} abgeleitet)
+ok - alle 3 Dateien, die der Block nennt, sind erreichbar
+ok - 2 davon über einen Einhängepunkt erreichbar (der Block nennt Host-Pfade, dieser Rechner sieht sie eingebunden): boot.img->/factory/sp1a/boot.img, boot.img->/pmos-ref-build/ref/boot.img
+ok - alle 3 genannten Belegdateien existieren (Grund ausprobierter Kandidaten, nicht geraten)
+ok - Hash und Groesse von boot.img stimmen (5c1ce19e…bb506e, Groesse 67108864 B bestaetigt)
+ok - Hash und Groesse von firstlight.img stimmen (ba18304d…c77154, Groesse 21098496 B bestaetigt)
+ok - Hash und Groesse von boot.img stimmen (ed2c225f…f76f82, Groesse 28729344 B bestaetigt)
+ok - Anruf-Hash im Block ist der gemessene Hash des Bildes (ba18304d…c77154)
+ok - Rueckweg Stufe 1 = Runner-Default, Zeichen fuer Zeichen
+ok - 7 Erwartungszeilen nachgewiesen (Bild 19782744 B entpackt, Runner als zweite Quelle)
+ok - alle 10 angesagten Sammeldateien stehen in der Befehlsliste des Runners
+ok - 1 Adresse im Block = die, die der Runner anpingt (172.16.42.1)
+
+pruefungen=13 fehler=0 skips=0 ausgelassen=1
+# tests/flame-probe
+ok - flame guard protects whole disks, boot, userdata and calibration partitions
+ok - already read-only devices need no ioctl
+ok - a later pass protects newly enumerated storage
+ok - both ioctl failure and a missing read-only flag fail the guard
+ok - initial guard failure exits PID 1 before services, without sleeping
+# packages/omamobile-firstboot/test/all
+ok - scripts parse
+ok - install stages the package
+ok - --check accepts a good conf and prints no secret
+ok - --check refuses bad confs
+ok - values are data, never executed
+ok - a run sets everything up and deletes the conf
+ok - the lock's PAM file comes from lock-pam, not omarchy-apply-lock
+ok - running again is safe
+ok - a failed run keeps the conf for the next boot, without the Wi-Fi secret
+ok - upgrades add Relogin=true to an existing autologin drop-in
+# packages/omamobile-device-felix/test/all
+ok - scripts parse
+ok - build and install stay inside the package directory
+ok - reboot-to.c matches the cheetah source
+ok - the storage rule matches the cheetah package
+ok - the mirrorlist matches the cheetah package
+ok - the power-key drop-in matches the cheetah package
+ok - the pacman install script matches the cheetah package
+ok - pacman gets the keyring, the mirrorlist, and the install script
+ok - device.conf matches the descriptor
+ok - reboot-to compiles (# SKIP: no cc, compile stubbed)
+ok - install stages the udev rule, the USB link, and the mirrorlist, and nothing that marks a slot or starts hardware
+ok - # skip: no root image in out/ for tests/rootfs-smoke (tools/build-rootfs)
