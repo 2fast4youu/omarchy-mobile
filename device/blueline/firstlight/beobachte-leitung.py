@@ -48,9 +48,9 @@ while time.time() - t0 < DAUER:
     elif "status: inactive" in en8:
         status = "inaktiv"
     ip = re.findall(r"inet (\S+)", en8)
-    baum = hole(["system_profiler", "SPUSBDataType", "-timeout", "6"])
-    prod = re.findall(r"Product ID:\s*(\S+)", baum)
-    schnitt = [s.strip() for s in re.findall(r"(\d+/\d+ Mbit)", baum)]
+    baum = hole(["ioreg", "-p", "IOUSB", "-l", "-w", "0"])
+    prod = re.findall(r'"USB Product ID"\s*=\s*"?([^"\n]+)', baum)
+    schnitt = [s.strip() for s in re.findall(r'"speed"\s*=\s*"?(\d+)', baum)]
     offen = "-"
     try:
         s = socket.create_connection(("172.16.42.1", 23), timeout=2)
