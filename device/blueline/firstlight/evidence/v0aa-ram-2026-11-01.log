@@ -1,1 +1,6 @@
 16:54:40 === v0aa RAM-Zyklus beginnt (Ziel boot_a, boot_b unangetastet) ===
+16:54:51 fastboot boot:                         OKAY [  9.837s] Finished. Total time: 10.456s 
+16:54:52 t=  0s usb=0x4EE0 telnet23=zu
+16:54:59 t=  7s usb=kein-Geraet telnet23=zu
+17:01:51 420s ohne Selbst-Rueckweg; letzter Zustand oben
+17:01:58 Fastboot-Abruf: False | letzte USB-Sicht: kein-Geraet
