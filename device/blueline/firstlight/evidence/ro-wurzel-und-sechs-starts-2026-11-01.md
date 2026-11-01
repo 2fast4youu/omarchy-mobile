@@ -66,13 +66,26 @@ Geraet haette der Schreibvorgang nicht durchgekonnt.
   Selbst-Rueckweg bleiben. Pruefer: 28 Punkte 0 Fehler, `sh -n`, `bash -n`,
   Round-trip des Archivs, restart2-Inhalt dicht.
 
-## Nebenbefund: die Kernel-Behauptung im Init-Kommentar stimmt nicht
+## Nebenbefund: meine erste Messung der Kernel-Identitaet war falsch, richtig gemessen stimmt die Dokumentation
 
-Zeile 135 der Init behauptet, der Kernel dieses Bildes sei byte-identisch zur
-Referenz. Gemessen: v0ac-Kernel 16154423 B (sha `24e8b99a…`), Referenz-Kernel
-16154252 B (sha `e494d677…`). **Nicht identisch**, 171 Byte Unterschied.** Der
-Modulpfad funktioniert trotzdem (die Module stammen aus demselben Build), aber
-die Begruendung im Kommentar ist falsifiziert und muss korrigiert werden.
+Zeile 135 der Init behauptet, der Kernel dieses Bildes sei im gzip-Anteil
+byte-identisch zur Referenz. Mein erster Vergleich (19:44) verglich das ganze
+Kernel-Feld des Boot-Bildes: v0ad 16154423 B (sha `24e8b99a…`) gegen Referenz
+16154252 B (sha `e494d677…`) — ungleich, und ich schrieb "falsifiziert". Die
+Frage war nur, ob der Kernel gleich ist. Gemessen 19:52, entpackt:
+
+| Stück | v0ad | Referenz | gleich? |
+|---|---|---|---|
+| entpackter Kernel | 44498944 B, sha `4f41f138…` | 44498944 B, sha `4f41f138…` | **ja** |
+| gzip-Strom allein | 16042611 B, sha `7112decb…` | 16042611 B, sha `7112decb…` | **ja** |
+| Anhang hinter dem gzip-Strom (DTB) | 111812 B, sha `01be7510…` | 111641 B, sha `24962c90…` | nein, 171 B Unterschied |
+
+Der in `patch-v0q.py` genannte Hash `7112decbddcbe235…` ist exakt der gemessene
+Hash des gzip-Stroms. **Die Dokumentation stimmt; meine erste Messung hatte das
+falsche Objekt.** Der Unterschied liegt allein im angehaengten Device-Tree, den
+unser Pack-Skript selbst ansetzt. Lehraetz: ein Grössenvergleich des Boot-Feldes
+beantwortet nicht die Frage nach dem Kernel — entpacken und beide Haelften
+getrennt hashen.
 
 ## Die sechs Referenz-Starts von heute, tabelliert (Clauses Punkt 2)
 

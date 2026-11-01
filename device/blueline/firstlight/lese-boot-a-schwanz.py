@@ -106,5 +106,10 @@ telnet([
     "A=$(readlink -f /dev/disk/by-partlabel/boot_a 2>/dev/null); echo boot_a_geraet=${A:-KEINER}",
     "A=$(readlink -f /dev/disk/by-partlabel/boot_a); dd if=$A bs=131072 skip=504 count=8 2>/dev/null | tr -d '\\0' | grep -c 'OMAMOBILE-LOG'",
     "A=$(readlink -f /dev/disk/by-partlabel/boot_a); dd if=$A bs=131072 skip=504 count=8 2>/dev/null | tr -d '\\0' | sed -n '/OMAMOBILE-LOG/,/ENDOF-LOG/p' | head -150",
+    # Zwei Lesungen ohne Bereichsfilter, weil ein Filter auf ein Marker-Wort,
+    # das moeglicherweise nie geschrieben wurde, nichts zeigt und wie "leer"
+    # aussieht (gemessen 19:34: der sed-Bereich gab nichts, der Zaehler schon).
+    "A=$(readlink -f /dev/disk/by-partlabel/boot_a); dd if=$A bs=131072 skip=504 count=8 2>/dev/null | tr -d '\\0' | grep -ao 'OMAMOBILE[A-Za-z0-9-]*' | sort | uniq -c",
+    "A=$(readlink -f /dev/disk/by-partlabel/boot_a); dd if=$A bs=1 skip=66060288 count=4096 2>/dev/null | tr -dc '[:print:]\\n' | head -c 3000",
 ])
 log("=== Lesung fertig ===")

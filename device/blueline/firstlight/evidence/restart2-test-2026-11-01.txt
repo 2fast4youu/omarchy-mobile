@@ -70,3 +70,7 @@
 18:15:51 t=  7s usb=0x4EE0 telnet=zu
 18:15:51 ERGEBNIS: FASTBOOT nach 7s — RESTART2 'bootloader' wirkt (Rueckweg belegt)
 18:15:52   current-slot: b | slot-retry-count:b: 2 | slot-unbootable:b: no
+19:46:28 === restart2-Test, robuster Upload (Stueck-fuer-Stueck-SHA) ===
+19:46:28 restart2 sha256 (Rechner): 06e4de8908190b863c2a8a0586614b68fa2445bc57d5269f73812db81eab38ea
+19:46:40 vorher: FB-ZEIT | FB-ZEIT | usb=0xD001
+19:47:11   10/74 Stuecke ok (28s)
