@@ -2937,3 +2937,19 @@ Nebenbefund zur Ordnung: `fastboot` und `$HOME` sind in der Hintergrund-Shell
 dieses Agents nicht gesetzt — Mounts und Telefonabfragen laufen jetzt mit
 absoluten Pfaden, weil ein leeres `$HOME` drei `-v`-Argumente still zu leeren
 Strings macht.
+
+## Nachtrag 15:34 — RESTART2 ist belegt (Rueckweg gefuenkelt)
+- Restart2 noetig, weil busybox 'reboot bootloader' das Kommando verwirft
+  (RESTART ohne Argument). Eigener Aufruf: reboot(0xfee1dead,0x28121969,
+  LINUX_REBOOT_CMD_RESTART2=0xa1b2c3d4,"bootloader"). Erste Fassung hatte
+  0xe1212120 — keine Kommandokonstante, reboot() gab EINVAL, kein Neustart.
+- Der laufende Device-Baum (Referenz-DTB + Overlay dtbo_b) enthaelt
+  pon@800/mode-bootloader und -mode-recovery; CONFIG_POWER_RESET_QCOM_PON=y.
+  Das Referenz-DTB allein hat keinen reboot-mode — das Overlay bringt ihn ein.
+- Messung 15:34:09: /tmp/restart2 bootloader (SHA 06e4de89… am Geraet geprueft)
+  -> t=7s Product 0x4EE0 (Fastboot), Telnet zu, slot-retry-count:b bleibt 1
+  (kein Slot-Boot-Zaehler verbraucht) = direkt in den Bootloader, nicht
+  'normaler Neustart, der zufaellig in Fastboot faellt'.
+- Upload-Kanal nebenbei geloest: unquotierte Heredocs ($@<<EOM) verfilschen
+  die Base64-Bytes; Stueck-fuer-Stueck-printf mit SHA je Stueck (74/74 gleich)
+  ist der zuverlaessige Weg. Skript: firstlight/restart2-robust-testen.py.

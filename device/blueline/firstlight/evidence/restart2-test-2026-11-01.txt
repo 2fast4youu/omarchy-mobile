@@ -1,0 +1,38 @@
+15:20:33 === restart2-Test (Hochladen + Ausfuehren in laufender Referenz) ===
+15:20:33 restart2 sha256 (Rechner): 06e4de8908190b863c2a8a0586614b68fa2445bc57d5269f73812db81eab38ea
+15:20:45 vorher: FB-ZEIT | FB-ZEIT | usb=0xD001
+15:20:52 Base64 gesendet (216448 Zeichen in 3.6s)
+15:21:00 sha im Geraet: art2; sha256sum /tm p/restart2 5820467df968ca40804e2560c6613d5dc99c359285beaf18ca1971dc3bfe53c6  /tmp/restart2 ~ # [6n
+15:21:00 ABBRUCH: SHA ungleich — Upload beschadigt
+15:24:31 === restart2-Test (Hochladen + Ausfuehren in laufender Referenz) ===
+15:24:31 restart2 sha256 (Rechner): 06e4de8908190b863c2a8a0586614b68fa2445bc57d5269f73812db81eab38ea
+15:24:43 vorher: FB-ZEIT | FB-ZEIT | usb=0xD001
+15:25:41 Base64 gesendet (216448 Zeichen in 53.2s)
+15:25:45 b64-Datei fehlerhaft: 733d2f33d4ebf2f9cb0651734ed1cd4a961e8e6491cda3076b4f5e1afcded45e  /tmp/r2.b64 ~ #
+15:25:45 ABBRUCH: Base64-Upload beschadigt
+15:26:22 === restart2-Test (Hochladen + Ausfuehren in laufender Referenz) ===
+15:26:22 restart2 sha256 (Rechner): 06e4de8908190b863c2a8a0586614b68fa2445bc57d5269f73812db81eab38ea
+15:26:34 vorher: FB-ZEIT | FB-ZEIT | usb=0xD001
+15:27:04 Base64(gzip) gesendet (56540 Zeichen in 22.1s)
+15:27:09 b64-Datei fehlerhaft: 53f17b236578bfe5d2547ab611f7d8af642f3c567e503b1e49d77343f73615e6  /tmp/r2.b64.gz ~ #
+15:27:09 ABBRUCH: Base64-Upload beschadigt
+15:29:54 === restart2-Test, robuster Upload (Stueck-fuer-Stueck-SHA) ===
+15:29:54 restart2 sha256 (Rechner): 06e4de8908190b863c2a8a0586614b68fa2445bc57d5269f73812db81eab38ea
+15:30:06 vorher: FB-ZEIT | FB-ZEIT | usb=0xD001
+15:30:16 === restart2-Test, robuster Upload (Stueck-fuer-Stueck-SHA) ===
+15:30:16 restart2 sha256 (Rechner): 06e4de8908190b863c2a8a0586614b68fa2445bc57d5269f73812db81eab38ea
+15:30:28 vorher: FB-ZEIT | FB-ZEIT | usb=0xD001
+15:31:01   10/74 Stuecke ok (30s)
+15:31:31   20/74 Stuecke ok (60s)
+15:31:59   30/74 Stuecke ok (89s)
+15:32:28   40/74 Stuecke ok (117s)
+15:32:56   50/74 Stuecke ok (145s)
+15:33:25   60/74 Stuecke ok (174s)
+15:33:53   70/74 Stuecke ok (202s)
+15:34:04 Upload komplett in 213.5s
+15:34:09 sha im Geraet: mp/restart2 06e4de8908190b863c2a8a0586614b68fa2445bc57d5269f73812db81eab38ea  /tmp/restart2 ~ # [6n
+15:34:09 starte: /tmp/restart2 bootloader
+15:34:14 t=  3s usb=kein-Geraet telnet=zu
+15:34:18 t=  7s usb=0x4EE0 telnet=zu
+15:34:18 ERGEBNIS: FASTBOOT nach 7s — RESTART2 'bootloader' wirkt (Rueckweg belegt)
+15:34:18   current-slot: b | slot-retry-count:b: 1 | slot-unbootable:b: no

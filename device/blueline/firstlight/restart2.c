@@ -3,7 +3,10 @@
  * busybox reboot ruft reboot(MAGIC1, MAGIC2, LINUX_REBOOT_CMD_RESTART, NULL):
  * das Kommando (z.B. "bootloader") geht verloren, jeder Versuch war ein
  * Warmboot ohne Grund. Dieses Werkzeug setzt direkt
- * SYS_reboot(0xfee1dead, 0x28121969, 0xe1212120, <command>) — RESTART2.
+ * SYS_reboot(0xfee1dead, 0x28121969, 0xa1b2c3d4, <command>) - RESTART2.
+ * RESTART2-Konstante nach include/uapi/linux/reboot.h und reboot(2):
+ * 0xa1b2c3d4. Der alte Wert 0xe1212120 war keine Kommandokonstante;
+ * reboot() gab EINVAL zurueck, ein Neustart fand nie statt.
  * Konstanten hartkodiert, weil musl-Kerncontainer kein linux/reboot.h haben.
  *
  * Bauen:  gcc -static -Os -o restart2 restart2.c   (alpine edge, build-base)
@@ -24,7 +27,7 @@ int main(int argc, char **argv)
         return 2;
     }
     sync();
-    long rc = syscall(SYS_reboot, 0xfee1dead, 0x28121969, 0xe1212120, argv[1]);
+    long rc = syscall(SYS_reboot, 0xfee1dead, 0x28121969, 0xa1b2c3d4, argv[1]);
     if (rc < 0) {
         perror("reboot RESTART2");
         return 1;

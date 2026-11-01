@@ -1,0 +1,19 @@
+2026-11-01 14:13:31 — Ausgangszustand vor boot_b-Flash
+current-slot: a
+slot-retry-count:a: 0
+slot-retry-count:b: 2
+slot-unbootable:a: yes
+slot-unbootable:b: no
+slot-successful:a: no
+slot-successful:b: no
+ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82  pmos-ref-build/ref/boot.img
+5c1ce19e814e2f198baa877a7351306079272fe67e13404e31f3bab213bb506e  images/factory-spiegel/sp1a/boot.img
+-rw-r--r--@ 1 gregor  staff  67108864 Oct 30 20:45 images/factory-spiegel/sp1a/boot.img
+-rw-r--r--@ 1 gregor  staff  28729344 Oct 28 20:12 pmos-ref-build/ref/boot.img
+current-slot: a
+slot-retry-count:a: 0
+slot-retry-count:b: 3
+slot-unbootable:a: yes
+slot-unbootable:b: no
+slot-successful:a: no
+slot-successful:b: no
