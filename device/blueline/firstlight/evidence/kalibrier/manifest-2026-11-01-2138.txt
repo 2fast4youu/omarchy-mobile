@@ -1,0 +1,17 @@
+21:43:05 Telefon erreichbar nach 290s
+21:43:05 === Kalibrier- und GPT-Abgriff, Ziel evidence/kalibrier ===
+21:43:05   lun-karte.txt 24550 B
+21:43:05   gpt-luna-kopf.bin                       0 B Klar  LUCKERIG  sha e3b0c44298fc1c14  (1149 B gepackt, 1 Bloecke)
+21:43:05   gpt-lunb-kopf.bin              Entpacken fehlgeschlagen (BadGzipFile) — LUECKERIG
+21:43:05   gpt-lunc-kopf.bin                       0 B Klar  LUCKERIG  sha e3b0c44298fc1c14  (3423 B gepackt, 1 Bloecke)
+21:43:05   gpt-lund-kopf.bin              Entpacken fehlgeschlagen (BadGzipFile) — LUECKERIG
+21:43:06   gpt-lune-kopf.bin              Entpacken fehlgeschlagen (BadGzipFile) — LUECKERIG
+21:43:06   gpt-lunf-kopf.bin              Entpacken fehlgeschlagen (BadGzipFile) — LUECKERIG
+21:43:06   kalibrier-modemst1.bin         Entpacken fehlgeschlagen (BadGzipFile) — LUECKERIG
+21:43:06   kalibrier-modemst2.bin         Entpacken fehlgeschlagen (BadGzipFile) — LUECKERIG
+21:43:06   kalibrier-persist.bin          Entpacken fehlgeschlagen (BadGzipFile) — LUECKERIG
+21:43:07   kalibrier-frp.bin              Entpacken fehlgeschlagen (BadGzipFile) — LUECKERIG
+21:43:07   kalibrier-misc.bin             Entpacken fehlgeschlagen (BadGzipFile) — LUECKERIG
+21:43:07   kalibrier-devinfo.bin          Entpacken fehlgeschlagen (BadGzipFile) — LUECKERIG
+21:43:07   kalibrier-dtbo_b.bin           Entpacken fehlgeschlagen (BadGzipFile) — LUECKERIG
+21:43:07 === Abgriff fertig: evidence/kalibrier ===

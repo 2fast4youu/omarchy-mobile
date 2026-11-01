@@ -1,3 +1,5 @@
+for u in /sys/block/sd*/sd*/uevent; do grep -H . $u; done 2>/dev/null; for d
+in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sda/sda1/uevent:MAJOR=8
 /sys/block/sda/sda1/uevent:MINOR=1
 /sys/block/sda/sda1/uevent:DEVNAME=sda1
@@ -558,3 +560,9 @@
 /sys/block/sdf/sdf9/uevent:PARTN=9
 /sys/block/sdf/sdf9/uevent:PARTNAME=spunvm
 /sys/block/sdf/sdf9/uevent:PARTUUID=bc5be664-d28a-44f3-bdf3-68b6fff58767
+/sys/block/sda/size 124731392
+/sys/block/sdb/size 8192
+/sys/block/sdc/size 8192
+/sys/block/sdd/size 16384
+/sys/block/sde/size 65536
+/sys/block/sdf/size 147456

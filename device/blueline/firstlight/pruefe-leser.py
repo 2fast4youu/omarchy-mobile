@@ -94,10 +94,11 @@ def antworte(ver):
                 stuck = PAKET[nr * BLOCK:(nr + 1) * BLOCK]
                 if nr == 1 and corrupt[0]:
                     stuck = stuck[:40]          # ein Stueck fehlt: muss LUCKERIG
-                b64 = base64.b64encode(stuck).decode()
-                ton += "".join("!" + b64[i:i + 70] + "\r\n" for i in range(0, len(b64), 70))
-                # ein Echo-Bruchstueck, das zufaellig gueltiges Base64 enthaelt
+                ton += base64.b64encode(stuck).decode() + "\r\n"
+                # drei Echo-Stuecke, die auf den ersten Blick wie Payload aussehen
                 ton += "> echo groesse=$(wc -c < /run/ab.bin) count=1 2>/dev/null |\r\n"
+                ton += "!/!/\"\r\n"
+                ton += "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\r\n"
             ver.sendall(ton.encode() + b"~ # ")
             protokol.append((befehl[:60], ton[:90]))
 

@@ -1,0 +1,17 @@
+21:45:51 Telefon erreichbar nach 0s
+21:45:51 === Kalibrier- und GPT-Abgriff, Ziel evidence/kalibrier ===
+21:45:52   lun-karte.txt 24849 B
+21:45:52   gpt-luna-kopf.bin                       0 B Klar  LUCKERIG  sha e3b0c44298fc1c14  (1149 B gepackt, 1 Bloecke)
+21:45:52   gpt-lunb-kopf.bin                       0 B Klar  LUCKERIG  sha e3b0c44298fc1c14  (3422 B gepackt, 1 Bloecke)
+21:45:52   gpt-lunc-kopf.bin                       0 B Klar  LUCKERIG  sha e3b0c44298fc1c14  (3423 B gepackt, 1 Bloecke)
+21:45:52   gpt-lund-kopf.bin                       0 B Klar  LUCKERIG  sha e3b0c44298fc1c14  (583 B gepackt, 1 Bloecke)
+21:45:52   gpt-lune-kopf.bin                       0 B Klar  LUCKERIG  sha e3b0c44298fc1c14  (4120 B gepackt, 2 Bloecke)
+21:45:52   gpt-lunf-kopf.bin                       0 B Klar  LUCKERIG  sha e3b0c44298fc1c14  (988 B gepackt, 1 Bloecke)
+21:45:53   kalibrier-modemst1.bin                  0 B Klar  LUCKERIG  sha e3b0c44298fc1c14  (20 B gepackt, 1 Bloecke)
+21:45:53   kalibrier-modemst2.bin                  0 B Klar  LUCKERIG  sha e3b0c44298fc1c14  (20 B gepackt, 1 Bloecke)
+21:45:53   kalibrier-persist.bin                   0 B Klar  LUCKERIG  sha e3b0c44298fc1c14  (20 B gepackt, 1 Bloecke)
+21:45:53   kalibrier-frp.bin                       0 B Klar  LUCKERIG  sha e3b0c44298fc1c14  (20 B gepackt, 1 Bloecke)
+21:45:53   kalibrier-misc.bin                      0 B Klar  LUCKERIG  sha e3b0c44298fc1c14  (20 B gepackt, 1 Bloecke)
+21:45:53   kalibrier-devinfo.bin                   0 B Klar  LUCKERIG  sha e3b0c44298fc1c14  (20 B gepackt, 1 Bloecke)
+21:45:54   kalibrier-dtbo_b.bin                    0 B Klar  LUCKERIG  sha e3b0c44298fc1c14  (20 B gepackt, 1 Bloecke)
+21:45:54 === Abgriff fertig: evidence/kalibrier ===

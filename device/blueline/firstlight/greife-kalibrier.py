@@ -117,17 +117,6 @@ def telefon(notiz):
     return None
 
 
-def knoten(partname):
-    """Shell-Ausdruck, der den Blockknoten eines Partitionsnamens sucht.
-
-    Die by-partlabel-Ketten fehlen in unserem Initramfs (Wurzel #8), also ueber
-    die uevent-Dateien, genau wie die Partitionssuche im Init selbst.
-    """
-    return ('$(for u in /sys/block/sd*/sd*/uevent; do grep -q "^PARTNAME=%s$" '
-            '"$u" 2>/dev/null && { q="${u%%uevent}"; echo /dev/"${q##*/}"; '
-            "break; }; done)") % partname
-
-
 def hole(s, notiz, name, quelle, sektoren, start=0):
     """Bereich nach /run/ab.bin holen, gzippen, in Bloecken ablesen, beglaubigen.
 
@@ -169,14 +158,20 @@ def hole(s, notiz, name, quelle, sektoren, start=0):
         # die Bruchstuecke waeren sonst Payload, und ein `count=1` ist
         # zufaellig ein gueltiges Base64-Stueck. Eine Zeile, die mit ! beginnt,
         # kann das Echo nicht hervorbringen.
-        befehl = "dd if=%s.gz bs=%d skip=%d count=1 2>/dev/null | base64 | sed %s" % (
-            GRUND, BLOCK, nr, chr(34) + "s/^/!/" + chr(34))
+        # Ein zusammenhaengender Base64-Strom ohne Umbuch: tr -d nimmt die
+        # Zeilenumbrueche, die busybox base64 bei 70 Spalten selbst einbaut.
+        # Nur eine Zeile, die ZWISCHEN 40 und 40000 Zeichen lang ist und nur aus
+        # Base64-Zeichen besteht, kann Payload sein — kein Echo-Stueck erfuellt
+        # das, weil jedes Echo-Stueck Leerzeichen, Klammern oder Punkte haelt.
+        befehl = "dd if=%s.gz bs=%d skip=%d count=1 2>/dev/null | base64 | tr -d %s" % (
+            GRUND, BLOCK, nr, chr(39) + chr(92) + "n" + chr(39))
         text = abfrage(s, befehl, "block-%s-%d" % (name, nr))
         if text is None:
             notiz("  %-30s Block %d/%d ohne Antwort" % (name, nr, brocken))
             return False
-        rein = "".join(z[1:] for z in text.split("\n") if z.startswith("!"))
-        rein = "".join(re.findall(r"[A-Za-z0-9+/=]+", rein))
+        kandidaten = [z.strip() for z in text.split("\n")
+                      if re.fullmatch(r"[A-Za-z0-9+/]{40,}={0,2}", z.strip())]
+        rein = "".join(kandidaten)
         try:
             daten[nr] = base64.b64decode(rein + "=" * (-len(rein) % 4))
         except (binascii.Error, ValueError):
@@ -218,20 +213,43 @@ def main() -> int:
         notiz("Telefon in %ds nicht erreichbar" % FRIST)
         return 1
     notiz("=== Kalibrier- und GPT-Abgriff, Ziel %s ===" % ZIEL)
-   # Die LUN-Karte: welcher Knoten fuehrt welchen Partitionsnamen (M1.3).
-    karte = abfrage(s, "for u in /sys/block/sd*/sd*/uevent; do grep -H . $u; done 2>/dev/null",
+    # Die LUN-Karte: welcher Knoten fuehrt welchen Partitionsnamen (M1.3), und
+    # die Groesse jeder Scheibe in 512-B-Sektoren — ohne die laesst sich der
+    # zweite GPT-Kopf nicht adresieren, der ganz hinten liegt.
+    karte = abfrage(s, "for u in /sys/block/sd*/sd*/uevent; do grep -H . $u; done 2>/dev/null; "
+                       "for d in /sys/block/sd*/size /sys/block/sd*/sd*/size; do "
+                       "echo $d $(cat $d); done 2>/dev/null",
                     "lun-karte")
+    knoten = {}
+    sektoren = {}
     if karte:
         with open(os.path.join(ZIEL, "lun-karte.txt"), "w") as f:
             f.write(karte + "\n")
         notiz("  lun-karte.txt %d B" % (len(karte) + 1))
+        for zeile in karte.split("\n"):
+            m = re.match(r"^/sys/block/(\S+?)/(\S+)/uevent:PARTNAME=(\S+)$", zeile.strip())
+            if m:
+                knoten[m.group(3)] = "/dev/" + m.group(2)
+            m = re.match(r"^/sys/block/(\S+)/(\S+)/size (\d+)$", zeile.strip())
+            if m:
+                sektoren["/dev/" + m.group(2)] = int(m.group(3))
+        notiz("  Karte: %d Partitionsnamen, %d Groessen" % (len(knoten), len(sektoren)))
+    else:
+        notiz("  keine Karte — Kalibrier-Bereiche koennen nicht adresiert werden")
     # GPT: Header und Eintragssatz am Anfang jedes LUN; die sichere Kopfzeile
     # wird ueber die Groesse der Platte adresiert, hier ueber blockdev --getsize.
     for lun in "abcdef":
         hole(s, notiz, "gpt-lun%s-kopf.bin" % lun, "/dev/sd%s" % lun, 64, 0)
     # Die kleinen Kalibrier-Partitionen, ueber den Partitionsnamen gesucht.
     for part in ("modemst1", "modemst2", "persist", "frp", "misc", "devinfo", "dtbo_b"):
-        hole(s, notiz, "kalibrier-%s.bin" % part, knoten(part), 1 << 20, 0)
+        pfad = knoten.get(part)
+        if not pfad:
+            notiz("  %-30s nicht in der Karte — uebersprungen" % ("kalibrier-%s.bin" % part))
+            continue
+        # Die wirkliche Groesse, nicht ein erratener Vorrat: persist ist 32 MiB,
+        # misc 1 MiB. Ohne die Zahl aus der Karte waere persist abgeschnitten.
+        anzahl = min(sektoren.get(pfad, 2048), 1 << 17)
+        hole(s, notiz, "kalibrier-%s.bin" % part, pfad, anzahl, 0)
     notiz("=== Abgriff fertig: %s ===" % ZIEL)
     try:
         s.close()
