@@ -34,7 +34,7 @@ mkdir -p /private/tmp
 if [ -d /factory-spiegel ] && ! [ -e /factory ]; then ln -sfn /factory-spiegel /factory 2>/dev/null || true; fi
 # Die Liste war auf v0r stehengeblieben: ein Ordner, der hier fehlt, ist
 # kein Ausfall, sondern Dunkelheit (eine Pruefung sucht ihr Bild nicht).
-for d in fl-v0q fl-refpacked fl-v0r fl-v0s fl-v0t fl-v0u fl-v0v fl-v0w fl-v0x fl-v0y fl-v0z fl-v0aa fl-v0ab fl-v0ac refmod; do
+for d in fl-v0q fl-refpacked fl-v0r fl-v0s fl-v0t fl-v0u fl-v0v fl-v0w fl-v0x fl-v0y fl-v0z fl-v0aa fl-v0ab fl-v0ac fl-v0ad refmod; do
   if [ -d "/images/$d" ]; then ln -sfn "/images/$d" "/private/tmp/$d"
   elif [ -d "/$d" ]; then ln -sfn "/$d" "/private/tmp/$d"; fi
 done

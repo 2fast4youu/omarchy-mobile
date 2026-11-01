@@ -2969,3 +2969,67 @@ Strings macht.
 - Upload-Kanal nebenbei geloest: unquotierte Heredocs ($@<<EOM) verfilschen
   die Base64-Bytes; Stueck-fuer-Stueck-printf mit SHA je Stueck (74/74 gleich)
   ist der zuverlaessige Weg. Skript: firstlight/restart2-robust-testen.py.
+
+## Nachtrag 18:15 — Der Lesekanal war die ganze Zeit heil, unser Bild fand seine Partition nicht
+
+Vier dunkle Nachmittage lang war die Frage, was unser Kernel tut, nachdem er
+vom USB-Baum verschwindet. Zwei Messungen von heute nachmittag entscheiden sie,
+beide maschinell, keine gefolgert.
+
+**1. Das Ende von boot_a ist beschreibbar und Liesbar (18:07).** An der
+laufenden Referenz, dieselbe Partition, derselbe Versatz, den unsere `logflush`
+benutzt: `blockdev --getsize64` = 67108864, `--getro` = 0,
+`dd bs=131072 seek=504 conv=notrunc,fsync` = rc 0, und der Marker steht beim
+Lesen bei 66060288 Byte da (`OMAMOBILE-SCHREIBTEST-1101`). Protokoll:
+`firstlight/evidence/boot-a-schreibtest-2026-11-01.md`.
+
+**2. Unser Bild hat dort nie geschrieben.** Nach zwei eigenen Laeufen (17:41,
+18:03) war der Bereich leer: `grep -c OMAMOBILE-LOG` = 0. Der Grund sitzt in
+`find_bootdev`: sie kennt nur `/dev/disk/by-partlabel/boot_a` und
+`/dev/disk/by-name/boot_a`. Beide Namen legt ein Uevent-Daemon an — die
+Referenz hat ihn (ueber ihren Symlink lief gerade der Schreibtest), unser
+first-light laeuft ohne jeden Daemon im Initramfs. `find_bootdev` gab 1,
+`logflush` kehrte ohne eine Zeile zurueck, und der Log-Beutel mit steps.log,
+UDC-Liste, Haengliste und dmesg lag nie auf der Partition. Der Kanal war seit
+seinem ersten Bau unbrauchbar, und keine Anwesenheitspruefung sah es, weil der
+Aufruf selbst korrekt aussah.
+
+**3. v0ac (sha256 0c03240a91c2b143122c9c1c1b99089e6dcbc98ad3389f0da8931eb9a94e84e6)
+sucht selbst.** Der Kernel haelt denselben Inhalt, aus dem ueventd den Symlink
+baut: `/sys/block/<disk>/<part>/uevent` traegt `PARTNAME=boot_a`,
+`<part>/dev` traegt major:minor. Die beiden bekannten Pfade bleiben erste
+Wahl, danach die eigene Suche, und ein fehlender Knoten wird mit mknod
+angelegt. Jede Entscheidung geht als Mark auf das Panel, denn nach einem
+eigenen Lauf ist das Panel der einzige Leser.
+
+**4. Der Selbst-Rueckweg ist belegt, und er ist fuer den Mac unsichtbar.**
+v0ab kam 17:52:30 bei t=185 s von selbst nach Fastboot zurueck, ohne
+Tastenaktion — `restart2 bootloader` wirkt. Die fruehere Erfahrung "nach
+unserem Lauf sieht der Mac nichts" erklaerte sich anders als vermutet: ABOOT
+hatte jedes Mal das alte Bild in boot_a gestartet, das in `while :; do sleep
+60; done` endet und nie zurueckkehrt (Retry a fiel dabei 1 -> 0,
+`slot-unbootable:a` stellte sich auf ja). Der Rueckweg ist also noetig, aber
+er ist nicht zuverlaessig sichtbar: um 17:52:30 sah der Mac die Rueckkehr als
+`0x4EE0`, zwischen 16:55 und 17:20 sah er sie sieben Minuten lang nicht.
+Zwei Messungen desselben Vorgangs, zwei Ausgaenge — eine Messung, die den
+Sichtbarkeitsfall braucht, taugt nicht als Beweis, und die Tastenaktion bleibt
+der Ausgang, wenn das Bild schweigt.
+
+**5. dtbo ist Teil der Bootkette.** Mit leerem `dtbo_a` starb jedes Bild — die
+Referenz und die Stock-Factory ebenso — nach ~13 s; mit Factory-dtbo ueberlebt
+es (72 s und 76 s Telnet). `dtbo_a` traegt seit 16:31 das Factory-Bild
+(`ff7bd6da…`) und wird gehalten. Vor jedem Versuch `--set-active=b` pruefen:
+mit `slot-unbootable:a: ja` / `retry a: 0` brachte die Referenz zweimal
+hintereinander kein Telnet innerhalb 200 s zustande, einmal nach
+`--set-active=b` kam es bei 78 s.
+
+**Regel aus dem Zahlenspur-Fehler von heute:** der v0ac-Umbau forderte zwei
+neue Schleifenkoepfe und fand einen — die Zahl stand im Kopf. Jetzt stehen die
+gemessenen Differenzen im Umbau (ein Kopf, ein `for`, ein `mknod`, ein
+`grep -q`, drei Marks, 20 Zeilen, Klammerbilanz dicht), gemessen mit
+`scratch/misse-v0ac-spur.py`, und das eingerueckte `done` wird ueber den
+Zeileninhalt gezaehlt, nicht ueber die Spalte.
+
+**Suite-Stand:** 145 ok (davon skip=4), 0 not-ok, Exit 0, frisch nach v0ac und
+nach allen Skript-Aenderungen (TAP-Abschrieb `scratch/tap-v0ac.txt`).
+Blockwart 12/0/0.

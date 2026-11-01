@@ -163,3 +163,55 @@ count=8 2>/dev/null | tr -d '\0' | sed -n '/OMAMOBILE-LOG/,/ENDOF-LOG/p' | head
 ~ # [6n
 18:03:28 === Lesung fertig ===
 18:09:26 === boot_a-Schwanz: Referenz aus dem RAM, dann dd ===
+18:21:57 === boot_a-Schwanz: Referenz aus dem RAM, dann dd ===
+18:21:57 Fastboot: current-slot: b
+18:21:57 vorher: slot-retry-count:b: 1
+18:21:57 vorher: slot-unbootable:b: no
+18:21:58 set-active=b:                 OKAY [  0.334s] Finished. Total time: 0.414s
+18:21:58 nachher: current-slot: b
+18:21:59 nachher: slot-retry-count:b: 3
+18:21:59 nachher: slot-unbootable:b: no
+18:22:10 fastboot boot ref:               OKAY [  9.824s] Finished. Total time: 10.674s 
+18:25:34 Telnet in 200 s nicht offen — Referenz erreicht, Lesung entfaellt
+18:26:46 === direkte Lesung, ohne Neu-Boot (Netz: 0 Adressen) ===
+18:30:55 Telnet: zu nach 250s, Netz 0 Adressen
+18:30:55 Referenz antwortet nicht — naechster Schritt: Referenz neu aus dem RAM
+18:31:24 === direkte Lesung, ohne Neu-Boot (Netz: 0 Adressen) ===
+18:36:26 Telnet: zu nach 302s, Netz 0 Adressen
+18:36:26 Referenz antwortet nicht — naechster Schritt: Referenz neu aus dem RAM
+19:33:51 === direkte Lesung, ohne Neu-Boot (Netz: 2 Adressen) ===
+19:33:51 Telnet: offen nach 0s, Netz 2 Adressen
+19:33:54 ### echo up=$(cut -d. -f1 /proc/uptime)s
+19:33:54 echo up=$(cut -d. -f1 /proc/uptime)s
+postmarketOS debug shell
+https://postmarketos.org/debug-shell
+
+  Device: Google Pixel 3 (google-blueline)
+  Kernel: 7.1.0-rc1-sdm845
+  OS ver: edge
+  initrd: 3.12.5-r0
+
+Run 'pmos_continue_boot' to continue booting.
+Read the initramfs log with 'cat /pmOS_init.log'.
+Run 'pmos_logdump' to generate a log dump and expose it over USB.
+You can expose storage devices over USB with
+'setup_usb_storage_configfs /dev/DEVICE'
+~ # 
+~ # echo up=$(cut -d. -f1 /proc/uptime)s
+up=807s
+~ # [6n
+19:33:57 ### A=$(readlink -f /dev/disk/by-partlabel/boot_a); echo geraet=${A:-KEINER}
+19:33:57 A=$(readlink -f /dev/disk/by-partlabel/boot_a); echo geraet=${A:-KEINER}
+geraet=/dev/sda11
+~ # [6n
+19:34:01 ### A=$(readlink -f /dev/disk/by-partlabel/boot_a); dd if=$A bs=131072 skip=504 count=8 2>/dev/null | grep -ac OMAMOBILE
+19:34:01 A=$(readlink -f /dev/disk/by-partlabel/boot_a); dd if=$A bs=131072 skip=504 
+count=8 2>/dev/null | grep -ac OMAMOBILE
+1
+~ # [6n
+19:34:04 ### A=$(readlink -f /dev/disk/by-partlabel/boot_a); dd if=$A bs=131072 skip=504 count=8 2>/dev/null | tr -d '\000' | sed -n '/OMAMOBILE-LOG/,/ENDOF-LOG/p' | head -140
+19:34:04 A=$(readlink -f /dev/disk/by-partlabel/boot_a); dd if=$A bs=131072 skip=504 
+count=8 2>/dev/null | tr -d '\000' | sed -n '/OMAMOBILE-LOG/,/ENDOF-LOG/p' | hea
+d -140
+~ # [6n
+19:34:04 === Lesung fertig ===
