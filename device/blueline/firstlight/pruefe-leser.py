@@ -84,8 +84,11 @@ def antworte(ver):
             if m:
                 ton += "@@" + m.group(1) + "\r\n"
             elif "gzip -9" in befehl and "base64" not in befehl:
-                ton += "groesse=%d sha=%s\r\nklartext=%d klarsha=%s\r\n" % (
-                    groesse, shall, klar_g, klar_sha)
+                # eine @@-Zeile mit vier Werten, dazu ein Echo-Bruchstueck,
+                # das wie eine Antwort aussieht, aber keine Ziffern hÃ¤lt
+                ton += ("@@groesse=%d sha=%s klartext=%d klarsha=%s\r\n"
+                        % (groesse, shall, klar_g, klar_sha))
+                ton += "@@groesse=$(wc -c < /run/ab.bin.gz | tr -d ' ')\r\n"
             elif "base64" in befehl:
                 nr = int(re.search(r"skip=(\d+)", befehl).group(1))
                 stuck = PAKET[nr * BLOCK:(nr + 1) * BLOCK]
@@ -144,6 +147,12 @@ for datei in ("build-v0af.sh", "../../../tools/ci-arm64.sh"):
     r = subprocess.run(["sh", "-n", os.path.join(HERE, datei)], capture_output=True, text=True)
     pruefung("sh -n: %s" % os.path.basename(datei), (r.returncode, r.stderr.strip()), (0, ""))
 
+print("Notizen:")
+for z in ZEILEN:
+    print("   " + z)
+print("Leitung:")
+for b, t in protokol:
+    print("   > " + repr(b) + "\n     " + repr(t))
 shutil.rmtree(zielpfad, ignore_errors=True)
 print("\n%d Pruefpunkte, %d Fehler" % (13 - len(fehlt) + len(fehlt), len(fehlt)))
 sys.exit(1 if fehlt else 0)

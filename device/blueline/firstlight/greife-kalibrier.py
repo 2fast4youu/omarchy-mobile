@@ -136,16 +136,18 @@ def hole(s, notiz, name, quelle, sektoren, start=0):
     rohe 8000 Bloecke brauchte. Geprueft wird der Hash der gepackten Datei; der
     Klartext-Hash steht zusaetzlich im Manifest, weil M1.3 den haben will.
     """
+    # Die vier Antwortzeilen bekommen das @@-Praezix, damit sie im Echo-Wust
+    # wiederzufinden sind: das Echo wiederholt den Befehl und bricht bei ~78
+    # Spalten um, aber keine Echo-Zeile kann mit @@ beginnen.
+    antwort = ("printf '@@%s %s %s %s\\n' " + " ".join(chr(34) + f + chr(34) for f in (
+        "groesse=$(wc -c < %s 2>/dev/null | tr -d ' ')" % (GRUND + ".gz"),
+        "sha=$(sha256sum %s 2>/dev/null | cut -d' ' -f1)" % (GRUND + ".gz"),
+        "klartext=$(wc -c < %s 2>/dev/null | tr -d ' ')" % GRUND,
+        "klarsha=$(sha256sum %s 2>/dev/null | cut -d' ' -f1)" % GRUND)) + " 2>/dev/null")
     grund = abfrage(s, "dd if=%s bs=512 skip=%d count=%d of=%s 2>/dev/null; "
-                       "gzip -9 -f -c %s > %s 2>/dev/null; "
-                       "echo groesse=%s sha=%s; "
-                       "echo klartext=%s klarsha=%s" % (
-                           quelle, start, sektoren, GRUND, GRUND, GRUND + ".gz",
-                           "wc -c < %s.gz" % GRUND,
-                           "sha256sum %s.gz | cut -d%s -f1" % (GRUND, Q),
-                           "wc -c < %s" % GRUND,
-                           "sha256sum %s | cut -d%s -f1" % (GRUND, Q)),
-                "grund-%s" % name)
+                       "gzip -9 -f -c %s > %s 2>/dev/null; %s"
+                    % (quelle, 0, sektoren, GRUND, GRUND, GRUND + ".gz", antwort),
+                    "grund-%s" % name)
     if grund is None:
         notiz("  %-30s keine Grunddaten" % name)
         return False
