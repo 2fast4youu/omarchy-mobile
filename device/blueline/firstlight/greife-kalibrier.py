@@ -254,12 +254,25 @@ def main() -> int:
             if m:
                 scheiben["/dev/" + m.group(1)] = int(m.group(2))
         notiz("  Karte: %d Partitionsnamen, %d Partitions-groessen, %d Scheiben" % (len(knoten), len(sektoren), len(scheiben)))
+
     else:
         notiz("  keine Karte — Kalibrier-Bereiche koennen nicht adresiert werden")
+
+    offen = []
+
+    def sicher(name, quelle, anz, start=0):
+        """Ein Bereich, und wenn er fehlt, ein zweiter Versuch am Ende.
+
+        Ein Loch beim ersten Anlauf ist kein Beweis: ein einzelner Block ist schon
+        mal zu spaet gekommen, waehrend das Telefon noch gzippte. Der zweite
+        Versuch kostet eine Minute und entscheidet, ob das Manifest ein Loch traegt.
+        """
+        if not hole(s, notiz, name, quelle, anz, start):
+            offen.append((name, quelle, anz, start))
     # GPT: Header und Eintragssatz am Anfang jedes LUN; die sichere Kopfzeile
     # wird ueber die Groesse der Platte adresiert, hier ueber blockdev --getsize.
     for lun in "abcdef":
-        hole(s, notiz, "gpt-lun%s-kopf.bin" % lun, "/dev/sd%s" % lun, 64, 0)
+        sicher("gpt-lun%s-kopf.bin" % lun, "/dev/sd%s" % lun, 64, 0)
     # Die kleinen Kalibrier-Partitionen, ueber den Partitionsnamen gesucht.
     # Der zweite GPT-Kopf liegt ganz hinten — ohne die Scheibengroesse ist er
     # nicht zu adresieren, und ohne ihn ist eine Partitionstabelle nicht heilbar.
@@ -267,7 +280,7 @@ def main() -> int:
         platte = "/dev/sd%s" % lun
         ende = scheiben.get(platte, 0)
         if ende >= 64:
-            hole(s, notiz, "gpt-lun%s-ende.bin" % lun, platte, 64, max(0, ende - 64))
+            sicher("gpt-lun%s-ende.bin" % lun, platte, 64, max(0, ende - 64))
     # Vor einem Write auf boot_a muss die Sicherung von boot_a da sein, und zwar
     # mit gepruefter Groesse und geprueftem sha (Gregors Regel vor jedem Write).
     # boot_b fehlt hier mit Absicht: sein Inhalt ist per Konstruktion die
@@ -282,7 +295,15 @@ def main() -> int:
         # Die wirkliche Groesse, nicht ein erratener Vorrat: persist ist 32 MiB,
         # misc 1 MiB. Ohne die Zahl aus der Karte waere persist abgeschnitten.
         anzahl = min(sektoren.get(pfad, 2048), 1 << 17)
-        hole(s, notiz, "kalibrier-%s.bin" % part, pfad, anzahl, 0)
+        sicher("kalibrier-%s.bin" % part, pfad, anzahl, 0)
+    if offen:
+        notiz("  zweiter Versuch fuer %d Loch(er): %s"
+              % (len(offen), ", ".join(n for n, _, _, _ in offen)))
+        for name, quelle, sektoren, start in list(offen):
+            if hole(s, notiz, name, quelle, sektoren, start):
+                offen.remove((name, quelle, sektoren, start))
+    if offen:
+        notiz("  ehrliches Loch bleibt: %s" % ", ".join(n for n, _, _, _ in offen))
     notiz("=== Abgriff fertig: %s ===" % ZIEL)
     try:
         s.close()
