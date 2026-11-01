@@ -60,7 +60,8 @@ mark 'warten beendet nach '$((warte * 5))'s, runde ' $(kill -0 "$runden_pid" 2>/
 # Reset wieder (gemessen 2026-11-01, 16:55-17:20 und 17:25/17:31 dunkel). Das
 # Herzschlagfeld zeigt immer genau eine Zeile, die letzte aus /run/steps.log.
 # Darum stehen die drei Entscheidungen einzeln da und werden danach in einer
-# Schleife 12 x wiederholt, damit sie bei 2 s Herzschlag nicht vorbeilaufen.
+# Schleife 60 x wiederholt (3 Minuten), damit ein Mensch sie ablesen kann: ein
+# einzelner Mark laeuft bei 2 s Herzschlag in zwei Sekunden vorbei.
 ABLESUNG = """UDCN=$(ls /sys/class/udc 2>/dev/null | xargs)
 MODN=$(wc -l < /proc/modules 2>/dev/null)
 DUNK=$(cat /sys/kernel/debug/devices_deferred 2>/dev/null | xargs)
@@ -72,7 +73,7 @@ DEV=$(readlink -f /dev/disk/by-partlabel/boot_a 2>/dev/null)
 LESE=$(dd if=${DEV:-/dev/null} bs=131072 skip=504 count=1 2>/dev/null | grep -ac OMAMOBILE-LOG)
 mark "logflush rc=$LFRZ rueckgelesen=${LESE:-0} geraet=${DEV:-KEINER}"
 zr=0
-while [ "$zr" -lt 12 ]; do
+while [ "$zr" -lt 60 ]; do
     mark "ABLESUNG udc=${UDCN:-KEINER} module=${MODN:-0} rueckgelesen=${LESE:-0} zyklus=$zr"
     sleep 3
     zr=$((zr + 1))
