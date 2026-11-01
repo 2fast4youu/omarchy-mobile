@@ -3033,3 +3033,124 @@ Zeileninhalt gezaehlt, nicht ueber die Spalte.
 **Suite-Stand:** 145 ok (davon skip=4), 0 not-ok, Exit 0, frisch nach v0ac und
 nach allen Skript-Aenderungen (TAP-Abschrieb `scratch/tap-v0ac.txt`).
 Blockwart 12/0/0.
+
+
+---
+
+## Nachtrag 19 (2026-11-01, 20:45): das eigene Bild gibt eine Shell — und zwei Wurzeln, die alles Frühere erklären
+
+### Meilenstein
+
+Erstes eigenes Bild, das im eigenen Lauf eine erreichbare Shell gibt. v0ae
+(sha256 `0d3b7fc6…`) aus dem RAM gestartet, Telnet auf 172.16.42.1:23 offen ab
+**t=24 s** (20:13:19 gelesen) und im zweiten Lauf offen von **t=26 s bis t=360 s**
+(66 Proben, keine Lücke). Protokolle:
+`firstlight/evidence/eigene-shell-2026-11-01.md`,
+`firstlight/evidence/v0ae-durchgang-2026-11-01.md`,
+`firstlight/evidence/abgriff/` (18 Dateien, 314 951 B, Manifest mit sha256 je Datei).
+
+Aus dem Steps.log desselben Laufs, alles zwischen 5 s und 6 s:
+
+    [5s] gadget-module-dir gefunden
+    [6s] modul libcomposite.ko geladen   (und u_ether, usb_f_ncm, u_serial, usb_f_acm)
+    [6s] udc nach 0 runden gefunden: a600000.usb, uptime 6.14s
+    [6s] UDC steht auf: a600000.usb
+    [6s] ifconfig usb0 172.16.42.1
+    [6s] boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+    [6s] raw log channel live on /dev/sda11
+
+Aus der Shell desselben Laufs: `/sys/class/udc` = `a600000.usb`, `state`
+= `configured`, Funktionen `acm.GS0` und `ncm.usb0`, `usb0` mit 172.16.42.1,
+`grep -c nonexistent /run/steps.log` = 0, `/proc/device-tree/compatible` =
+`google,blueline`, `qcom,sdm845`, dmesg ohne `ufshcd`- oder `abr`-Fehler.
+
+Damit ist die älteste offene Frage des Projekts beantwortet — der Satz von
+2026-10-29, „USB peripheral on this handset + this Mac has never been observed
+with ANY mainline image", ist **falsifiziert**: ein bindendes Gadget wurde
+gesehen, an genau diesem Mac, über denselben Hub. Alle „TOT"-Zeilen, die auf
+einem fehlenden NCM beruhten, haben die Gadget-Bindung gemessen, nicht den
+Kernel — wie die Durchsicht damals vermutete.
+
+### Wurzel #9 — der Log-Kanal war seit v0p tot, weil die Partition dem Platten-rw folgt
+
+    gemessen 19:40:50 am laufenden Gerät:
+      blockdev --setro /dev/sda; blockdev --setrw /dev/sda11
+      -> sda=1 sda11=1   dd: "Operation not permitted", 0 Bytes
+      blockdev --setrw /dev/sda
+      -> dd rc=0, 24 Bytes, Marker lesbar
+
+Unsere `storage_guard` setzt Platte UND Partitionen auf ro; `logflush` drehte
+nur die Partition zurück, und `2>/dev/null` an der dd verschluckte den Fehler.
+Seit v0p hat kein Bild je nach boot_a geschrieben — der Beweis: der Schreibtest-
+Marker von 18:07 lag um 19:35 unverändert auf 66060288, obwohl v0ac 334 s
+gelaufen war. Fix in v0ad: Platte rw vor dem dd, dd-Text eingefangen,
+`schreib_rc=` im Protokoll. Beweise: `evidence/ro-kausalitaet-2026-11-01.md`,
+`evidence/ro-wurzel-und-sechs-starts-2026-11-01.md`.
+
+### Wurzel #10 — dem Initramfs-Archiv fehlten die Elternordner der Module
+
+Seit v0p lagen sechs `.ko` im Archiv (Byte-identisch zur Quelle, ELF, richtige
+Mode, richtiger vermagic, alle Prüfer grün), aber der letzte Verzeichniseintrag
+war `usr/lib`; `usr/lib/modules/<version>/…/gadget/function` fehlte als
+Eintrag. `unpack_to_rootfs()` legt fehlende Elternordner nicht an, es verwirft
+die Datei ohne Meldung. Folge im Lauf: kein Modul, `insmod` Exit 254,
+libcomposite fehlt, configfs-Mount schlägt fehl (USB_CONFIGFS=m), und acht
+Bind-Runden pro Start laufen auf `can't create …/g1/UDC: nonexistent directory`
+— genau der Text, den der Besitzer am Panel las und der einen Tag lang für einen
+Log-Flush-Fehler gehalten wurde. Fix in v0ae: sieben Ordnereintraege vor die
+erste `.ko`, plus Prüfung, dass für JEDEN Dateieintrag der Elternordner im
+Archiv steht — dieselbe Prüfung ein zweites Mal auf das aus der fertigen .img
+zurückgelesene Archiv. Beweise: `evidence/erster-eigener-stepslog-2026-11-01.md`,
+`evidence/boot-a-beutel-2026-11-01.md`.
+
+### Wurzel #11 (Korrelation gemessen, Mechanik noch nicht belegt) — der aktive Slot entscheidet, ob ein RAM-Start überlebt
+
+    20:33  current-slot:b  unbootable:b:yes  retry b:0  retry a:3
+    20:34  fastboot boot v0ae  -> nach ~25 s zurück im Fastboot, en8 nie aktiv
+    20:40  fastboot boot ref/boot.img (ed2c225f, den ganzen Tag funktionierend)
+           -> derselbe Tod. Es lag also nicht an unserem Bild.
+    20:45  fastboot --set-active=a, danach dasselbe v0ae -> Shell offen,voller Abgriff
+
+Zwei Facts dazu: die Todes-Uhr ist unsere eigene. `initramfs/init:70` tut im
+Aufgabe-Zweig `echo c > /proc/sysrq-trigger`, ABOOTs Kommandozeile trägt
+`panic=60`, also: Crash bei t=181 s (pstore: `Kernel panic - not syncing:
+sysrq triggered crash`, `Comm: init`), Neustart 60 s später, ABOOT findet keinen
+startfähigen Slot und parkt in Fastboot — zusammen ~240 s, passend zur
+Beobachtung. Und: die Startkommandozeile des toten Laufs trägt
+`slot_suffix=_a`, `bootreason=watchdog`, die des lebenden `slot_suffix=_b`,
+`dtbo_idx=8`, `bootreason=reboot,bootloader`. Welche dtbo-/vbmeta-Menge ABOOT zu
+einem RAM-Start dazunimmt, hängt also an_slot; eine der beiden Mengen lässt den
+USB-Controller (`a600000.usb`) nicht erscheinen, unsere Init crashed daraufhin
+bei 181 s. Belegen lässt das in zwei Zyklen: `--set-active=b` muss den Tod
+zurückbringen, `--set-active=a` ihn wieder nehmen.
+
+### M1-Kriterien, abgelesen statt vermutet
+
+| Gate | Stand | Fehlendes |
+|---|---|---|
+| M1.0 ankommen, entsperren, erfassen | erledigt | — |
+| M1.1 first-light bauen (nur Host) | erledigt 2026-10-27 | — |
+| M1.2 Start aus dem RAM, keine Writes | **erfüllt bis auf eine Zeile** | `uname` nennt den Distro-Build `#5-postmarketos-qcom-sdm845` (Kernel absichtlich der Referenz-kernel, unser Teil sind Init und Initramfs); `compatible` = `google,blueline` ✓; alle UFS-Ganzen Platten ro ✓; kein `ufshcd`/`abr` in dmesg ✓. Offen: „the simple-framebuffer console is the screen we are reading" — das kann nur ein Mensch ablesen. |
+| M1.3 LUN-Karte und Kalibrier-Backups | teilweise | LUN-Karte jetzt gemessen (`evidence/abgriff/storage-ro.txt`: sda 63,9 GB Haupt-LUN, sdb 4 MiB, sdc 4 MiB, sdd 8 MiB, sde 32 MiB, sdf 72 MiB). Kalibrier-Backups (persist, efs/modemst) mit `dd iflag=direct` und zweifachem sha256: stehen aus. |
+| M1.4 GPT vor dem ersten Slot-Flag-Write | offen | LBA-Auszüge + `gdisk v`-CRCs vor/jetzt. Wird dringend, weil die Slot-Schalter heute mehrfach von selbst gelaufen sind (14:13 a/unbootable, 20:33 b/unbootable). |
+| M1.5 Slot B beschreiben, Root auf userdata rw | offen | Rootfs auf userdata `rw`, Rest bleibt ro. Bisher läuft alles als RAM-Bild mit Initramfs-Root; userdata ist von uns nie angefasst. |
+| M1.6 Slot B bootbar markieren | offen, und blockiert | Aktuell `unbootable:b:yes`, `retry b:0`. Vor M1.6 gehört der Zustand repariert und belegt (M1.4), sonst ist der Rettungsweg nur der Fastboot-Bildschirm. |
+| M1.7 durchstarten bleiben | offen | systemd/Sitzung, dazu die Display-Lücke: dmesg meldet `DSI PLL(0) lock failed` und fehlende `qcom/a630_sqe.fw` — Display und GPU-Firmware sind die nächsten echten Baustellen nach M1.5. |
+
+### Eigenfehler, die dieser Abend gezeigt hat
+
+1. `mark 'text $(befehl)'` in einfachen Anführungszeichen druckt seinen
+   Befehl, nicht seinen Wert — zwei Instrumente von v0ad/v0ae waren blind, ohne
+   blind auszusehen. In der nächsten Fassung doppelt zitieren und an einem Mark
+   mit bekanntem Wert prüfen.
+2. `fastboot boot` gegen ein lebendes Telefon wird verschluckt: 20:16 meldete
+   der Client „Finished", das Telefon bootete nie. Erst auf Fastboot-Sicht
+   warten, dann starten.
+3. Ein Abgreifer ohne Rahmenprüfung ist ein Gerücht: `greife-beweise.py` holt
+   jetzt jede Datei zwischen `@@ANFANG`/`@@ENDE` mit Bytezahl des Telefons und
+   sha256. Die verschachtelte `$( … | wc -c)`-Größenabfrage zerlegt sich bei
+   mehrzeiligen Befehlen selbst (sieben Artefakte verrutscht) — zweiter
+   Durchgang, Größe separat erfragen.
+4. Die Selbst-Rückweg-Uhr (372 s) nimmt die Shell weg, während man noch dran
+   sitzt. Vorgesehene Änderung: Rückkehr nur noch nach Funkstille (fünf Minuten
+   ohne Verbindung oder ohne `/tmp/halt`), obere Grenze bleibt.

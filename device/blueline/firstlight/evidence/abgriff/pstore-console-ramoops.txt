@@ -1,0 +1,969 @@
+console-ramoop
+s-0 2>/dev/null | wc -c)
+@@ANFANG pstore-console-ramoops.txt 85572
+[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x517f803c]
+[    0.000000] Linux version 7.1.0-rc1-sdm845 (pmos@build) (Alpine clang version 22.1.8, LLD 22.1.8) #5-postmarketos-qcom-sdm845 SMP PREEMPT Tue Jul 14 03:51:45 UTC 
+[    0.000000] KASLR enabled
+[    0.000000] Machine model: Google Pixel 3
+[    0.000000] efi: UEFI not found.
+[    0.000000] [Firmware Bug]: Kernel image misaligned at boot, please fix your bootloader!
+[    0.000000] OF: reserved mem: 0x00000000bfffc000..0x00000000bfffffff (16 KiB) nomap non-reusable mpss-metadata
+[    0.000000] Reserved memory: created CMA memory pool at 0x00000000fec00000, size 16 MiB
+[    0.000000] OF: reserved mem: initialized node fastrpc, compatible id shared-dma-pool
+[    0.000000] OF: reserved mem: 0x00000000fec00000..0x00000000ffbfffff (16384 KiB) map reusable fastrpc
+[    0.000000] OF: reserved mem: 0x0000000085700000..0x0000000085cfffff (6144 KiB) nomap non-reusable hyp-mem@85700000
+[    0.000000] OF: reserved mem: 0x0000000085e00000..0x0000000085efffff (1024 KiB) nomap non-reusable xbl-mem@85e00000
+[    0.000000] OF: reserved mem: 0x0000000085fc0000..0x0000000085fdffff (128 KiB) nomap non-reusable aop-mem@85fc0000
+[    0.000000] OF: reserved mem: 0x0000000085fe0000..0x0000000085ffffff (128 KiB) nomap non-reusable aop-cmd-db-mem@85fe0000
+[    0.000000] OF: reserved mem: 0x0000000086000000..0x00000000861fffff (2048 KiB) nomap non-reusable smem@86000000
+[    0.000000] OF: reserved mem: 0x0000000086200000..0x0000000088efffff (46080 KiB) nomap non-reusable tz@86200000
+[    0.000000] OF: reserved mem: 0x000000008ab00000..0x000000008befffff (20480 KiB) nomap non-reusable qseecom@8ab00000
+[    0.000000] OF: reserved mem: 0x000000008bf00000..0x000000008c3fffff (5120 KiB) nomap non-reusable camera-mem@8bf00000
+[    0.000000] OF: reserved mem: 0x000000008c400000..0x000000008c40ffff (64 KiB) nomap non-reusable ipa-fw@8c400000
+[    0.000000] OF: reserved mem: 0x000000008c410000..0x000000008c414fff (20 KiB) nomap non-reusable ipa-gsi@8c410000
+[    0.000000] OF: reserved mem: 0x000000008c415000..0x000000008c416fff (8 KiB) nomap non-reusable gpu@8c415000
+[    0.000000] OF: reserved mem: 0x000000008c500000..0x000000008defffff (26624 KiB) nomap non-reusable adsp@8c500000
+[    0.000000] OF: reserved mem: 0x000000008df00000..0x000000008dffffff (1024 KiB) nomap non-reusable wlan-msa@8df00000
+[    0.000000] OF: reserved mem: 0x000000009d400000..0x000000009f7fffff (36864 KiB) nomap non-reusable splash@9d400000
+[    0.000000] OF: reserved mem: 0x000000008e000000..0x00000000977fffff (155648 KiB) nomap non-reusable memory@8e000000
+[    0.000000] OF: reserved mem: 0x0000000097800000..0x0000000097cfffff (5120 KiB) nomap non-reusable venus@97800000
+[    0.000000] OF: reserved mem: 0x0000000097d00000..0x00000000984fffff (8192 KiB) nomap non-reusable cdsp-mem@97D00000
+[    0.000000] OF: reserved mem: 0x0000000098500000..0x00000000986fffff (2048 KiB) nomap non-reusable mba@98500000
+[    0.000000] OF: reserved mem: 0x0000000098700000..0x0000000099afffff (20480 KiB) nomap non-reusable slpi@98700000
+[    0.000000] OF: reserved mem: 0x0000000099b00000..0x0000000099bfffff (1024 KiB) nomap non-reusable spss@99B00000
+[    0.000000] OF: reserved mem: 0x00000000f2700000..0x00000000f2901fff (2056 KiB) nomap non-reusable rmtfs-region@f2700000
+[    0.000000] OF: reserved mem: 0x000000009f800000..0x000000009f8fffff (1024 KiB) nomap non-reusable ramoops@9f800000
+[    0.000000] NUMA: Faking a node at [mem 0x0000000080000000-0x000000017e09ffff]
+[    0.000000] NODE_DATA(0) allocated [mem 0x17d8a8a80-0x17d8ab8ff]
+[    0.000000] cma: Reserved 256 MiB at 0x00000000e2600000
+[    0.000000] psci: probing for conduit method from DT.
+[    0.000000] psci: PSCIv1.1 detected in firmware.
+[    0.000000] psci: Using standard PSCI v0.2 function IDs
+[    0.000000] psci: MIGRATE_INFO_TYPE not supported.
+[    0.000000] psci: SMC Calling Convention v1.2
+[    0.000000] psci: OSI mode supported.
+[    0.000000] psci: [Firmware Bug]: failed to set PC mode: -3
+[    0.000000] Zone ranges:
+[    0.000000]   DMA      [mem 0x0000000080000000-0x00000000ffffffff]
+[    0.000000]   DMA32    empty
+[    0.000000]   Normal   [mem 0x0000000100000000-0x000000017e09ffff]
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   node   0: [mem 0x0000000080000000-0x00000000856fffff]
+[    0.000000]   node   0: [mem 0x0000000085700000-0x0000000085cfffff]
+[    0.000000]   node   0: [mem 0x0000000085d00000-0x0000000085dfffff]
+[    0.000000]   node   0: [mem 0x0000000085e00000-0x0000000085efffff]
+[    0.000000]   node   0: [mem 0x0000000085f00000-0x0000000085fbffff]
+[    0.000000]   node   0: [mem 0x0000000085fc0000-0x0000000088efffff]
+[    0.000000]   node   0: [mem 0x0000000088f00000-0x000000008aafffff]
+[    0.000000]   node   0: [mem 0x000000008ab00000-0x000000008c416fff]
+[    0.000000]   node   0: [mem 0x000000008c417000-0x000000008c4fffff]
+[    0.000000]   node   0: [mem 0x000000008c500000-0x0000000099bfffff]
+[    0.000000]   node   0: [mem 0x0000000099c00000-0x000000009d3fffff]
+[    0.000000]   node   0: [mem 0x000000009d400000-0x000000009f8fffff]
+[    0.000000]   node   0: [mem 0x000000009f900000-0x00000000bfffbfff]
+[    0.000000]   node   0: [mem 0x00000000bfffc000-0x00000000bfffffff]
+[    0.000000]   node   0: [mem 0x00000000c0000000-0x00000000f26fffff]
+[    0.000000]   node   0: [mem 0x00000000f2700000-0x00000000f2901fff]
+[    0.000000]   node   0: [mem 0x00000000f2902000-0x000000017e09ffff]
+[    0.000000] Initmem setup node 0 [mem 0x0000000080000000-0x000000017e09ffff]
+[    0.000000] On node 0, zone Normal: 8032 pages in unavailable ranges
+[    0.000000] Kernel is locked down from Kernel configuration; see man kernel_lockdown.7
+[    0.000000] percpu: Embedded 35 pages/cpu s103896 r8192 d31272 u143360
+[    0.000000] pcpu-alloc: s103896 r8192 d31272 u143360 alloc=35*4096
+[    0.000000] pcpu-alloc: [0] 0 [0] 1 [0] 2 [0] 3 [0] 4 [0] 5 [0] 6 [0] 7 
+[    0.000000] Detected VIPT I-cache on CPU0
+[    0.000000] CPU features: detected: GICv3 CPU interface
+[    0.000000] CPU features: kernel page table isolation forced ON by KASLR
+[    0.000000] CPU features: detected: Kernel page table isolation (KPTI)
+[    0.000000] alternatives: applying boot alternatives
+[    0.000000] Kernel command line: rootwait ro init=/init androidboot.bootdevice=1d84000.ufshc androidboot.baseband=sdm androidboot.keymaster=1 msm_drm.dsi_display0=dsi_sw43408_cmd_display::timing0 androidboot.force_normal_boot=1 androidboot.serialno=PIXEL3-SERIAL androidboot.slot_suffix=_b androidboot.slot_retry_count=0 androidboot.slot_successful=no androidboot.hardware.platform=sdm845 androidboot.hardware=blueline androidboot.revision=MP1.0 androidboot.bootloader=b1c1-0.4-7617406 androidboot.hardware.sku=G013A androidboot.hardware.radio.subtype=0 androidboot.hardware.dsds=0 androidboot.secure_boot=PRODUCTION androidboot.cdt_hwid=0x05022800 androidboot.hardware.majorid=0x02 androidboot.dtb_idx=0 androidboot.dtbo_idx=8 androidboot.bootreason=reboot,bootloader androidboot.hardware.ddr=4GB,Micron,LPDDR4X androidboot.ddr_info=Micron androidboot.ddr_size=4GB androidboot.hardware.ufs=64GB,SKHynix androidboot.cid=00000000 \
+[    0.000000] Kernel command line: androidboot.boottime=0BLE:59,1BLL:29,1BLE:480,2BLL:127,2BLE:61255,SW:10015,KL:0,KD:4683,ODT:2,AVB:31,AFTL:0 androidboot.ramdump=enabled androidboot.blockchain=disabled androidboot.init_fatal_panic=true usbcfg.suzyq=disabled androidboot.theme=1 androidboot.hardware.pcbcfg=G650-02573-01 androidboot.hardware.devcfg=G950-01035-02 androidboot.vbmeta.device=PARTUUID=012d84c5-8761-419a-b524-c38fa2704057 androidboot.vbmeta.avb_version=1.1 androidboot.vbmeta.device_state=unlocked androidboot.vbmeta.hash_alg=sha256 androidboot.vbmeta.size=4224 androidboot.vbmeta.digest=1752749d02b07df912ddba18c6c915ac5944b2529547781482d421f7882ad660 androidboot.veritymode=enforcing androidboot.verifiedbootstate=orange androidboot.aftlstate=8 console=ttyMSM0,115200n8 console=tty0 loglevel=8 printk.devkmsg=on panic=60 androidboot.hardware=qcom androidboot.board=blueline rdinit=/init
+[    0.000000] printk: log buffer data + meta data: 131072 + 458752 = 589824 bytes
+[    0.000000] Dentry cache hash table entries: 524288 (order: 10, 4194304 bytes, linear)
+[    0.000000] Inode-cache hash table entries: 262144 (order: 9, 2097152 bytes, linear)
+[    0.000000] software IO TLB: area num 8.
+[    0.000000] software IO TLB: mapped [mem 0x00000000fac00000-0x00000000fec00000] (64MB)
+[    0.000000] Fallback order for Node 0: 0 
+[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 1040544
+[    0.000000] Policy zone: Normal
+[    0.000000] mem auto-init: stack:all(zero), heap alloc:off, heap free:off
+[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=8, Nodes=1
+[    0.000000] ftrace: allocating 55992 entries in 220 pages
+[    0.000000] ftrace: allocated 220 pages with 5 groups
+[    0.000000] rcu: Preemptible hierarchical RCU implementation.
+[    0.000000] rcu:     RCU event tracing is enabled.
+[    0.000000]  Trampoline variant of Tasks RCU enabled.
+[    0.000000]  Rude variant of Tasks RCU enabled.
+[    0.000000]  Tracing variant of Tasks RCU enabled.
+[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 100 jiffies.
+[    0.000000] RCU Tasks: Setting shift to 3 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=8.
+[    0.000000] RCU Tasks Rude: Setting shift to 3 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=8.
+[    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[    0.000000] GICv3: 768 SPIs implemented
+[    0.000000] GICv3: 0 Extended SPIs implemented
+[    0.000000] Root IRQ handler: gic_handle_irq
+[    0.000000] GICv3: GICv3 features: 16 PPIs
+[    0.000000] GICv3: GICD_CTLR.DS=0, SCR_EL3.FIQ=1
+[    0.000000] GICv3: CPU0: found redistributor 0 region 0:0x0000000017a60000
+[    0.000000] ITS: No ITS available, not enabling LPIs
+[    0.000000] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[    0.000000] arch_timer: cp15 timer running at 19.20MHz (virt).
+[    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x46d987e47, max_idle_ns: 440795202767 ns
+[    0.000001] sched_clock: 56 bits at 19MHz, resolution 52ns, wraps every 4398046511078ns
+[    0.000283] Console: colour dummy device 80x25
+[    0.000300] printk: legacy console [tty0] enabled
+[    0.001369] Calibrating delay loop (skipped), value calculated using timer frequency.. 38.40 BogoMIPS (lpj=19200)
+[    0.001395] pid_max: default: 32768 minimum: 301
+[    0.001617] Yama: becoming mindful.
+[    0.002356] LSM support for eBPF active
+[    0.002513] Mount-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    0.002538] Mountpoint-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[    0.002932] VFS: Finished mounting rootfs on nullfs
+[    0.005646] rcu: Hierarchical SRCU implementation.
+[    0.005662] rcu:     Max phase no-delay instances is 400.
+[    0.005889] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+[    0.007281] EFI services will not be available.
+[    0.007736] smp: Bringing up secondary CPUs ...
+[    0.009673] Detected VIPT I-cache on CPU1
+[    0.009854] GICv3: CPU1: found redistributor 100 region 0:0x0000000017a80000
+[    0.009935] CPU1: Booted secondary processor 0x0000000100 [0x517f803c]
+[    0.011786] Detected VIPT I-cache on CPU2
+[    0.011919] GICv3: CPU2: found redistributor 200 region 0:0x0000000017aa0000
+[    0.011973] CPU2: Booted secondary processor 0x0000000200 [0x517f803c]
+[    0.013849] Detected VIPT I-cache on CPU3
+[    0.013978] GICv3: CPU3: found redistributor 300 region 0:0x0000000017ac0000
+[    0.014027] CPU3: Booted secondary processor 0x0000000300 [0x517f803c]
+[    0.016496] CPU features: detected: Spectre-v2
+[    0.016509] CPU features: detected: Spectre-BHB
+[    0.016520] Detected VIPT I-cache on CPU4
+[    0.016676] GICv3: CPU4: found redistributor 400 region 0:0x0000000017ae0000
+[    0.016727] CPU4: Booted secondary processor 0x0000000400 [0x516f802d]
+[    0.018952] Detected VIPT I-cache on CPU5
+[    0.019119] GICv3: CPU5: found redistributor 500 region 0:0x0000000017b00000
+[    0.019172] CPU5: Booted secondary processor 0x0000000500 [0x516f802d]
+[    0.021590] Detected VIPT I-cache on CPU6
+[    0.021758] GICv3: CPU6: found redistributor 600 region 0:0x0000000017b20000
+[    0.021810] CPU6: Booted secondary processor 0x0000000600 [0x516f802d]
+[    0.024338] Detected VIPT I-cache on CPU7
+[    0.024508] GICv3: CPU7: found redistributor 700 region 0:0x0000000017b40000
+[    0.024562] CPU7: Booted secondary processor 0x0000000700 [0x516f802d]
+[    0.024662] smp: Brought up 1 node, 8 CPUs
+[    0.024821] SMP: Total of 8 processors activated.
+[    0.024832] CPU: All CPU(s) started at EL1
+[    0.024861] CPU features: detected: 32-bit EL0 Support
+[    0.024870] CPU features: detected: 32-bit EL1 Support
+[    0.024880] CPU features: detected: Data cache clean to the PoU not required for I/D coherence
+[    0.024894] CPU features: detected: Common not Private translations
+[    0.024905] CPU features: detected: CRC32 instructions
+[    0.024921] CPU features: detected: RCpc load-acquire (LDAPR)
+[    0.024933] CPU features: detected: LSE atomic instructions
+[    0.024943] CPU features: detected: Privileged Access Never
+[    0.024956] CPU features: detected: PMUv3
+[    0.024965] CPU features: detected: RAS Extension Support
+[    0.024977] CPU features: detected: XNX
+[    0.025092] alternatives: applying system-wide alternatives
+[    0.031683] CPU features: detected: Hardware dirty bit management on CPU0-7
+[    0.032088] Memory: 3339592K/4162176K available (18624K kernel code, 4870K rwdata, 17168K rodata, 2048K init, 479K bss, 537152K reserved, 278528K cma-reserved)
+[    0.034177] devtmpfs: initialized
+[    0.050827] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 1911260446275000 ns
+[    0.050866] posixtimers hash table entries: 4096 (order: 4, 65536 bytes, linear)
+[    0.051025] futex hash table entries: 2048 (131072 bytes on 1 NUMA nodes, total 128 KiB, linear).
+[    0.053200] 2G module region forced by RANDOMIZE_MODULE_REGION_FULL
+[    0.053241] 0 pages in range for non-PLT usage
+[    0.053245] 513424 pages in range for PLT usage
+[    0.054597] DMI: not present or invalid.
+[    0.056787] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[    0.058115] DMA: preallocated 512 KiB GFP_KERNEL pool for atomic allocations
+[    0.058282] DMA: preallocated 512 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[    0.058347] audit: initializing netlink subsys (disabled)
+[    0.058543] audit: type=2000 audit(0.051:1): state=initialized audit_enabled=0 res=1
+[    0.060547] thermal_sys: Registered thermal governor 'step_wise'
+[    0.060554] thermal_sys: Registered thermal governor 'power_allocator'
+[    0.060638] cpuidle: using governor menu
+[    0.061162] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[    0.061409] ASID allocator initialised with 32768 entries
+[    0.062635] Serial: AMBA PL011 UART driver
+[    0.067606] pstore: Using crash dump compression: deflate
+[    0.067627] printk: legacy console [ramoops-1] enabled
+[    0.068512] pstore: Registered ramoops as persistent store backend
+[    0.068529] ramoops: using 0x100000@0x9f800000, ecc: 0
+[    0.070545] CPUidle PSCI: Initialized CPU PM domain topology using OSI mode
+[    0.079788] /soc@0/ufshc@1d84000: Fixed dependency cycle(s) with /soc@0/phy@1d87000
+[    0.079835] /soc@0/phy@1d87000: Fixed dependency cycle(s) with /soc@0/ufshc@1d84000
+[    0.080001] /soc@0/stm@6002000: Fixed dependency cycle(s) with /soc@0/funnel@6041000
+[    0.080030] /soc@0/funnel@6041000: Fixed dependency cycle(s) with /soc@0/stm@6002000
+[    0.080077] /soc@0/funnel@6041000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+[    0.080121] /soc@0/funnel@6043000: Fixed dependency cycle(s) with /soc@0/funnel@7810000
+[    0.080154] /soc@0/funnel@6043000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+[    0.080200] /soc@0/funnel@6045000: Fixed dependency cycle(s) with /soc@0/funnel@6043000
+[    0.080225] /soc@0/funnel@6045000: Fixed dependency cycle(s) with /soc@0/funnel@6041000
+[    0.080253] /soc@0/funnel@6045000: Fixed dependency cycle(s) with /soc@0/etf@6047000
+[    0.080306] /soc@0/replicator@6046000: Fixed dependency cycle(s) with /soc@0/etf@6047000
+[    0.080343] /soc@0/replicator@6046000: Fixed dependency cycle(s) with /soc@0/etr@6048000
+[    0.080396] /soc@0/etf@6047000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+[    0.080422] /soc@0/etf@6047000: Fixed dependency cycle(s) with /soc@0/replicator@6046000
+[    0.080476] /soc@0/etr@6048000: Fixed dependency cycle(s) with /soc@0/replicator@6046000
+[    0.080529] /soc@0/etm@7040000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.080583] /soc@0/etm@7140000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.080635] /soc@0/etm@7240000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.080688] /soc@0/etm@7340000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.080740] /soc@0/etm@7440000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.080793] /soc@0/etm@7540000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.080845] /soc@0/etm@7640000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.080898] /soc@0/etm@7740000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.080926] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7740000
+[    0.080949] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7640000
+[    0.080973] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7540000
+[    0.080997] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7440000
+[    0.081020] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7340000
+[    0.081044] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7240000
+[    0.081068] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7140000
+[    0.081090] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7040000
+[    0.081125] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/funnel@7810000
+[    0.081174] /soc@0/funnel@7810000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.081207] /soc@0/funnel@7810000: Fixed dependency cycle(s) with /soc@0/funnel@6043000
+[    0.081261] /soc@0/phy@88e8000: Fixed dependency cycle(s) with /soc@0/usb@a6f8800/usb@a600000
+[    0.081311] /soc@0/usb@a6f8800/usb@a600000: Fixed dependency cycle(s) with /soc@0/phy@88e8000
+[    0.081383] /soc@0/camss@acb3000: Fixed dependency cycle(s) with /soc@0/cci@ac4a000/i2c-bus@1/camera@10
+[    0.081417] /soc@0/camss@acb3000: Fixed dependency cycle(s) with /soc@0/cci@ac4a000/i2c-bus@1/camera@1a
+[    0.081482] /soc@0/cci@ac4a000/i2c-bus@1/camera@10: Fixed dependency cycle(s) with /soc@0/camss@acb3000
+[    0.081531] /soc@0/cci@ac4a000/i2c-bus@1/camera@1a: Fixed dependency cycle(s) with /soc@0/camss@acb3000
+[    0.081657] /soc@0/display-subsystem@ae00000/display-controller@ae01000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[    0.081743] /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+[    0.081818] /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/display-controller@ae01000
+[    0.082014] /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[    0.082073] /soc@0/display-subsystem@ae00000/phy@ae94400: Fixed dependency cycle(s) with /soc@0/clock-controller@af00000
+[    0.082147] /soc@0/clock-controller@af00000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/phy@ae94400
+[    0.082381] /soc@0/interrupt-controller@17a00000: Fixed dependency cycle(s) with /soc@0/interrupt-controller@17a00000
+[    0.087536] /soc@0/ufshc@1d84000: Fixed dependency cycle(s) with /soc@0/phy@1d87000
+[    0.087820] /soc@0/ufshc@1d84000: Fixed dependency cycle(s) with /soc@0/phy@1d87000
+[    0.087903] /soc@0/phy@1d87000: Fixed dependency cycle(s) with /soc@0/ufshc@1d84000
+[    0.090875] /soc@0/stm@6002000: Fixed dependency cycle(s) with /soc@0/funnel@6041000
+[    0.091042] /soc@0/stm@6002000: Fixed dependency cycle(s) with /soc@0/funnel@6041000
+[    0.091113] /soc@0/funnel@6041000: Fixed dependency cycle(s) with /soc@0/stm@6002000
+[    0.091209] /soc@0/funnel@6041000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+[    0.091338] /soc@0/funnel@6043000: Fixed dependency cycle(s) with /soc@0/funnel@7810000
+[    0.091381] /soc@0/funnel@6043000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+[    0.091484] /soc@0/funnel@6043000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+[    0.091583] /soc@0/funnel@6041000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+[    0.091669] /soc@0/funnel@6045000: Fixed dependency cycle(s) with /soc@0/funnel@6043000
+[    0.091731] /soc@0/funnel@6045000: Fixed dependency cycle(s) with /soc@0/funnel@6041000
+[    0.091800] /soc@0/funnel@6045000: Fixed dependency cycle(s) with /soc@0/etf@6047000
+[    0.091930] /soc@0/replicator@6046000: Fixed dependency cycle(s) with /soc@0/etf@6047000
+[    0.091966] /soc@0/replicator@6046000: Fixed dependency cycle(s) with /soc@0/etr@6048000
+[    0.092089] /soc@0/replicator@6046000: Fixed dependency cycle(s) with /soc@0/etf@6047000
+[    0.092153] /soc@0/funnel@6045000: Fixed dependency cycle(s) with /soc@0/etf@6047000
+[    0.092251] /soc@0/etf@6047000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+[    0.092309] /soc@0/etf@6047000: Fixed dependency cycle(s) with /soc@0/replicator@6046000
+[    0.092432] /soc@0/replicator@6046000: Fixed dependency cycle(s) with /soc@0/etr@6048000
+[    0.092535] /soc@0/etr@6048000: Fixed dependency cycle(s) with /soc@0/replicator@6046000
+[    0.092697] /soc@0/etm@7040000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.092824] /soc@0/etm@7140000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.092945] /soc@0/etm@7240000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.093085] /soc@0/etm@7340000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.093205] /soc@0/etm@7440000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.093329] /soc@0/etm@7540000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.093448] /soc@0/etm@7640000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.093573] /soc@0/etm@7740000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.093704] /soc@0/etm@7740000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.093800] /soc@0/etm@7640000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.093893] /soc@0/etm@7540000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.093993] /soc@0/etm@7440000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.094098] /soc@0/etm@7340000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.094193] /soc@0/etm@7240000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.094286] /soc@0/etm@7140000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.094379] /soc@0/etm@7040000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.094434] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7740000
+[    0.094493] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7640000
+[    0.094550] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7540000
+[    0.094604] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7440000
+[    0.094657] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7340000
+[    0.094712] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7240000
+[    0.094772] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7140000
+[    0.094830] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7040000
+[    0.094902] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/funnel@7810000
+[    0.095034] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/funnel@7810000
+[    0.095129] /soc@0/funnel@6043000: Fixed dependency cycle(s) with /soc@0/funnel@7810000
+[    0.095206] /soc@0/funnel@7810000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+[    0.095276] /soc@0/funnel@7810000: Fixed dependency cycle(s) with /soc@0/funnel@6043000
+[    0.096161] /soc@0/phy@88e8000: Fixed dependency cycle(s) with /soc@0/usb@a6f8800/usb@a600000
+[    0.096613] /soc@0/usb@a6f8800/usb@a600000: Fixed dependency cycle(s) with /soc@0/phy@88e8000
+[    0.097731] /soc@0/camss@acb3000: Fixed dependency cycle(s) with /soc@0/cci@ac4a000/i2c-bus@1/camera@10
+[    0.097774] /soc@0/camss@acb3000: Fixed dependency cycle(s) with /soc@0/cci@ac4a000/i2c-bus@1/camera@1a
+[    0.098133] /soc@0/cci@ac4a000/i2c-bus@1/camera@10: Fixed dependency cycle(s) with /soc@0/camss@acb3000
+[    0.098265] /soc@0/cci@ac4a000/i2c-bus@1/camera@1a: Fixed dependency cycle(s) with /soc@0/camss@acb3000
+[    0.098976] /soc@0/display-subsystem@ae00000: Fixed dependency cycle(s) with /soc@0/clock-controller@af00000
+[    0.099172] /soc@0/display-subsystem@ae00000/display-controller@ae01000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[    0.099343] /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+[    0.099457] /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/display-controller@ae01000
+[    0.099833] /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[    0.099936] /soc@0/display-subsystem@ae00000/phy@ae94400: Fixed dependency cycle(s) with /soc@0/clock-controller@af00000
+[    0.101231] /soc@0/display-subsystem@ae00000/phy@ae94400: Fixed dependency cycle(s) with /soc@0/clock-controller@af00000
+[    0.101387] /soc@0/display-subsystem@ae00000: Fixed dependency cycle(s) with /soc@0/clock-controller@af00000
+[    0.101472] /soc@0/clock-controller@af00000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/phy@ae94400
+[    0.115226] /soc@0/rsc@179c0000/regulators-0: Fixed dependency cycle(s) with /soc@0/rsc@179c0000/regulators-0/smps5
+[    0.115275] /soc@0/rsc@179c0000/regulators-0: Fixed dependency cycle(s) with /soc@0/rsc@179c0000/regulators-0/smps3
+[    0.115307] /soc@0/rsc@179c0000/regulators-0: Fixed dependency cycle(s) with /soc@0/rsc@179c0000/regulators-0/smps7
+[    0.121193] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
+[    0.121219] HugeTLB: 0 KiB vmemmap can be freed for a 1.00 GiB page
+[    0.121237] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
+[    0.121251] HugeTLB: 0 KiB vmemmap can be freed for a 32.0 MiB page
+[    0.121278] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[    0.121292] HugeTLB: 0 KiB vmemmap can be freed for a 2.00 MiB page
+[    0.121308] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
+[    0.121322] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
+[    0.123082] ACPI: Interpreter disabled.
+[    0.126494] iommu: Default domain type: Translated
+[    0.126511] iommu: DMA domain TLB invalidation policy: strict mode
+[    0.127236] SCSI subsystem initialized
+[    0.127415] usbcore: registered new interface driver usbfs
+[    0.127456] usbcore: registered new interface driver hub
+[    0.127502] usbcore: registered new device driver usb
+[    0.127651] pps_core: LinuxPPS API ver. 1 registered
+[    0.127666] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[    0.127691] PTP clock support registered
+[    0.127760] EDAC MC: Ver: 3.0.0
+[    0.128009] scmi_core: SCMI protocol bus registered
+[    0.128101] qcom_scm firmware:scm: SHM Bridge not supported
+[    0.128135] qcom_scm: convention: smc arm 64
+[    0.128415] qcom_scm firmware:scm: qseecom: found qseecom with version 0x1400000
+[    0.128454] qcom_scm firmware:scm: qseecom: untested machine, skipping
+[    0.130037] vgaarb: loaded
+[    0.130570] clocksource: Switched to clocksource arch_sys_counter
+[    0.130947] VFS: Disk quotas dquot_6.6.0
+[    0.130979] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[    0.131265] pnp: PnP ACPI: disabled
+[    0.137500] NET: Registered PF_INET protocol family
+[    0.137675] IP idents hash table entries: 65536 (order: 7, 524288 bytes, linear)
+[    0.140734] tcp_listen_portaddr_hash hash table entries: 2048 (order: 3, 32768 bytes, linear)
+[    0.140785] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[    0.140812] TCP established hash table entries: 32768 (order: 6, 262144 bytes, linear)
+[    0.140995] TCP bind hash table entries: 32768 (order: 8, 1048576 bytes, linear)
+[    0.141746] TCP: Hash tables configured (established 32768 bind 32768)
+[    0.141845] UDP hash table entries: 2048 (order: 5, 131072 bytes, linear)
+[    0.142118] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[    0.142170] PCI: CLS 0 bytes, default 64
+[    0.142391] Trying to unpack rootfs image as initramfs...
+[    0.147611] kvm [1]: HYP mode not available
+[    0.148711] Initialise system trusted keyrings
+[    0.148965] workingset: timestamp_bits=42 (anon: 38) max_order=20 bucket_order=0 (anon: 0)
+[    0.149723] NET: Registered PF_ALG protocol family
+[    0.149747] Key type asymmetric registered
+[    0.149762] Asymmetric key parser 'x509' registered
+[    0.149828] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 241)
+[    0.149990] io scheduler mq-deadline registered
+[    0.150006] io scheduler kyber registered
+[    0.150048] io scheduler bfq registered
+[    0.208461] ledtrig-cpu: registered to indicate activity on CPUs
+[    0.210232] simple-framebuffer chosen:framebuffer-0: framebuffer at 0x9d400000, 0x2400000 bytes
+[    0.210265] simple-framebuffer chosen:framebuffer-0: format=a8r8g8b8, mode=1080x2160x32, linelength=4320
+[    0.214682] Console: switching to colour frame buffer device 135x135
+[    0.219066] simple-framebuffer chosen:framebuffer-0: fb0: simplefb registered!
+[    0.231476] smps3: Setting 600000-600000uV
+[    0.231510] bob: Setting 3312000-3600000uV
+[    0.235144] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[    0.237504] msm_serial: driver initialized
+[    0.237840] STM32 USART driver initialized
+[    0.241163] arm-smmu 15000000.iommu: probing hardware configuration...
+[    0.241205] arm-smmu 15000000.iommu: SMMUv2 with:
+[    0.241256] arm-smmu 15000000.iommu:         stage 1 translation
+[    0.241290] arm-smmu 15000000.iommu:         non-coherent table walk
+[    0.241321] arm-smmu 15000000.iommu:         (IDR0.CTTW overridden by FW configuration)
+[    0.241359] arm-smmu 15000000.iommu:         stream matching with 76 register groups
+[    0.241409] arm-smmu 15000000.iommu:         45 context banks (0 stage-2 only)
+[    0.241918] arm-smmu 15000000.iommu:         Supported page sizes: 0x61311000
+[    0.241956] arm-smmu 15000000.iommu:         Stage-1: 48-bit VA -> 48-bit IPA
+[    0.242055] arm-smmu 15000000.iommu:         preserved 0 boot mappings
+[    0.243996] platform 800000.dma-controller: Adding to iommu group 0
+[    0.244181] platform 8c0000.geniqup: Adding to iommu group 1
+[    0.244363] platform a00000.dma-controller: Adding to iommu group 2
+[    0.244537] platform ac0000.geniqup: Adding to iommu group 3
+[    0.244911] platform 1d84000.ufshc: Adding to iommu group 4
+[    0.245170] platform 1dc4000.dma-controller: Adding to iommu group 5
+[    0.245373] platform 1e40000.ipa: Adding to iommu group 6
+[    0.245750] platform aa00000.video-codec: Adding to iommu group 7
+[    0.245997] platform acb3000.camss: Adding to iommu group 8
+[    0.246223] platform ae00000.display-subsystem: Adding to iommu group 9
+[    0.246917] platform 17184000.dma-controller: Adding to iommu group 10
+[    0.247148] platform 18800000.wifi: Adding to iommu group 11
+[    0.259458] loop: module loaded
+[    0.259894] zram: Added device: zram0
+[    0.261304] spmi_pmic_arb c440000.spmi: PMIC arbiter version v5 (0x50000000)
+[    0.275295] thunder_xcv, ver 1.0
+[    0.275371] thunder_bgx, ver 1.0
+[    0.275426] nicpf, ver 1.0
+[    0.275473] e1000: Intel(R) PRO/1000 Network Driver
+[    0.275501] e1000: Copyright (c) 1999-2006 Intel Corporation.
+[    0.275556] e1000e: Intel(R) PRO/1000 Network Driver
+[    0.275597] e1000e: Copyright(c) 1999 - 2015 Intel Corporation.
+[    0.275781] sky2: driver version 1.30
+[    0.276222] VFIO - User Level meta-driver version: 0.3
+[    0.288484] i2c_dev: i2c /dev entries driver
+[    0.290772] input: pm8941_pwrkey as /devices/platform/soc@0/c440000.spmi/spmi-0/0-00/c440000.spmi:pmic@0:pon@800/c440000.spmi:pmic@0:pon@800:pwrkey/input/input0
+[    0.291949] input: pm8941_resin as /devices/platform/soc@0/c440000.spmi/spmi-0/0-00/c440000.spmi:pmic@0:pon@800/c440000.spmi:pmic@0:pon@800:resin/input/input1
+[    0.314765] device-mapper: ioctl: 4.50.0-ioctl (2025-04-28) initialised: dm-devel@lists.linux.dev
+[    0.317802] SMCCC: SOC_ID: ARCH_SOC_ID not implemented, skipping ....
+[    0.318413] clocksource: arch_mmio_counter: mask: 0xffffffffffffff max_cycles: 0x46d987e47, max_idle_ns: 440795202767 ns
+[    0.318471] arch-timer-mmio 17c90000.timer: mmio timer running at 19.20MHz (virt)
+[    0.318797] hid: raw HID events driver (C) Jiri Kosina
+[    0.318883] usbcore: registered new interface driver usbhid
+[    0.318912] usbhid: USB HID core driver
+[    0.324238] hw perfevents: enabled with armv8_pmuv3 PMU driver, 7 (0,8000003f) counters available
+[    0.356818] NET: Registered PF_INET6 protocol family
+[    0.358020] Freeing initrd memory: 4864K
+[    0.358262] Segment Routing with IPv6
+[    0.358321] In-situ OAM (IOAM) with IPv6
+[    0.358388] sit: IPv6, IPv4 and MPLS over IPv4 tunneling driver
+[    0.358837] NET: Registered PF_PACKET protocol family
+[    0.358887] Key type dns_resolver registered
+[    0.367115] registered taskstats version 1
+[    0.367558] Loading compiled-in X.509 certificates
+[    0.374222] Loaded X.509 cert 'Build time autogenerated kernel key: cd8571b914e13c88ad09bcea68ebdc1b28dac735'
+[    0.381308] Demotion targets for Node 0: null
+[    0.381399] Key type .fscrypt registered
+[    0.381423] Key type fscrypt-provisioning registered
+[    0.407830] smps3: Setting 1352000-1352000uV
+[    0.408078] arm-smmu 5040000.iommu: probing hardware configuration...
+[    0.408105] smps5: Setting 1904000-2040000uV
+[    0.408117] arm-smmu 5040000.iommu: SMMUv2 with:
+[    0.408188] arm-smmu 5040000.iommu:  stage 1 translation
+[    0.408222] arm-smmu 5040000.iommu:  address translation ops
+[    0.408252] arm-smmu 5040000.iommu:  non-coherent table walk
+[    0.408274] smps7: Setting 900000-1028000uV
+[    0.408300] arm-smmu 5040000.iommu:  (IDR0.CTTW overridden by FW configuration)
+[    0.408335] arm-smmu 5040000.iommu:  stream matching with 5 register groups
+[    0.408383] arm-smmu 5040000.iommu:  5 context banks (0 stage-2 only)
+[    0.408437] arm-smmu 5040000.iommu:  Supported page sizes: 0x61311000
+[    0.408455] ldo1: Setting 880000-880000uV
+[    0.408470] arm-smmu 5040000.iommu:  Stage-1: 48-bit VA -> 36-bit IPA
+[    0.408633] arm-smmu 5040000.iommu:  preserved 0 boot mappings
+[    0.409492] ldo5: Setting 800000-800000uV
+[    0.409497] platform 5000000.gpu: Adding to iommu group 12
+[    0.409759] platform 506a000.gmu: Adding to iommu group 13
+[    0.410144] ldo12: Setting 1800000-1800000uV
+[    0.410790] ldo7: Setting 1800000-1800000uV
+[    0.411446] ldo13: Setting 1800000-2960000uV
+[    0.412271] ldo14: Setting 1800000-1800000uV
+[    0.414398] ldo17: Setting 1304000-1304000uV
+[    0.415159] ldo19: Setting 3300000-3312000uV
+[    0.415903] ldo20: Setting 2960000-2968000uV
+[    0.416535] ldo21: Setting 2960000-2968000uV
+[    0.417040] ldo22: Setting 2864000-2864000uV
+[    0.417939] ldo24: Setting 3088000-3088000uV
+[    0.418319] ldo25: Setting 3300000-3312000uV
+[    0.418796] ldo26: Setting 1200000-1200000uV
+[    0.418973] platform a600000.usb: Adding to iommu group 14
+[    0.419200] /soc@0/phy@88e8000: Fixed dependency cycle(s) with /soc@0/usb@a6f8800/usb@a600000
+[    0.419355] /soc@0/usb@a6f8800/usb@a600000: Fixed dependency cycle(s) with /soc@0/phy@88e8000
+[    0.420506] ldo28: Setting 2856000-3008000uV
+[    0.425868] ufshcd-qcom 1d84000.ufshc: freq-table-hz property not specified
+[    0.425914] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vdd-hba-supply regulator, assuming enabled
+[    0.425999] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vccq-supply regulator, assuming enabled
+[    0.426045] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vccq2-supply regulator, assuming enabled
+[    0.442024] cpufreq: cpufreq_policy_online: CPU0: Running at unlisted initial frequency: 2995200 kHz, changing to: 1766400 kHz
+[    0.443939] cpu cpu0: EM: OPP:652800 is inefficient
+[    0.445802] cpu cpu0: EM: OPP:576000 is inefficient
+[    0.447607] cpu cpu0: EM: OPP:480000 is inefficient
+[    0.449383] cpu cpu0: EM: OPP:403200 is inefficient
+[    0.451157] cpu cpu0: EM: OPP:300000 is inefficient
+[    0.453228] cpu cpu0: EM: created perf domain
+[    0.464792] cpufreq: cpufreq_policy_online: CPU4: Running at unlisted initial frequency: 2995200 kHz, changing to: 2649600 kHz
+[    0.465673] cpu cpu4: EM: created perf domain
+[    0.466362] energy_model: updating cpu0 cpu_cap=407 old capacity=611
+[    0.467068] cpu cpu0: EM: OPP:576000 is inefficient
+[    0.467770] cpu cpu0: EM: OPP:480000 is inefficient
+[    0.468465] cpu cpu0: EM: OPP:403200 is inefficient
+[    0.469154] cpu cpu0: EM: OPP:300000 is inefficient
+[    0.472956] aux_bridge.aux_bridge aux_bridge.aux_bridge.0: error -ENODEV: failed to acquire drm_bridge
+[    0.477411] geni_i2c 88c000.i2c: Bus frequency not specified, default to 100kHz.
+[    0.480729] 898000.serial: ttyHS1 at MMIO 0x898000 (irq = 125, base_baud = 0) is a MSM
+[    0.483654] serial serial0: tty port ttyHS1 registered
+[    0.485553] a84000.serial: ttyMSM0 at MMIO 0xa84000 (irq = 126, base_baud = 0) is a MSM
+[    0.488011] printk: legacy console [ttyMSM0] enabled
+[    3.895797] geni_i2c a90000.i2c: Bus frequency not specified, default to 100kHz.
+[    3.908229] /soc@0/display-subsystem@ae00000/display-controller@ae01000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[    3.923941] /soc@0/display-subsystem@ae00000/display-controller@ae01000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[    3.938757] /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+[    3.952990] /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/display-controller@ae01000
+[    3.967973] /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[    3.988974] msm_dsi_phy ae94400.phy: [drm:dsi_pll_10nm_vco_prepare] *ERROR* DSI PLL(0) lock failed, status=0x00000000
+[    4.000430] msm_dsi_phy ae94400.phy: [drm:dsi_pll_10nm_vco_prepare] *ERROR* PLL(0) lock failed
+[    4.009877] ------------[ cut here ]------------
+[    4.015284] dsi0_phy_pll_out_dsiclk already disabled
+[    4.021064] WARNING: drivers/clk/clk.c:1188 at clk_core_disable+0xb0/0xd0, CPU#6: kworker/u32:4/71
+[    4.030856] Modules linked in:
+[    4.034715] CPU: 6 UID: 0 PID: 71 Comm: kworker/u32:4 Not tainted 7.1.0-rc1-sdm845 #5-postmarketos-qcom-sdm845 PREEMPT 
+[    4.046351] Hardware name: Google Pixel 3 (DT)
+[    4.051615] Workqueue: events_unbound deferred_probe_work_func
+[    4.058284] pstate: 604000c5 (nZCv daIF +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+[    4.066086] pc : clk_core_disable+0xb0/0xd0
+[    4.071089] lr : clk_core_disable+0xb0/0xd0
+[    4.076086] sp : ffff80008083b5b0
+[    4.080212] x29: ffff80008083b5b0 x28: ffffbf910cda5000 x27: 000000007fffffff
+[    4.088198] x26: ffff000080be6108 x25: 0000000000000000 x24: ffff0000fd929080
+[    4.096174] x23: ffff000081543180 x22: ffffbf910d2c2000 x21: ffffbf910d2c2000
+[    4.104150] x20: ffff0000829ada00 x19: ffff0000829ada00 x18: ffff8000806c3118
+[    4.112128] x17: 00000000fed73151 x16: 00000000fed73151 x15: 0000000000000003
+[    4.120100] x14: ffffbf910cde4e48 x13: 0000000000000fff x12: 0000000000000003
+[    4.128082] x11: 0000000000000003 x10: 0000000000000002 x9 : 9f6faa09474d3200
+[    4.136062] x8 : 9f6faa09474d3200 x7 : 205d343832353130 x6 : 302e34202020205b
+[    4.144046] x5 : ffffbf910d290258 x4 : ffff80008083b197 x3 : 0000000000000000
+[    4.152023] x2 : 0000000000000000 x1 : ffff80008083b380 x0 : 0000000000000028
+[    4.160002] Call trace:
+[    4.163260]  clk_core_disable+0xb0/0xd0 (P)
+[    4.168273]  clk_core_disable_lock+0x94/0x120
+[    4.173455]  __clk_set_parent_after+0x5c/0x8c
+[    4.178640]  clk_core_reparent_orphans_nolock+0xa8/0xf0
+[    4.184694]  clk_core_reparent_orphans+0x78/0xfc
+[    4.190134]  of_clk_add_hw_provider+0x9c/0x148
+[    4.195402]  devm_of_clk_add_hw_provider+0xc0/0x10c
+[    4.201113]  dsi_phy_driver_probe+0x334/0x364
+[    4.206296]  platform_probe+0x84/0xcc
+[    4.210786]  really_probe+0x1dc/0x4f4
+[    4.215260]  __driver_probe_device+0xdc/0x168
+[    4.220436]  driver_probe_device+0x4c/0x238
+[    4.225441]  __device_attach_driver+0x154/0x224
+[    4.230764]  bus_for_each_drv+0x11c/0x17c
+[    4.235568]  __device_attach+0x10c/0x1d4
+[    4.240276]  device_initial_probe+0x48/0x6c
+[    4.245247]  bus_probe_device+0x9c/0x128
+[    4.249944]  device_add+0x274/0x4e0
+[    4.254194]  of_platform_device_create_pdata+0xdc/0x198
+[    4.260194]  of_platform_bus_create+0x274/0x4b8
+[    4.265487]  of_platform_populate+0x7c/0x168
+[    4.270517]  mdss_probe+0x320/0x408
+[    4.274772]  platform_probe+0x84/0xcc
+[    4.279188]  really_probe+0x1dc/0x4f4
+[    4.283588]  __driver_probe_device+0xdc/0x168
+[    4.288697]  driver_probe_device+0x4c/0x238
+[    4.293623]  __device_attach_driver+0x154/0x224
+[    4.298904]  bus_for_each_drv+0x11c/0x17c
+[    4.303658]  __device_attach+0x10c/0x1d4
+[    4.308336]  device_initial_probe+0x48/0x6c
+[    4.313275]  bus_probe_device+0x9c/0x128
+[    4.317946]  deferred_probe_work_func+0xb0/0x11c
+[    4.323306]  process_scheduled_works+0x1a0/0x4b4
+[    4.328669]  worker_thread+0x280/0x3fc
+[    4.333143]  kthread+0x12c/0x15c
+[    4.337106]  ret_from_fork+0x10/0x20
+[    4.341417] ---[ end trace 0000000000000000 ]---
+[    4.346790] ------------[ cut here ]------------
+[    4.352135] dsi0_phy_pll_out_dsiclk already unprepared
+[    4.358036] WARNING: drivers/clk/clk.c:1048 at clk_core_unprepare+0xe8/0x120, CPU#6: kworker/u32:4/71
+[    4.368027] Modules linked in:
+[    4.371814] CPU: 6 UID: 0 PID: 71 Comm: kworker/u32:4 Tainted: G        W           7.1.0-rc1-sdm845 #5-postmarketos-qcom-sdm845 PREEMPT 
+[    4.385678] Tainted: [W]=WARN
+[    4.389397] Hardware name: Google Pixel 3 (DT)
+[    4.394590] Workqueue: events_unbound deferred_probe_work_func
+[    4.401186] pstate: 60400005 (nZCv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+[    4.408916] pc : clk_core_unprepare+0xe8/0x120
+[    4.414117] lr : clk_core_unprepare+0xe8/0x120
+[    4.419314] sp : ffff80008083b5c0
+[    4.423368] x29: ffff80008083b5c0 x28: ffffbf910cda5000 x27: 000000007fffffff
+[    4.431284] x26: ffff000080be6108 x25: 0000000000000000 x24: ffff0000fd929080
+[    4.439199] x23: ffff0000fd92f180 x22: ffff000081543180 x21: ffffbf910d2c2000
+[    4.447112] x20: ffffbf910d2c2000 x19: ffff0000829ada00 x18: ffff8000806c3118
+[    4.455028] x17: 00000000fed73151 x16: 00000000fed73151 x15: 0000000000000003
+[    4.462945] x14: ffffbf910cde4e48 x13: 0000000000000fff x12: 0000000000000003
+[    4.470856] x11: 0000000000000003 x10: 0000000000000002 x9 : 9f6faa09474d3200
+[    4.478774] x8 : 9f6faa09474d3200 x7 : 205d353331323533 x6 : 332e34202020205b
+[    4.486696] x5 : ffffbf910d290258 x4 : ffff80008083b1a7 x3 : 0000000000000000
+[    4.494624] x2 : 0000000000000000 x1 : ffff80008083b390 x0 : 000000000000002a
+[    4.502552] Call trace:
+[    4.505756]  clk_core_unprepare+0xe8/0x120 (P)
+[    4.510974]  clk_core_unprepare_lock+0x80/0x104
+[    4.516284]  __clk_set_parent_after+0x64/0x8c
+[    4.521424]  clk_core_reparent_orphans_nolock+0xa8/0xf0
+[    4.527412]  clk_core_reparent_orphans+0x78/0xfc
+[    4.532821]  of_clk_add_hw_provider+0x9c/0x148
+[    4.538044]  devm_of_clk_add_hw_provider+0xc0/0x10c
+[    4.543703]  dsi_phy_driver_probe+0x334/0x364
+[    4.548840]  platform_probe+0x84/0xcc
+[    4.553259]  really_probe+0x1dc/0x4f4
+[    4.557682]  __driver_probe_device+0xdc/0x168
+[    4.562800]  driver_probe_device+0x4c/0x238
+[    4.567764]  __device_attach_driver+0x154/0x224
+[    4.573056]  bus_for_each_drv+0x11c/0x17c
+[    4.577821]  __device_attach+0x10c/0x1d4
+[    4.582500]  device_initial_probe+0x48/0x6c
+[    4.587445]  bus_probe_device+0x9c/0x128
+[    4.592127]  device_add+0x274/0x4e0
+[    4.596344]  of_platform_device_create_pdata+0xdc/0x198
+[    4.602335]  of_platform_bus_create+0x274/0x4b8
+[    4.607634]  of_platform_populate+0x7c/0x168
+[    4.612657]  mdss_probe+0x320/0x408
+[    4.616894]  platform_probe+0x84/0xcc
+[    4.621298]  really_probe+0x1dc/0x4f4
+[    4.625696]  __driver_probe_device+0xdc/0x168
+[    4.630798]  driver_probe_device+0x4c/0x238
+[    4.635735]  __device_attach_driver+0x154/0x224
+[    4.641011]  bus_for_each_drv+0x11c/0x17c
+[    4.645764]  __device_attach+0x10c/0x1d4
+[    4.650429]  device_initial_probe+0x48/0x6c
+[    4.655351]  bus_probe_device+0x9c/0x128
+[    4.660001]  deferred_probe_work_func+0xb0/0x11c
+[    4.665349]  process_scheduled_works+0x1a0/0x4b4
+[    4.670689]  worker_thread+0x280/0x3fc
+[    4.675161]  kthread+0x12c/0x15c
+[    4.679102]  ret_from_fork+0x10/0x20
+[    4.683378] ---[ end trace 0000000000000000 ]---
+[    4.696125] ufshcd-qcom 1d84000.ufshc: freq-table-hz property not specified
+[    4.703783] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vdd-hba-supply regulator, assuming enabled
+[    4.715173] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vccq-supply regulator, assuming enabled
+[    4.726291] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vccq2-supply regulator, assuming enabled
+[    4.739977] ufshcd-qcom 1d84000.ufshc: Found QC Inline Crypto Engine (ICE) v3.1.75
+[    4.748285] ufshcd-qcom 1d84000.ufshc: A supported HWKM is not present. Supporting raw keys only.
+[    4.780072] scsi host0: ufshcd
+[    4.871910] scsi 0:0:0:49488: Well-known LUN    SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    4.876906] /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+[    4.899494] /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[    4.916402] scsi 0:0:0:49476: Well-known LUN    SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    4.916830] msm_dpu ae01000.display-controller: bound ae94000.dsi (ops dsi_ops)
+[    4.921341] scsi 0:0:0:49456: Well-known LUN    SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    4.929838] adreno 5000000.gpu: supply vdd not found, using dummy regulator
+[    4.933592] scsi 0:0:0:0: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    4.938991] adreno 5000000.gpu: supply vddcx not found, using dummy regulator
+[    4.943041] scsi 0:0:0:1: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    4.959920] msm_dpu ae01000.display-controller: bound 5000000.gpu (ops a3xx_ops)
+[    4.970406] scsi 0:0:0:2: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    5.001333] Console: switching to colour dummy device 80x25
+[    5.006639] scsi 0:0:0:3: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    5.018241] scsi 0:0:0:4: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    5.019202] [drm:dpu_kms_hw_init:1168] dpu hardware revision:0x40000000
+[    5.029362] scsi 0:0:0:5: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    5.041506] [drm] Initialized msm 1.13.0 for ae01000.display-controller on minor 0
+[    5.049685] msm_dpu ae01000.display-controller: Direct firmware load for qcom/a630_sqe.fw failed with error -2
+[    5.059839] msm_dpu ae01000.display-controller: [drm:adreno_request_fw] *ERROR* failed to load a630_sqe.fw
+[    5.073085] sd 0:0:0:0: [sda] 15591424 4096-byte logical blocks: (63.9 GB/59.5 GiB)
+[    5.073295] sd 0:0:0:1: [sdb] 1024 4096-byte logical blocks: (4.19 MB/4.00 MiB)
+[    5.075187] sd 0:0:0:2: [sdc] 1024 4096-byte logical blocks: (4.19 MB/4.00 MiB)
+[    5.075330] sd 0:0:0:2: [sdc] Write Protect is off
+[    5.075341] sd 0:0:0:2: [sdc] Mode Sense: 00 32 00 10
+[    5.075707] sd 0:0:0:2: [sdc] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    5.075827] sd 0:0:0:2: [sdc] Preferred minimum I/O size 786432 bytes
+[    5.075836] sd 0:0:0:2: [sdc] Optimal transfer size 786432 bytes
+[    5.081182] sd 0:0:0:0: [sda] Write Protect is off
+[    5.132114] sd 0:0:0:0: [sda] Mode Sense: 00 32 00 10
+[    5.136632] sd 0:0:0:3: [sdd] 2048 4096-byte logical blocks: (8.39 MB/8.00 MiB)
+[    5.136648] sd 0:0:0:1: [sdb] Write Protect is off
+[    5.136655] sd 0:0:0:1: [sdb] Mode Sense: 00 32 00 10
+[    5.136689] sd 0:0:0:5: [sdf] 18432 4096-byte logical blocks: (75.5 MB/72.0 MiB)
+[    5.136717] sd 0:0:0:3: [sdd] Write Protect is off
+[    5.136721] sd 0:0:0:3: [sdd] Mode Sense: 00 32 00 10
+[    5.136787] sd 0:0:0:0: [sda] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    5.136791] sd 0:0:0:4: [sde] 8192 4096-byte logical blocks: (33.6 MB/32.0 MiB)
+[    5.136800] sd 0:0:0:5: [sdf] Write Protect is off
+[    5.136804] sd 0:0:0:5: [sdf] Mode Sense: 00 32 00 10
+[    5.136874] sd 0:0:0:0: [sda] Preferred minimum I/O size 786432 bytes
+[    5.136877] sd 0:0:0:0: [sda] Optimal transfer size 786432 bytes
+[    5.136901] sd 0:0:0:1: [sdb] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    5.136903] sd 0:0:0:4: [sde] Write Protect is off
+[    5.136908] sd 0:0:0:4: [sde] Mode Sense: 00 32 00 10
+[    5.136962] sd 0:0:0:3: [sdd] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    5.137014] sd 0:0:0:1: [sdb] Preferred minimum I/O size 786432 bytes
+[    5.137020] sd 0:0:0:1: [sdb] Optimal transfer size 786432 bytes
+[    5.137023] sd 0:0:0:5: [sdf] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    5.137041] sd 0:0:0:3: [sdd] Preferred minimum I/O size 786432 bytes
+[    5.137045] sd 0:0:0:3: [sdd] Optimal transfer size 786432 bytes
+[    5.137091] sd 0:0:0:5: [sdf] Preferred minimum I/O size 786432 bytes
+[    5.137094] sd 0:0:0:5: [sdf] Optimal transfer size 786432 bytes
+[    5.137180] sd 0:0:0:4: [sde] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    5.137272] sd 0:0:0:4: [sde] Preferred minimum I/O size 786432 bytes
+[    5.137277] sd 0:0:0:4: [sde] Optimal transfer size 786432 bytes
+[    5.137485]  sdc: sdc1 sdc2
+[    5.137908] sd 0:0:0:2: [sdc] Attached SCSI disk
+[    5.145428]  sdb: sdb1 sdb2
+[    5.145669]  sda: sda1 sda2 sda3 sda4 sda5 sda6 sda7 sda8 sda9 sda10 sda11 sda12 sda13 sda14 sda15 sda16 sda17 sda18 sda19 sda20 sda21
+[    5.145685]  sdd: sdd1 sdd2 sdd3 sdd4 sdd5 sdd6
+[    5.145789] sd 0:0:0:1: [sdb] Attached SCSI disk
+[    5.146223] sd 0:0:0:3: [sdd] Attached SCSI disk
+[    5.146388]  sdf: sdf1 sdf2 sdf3 sdf4 sdf5 sdf6 sdf7 sdf8 sdf9 sdf10 sdf11 sdf12 sdf13 sdf14 sdf15
+[    5.146532]  sde: sde1 sde2 sde3 sde4 sde5 sde6 sde7 sde8 sde9 sde10 sde11 sde12 sde13 sde14 sde15 sde16 sde17 sde18 sde19 sde20 sde21 sde22 sde23 sde24
+[    5.147902] sd 0:0:0:5: [sdf] Attached SCSI disk
+[    5.148026] sd 0:0:0:0: [sda] Attached SCSI disk
+[    5.149180] sd 0:0:0:4: [sde] Attached SCSI disk
+[    5.472914] fb0: sys_imageblit: framebuffer is not in virtual address space.
+[    5.506017] Console: switching to colour frame buffer device 135x135
+[    5.801414] msm_dpu ae01000.display-controller: [drm] fb0: msmdrmfb frame buffer device
+[    5.817049] input: Volume keys as /devices/platform/gpio-keys/input/input2
+[    5.824448] clk: Disabling unused clocks
+[    5.828701] PM: genpd: Disabling unused power domains
+[    5.836732] Freeing unused kernel memory: 2048K
+[    5.841400] Run /init as init process
+[    5.845113]   with arguments:
+[    5.848126]     /init
+[    5.850438]   with environment:
+[    5.853622]     HOME=/
+[    5.856027]     TERM=linux
+[    5.880954] omamobile-blueline: watchdog-Knoten /dev/watchdog0
+[    5.882001] omamobile-blueline: kernel 7.1.0-rc1-sdm845 aarch64
+[    5.894492] omamobile-blueline: gadget-module-dir gefunden
+[    5.906763] fb0: sys_fillrect: framebuffer is not in virtual address space.
+[    5.909006] omamobile-blueline: modul libcomposite.ko geladen
+[    5.930772] omamobile-blueline: modul u_ether.ko geladen
+[    5.945239] omamobile-blueline: modul usb_f_ncm.ko geladen
+[    5.961007] omamobile-blueline: modul u_serial.ko geladen
+[    5.974478] omamobile-blueline: modul usb_f_acm.ko geladen
+[    5.978237] omamobile-blueline: moduli: 1 geladen, usb_f_ncm 3
+[    5.992130] omamobile-blueline: usb gadget setup (reference sequence)
+[    5.993874] omamobile-blueline: vor mkdir: configfs=$(grep -c " type configfs " /proc/mounts) libcomposite=$(grep -c libcomposite /proc/modules 2>/dev/null) module=$(wc -l < /proc/modules 2>/dev/null)
+[    6.029109] omamobile-blueline: nach mount: configfs=$(grep -c " type configfs " /proc/mounts) ordner=$([ -d "$CONFIGFS" ] && echo ja || echo nein) udc=$(ls /sys/class/udc 2>/dev/null | xargs)
+[    6.033971] omamobile-blueline: udc-lesung 1: uptime 6.02s, inhalt: a600000.usb 
+[    6.063322] omamobile-blueline: udc nach 0 runden gefunden: a600000.usb, uptime 6.05s
+[    6.067701] omamobile-blueline: network function: ncm.usb0
+[    6.091238] omamobile-blueline: binding UDC a600000.usb
+[    6.099919] configfs-gadget.g1 gadget.0: HOST MAC 72:1b:e8:13:3f:40
+[    6.108260] configfs-gadget.g1 gadget.0: MAC 0a:f0:85:5b:62:2c
+[    6.123006] omamobile-blueline: UDC steht auf: a600000.usb
+[    6.132744] omamobile-blueline: ifconfig usb0 172.16.42.1
+[    6.141599] random: crng init done
+[    6.149453] omamobile-blueline: network bring-up
+[    6.151504] ===== PSTORE console-ramoops-0 begin =====
+[    6.160520] omamobile-blueline: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+[    6.163974] omamobile-blueline: debug shell: telnetd -l /bin/sh (Port 23, alle Adressen)
+[    6.169792] omamobile-blueline: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+[    6.176454] ===== PSTORE console-ramoops-0 end =====
+[    6.185356] omamobile-blueline: raw log channel live on /dev/sda11
+[    6.186407] ===== PSTORE dmesg-ramoops-0 begin =====
+[    6.191491] omamobile-blueline: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+[    6.198532] ===== PSTORE dmesg-ramoops-0 end =====
+[    6.232555] omamobile-blueline: debug shell armed
+[    6.232938] omamobile-blueline: beat 6s steps:[6s] step: debug shell armed
+[    6.239477] omamobile-blueline: SSH ready: root@172.16.42.1; all storage read-only
+[    6.261741] omamobile-blueline: storage guard pass 1
+[    6.465881] omamobile-blueline: storage guard: 0 device(s) could not be write-protected
+[    6.479901] omamobile-blueline: storage guard pass 1 done
+[    6.489533] omamobile-blueline: init main flow complete; PID 1 parking
+[    6.499377] omamobile-blueline: init main flow complete; v0aa steuert den Selbst-Rueckweg an
+[    6.511197] omamobile-blueline: v0aa wartet das Messfenster der Runde aus
+[    7.223282] omamobile-blueline: schreib_rc=0 8+0 records in 8+0 records out 1048576 bytes (1.0MB) copied, 0.011441  platte=/dev/sda ro_achter=1
+[   16.365354] platform 888000.i2c: deferred probe pending: geni_i2c: Failed to get tx DMA ch
+[   16.378031] gcc-sdm845 100000.clock-controller: sync_state() pending due to 793000.rng
+[   16.390159] qnoc-sdm845 1380000.interconnect: sync_state() pending due to 1436400.pmu
+[   16.402216] qnoc-sdm845 1380000.interconnect: sync_state() pending due to 114a000.pmu
+[   16.414283] qnoc-sdm845 1500000.interconnect: sync_state() pending due to 1e40000.ipa
+[   16.425222] qnoc-sdm845 1620000.interconnect: sync_state() pending due to 1e40000.ipa
+[   16.436011] qnoc-sdm845 1380000.interconnect: sync_state() pending due to 1e40000.ipa
+[   16.446126] qnoc-sdm845 1700000.interconnect: sync_state() pending due to 1e40000.ipa
+[   16.455811] gcc-sdm845 100000.clock-controller: sync_state() pending due to 4080000.remoteproc
+[   16.466297] qnoc-sdm845 1500000.interconnect: sync_state() pending due to aa00000.video-codec
+[   16.476656] qnoc-sdm845 1380000.interconnect: sync_state() pending due to aa00000.video-codec
+[   16.486999] qnoc-sdm845 1740000.interconnect: sync_state() pending due to aa00000.video-codec
+[   16.497315] sdm845-videocc ab00000.clock-controller: sync_state() pending due to aa00000.video-codec
+[   16.508276] gcc-sdm845 100000.clock-controller: sync_state() pending due to acb3000.camss
+[   16.518277] gcc-sdm845 100000.clock-controller: sync_state() pending due to 506a000.gmu
+[   16.528079] sdm845-gpucc 5090000.clock-controller: sync_state() pending due to 506a000.gmu
+[   16.538206] qnoc-sdm845 17900000.interconnect: sync_state() pending due to aa00000.video-codec
+[   16.548631] qnoc-sdm845 17900000.interconnect: sync_state() pending due to 1e40000.ipa
+[   16.558333] qnoc-sdm845 17900000.interconnect: sync_state() pending due to 1436400.pmu
+[   16.568040] qcom-rpmhpd 179c0000.rsc:power-controller: sync_state() pending due to aa00000.video-codec
+[   16.579152] qcom-rpmhpd 179c0000.rsc:power-controller: sync_state() pending due to 4080000.remoteproc
+[   16.590233] qnoc-sdm845 1380000.interconnect: sync_state() pending due to 888000.i2c
+[   16.599783] qnoc-sdm845 17900000.interconnect: sync_state() pending due to 888000.i2c
+[   16.609419] qnoc-sdm845 1500000.interconnect: sync_state() pending due to 888000.i2c
+[   16.618980] qnoc-sdm845 16e0000.interconnect: sync_state() pending due to 888000.i2c
+[   16.628524] qcom-rpmhpd 179c0000.rsc:power-controller: sync_state() pending due to 888000.i2c
+[   16.638874] gcc-sdm845 100000.clock-controller: sync_state() pending due to 888000.i2c
+[   21.264742] udc a600000.usb: UDC had already started
+[   26.272740] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[   26.287199] omamobile-blueline:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0 
+[   26.481057] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   27.502087] omamobile-blueline: weicher-bind 1: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1= text1=, UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0 
+[   32.550513] omamobile-blueline: weicher-bind 1 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[   36.329692] ldo22: disabling
+[   38.848902] omamobile-blueline: beat 38s steps:[26s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0 
+[   40.356034] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   40.398354] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   40.880093] omamobile-blueline: beat 40s steps:[26s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0 
+[   41.338535] udc a600000.usb: UDC had already started
+[   41.559144] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[   41.637420] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   41.683169] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   42.916015] omamobile-blueline: beat 42s steps:[26s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0 
+[   44.955309] omamobile-blueline: beat 44s steps:[26s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0 
+[   46.362719] omamobile-blueline:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0 
+[   46.990983] omamobile-blueline: beat 46s steps:[46s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0 
+[   47.910855] omamobile-blueline: dmesg gesichert: /run/dmesg-12s.txt /run/dmesg-2s.txt /run/dmesg-42s.txt 
+[   52.614279] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[   52.827102] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   53.848633] omamobile-blueline: weicher-bind 2: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0 
+[   58.900002] omamobile-blueline: weicher-bind 2 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[   61.084005] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   61.134046] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   61.431581] udc a600000.usb: UDC had already started
+[   66.455712] omamobile-blueline:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0 
+[   78.970195] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[   79.203190] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   80.226519] omamobile-blueline: weicher-bind 3: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0 
+[   80.529140] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   80.585935] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   81.545549] udc a600000.usb: UDC had already started
+[   81.806598] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[   81.892269] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   81.944057] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   85.285827] omamobile-blueline: weicher-bind 3 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[   86.574036] omamobile-blueline:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0 
+[  100.355745] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  100.408590] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  101.658637] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  101.678250] udc a600000.usb: UDC had already started
+[  101.742830] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  101.783069] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  105.377641] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  105.617602] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  106.641238] omamobile-blueline: weicher-bind 4: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0 
+[  106.705059] omamobile-blueline:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0 
+[  111.700259] omamobile-blueline: weicher-bind 4 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  121.187670] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  121.242684] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  121.840871] udc a600000.usb: UDC had already started
+[  126.868699] omamobile-blueline:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0 
+[  131.773946] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  132.020545] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  133.047335] omamobile-blueline: weicher-bind 5: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0 
+[  138.108040] omamobile-blueline: weicher-bind 5 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  140.682932] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  140.735461] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  142.009298] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  142.037532] udc a600000.usb: UDC had already started
+[  142.086355] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  142.140134] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  158.187352] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  158.430084] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  159.451279] omamobile-blueline: weicher-bind 6: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0 
+[  160.619093] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  160.673173] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  161.998906] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  162.055621] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  162.111772] udc a600000.usb: UDC had already started
+[  164.505260] omamobile-blueline: weicher-bind 6 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  171.632061] omamobile-blueline: warten beendet nach 165s, runde  fertig
+[  171.645688] omamobile-blueline: v0ab Ziel erreicht: letztes logflush, dann Ablesung, dann Selbst-Rueckweg
+[  171.670667] omamobile-blueline: udc=a600000.usb module=5 dunkel=888000.i2c geni_i2c: Failed to get tx DMA ch
+[  171.695125] omamobile-blueline: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+[  172.770860] omamobile-blueline: schreib_rc=0 8+0 records in 8+0 records out 1048576 bytes (1.0MB) copied, 0.014045  platte=/dev/sda ro_achter=1
+[  172.794587] omamobile-blueline: logflush rc=0 rueckgelesen=0 geraet=KEINER
+[  172.806223] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=0
+[  175.822933] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=1
+[  178.844986] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=2
+[  180.450695] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  180.539685] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  180.586817] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  181.865151] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=3
+[  181.881814] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  181.926791] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  184.582689] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  184.810973] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  184.885353] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=4
+[  185.837670] omamobile-blueline: weicher-bind 7: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0 
+[  187.904057] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=5
+[  190.894948] omamobile-blueline: weicher-bind 7 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  190.932549] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=6
+[  193.950349] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=7
+[  196.970674] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=8
+[  199.990615] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=9
+[  200.293607] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  200.347784] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  201.619322] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  201.665550] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  203.010812] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=10
+[  206.032031] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=11
+[  209.052261] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=12
+[  210.972751] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  211.235511] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  212.069991] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=13
+[  212.258911] omamobile-blueline: weicher-bind 8: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0 
+[  215.090943] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=14
+[  217.314271] omamobile-blueline: weicher-bind 8 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  218.107448] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=15
+[  221.041993] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  221.091675] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  221.123018] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=16
+[  224.128953] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=17
+[  227.149637] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=18
+[  230.170492] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=19
+[  233.188743] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=20
+[  236.208777] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=21
+[  237.393415] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  237.623634] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  238.647673] omamobile-blueline: weicher-bind 9: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0 
+[  239.228941] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=22
+[  240.479126] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  240.531278] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  241.821477] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  241.872271] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  242.249537] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=23
+[  243.699476] omamobile-blueline: weicher-bind 9 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  245.267837] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=24
+[  248.287920] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=25
+[  251.308885] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=26
+[  254.329793] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=27
+[  257.350377] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=28
+[  260.278083] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  260.331271] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  260.368311] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=29
+[  261.635047] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  261.684676] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  263.398606] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=30
+[  263.792175] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  264.042847] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  265.065716] omamobile-blueline: weicher-bind 10: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0 
+[  266.418692] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=31
+[  269.436683] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=32
+[  270.125298] omamobile-blueline: weicher-bind 10 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  272.458895] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=33
+[  275.478945] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=34
+[  278.500153] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=35
+[  281.068985] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  281.121549] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  281.517971] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=36
+[  284.539784] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=37
+[  287.559320] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=38
+[  290.199634] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  290.461950] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  290.579622] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=39
+[  291.484726] omamobile-blueline: weicher-bind 11: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0 
+[  293.596099] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=40
+[  296.537076] omamobile-blueline: weicher-bind 11 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  296.612383] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=41
+[  299.632632] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=42
+[  300.499128] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  300.550319] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  301.824162] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  301.877835] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  302.652299] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=43
+[  305.670542] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=44
+[  308.691902] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=45
+[  311.713059] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=46
+[  314.731630] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=47
+[  316.614001] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  316.868256] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  317.750804] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=48
+[  317.890236] omamobile-blueline: weicher-bind 12: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0 
+[  320.273828] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  320.325022] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  320.770749] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=49
+[  321.590516] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  321.640994] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  322.947175] omamobile-blueline: weicher-bind 12 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  323.792003] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=50
+[  326.810145] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=51
+[  329.831428] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=52
+[  332.853383] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=53
+[  335.871353] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=54
+[  338.889506] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=55
+[  341.040498] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  341.074056] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  341.911327] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=56
+[  343.028728] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  343.273170] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  344.297872] omamobile-blueline: weicher-bind 13: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0 
+[  344.929705] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=57
+[  347.949064] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=58
+[  349.347909] omamobile-blueline: weicher-bind 13 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  350.967553] omamobile-blueline: ABLESUNG udc=a600000.usb module=5 rueckgelesen=0 zyklus=59
+[  354.163410] arm-smmu 5040000.iommu: disabling translation
+[  354.175103] arm-smmu 15000000.iommu: disabling translation
+[  354.185198] reboot: Restarting system with command 'bootloader'
+@@ENDE pstore-console-ramoops.txt

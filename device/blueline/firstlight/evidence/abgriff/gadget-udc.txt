@@ -1,0 +1,8 @@
+/config/usb_gadget/g1/UDC; ech
+o; cat /sys/kernel/config/usb_gadget/g1/UDC 2>/dev/null | wc -c)
+@@ANFANG gadget-udc.txt a600000.usb 12
+adget/g1/UDC 2>/dev/null
+a600000.usb
+
+a600000.usb
+@@ENDE gadget-udc.txt

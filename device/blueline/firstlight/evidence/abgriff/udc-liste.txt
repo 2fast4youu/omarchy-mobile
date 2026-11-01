@@ -1,0 +1,7 @@
+usb_f_acm 24576 2 - Live 0xffffbceae0de7000
+u_serial 32768 4 usb_f_acm, Live 0xffffbceae0dd5000
+usb_f_ncm 32768 2 - Live 0xffffbceae0dbb000
+u_ether 36864 1 usb_f_ncm, Live 0xffffbceae0dc8000
+libcomposite 98304 14 usb_f_acm,u_serial,usb_f_ncm,u_ether, Live 0xffffbceae0d9f000
+@@ENDE proc-modules.txt
+echo @@ENDE udc-liste.txt

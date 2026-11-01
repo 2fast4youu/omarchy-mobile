@@ -1,0 +1,3 @@
+@@ANFANG uptime.txt 13
+echo @@ENDE uptime.txt
+17.74 131.29

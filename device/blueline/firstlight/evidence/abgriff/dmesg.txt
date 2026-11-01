@@ -1,0 +1,767 @@
+)
+@@ANFANG dmesg.txt 58495
+[32m[    0.000000] [0mBooting Linux on physical CPU 0x0000000000 [0x517f803c]
+[32m[    0.000000] [0mLinux version 7.1.0-rc1-sdm845 (pmos@build) (Alpine clang version 22.1.8, LLD 22.1.8) #5-postmarketos-qcom-sdm845 SMP PREEMPT Tue Jul 14 03:51:45 UTC 
+[32m[    0.000000] [0mKASLR enabled
+[32m[    0.000000] [0m[33mMachine model: [0mGoogle Pixel 3
+[32m[    0.000000] [0m[33mefi: [0mUEFI not found.
+[32m[    0.000000] [0m[33m[Firmware Bug]: [0m[1mKernel image misaligned at boot, please fix your bootloader![0m
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x00000000bfffc000..0x00000000bfffffff (16 KiB) nomap non-reusable mpss-metadata
+[32m[    0.000000] [0m[33mReserved memory: [0mcreated CMA memory pool at 0x00000000fec00000, size 16 MiB
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: initialized node fastrpc, compatible id shared-dma-pool
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x00000000fec00000..0x00000000ffbfffff (16384 KiB) map reusable fastrpc
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x0000000085700000..0x0000000085cfffff (6144 KiB) nomap non-reusable hyp-mem@85700000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x0000000085e00000..0x0000000085efffff (1024 KiB) nomap non-reusable xbl-mem@85e00000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x0000000085fc0000..0x0000000085fdffff (128 KiB) nomap non-reusable aop-mem@85fc0000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x0000000085fe0000..0x0000000085ffffff (128 KiB) nomap non-reusable aop-cmd-db-mem@85fe0000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x0000000086000000..0x00000000861fffff (2048 KiB) nomap non-reusable smem@86000000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x0000000086200000..0x0000000088efffff (46080 KiB) nomap non-reusable tz@86200000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x000000008ab00000..0x000000008befffff (20480 KiB) nomap non-reusable qseecom@8ab00000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x000000008bf00000..0x000000008c3fffff (5120 KiB) nomap non-reusable camera-mem@8bf00000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x000000008c400000..0x000000008c40ffff (64 KiB) nomap non-reusable ipa-fw@8c400000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x000000008c410000..0x000000008c414fff (20 KiB) nomap non-reusable ipa-gsi@8c410000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x000000008c415000..0x000000008c416fff (8 KiB) nomap non-reusable gpu@8c415000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x000000008c500000..0x000000008defffff (26624 KiB) nomap non-reusable adsp@8c500000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x000000008df00000..0x000000008dffffff (1024 KiB) nomap non-reusable wlan-msa@8df00000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x000000009d400000..0x000000009f7fffff (36864 KiB) nomap non-reusable splash@9d400000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x000000008e000000..0x00000000977fffff (155648 KiB) nomap non-reusable memory@8e000000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x0000000097800000..0x0000000097cfffff (5120 KiB) nomap non-reusable venus@97800000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x0000000097d00000..0x00000000984fffff (8192 KiB) nomap non-reusable cdsp-mem@97D00000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x0000000098500000..0x00000000986fffff (2048 KiB) nomap non-reusable mba@98500000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x0000000098700000..0x0000000099afffff (20480 KiB) nomap non-reusable slpi@98700000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x0000000099b00000..0x0000000099bfffff (1024 KiB) nomap non-reusable spss@99B00000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x00000000f2700000..0x00000000f2901fff (2056 KiB) nomap non-reusable rmtfs-region@f2700000
+[32m[    0.000000] [0m[33mOF: [0mreserved mem: 0x000000009f800000..0x000000009f8fffff (1024 KiB) nomap non-reusable ramoops@9f800000
+[32m[    0.000000] [0m[33mNUMA: [0mFaking a node at [mem 0x0000000080000000-0x000000017e09ffff]
+[32m[    0.000000] [0mNODE_DATA(0) allocated [mem 0x17d8a8a80-0x17d8ab8ff]
+[32m[    0.000000] [0m[33mcma: [0mReserved 256 MiB at 0x00000000e2600000
+[32m[    0.000000] [0m[33mpsci: [0mprobing for conduit method from DT.
+[32m[    0.000000] [0m[33mpsci: [0mPSCIv1.1 detected in firmware.
+[32m[    0.000000] [0m[33mpsci: [0mUsing standard PSCI v0.2 function IDs
+[32m[    0.000000] [0m[33mpsci: [0mMIGRATE_INFO_TYPE not supported.
+[32m[    0.000000] [0m[33mpsci: [0mSMC Calling Convention v1.2
+[32m[    0.000000] [0m[33mpsci: [0mOSI mode supported.
+[32m[    0.000000] [0m[33mpsci: [0m[Firmware Bug]: failed to set PC mode: -3
+[32m[    0.000000] [0mZone ranges:
+[32m[    0.000000] [0m  DMA      [mem 0x0000000080000000-0x00000000ffffffff]
+[32m[    0.000000] [0m  DMA32    empty
+[32m[    0.000000] [0m  Normal   [mem 0x0000000100000000-0x000000017e09ffff]
+[32m[    0.000000] [0mMovable zone start for each node
+[32m[    0.000000] [0mEarly memory node ranges
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x0000000080000000-0x00000000856fffff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x0000000085700000-0x0000000085cfffff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x0000000085d00000-0x0000000085dfffff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x0000000085e00000-0x0000000085efffff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x0000000085f00000-0x0000000085fbffff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x0000000085fc0000-0x0000000088efffff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x0000000088f00000-0x000000008aafffff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x000000008ab00000-0x000000008c416fff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x000000008c417000-0x000000008c4fffff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x000000008c500000-0x0000000099bfffff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x0000000099c00000-0x000000009d3fffff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x000000009d400000-0x000000009f8fffff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x000000009f900000-0x00000000bfffbfff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x00000000bfffc000-0x00000000bfffffff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x00000000c0000000-0x00000000f26fffff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x00000000f2700000-0x00000000f2901fff]
+[32m[    0.000000] [0m[33m  node   0: [0m[mem 0x00000000f2902000-0x000000017e09ffff]
+[32m[    0.000000] [0mInitmem setup node 0 [mem 0x0000000080000000-0x000000017e09ffff]
+[32m[    0.000000] [0m[33mOn node 0, zone Normal: [0m8032 pages in unavailable ranges
+[32m[    0.000000] [0mKernel is locked down from Kernel configuration; see man kernel_lockdown.7
+[32m[    0.000000] [0m[33mpercpu: [0mEmbedded 35 pages/cpu s103896 r8192 d31272 u143360
+[32m[    0.000000] [0m[33mpcpu-alloc: [0ms103896 r8192 d31272 u143360 alloc=35*4096
+[32m[    0.000000] [0m[33mpcpu-alloc: [0m[0] 0 [0] 1 [0] 2 [0] 3 [0] 4 [0] 5 [0] 6 [0] 7 
+[32m[    0.000000] [0mDetected VIPT I-cache on CPU0
+[32m[    0.000000] [0m[33mCPU features: [0mdetected: GICv3 CPU interface
+[32m[    0.000000] [0m[33mCPU features: [0mkernel page table isolation forced ON by KASLR
+[32m[    0.000000] [0m[33mCPU features: [0mdetected: Kernel page table isolation (KPTI)
+[32m[    0.000000] [0m[33malternatives: [0mapplying boot alternatives
+[32m[    0.000000] [0m[33mKernel command line: [0mrootwait ro init=/init androidboot.bootdevice=1d84000.ufshc androidboot.baseband=sdm androidboot.keymaster=1 msm_drm.dsi_display0=dsi_sw43408_cmd_display::timing0 androidboot.force_normal_boot=1 androidboot.serialno=PIXEL3-SERIAL androidboot.slot_suffix=_b androidboot.slot_retry_count=-1 androidboot.slot_successful=no androidboot.hardware.platform=sdm845 androidboot.hardware=blueline androidboot.revision=MP1.0 androidboot.bootloader=b1c1-0.4-7617406 androidboot.hardware.sku=G013A androidboot.hardware.radio.subtype=0 androidboot.hardware.dsds=0 androidboot.secure_boot=PRODUCTION androidboot.cdt_hwid=0x05022800 androidboot.hardware.majorid=0x02 androidboot.dtb_idx=0 androidboot.dtbo_idx=8 androidboot.bootreason=reboot,bootloader androidboot.hardware.ddr=4GB,Micron,LPDDR4X androidboot.ddr_info=Micron androidboot.ddr_size=4GB androidboot.hardware.ufs=64GB,SKHynix androidboot.cid=00000000 \
+[32m[    0.000000] [0m[33mKernel command line: [0mandroidboot.boottime=0BLE:59,1BLL:29,1BLE:534,2BLL:127,2BLE:264735,SW:10015,KL:0,KD:4683,ODT:2,AVB:31,AFTL:0 androidboot.ramdump=enabled androidboot.blockchain=disabled androidboot.init_fatal_panic=true usbcfg.suzyq=disabled androidboot.theme=1 androidboot.hardware.pcbcfg=G650-02573-01 androidboot.hardware.devcfg=G950-01035-02 androidboot.vbmeta.device=PARTUUID=b7fc981c-7b25-4f78-848a-e5015e7b3cf5 androidboot.vbmeta.avb_version=1.1 androidboot.vbmeta.device_state=unlocked androidboot.vbmeta.hash_alg=sha256 androidboot.vbmeta.size=4224 androidboot.vbmeta.digest=1752749d02b07df912ddba18c6c915ac5944b2529547781482d421f7882ad660 androidboot.veritymode=enforcing androidboot.verifiedbootstate=orange androidboot.aftlstate=8 console=ttyMSM0,115200n8 console=tty0 loglevel=8 printk.devkmsg=on panic=60 androidboot.hardware=qcom androidboot.board=blueline rdinit=/init
+[32m[    0.000000] [0m[33mprintk: [0mlog buffer data + meta data: 131072 + 458752 = 589824 bytes
+[32m[    0.000000] [0m[33mDentry cache hash table entries: [0m524288 (order: 10, 4194304 bytes, linear)
+[32m[    0.000000] [0m[33mInode-cache hash table entries: [0m262144 (order: 9, 2097152 bytes, linear)
+[32m[    0.000000] [0m[33msoftware IO TLB: [0marea num 8.
+[32m[    0.000000] [0m[33msoftware IO TLB: [0mmapped [mem 0x00000000fac00000-0x00000000fec00000] (64MB)
+[32m[    0.000000] [0m[33mFallback order for Node 0: [0m0 
+[32m[    0.000000] [0m[33mBuilt 1 zonelists, mobility grouping on.  Total pages: [0m1040544
+[32m[    0.000000] [0m[33mPolicy zone: [0mNormal
+[32m[    0.000000] [0m[33mmem auto-init: [0mstack:all(zero), heap alloc:off, heap free:off
+[32m[    0.000000] [0m[33mSLUB: [0mHWalign=64, Order=0-3, MinObjects=0, CPUs=8, Nodes=1
+[32m[    0.000000] [0m[33mftrace: [0mallocating 55992 entries in 220 pages
+[32m[    0.000000] [0m[33mftrace: [0mallocated 220 pages with 5 groups
+[32m[    0.000000] [0m[33mrcu: [0mPreemptible hierarchical RCU implementation.
+[32m[    0.000000] [0m[33mrcu: [0m      RCU event tracing is enabled.
+[32m[    0.000000] [0m  Trampoline variant of Tasks RCU enabled.
+[32m[    0.000000] [0m  Rude variant of Tasks RCU enabled.
+[32m[    0.000000] [0m  Tracing variant of Tasks RCU enabled.
+[32m[    0.000000] [0m[33mrcu: [0mRCU calculated value of scheduler-enlistment delay is 100 jiffies.
+[32m[    0.000000] [0m[33mRCU Tasks: [0mSetting shift to 3 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=8.
+[32m[    0.000000] [0m[33mRCU Tasks Rude: [0mSetting shift to 3 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=8.
+[32m[    0.000000] [0m[33mNR_IRQS: [0m64, nr_irqs: 64, preallocated irqs: 0
+[32m[    0.000000] [0m[33mGICv3: [0m768 SPIs implemented
+[32m[    0.000000] [0m[33mGICv3: [0m0 Extended SPIs implemented
+[32m[    0.000000] [0m[33mRoot IRQ handler: [0mgic_handle_irq
+[32m[    0.000000] [0m[33mGICv3: [0mGICv3 features: 16 PPIs
+[32m[    0.000000] [0m[33mGICv3: [0mGICD_CTLR.DS=0, SCR_EL3.FIQ=1
+[32m[    0.000000] [0m[33mGICv3: [0mCPU0: found redistributor 0 region 0:0x0000000017a60000
+[32m[    0.000000] [0m[33mITS: [0m[1mNo ITS available, not enabling LPIs[0m
+[32m[    0.000000] [0m[33mrcu: [0msrcu_init: Setting srcu_struct sizes based on contention.
+[32m[    0.000000] [0m[33march_timer: [0mcp15 timer running at 19.20MHz (virt).
+[32m[    0.000000] [0m[33mclocksource: [0march_sys_counter: mask: 0xffffffffffffff max_cycles: 0x46d987e47, max_idle_ns: 440795202767 ns
+[32m[    0.000001] [0m[33msched_clock: [0m56 bits at 19MHz, resolution 52ns, wraps every 4398046511078ns
+[32m[    0.000263] [0m[33mConsole: [0mcolour dummy device 80x25
+[32m[    0.000278] [0m[33mprintk: [0mlegacy console [tty0] enabled
+[32m[    0.001344] [0mCalibrating delay loop (skipped), value calculated using timer frequency.. 38.40 BogoMIPS (lpj=19200)
+[32m[    0.001370] [0m[33mpid_max: [0mdefault: 32768 minimum: 301
+[32m[    0.001614] [0m[33mYama: [0mbecoming mindful.
+[32m[    0.002485] [0mLSM support for eBPF active
+[32m[    0.002638] [0m[33mMount-cache hash table entries: [0m8192 (order: 4, 65536 bytes, linear)
+[32m[    0.002664] [0m[33mMountpoint-cache hash table entries: [0m8192 (order: 4, 65536 bytes, linear)
+[32m[    0.003064] [0m[33mVFS: [0mFinished mounting rootfs on nullfs
+[32m[    0.005492] [0m[33mrcu: [0mHierarchical SRCU implementation.
+[32m[    0.005507] [0m[33mrcu: [0m      Max phase no-delay instances is 400.
+[32m[    0.005729] [0m[33mTimer migration: [0m1 hierarchy levels; 8 children per group; 1 crossnode level
+[32m[    0.006883] [0mEFI services will not be available.
+[32m[    0.007304] [0m[33msmp: [0mBringing up secondary CPUs ...
+[32m[    0.009149] [0mDetected VIPT I-cache on CPU1
+[32m[    0.009300] [0m[33mGICv3: [0mCPU1: found redistributor 100 region 0:0x0000000017a80000
+[32m[    0.009376] [0m[33mCPU1: [0mBooted secondary processor 0x0000000100 [0x517f803c]
+[32m[    0.011133] [0mDetected VIPT I-cache on CPU2
+[32m[    0.011258] [0m[33mGICv3: [0mCPU2: found redistributor 200 region 0:0x0000000017aa0000
+[32m[    0.011311] [0m[33mCPU2: [0mBooted secondary processor 0x0000000200 [0x517f803c]
+[32m[    0.013161] [0mDetected VIPT I-cache on CPU3
+[32m[    0.013284] [0m[33mGICv3: [0mCPU3: found redistributor 300 region 0:0x0000000017ac0000
+[32m[    0.013334] [0m[33mCPU3: [0mBooted secondary processor 0x0000000300 [0x517f803c]
+[32m[    0.015768] [0m[33mCPU features: [0mdetected: Spectre-v2
+[32m[    0.015781] [0m[33mCPU features: [0mdetected: Spectre-BHB
+[32m[    0.015793] [0mDetected VIPT I-cache on CPU4
+[32m[    0.015944] [0m[33mGICv3: [0mCPU4: found redistributor 400 region 0:0x0000000017ae0000
+[32m[    0.015995] [0m[33mCPU4: [0mBooted secondary processor 0x0000000400 [0x516f802d]
+[32m[    0.018251] [0mDetected VIPT I-cache on CPU5
+[32m[    0.018412] [0m[33mGICv3: [0mCPU5: found redistributor 500 region 0:0x0000000017b00000
+[32m[    0.018467] [0m[33mCPU5: [0mBooted secondary processor 0x0000000500 [0x516f802d]
+[32m[    0.020887] [0mDetected VIPT I-cache on CPU6
+[32m[    0.021050] [0m[33mGICv3: [0mCPU6: found redistributor 600 region 0:0x0000000017b20000
+[32m[    0.021102] [0m[33mCPU6: [0mBooted secondary processor 0x0000000600 [0x516f802d]
+[32m[    0.023632] [0mDetected VIPT I-cache on CPU7
+[32m[    0.023796] [0m[33mGICv3: [0mCPU7: found redistributor 700 region 0:0x0000000017b40000
+[32m[    0.023848] [0m[33mCPU7: [0mBooted secondary processor 0x0000000700 [0x516f802d]
+[32m[    0.023957] [0m[33msmp: [0mBrought up 1 node, 8 CPUs
+[32m[    0.024110] [0m[33mSMP: [0mTotal of 8 processors activated.
+[32m[    0.024120] [0m[33mCPU: [0mAll CPU(s) started at EL1
+[32m[    0.024147] [0m[33mCPU features: [0mdetected: 32-bit EL0 Support
+[32m[    0.024157] [0m[33mCPU features: [0mdetected: 32-bit EL1 Support
+[32m[    0.024167] [0m[33mCPU features: [0mdetected: Data cache clean to the PoU not required for I/D coherence
+[32m[    0.024180] [0m[33mCPU features: [0mdetected: Common not Private translations
+[32m[    0.024189] [0m[33mCPU features: [0mdetected: CRC32 instructions
+[32m[    0.024202] [0m[33mCPU features: [0mdetected: RCpc load-acquire (LDAPR)
+[32m[    0.024212] [0m[33mCPU features: [0mdetected: LSE atomic instructions
+[32m[    0.024237] [0m[33mCPU features: [0mdetected: Privileged Access Never
+[32m[    0.024248] [0m[33mCPU features: [0mdetected: PMUv3
+[32m[    0.024256] [0m[33mCPU features: [0mdetected: RAS Extension Support
+[32m[    0.024268] [0m[33mCPU features: [0mdetected: XNX
+[32m[    0.024366] [0m[33malternatives: [0mapplying system-wide alternatives
+[32m[    0.030861] [0m[33mCPU features: [0mdetected: Hardware dirty bit management on CPU0-7
+[32m[    0.031265] [0m[33mMemory: [0m3339592K/4162176K available (18624K kernel code, 4870K rwdata, 17168K rodata, 2048K init, 479K bss, 537152K reserved, 278528K cma-reserved)
+[32m[    0.033334] [0m[33mdevtmpfs: [0minitialized
+[32m[    0.049879] [0m[33mclocksource: [0mjiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 1911260446275000 ns
+[32m[    0.049921] [0m[33mposixtimers hash table entries: [0m4096 (order: 4, 65536 bytes, linear)
+[32m[    0.050085] [0m[33mfutex hash table entries: [0m2048 (131072 bytes on 1 NUMA nodes, total 128 KiB, linear).
+[32m[    0.052548] [0m2G module region forced by RANDOMIZE_MODULE_REGION_FULL
+[32m[    0.052593] [0m0 pages in range for non-PLT usage
+[32m[    0.052598] [0m513424 pages in range for PLT usage
+[32m[    0.053972] [0m[33mDMI: [0mnot present or invalid.
+[32m[    0.056105] [0m[33mNET: [0mRegistered PF_NETLINK/PF_ROUTE protocol family
+[32m[    0.057378] [0m[33mDMA: [0mpreallocated 512 KiB GFP_KERNEL pool for atomic allocations
+[32m[    0.057537] [0m[33mDMA: [0mpreallocated 512 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[32m[    0.057591] [0m[33maudit: [0minitializing netlink subsys (disabled)
+[32m[    0.057782] [0m[33maudit: [0mtype=2000 audit(0.051:1): state=initialized audit_enabled=0 res=1
+[32m[    0.059938] [0m[33mthermal_sys: [0mRegistered thermal governor 'step_wise'
+[32m[    0.059947] [0m[33mthermal_sys: [0mRegistered thermal governor 'power_allocator'
+[32m[    0.060028] [0m[33mcpuidle: [0musing governor menu
+[32m[    0.060556] [0m[33mhw-breakpoint: [0mfound 6 breakpoint and 4 watchpoint registers.
+[32m[    0.060797] [0mASID allocator initialised with 32768 entries
+[32m[    0.062013] [0m[33mSerial: [0mAMBA PL011 UART driver
+[32m[    0.067046] [0m[33mpstore: [0mUsing crash dump compression: deflate
+[32m[    0.067068] [0m[33mprintk: [0mlegacy console [ramoops-1] enabled
+[32m[    0.067999] [0m[33mpstore: [0mRegistered ramoops as persistent store backend
+[32m[    0.068018] [0m[33mramoops: [0musing 0x100000@0x9f800000, ecc: 0
+[32m[    0.070160] [0m[33mCPUidle PSCI: [0mInitialized CPU PM domain topology using OSI mode
+[32m[    0.079444] [0m[33m/soc@0/ufshc@1d84000: [0mFixed dependency cycle(s) with /soc@0/phy@1d87000
+[32m[    0.079490] [0m[33m/soc@0/phy@1d87000: [0mFixed dependency cycle(s) with /soc@0/ufshc@1d84000
+[32m[    0.079653] [0m[33m/soc@0/stm@6002000: [0mFixed dependency cycle(s) with /soc@0/funnel@6041000
+[32m[    0.079682] [0m[33m/soc@0/funnel@6041000: [0mFixed dependency cycle(s) with /soc@0/stm@6002000
+[32m[    0.079729] [0m[33m/soc@0/funnel@6041000: [0mFixed dependency cycle(s) with /soc@0/funnel@6045000
+[32m[    0.079773] [0m[33m/soc@0/funnel@6043000: [0mFixed dependency cycle(s) with /soc@0/funnel@7810000
+[32m[    0.079806] [0m[33m/soc@0/funnel@6043000: [0mFixed dependency cycle(s) with /soc@0/funnel@6045000
+[32m[    0.079853] [0m[33m/soc@0/funnel@6045000: [0mFixed dependency cycle(s) with /soc@0/funnel@6043000
+[32m[    0.079879] [0m[33m/soc@0/funnel@6045000: [0mFixed dependency cycle(s) with /soc@0/funnel@6041000
+[32m[    0.079906] [0m[33m/soc@0/funnel@6045000: [0mFixed dependency cycle(s) with /soc@0/etf@6047000
+[32m[    0.079961] [0m[33m/soc@0/replicator@6046000: [0mFixed dependency cycle(s) with /soc@0/etf@6047000
+[32m[    0.079986] [0m[33m/soc@0/replicator@6046000: [0mFixed dependency cycle(s) with /soc@0/etr@6048000
+[32m[    0.080036] [0m[33m/soc@0/etf@6047000: [0mFixed dependency cycle(s) with /soc@0/funnel@6045000
+[32m[    0.080062] [0m[33m/soc@0/etf@6047000: [0mFixed dependency cycle(s) with /soc@0/replicator@6046000
+[32m[    0.080116] [0m[33m/soc@0/etr@6048000: [0mFixed dependency cycle(s) with /soc@0/replicator@6046000
+[32m[    0.080169] [0m[33m/soc@0/etm@7040000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.080221] [0m[33m/soc@0/etm@7140000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.080274] [0m[33m/soc@0/etm@7240000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.080326] [0m[33m/soc@0/etm@7340000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.080378] [0m[33m/soc@0/etm@7440000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.080442] [0m[33m/soc@0/etm@7540000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.080497] [0m[33m/soc@0/etm@7640000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.080550] [0m[33m/soc@0/etm@7740000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.080578] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7740000
+[32m[    0.080601] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7640000
+[32m[    0.080625] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7540000
+[32m[    0.080649] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7440000
+[32m[    0.080673] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7340000
+[32m[    0.080696] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7240000
+[32m[    0.080719] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7140000
+[32m[    0.080742] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7040000
+[32m[    0.080777] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/funnel@7810000
+[32m[    0.080826] [0m[33m/soc@0/funnel@7810000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.080859] [0m[33m/soc@0/funnel@7810000: [0mFixed dependency cycle(s) with /soc@0/funnel@6043000
+[32m[    0.080915] [0m[33m/soc@0/phy@88e8000: [0mFixed dependency cycle(s) with /soc@0/usb@a6f8800/usb@a600000
+[32m[    0.080967] [0m[33m/soc@0/usb@a6f8800/usb@a600000: [0mFixed dependency cycle(s) with /soc@0/phy@88e8000
+[32m[    0.081031] [0m[33m/soc@0/camss@acb3000: [0mFixed dependency cycle(s) with /soc@0/cci@ac4a000/i2c-bus@1/camera@10
+[32m[    0.081064] [0m[33m/soc@0/camss@acb3000: [0mFixed dependency cycle(s) with /soc@0/cci@ac4a000/i2c-bus@1/camera@1a
+[32m[    0.081129] [0m[33m/soc@0/cci@ac4a000/i2c-bus@1/camera@10: [0mFixed dependency cycle(s) with /soc@0/camss@acb3000
+[32m[    0.081178] [0m[33m/soc@0/cci@ac4a000/i2c-bus@1/camera@1a: [0mFixed dependency cycle(s) with /soc@0/camss@acb3000
+[32m[    0.081305] [0m[33m/soc@0/display-subsystem@ae00000/display-controller@ae01000: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[32m[    0.081391] [0m[33m/soc@0/display-subsystem@ae00000/dsi@ae94000: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+[32m[    0.081477] [0m[33m/soc@0/display-subsystem@ae00000/dsi@ae94000: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/display-controller@ae01000
+[32m[    0.081675] [0m[33m/soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[32m[    0.081736] [0m[33m/soc@0/display-subsystem@ae00000/phy@ae94400: [0mFixed dependency cycle(s) with /soc@0/clock-controller@af00000
+[32m[    0.081811] [0m[33m/soc@0/clock-controller@af00000: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/phy@ae94400
+[32m[    0.082037] [0m[33m/soc@0/interrupt-controller@17a00000: [0mFixed dependency cycle(s) with /soc@0/interrupt-controller@17a00000
+[32m[    0.087439] [0m[33m/soc@0/ufshc@1d84000: [0mFixed dependency cycle(s) with /soc@0/phy@1d87000
+[32m[    0.087748] [0m[33m/soc@0/ufshc@1d84000: [0mFixed dependency cycle(s) with /soc@0/phy@1d87000
+[32m[    0.087834] [0m[33m/soc@0/phy@1d87000: [0mFixed dependency cycle(s) with /soc@0/ufshc@1d84000
+[32m[    0.090811] [0m[33m/soc@0/stm@6002000: [0mFixed dependency cycle(s) with /soc@0/funnel@6041000
+[32m[    0.090962] [0m[33m/soc@0/stm@6002000: [0mFixed dependency cycle(s) with /soc@0/funnel@6041000
+[32m[    0.091028] [0m[33m/soc@0/funnel@6041000: [0mFixed dependency cycle(s) with /soc@0/stm@6002000
+[32m[    0.091121] [0m[33m/soc@0/funnel@6041000: [0mFixed dependency cycle(s) with /soc@0/funnel@6045000
+[32m[    0.091251] [0m[33m/soc@0/funnel@6043000: [0mFixed dependency cycle(s) with /soc@0/funnel@7810000
+[32m[    0.091291] [0m[33m/soc@0/funnel@6043000: [0mFixed dependency cycle(s) with /soc@0/funnel@6045000
+[32m[    0.091399] [0m[33m/soc@0/funnel@6043000: [0mFixed dependency cycle(s) with /soc@0/funnel@6045000
+[32m[    0.091509] [0m[33m/soc@0/funnel@6041000: [0mFixed dependency cycle(s) with /soc@0/funnel@6045000
+[32m[    0.091594] [0m[33m/soc@0/funnel@6045000: [0mFixed dependency cycle(s) with /soc@0/funnel@6043000
+[32m[    0.091654] [0m[33m/soc@0/funnel@6045000: [0mFixed dependency cycle(s) with /soc@0/funnel@6041000
+[32m[    0.091715] [0m[33m/soc@0/funnel@6045000: [0mFixed dependency cycle(s) with /soc@0/etf@6047000
+[32m[    0.091858] [0m[33m/soc@0/replicator@6046000: [0mFixed dependency cycle(s) with /soc@0/etf@6047000
+[32m[    0.091886] [0m[33m/soc@0/replicator@6046000: [0mFixed dependency cycle(s) with /soc@0/etr@6048000
+[32m[    0.092007] [0m[33m/soc@0/replicator@6046000: [0mFixed dependency cycle(s) with /soc@0/etf@6047000
+[32m[    0.092074] [0m[33m/soc@0/funnel@6045000: [0mFixed dependency cycle(s) with /soc@0/etf@6047000
+[32m[    0.092175] [0m[33m/soc@0/etf@6047000: [0mFixed dependency cycle(s) with /soc@0/funnel@6045000
+[32m[    0.092234] [0m[33m/soc@0/etf@6047000: [0mFixed dependency cycle(s) with /soc@0/replicator@6046000
+[32m[    0.092364] [0m[33m/soc@0/replicator@6046000: [0mFixed dependency cycle(s) with /soc@0/etr@6048000
+[32m[    0.092465] [0m[33m/soc@0/etr@6048000: [0mFixed dependency cycle(s) with /soc@0/replicator@6046000
+[32m[    0.092627] [0m[33m/soc@0/etm@7040000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.092759] [0m[33m/soc@0/etm@7140000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.092882] [0m[33m/soc@0/etm@7240000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.093008] [0m[33m/soc@0/etm@7340000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.093128] [0m[33m/soc@0/etm@7440000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.093269] [0m[33m/soc@0/etm@7540000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.093392] [0m[33m/soc@0/etm@7640000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.093512] [0m[33m/soc@0/etm@7740000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.093642] [0m[33m/soc@0/etm@7740000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.093748] [0m[33m/soc@0/etm@7640000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.093842] [0m[33m/soc@0/etm@7540000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.093936] [0m[33m/soc@0/etm@7440000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.094026] [0m[33m/soc@0/etm@7340000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.094117] [0m[33m/soc@0/etm@7240000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.094232] [0m[33m/soc@0/etm@7140000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.094327] [0m[33m/soc@0/etm@7040000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.094382] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7740000
+[32m[    0.094436] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7640000
+[32m[    0.094490] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7540000
+[32m[    0.094550] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7440000
+[32m[    0.094611] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7340000
+[32m[    0.094665] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7240000
+[32m[    0.094718] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7140000
+[32m[    0.094776] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/etm@7040000
+[32m[    0.094855] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/funnel@7810000
+[32m[    0.094974] [0m[33m/soc@0/funnel@7800000: [0mFixed dependency cycle(s) with /soc@0/funnel@7810000
+[32m[    0.095059] [0m[33m/soc@0/funnel@6043000: [0mFixed dependency cycle(s) with /soc@0/funnel@7810000
+[32m[    0.095134] [0m[33m/soc@0/funnel@7810000: [0mFixed dependency cycle(s) with /soc@0/funnel@7800000
+[32m[    0.095224] [0m[33m/soc@0/funnel@7810000: [0mFixed dependency cycle(s) with /soc@0/funnel@6043000
+[32m[    0.096125] [0m[33m/soc@0/phy@88e8000: [0mFixed dependency cycle(s) with /soc@0/usb@a6f8800/usb@a600000
+[32m[    0.096605] [0m[33m/soc@0/usb@a6f8800/usb@a600000: [0mFixed dependency cycle(s) with /soc@0/phy@88e8000
+[32m[    0.097744] [0m[33m/soc@0/camss@acb3000: [0mFixed dependency cycle(s) with /soc@0/cci@ac4a000/i2c-bus@1/camera@10
+[32m[    0.097784] [0m[33m/soc@0/camss@acb3000: [0mFixed dependency cycle(s) with /soc@0/cci@ac4a000/i2c-bus@1/camera@1a
+[32m[    0.098131] [0m[33m/soc@0/cci@ac4a000/i2c-bus@1/camera@10: [0mFixed dependency cycle(s) with /soc@0/camss@acb3000
+[32m[    0.098280] [0m[33m/soc@0/cci@ac4a000/i2c-bus@1/camera@1a: [0mFixed dependency cycle(s) with /soc@0/camss@acb3000
+[32m[    0.099013] [0m[33m/soc@0/display-subsystem@ae00000: [0mFixed dependency cycle(s) with /soc@0/clock-controller@af00000
+[32m[    0.099200] [0m[33m/soc@0/display-subsystem@ae00000/display-controller@ae01000: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[32m[    0.099378] [0m[33m/soc@0/display-subsystem@ae00000/dsi@ae94000: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+[32m[    0.099493] [0m[33m/soc@0/display-subsystem@ae00000/dsi@ae94000: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/display-controller@ae01000
+[32m[    0.099876] [0m[33m/soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[32m[    0.099988] [0m[33m/soc@0/display-subsystem@ae00000/phy@ae94400: [0mFixed dependency cycle(s) with /soc@0/clock-controller@af00000
+[32m[    0.101354] [0m[33m/soc@0/display-subsystem@ae00000/phy@ae94400: [0mFixed dependency cycle(s) with /soc@0/clock-controller@af00000
+[32m[    0.101507] [0m[33m/soc@0/display-subsystem@ae00000: [0mFixed dependency cycle(s) with /soc@0/clock-controller@af00000
+[32m[    0.101596] [0m[33m/soc@0/clock-controller@af00000: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/phy@ae94400
+[32m[    0.115665] [0m[33m/soc@0/rsc@179c0000/regulators-0: [0mFixed dependency cycle(s) with /soc@0/rsc@179c0000/regulators-0/smps5
+[32m[    0.115712] [0m[33m/soc@0/rsc@179c0000/regulators-0: [0mFixed dependency cycle(s) with /soc@0/rsc@179c0000/regulators-0/smps3
+[32m[    0.115746] [0m[33m/soc@0/rsc@179c0000/regulators-0: [0mFixed dependency cycle(s) with /soc@0/rsc@179c0000/regulators-0/smps7
+[32m[    0.121913] [0m[33mHugeTLB: [0mregistered 1.00 GiB page size, pre-allocated 0 pages
+[32m[    0.121938] [0m[33mHugeTLB: [0m0 KiB vmemmap can be freed for a 1.00 GiB page
+[32m[    0.121957] [0m[33mHugeTLB: [0mregistered 32.0 MiB page size, pre-allocated 0 pages
+[32m[    0.121972] [0m[33mHugeTLB: [0m0 KiB vmemmap can be freed for a 32.0 MiB page
+[32m[    0.121987] [0m[33mHugeTLB: [0mregistered 2.00 MiB page size, pre-allocated 0 pages
+[32m[    0.122001] [0m[33mHugeTLB: [0m0 KiB vmemmap can be freed for a 2.00 MiB page
+[32m[    0.122017] [0m[33mHugeTLB: [0mregistered 64.0 KiB page size, pre-allocated 0 pages
+[32m[    0.122030] [0m[33mHugeTLB: [0m0 KiB vmemmap can be freed for a 64.0 KiB page
+[32m[    0.123784] [0m[33mACPI: [0mInterpreter disabled.
+[32m[    0.127277] [0m[33miommu: [0mDefault domain type: Translated
+[32m[    0.127295] [0m[33miommu: [0mDMA domain TLB invalidation policy: strict mode
+[32m[    0.128623] [0mSCSI subsystem initialized
+[32m[    0.128805] [0m[33musbcore: [0mregistered new interface driver usbfs
+[32m[    0.128845] [0m[33musbcore: [0mregistered new interface driver hub
+[32m[    0.128888] [0m[33musbcore: [0mregistered new device driver usb
+[32m[    0.129042] [0m[33mpps_core: [0mLinuxPPS API ver. 1 registered
+[32m[    0.129057] [0m[33mpps_core: [0mSoftware ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[32m[    0.129081] [0mPTP clock support registered
+[32m[    0.129144] [0m[33mEDAC MC: [0mVer: 3.0.0
+[32m[    0.129407] [0m[33mscmi_core: [0mSCMI protocol bus registered
+[32m[    0.129521] [0m[33mqcom_scm firmware:scm: [0mSHM Bridge not supported
+[32m[    0.129554] [0m[33mqcom_scm: [0mconvention: smc arm 64
+[32m[    0.129815] [0m[33mqcom_scm firmware:scm: [0mqseecom: found qseecom with version 0x1400000
+[32m[    0.129851] [0m[33mqcom_scm firmware:scm: [0mqseecom: untested machine, skipping
+[32m[    0.131465] [0m[33mvgaarb: [0mloaded
+[32m[    0.131995] [0m[33mclocksource: [0mSwitched to clocksource arch_sys_counter
+[32m[    0.132334] [0m[33mVFS: [0mDisk quotas dquot_6.6.0
+[32m[    0.132366] [0m[33mVFS: [0mDquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[32m[    0.132775] [0m[33mpnp: [0mPnP ACPI: disabled
+[32m[    0.139157] [0m[33mNET: [0mRegistered PF_INET protocol family
+[32m[    0.139320] [0m[33mIP idents hash table entries: [0m65536 (order: 7, 524288 bytes, linear)
+[32m[    0.142380] [0m[33mtcp_listen_portaddr_hash hash table entries: [0m2048 (order: 3, 32768 bytes, linear)
+[32m[    0.142433] [0m[33mTable-perturb hash table entries: [0m65536 (order: 6, 262144 bytes, linear)
+[32m[    0.142458] [0m[33mTCP established hash table entries: [0m32768 (order: 6, 262144 bytes, linear)
+[32m[    0.142642] [0m[33mTCP bind hash table entries: [0m32768 (order: 8, 1048576 bytes, linear)
+[32m[    0.143390] [0m[33mTCP: [0mHash tables configured (established 32768 bind 32768)
+[32m[    0.143489] [0m[33mUDP hash table entries: [0m2048 (order: 5, 131072 bytes, linear)
+[32m[    0.143767] [0m[33mNET: [0mRegistered PF_UNIX/PF_LOCAL protocol family
+[32m[    0.143824] [0m[33mPCI: [0mCLS 0 bytes, default 64
+[32m[    0.144063] [0mTrying to unpack rootfs image as initramfs...
+[32m[    0.147315] [0m[33mkvm [1]: [0mHYP mode not available
+[32m[    0.148436] [0mInitialise system trusted keyrings
+[32m[    0.148683] [0m[33mworkingset: [0mtimestamp_bits=42 (anon: 38) max_order=20 bucket_order=0 (anon: 0)
+[32m[    0.149450] [0m[33mNET: [0mRegistered PF_ALG protocol family
+[32m[    0.149475] [0mKey type asymmetric registered
+[32m[    0.149489] [0mAsymmetric key parser 'x509' registered
+[32m[    0.149549] [0mBlock layer SCSI generic (bsg) driver version 0.4 loaded (major 241)
+[32m[    0.149735] [0mio scheduler mq-deadline registered
+[32m[    0.149750] [0mio scheduler kyber registered
+[32m[    0.149793] [0mio scheduler bfq registered
+[32m[    0.207546] [0m[33mledtrig-cpu: [0mregistered to indicate activity on CPUs
+[32m[    0.209510] [0m[33msimple-framebuffer chosen:framebuffer-0: [0mframebuffer at 0x9d400000, 0x2400000 bytes
+[32m[    0.209550] [0m[33msimple-framebuffer chosen:framebuffer-0: [0mformat=a8r8g8b8, mode=1080x2160x32, linelength=4320
+[32m[    0.213966] [0m[33mConsole: [0mswitching to colour frame buffer device 135x135
+[32m[    0.218369] [0m[33msimple-framebuffer chosen:framebuffer-0: [0mfb0: simplefb registered!
+[32m[    0.230929] [0m[33msmps3: [0mSetting 600000-600000uV
+[32m[    0.231025] [0m[33mbob: [0mSetting 3312000-3600000uV
+[32m[    0.234768] [0m[33mSerial: [0m8250/16550 driver, 4 ports, IRQ sharing enabled
+[32m[    0.237171] [0m[33mmsm_serial: [0mdriver initialized
+[32m[    0.237499] [0mSTM32 USART driver initialized
+[32m[    0.240809] [0m[33marm-smmu 15000000.iommu: [0mprobing hardware configuration...
+[32m[    0.240853] [0m[33marm-smmu 15000000.iommu: [0mSMMUv2 with:
+[32m[    0.240904] [0m[33marm-smmu 15000000.iommu: [0m  stage 1 translation
+[32m[    0.240937] [0m[33marm-smmu 15000000.iommu: [0m  non-coherent table walk
+[32m[    0.240970] [0m[33marm-smmu 15000000.iommu: [0m  (IDR0.CTTW overridden by FW configuration)
+[32m[    0.241025] [0m[33marm-smmu 15000000.iommu: [0m  stream matching with 76 register groups
+[32m[    0.241077] [0m[33marm-smmu 15000000.iommu: [0m  45 context banks (0 stage-2 only)
+[32m[    0.241568] [0m[33marm-smmu 15000000.iommu: [0m  Supported page sizes: 0x61311000
+[32m[    0.241606] [0m[33marm-smmu 15000000.iommu: [0m  Stage-1: 48-bit VA -> 48-bit IPA
+[32m[    0.241705] [0m[33marm-smmu 15000000.iommu: [0m  preserved 0 boot mappings
+[32m[    0.243657] [0m[33mplatform 800000.dma-controller: [0mAdding to iommu group 0
+[32m[    0.243833] [0m[33mplatform 8c0000.geniqup: [0mAdding to iommu group 1
+[32m[    0.244027] [0m[33mplatform a00000.dma-controller: [0mAdding to iommu group 2
+[32m[    0.244244] [0m[33mplatform ac0000.geniqup: [0mAdding to iommu group 3
+[32m[    0.244566] [0m[33mplatform 1d84000.ufshc: [0mAdding to iommu group 4
+[32m[    0.244826] [0m[33mplatform 1dc4000.dma-controller: [0mAdding to iommu group 5
+[32m[    0.245064] [0m[33mplatform 1e40000.ipa: [0mAdding to iommu group 6
+[32m[    0.245421] [0m[33mplatform aa00000.video-codec: [0mAdding to iommu group 7
+[32m[    0.245672] [0m[33mplatform acb3000.camss: [0mAdding to iommu group 8
+[32m[    0.245891] [0m[33mplatform ae00000.display-subsystem: [0mAdding to iommu group 9
+[32m[    0.246607] [0m[33mplatform 17184000.dma-controller: [0mAdding to iommu group 10
+[32m[    0.246837] [0m[33mplatform 18800000.wifi: [0mAdding to iommu group 11
+[32m[    0.260228] [0m[33mloop: [0mmodule loaded
+[32m[    0.260655] [0m[33mzram: [0mAdded device: zram0
+[32m[    0.262099] [0m[33mspmi_pmic_arb c440000.spmi: [0mPMIC arbiter version v5 (0x50000000)
+[32m[    0.276373] [0mthunder_xcv, ver 1.0
+[32m[    0.276449] [0mthunder_bgx, ver 1.0
+[32m[    0.276500] [0mnicpf, ver 1.0
+[32m[    0.276545] [0m[33me1000: [0mIntel(R) PRO/1000 Network Driver
+[32m[    0.276573] [0m[33me1000: [0mCopyright (c) 1999-2006 Intel Corporation.
+[32m[    0.276627] [0m[33me1000e: [0mIntel(R) PRO/1000 Network Driver
+[32m[    0.276653] [0m[33me1000e: [0mCopyright(c) 1999 - 2015 Intel Corporation.
+[32m[    0.276844] [0m[33msky2: [0mdriver version 1.30
+[32m[    0.277299] [0m[33mVFIO - User Level meta-driver version: [0m0.3
+[32m[    0.289657] [0m[33mi2c_dev: [0mi2c /dev entries driver
+[32m[    0.291976] [0m[33minput: [0mpm8941_pwrkey as /devices/platform/soc@0/c440000.spmi/spmi-0/0-00/c440000.spmi:pmic@0:pon@800/c440000.spmi:pmic@0:pon@800:pwrkey/input/input0
+[32m[    0.293165] [0m[33minput: [0mpm8941_resin as /devices/platform/soc@0/c440000.spmi/spmi-0/0-00/c440000.spmi:pmic@0:pon@800/c440000.spmi:pmic@0:pon@800:resin/input/input1
+[32m[    0.316170] [0m[33mdevice-mapper: [0mioctl: 4.50.0-ioctl (2025-04-28) initialised: dm-devel@lists.linux.dev
+[32m[    0.319293] [0m[33mSMCCC: [0mSOC_ID: ARCH_SOC_ID not implemented, skipping ....
+[32m[    0.319945] [0m[33mclocksource: [0march_mmio_counter: mask: 0xffffffffffffff max_cycles: 0x46d987e47, max_idle_ns: 440795202767 ns
+[32m[    0.320038] [0m[33march-timer-mmio 17c90000.timer: [0mmmio timer running at 19.20MHz (virt)
+[32m[    0.320349] [0m[33mhid: [0mraw HID events driver (C) Jiri Kosina
+[32m[    0.320427] [0m[33musbcore: [0mregistered new interface driver usbhid
+[32m[    0.320511] [0m[33musbhid: [0mUSB HID core driver
+[32m[    0.323687] [0m[33mhw perfevents: [0menabled with armv8_pmuv3 PMU driver, 7 (0,8000003f) counters available
+[32m[    0.339919] [0m[33mNET: [0mRegistered PF_INET6 protocol family
+[32m[    0.341094] [0mSegment Routing with IPv6
+[32m[    0.341152] [0mIn-situ OAM (IOAM) with IPv6
+[32m[    0.341222] [0m[33msit: [0mIPv6, IPv4 and MPLS over IPv4 tunneling driver
+[32m[    0.341647] [0m[33mNET: [0mRegistered PF_PACKET protocol family
+[32m[    0.341729] [0mKey type dns_resolver registered
+[32m[    0.350029] [0mregistered taskstats version 1
+[32m[    0.350464] [0mLoading compiled-in X.509 certificates
+[32m[    0.354537] [0m[33mFreeing initrd memory: [0m4864K
+[32m[    0.360338] [0m[33mLoaded X.509 cert 'Build time autogenerated kernel key: [0mcd8571b914e13c88ad09bcea68ebdc1b28dac735'
+[32m[    0.367450] [0m[33mDemotion targets for Node 0: [0mnull
+[32m[    0.367552] [0mKey type .fscrypt registered
+[32m[    0.367577] [0mKey type fscrypt-provisioning registered
+[32m[    0.395594] [0m[33msmps3: [0mSetting 1352000-1352000uV
+[32m[    0.395830] [0m[33msmps5: [0mSetting 1904000-2040000uV
+[32m[    0.396017] [0m[33marm-smmu 5040000.iommu: [0mprobing hardware configuration...
+[32m[    0.396045] [0m[33msmps7: [0mSetting 900000-1028000uV
+[32m[    0.396072] [0m[33marm-smmu 5040000.iommu: [0mSMMUv2 with:
+[32m[    0.396118] [0m[33marm-smmu 5040000.iommu: [0m   stage 1 translation
+[32m[    0.396145] [0m[33marm-smmu 5040000.iommu: [0m   address translation ops
+[32m[    0.396171] [0m[33marm-smmu 5040000.iommu: [0m   non-coherent table walk
+[32m[    0.396199] [0m[33marm-smmu 5040000.iommu: [0m   (IDR0.CTTW overridden by FW configuration)
+[32m[    0.396232] [0m[33marm-smmu 5040000.iommu: [0m   stream matching with 5 register groups
+[32m[    0.396233] [0m[33mldo1: [0mSetting 880000-880000uV
+[32m[    0.396275] [0m[33marm-smmu 5040000.iommu: [0m   5 context banks (0 stage-2 only)
+[32m[    0.396293] [0m[33marm-smmu 5040000.iommu: [0m   Supported page sizes: 0x61311000
+[32m[    0.396337] [0m[33marm-smmu 5040000.iommu: [0m   Stage-1: 48-bit VA -> 36-bit IPA
+[32m[    0.396456] [0m[33marm-smmu 5040000.iommu: [0m   preserved 0 boot mappings
+[32m[    0.396897] [0m[33mldo5: [0mSetting 800000-800000uV
+[32m[    0.397219] [0m[33mldo12: [0mSetting 1800000-1800000uV
+[32m[    0.397252] [0m[33mplatform 5000000.gpu: [0mAdding to iommu group 12
+[32m[    0.397434] [0m[33mldo7: [0mSetting 1800000-1800000uV
+[32m[    0.397443] [0m[33mplatform 506a000.gmu: [0mAdding to iommu group 13
+[32m[    0.397664] [0m[33mldo13: [0mSetting 1800000-2960000uV
+[32m[    0.397928] [0m[33mldo14: [0mSetting 1800000-1800000uV
+[32m[    0.398868] [0m[33mldo17: [0mSetting 1304000-1304000uV
+[32m[    0.399620] [0m[33mldo19: [0mSetting 3300000-3312000uV
+[32m[    0.400110] [0m[33mldo20: [0mSetting 2960000-2968000uV
+[32m[    0.400704] [0m[33mldo21: [0mSetting 2960000-2968000uV
+[32m[    0.401179] [0m[33mldo22: [0mSetting 2864000-2864000uV
+[32m[    0.402090] [0m[33mldo24: [0mSetting 3088000-3088000uV
+[32m[    0.402611] [0m[33mldo25: [0mSetting 3300000-3312000uV
+[32m[    0.403109] [0m[33mldo26: [0mSetting 1200000-1200000uV
+[32m[    0.403875] [0m[33mldo28: [0mSetting 2856000-3008000uV
+[32m[    0.405924] [0m[33mplatform a600000.usb: [0mAdding to iommu group 14
+[32m[    0.406152] [0m[33m/soc@0/phy@88e8000: [0mFixed dependency cycle(s) with /soc@0/usb@a6f8800/usb@a600000
+[32m[    0.406279] [0m[33m/soc@0/usb@a6f8800/usb@a600000: [0mFixed dependency cycle(s) with /soc@0/phy@88e8000
+[32m[    0.411493] [0m[33mufshcd-qcom 1d84000.ufshc: [0mfreq-table-hz property not specified
+[32m[    0.411538] [0m[33mufshcd-qcom 1d84000.ufshc: [0mufshcd_populate_vreg: Unable to find vdd-hba-supply regulator, assuming enabled
+[32m[    0.411613] [0m[33mufshcd-qcom 1d84000.ufshc: [0mufshcd_populate_vreg: Unable to find vccq-supply regulator, assuming enabled
+[32m[    0.411656] [0m[33mufshcd-qcom 1d84000.ufshc: [0mufshcd_populate_vreg: Unable to find vccq2-supply regulator, assuming enabled
+[32m[    0.426003] [0m[33mcpufreq: [0mcpufreq_policy_online: CPU0: Running at unlisted initial frequency: 2995200 kHz, changing to: 1766400 kHz
+[32m[    0.427614] [0m[33mcpu cpu0: [0mEM: OPP:652800 is inefficient
+[32m[    0.429155] [0m[33mcpu cpu0: [0mEM: OPP:576000 is inefficient
+[32m[    0.430675] [0m[33mcpu cpu0: [0mEM: OPP:480000 is inefficient
+[32m[    0.432184] [0m[33mcpu cpu0: [0mEM: OPP:403200 is inefficient
+[32m[    0.433680] [0m[33mcpu cpu0: [0mEM: OPP:300000 is inefficient
+[32m[    0.435491] [0m[33mcpu cpu0: [0mEM: created perf domain
+[32m[    0.446717] [0m[33mcpufreq: [0mcpufreq_policy_online: CPU4: Running at unlisted initial frequency: 2995200 kHz, changing to: 2649600 kHz
+[32m[    0.448774] [0m[33mcpu cpu4: [0mEM: created perf domain
+[32m[    0.450302] [0m[33menergy_model: [0mupdating cpu0 cpu_cap=407 old capacity=611
+[32m[    0.451834] [0m[33mcpu cpu0: [0mEM: OPP:576000 is inefficient
+[32m[    0.453349] [0m[33mcpu cpu0: [0mEM: OPP:480000 is inefficient
+[32m[    0.454850] [0m[33mcpu cpu0: [0mEM: OPP:403200 is inefficient
+[32m[    0.456532] [0m[33mcpu cpu0: [0mEM: OPP:300000 is inefficient
+[32m[    0.460439] [0m[33maux_bridge.aux_bridge aux_bridge.aux_bridge.0: [0m[31merror -ENODEV: failed to acquire drm_bridge[0m
+[32m[    0.468875] [0m[33mgeni_i2c 88c000.i2c: [0mBus frequency not specified, default to 100kHz.
+[32m[    0.476589] [0m[33m898000.serial: [0mttyHS1 at MMIO 0x898000 (irq = 125, base_baud = 0) is a MSM
+[32m[    0.479552] [0m[33mserial serial0: [0mtty port ttyHS1 registered
+[32m[    0.482886] [0m[33ma84000.serial: [0mttyMSM0 at MMIO 0xa84000 (irq = 126, base_baud = 0) is a MSM
+[32m[    0.485522] [0m[33mprintk: [0mlegacy console [ttyMSM0] enabled
+[32m[    3.894575] [0m[33mgeni_i2c a90000.i2c: [0mBus frequency not specified, default to 100kHz.
+[32m[    3.906532] [0m[33m/soc@0/display-subsystem@ae00000/display-controller@ae01000: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[32m[    3.922137] [0m[33m/soc@0/display-subsystem@ae00000/display-controller@ae01000: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[32m[    3.937026] [0m[33m/soc@0/display-subsystem@ae00000/dsi@ae94000: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+[32m[    3.951186] [0m[33m/soc@0/display-subsystem@ae00000/dsi@ae94000: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/display-controller@ae01000
+[32m[    3.966166] [0m[33m/soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[32m[    3.987753] [0m[33mmsm_dsi_phy ae94400.phy: [0m[31m[drm:dsi_pll_10nm_vco_prepare] *ERROR* DSI PLL(0) lock failed, status=0x00000000[0m
+[32m[    3.999192] [0m[33mmsm_dsi_phy ae94400.phy: [0m[31m[drm:dsi_pll_10nm_vco_prepare] *ERROR* PLL(0) lock failed[0m
+[32m[    4.008631] [0m[1m------------[ cut here ]------------[0m
+[32m[    4.014017] [0m[1mdsi0_phy_pll_out_dsiclk already disabled[0m
+[32m[    4.019800] [0m[33mWARNING: [0m[1mdrivers/clk/clk.c:1188 at clk_core_disable+0xb0/0xd0, CPU#5: kworker/u32:3/70[0m
+[32m[    4.029588] [0m[1mModules linked in:[0m
+[32m[    4.033444] [0m[33mCPU: [0m[1m5 UID: 0 PID: 70 Comm: kworker/u32:3 Not tainted 7.1.0-rc1-sdm845 #5-postmarketos-qcom-sdm845 PREEMPT [0m
+[32m[    4.045084] [0m[33mHardware name: [0m[1mGoogle Pixel 3 (DT)[0m
+[32m[    4.050337] [0m[33mWorkqueue: [0m[1mevents_unbound deferred_probe_work_func[0m
+[32m[    4.057000] [0m[33mpstate: [0m[1m604000c5 (nZCv daIF +PAN -UAO -TCO -DIT -SSBS BTYPE=--)[0m
+[32m[    4.064810] [0m[33mpc : [0m[1mclk_core_disable+0xb0/0xd0[0m
+[32m[    4.069812] [0m[33mlr : [0m[1mclk_core_disable+0xb0/0xd0[0m
+[32m[    4.074805] [0m[33msp : [0m[1mffff8000808335b0[0m
+[32m[    4.078919] [0m[33mx29: [0m[1mffff8000808335b0 x28: ffffbceb173a5000 x27: 000000007fffffff[0m
+[32m[    4.086900] [0m[33mx26: [0m[1mffff000080be6288 x25: 0000000000000000 x24: ffff0000fd929080[0m
+[32m[    4.094873] [0m[33mx23: [0m[1mffff000080a5e300 x22: ffffbceb178c2000 x21: ffffbceb178c2000[0m
+[32m[    4.102855] [0m[33mx20: [0m[1mffff000083e45600 x19: ffff000083e45600 x18: ffff8000806c1118[0m
+[32m[    4.110825] [0m[33mx17: [0m[1m00000000fed73151 x16: 00000000fed73151 x15: 0000000000000003[0m
+[32m[    4.118807] [0m[33mx14: [0m[1mffffbceb173e4e48 x13: 0000000000000fff x12: 0000000000000003[0m
+[32m[    4.126781] [0m[33mx11: [0m[1m0000000000000003 x10: 0000000000000002 x9 : 1cbf3487123b6f00[0m
+[32m[    4.134767] [0m[33mx8 : [0m[1m1cbf3487123b6f00 x7 : 205d373130343130 x6 : 302e34202020205b[0m
+[32m[    4.142737] [0m[33mx5 : [0m[1mffffbceb17890258 x4 : ffff800080833197 x3 : 0000000000000000[0m
+[32m[    4.150722] [0m[33mx2 : [0m[1m0000000000000000 x1 : ffff800080833380 x0 : 0000000000000028[0m
+[32m[    4.158703] [0m[1mCall trace:[0m
+[32m[    4.161964] [0m[1m clk_core_disable+0xb0/0xd0 (P)[0m
+[32m[    4.166963] [0m[1m clk_core_disable_lock+0x94/0x120[0m
+[32m[    4.172143] [0m[1m __clk_set_parent_after+0x5c/0x8c[0m
+[32m[    4.177320] [0m[1m clk_core_reparent_orphans_nolock+0xa8/0xf0[0m
+[32m[    4.183371] [0m[1m clk_core_reparent_orphans+0x78/0xfc[0m
+[32m[    4.188809] [0m[1m of_clk_add_hw_provider+0x9c/0x148[0m
+[32m[    4.194072] [0m[1m devm_of_clk_add_hw_provider+0xc0/0x10c[0m
+[32m[    4.199769] [0m[1m dsi_phy_driver_probe+0x334/0x364[0m
+[32m[    4.204950] [0m[1m platform_probe+0x84/0xcc[0m
+[32m[    4.209432] [0m[1m really_probe+0x1dc/0x4f4[0m
+[32m[    4.213903] [0m[1m __driver_probe_device+0xdc/0x168[0m
+[32m[    4.219077] [0m[1m driver_probe_device+0x4c/0x238[0m
+[32m[    4.224072] [0m[1m __device_attach_driver+0x154/0x224[0m
+[32m[    4.229397] [0m[1m bus_for_each_drv+0x11c/0x17c[0m
+[32m[    4.234197] [0m[1m __device_attach+0x10c/0x1d4[0m
+[32m[    4.238901] [0m[1m device_initial_probe+0x48/0x6c[0m
+[32m[    4.243870] [0m[1m bus_probe_device+0x9c/0x128[0m
+[32m[    4.248566] [0m[1m device_add+0x274/0x4e0[0m
+[32m[    4.252822] [0m[1m of_platform_device_create_pdata+0xdc/0x198[0m
+[32m[    4.258815] [0m[1m of_platform_bus_create+0x274/0x4b8[0m
+[32m[    4.264105] [0m[1m of_platform_populate+0x7c/0x168[0m
+[32m[    4.269130] [0m[1m mdss_probe+0x320/0x408[0m
+[32m[    4.273361] [0m[1m platform_probe+0x84/0xcc[0m
+[32m[    4.277768] [0m[1m really_probe+0x1dc/0x4f4[0m
+[32m[    4.282177] [0m[1m __driver_probe_device+0xdc/0x168[0m
+[32m[    4.287281] [0m[1m driver_probe_device+0x4c/0x238[0m
+[32m[    4.292208] [0m[1m __device_attach_driver+0x154/0x224[0m
+[32m[    4.297487] [0m[1m bus_for_each_drv+0x11c/0x17c[0m
+[32m[    4.302230] [0m[1m __device_attach+0x10c/0x1d4[0m
+[32m[    4.306883] [0m[1m device_initial_probe+0x48/0x6c[0m
+[32m[    4.311799] [0m[1m bus_probe_device+0x9c/0x128[0m
+[32m[    4.316461] [0m[1m deferred_probe_work_func+0xb0/0x11c[0m
+[32m[    4.321818] [0m[1m process_scheduled_works+0x1a0/0x4b4[0m
+[32m[    4.327178] [0m[1m worker_thread+0x280/0x3fc[0m
+[32m[    4.331655] [0m[1m kthread+0x12c/0x15c[0m
+[32m[    4.335604] [0m[1m ret_from_fork+0x10/0x20[0m
+[32m[    4.339911] [0m[1m---[ end trace 0000000000000000 ]---[0m
+[32m[    4.345276] [0m[1m------------[ cut here ]------------[0m
+[32m[    4.350607] [0m[1mdsi0_phy_pll_out_dsiclk already unprepared[0m
+[32m[    4.356509] [0m[33mWARNING: [0m[1mdrivers/clk/clk.c:1048 at clk_core_unprepare+0xe8/0x120, CPU#5: kworker/u32:3/70[0m
+[32m[    4.366466] [0m[1mModules linked in:[0m
+[32m[    4.370252] [0m[33mCPU: [0m[1m5 UID: 0 PID: 70 Comm: kworker/u32:3 Tainted: G        W           7.1.0-rc1-sdm845 #5-postmarketos-qcom-sdm845 PREEMPT [0m
+[32m[    4.384106] [0m[33mTainted: [0m[1m[W]=WARN[0m
+[32m[    4.387828] [0m[33mHardware name: [0m[1mGoogle Pixel 3 (DT)[0m
+[32m[    4.393017] [0m[33mWorkqueue: [0m[1mevents_unbound deferred_probe_work_func[0m
+[32m[    4.399606] [0m[33mpstate: [0m[1m60400005 (nZCv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)[0m
+[32m[    4.407333] [0m[33mpc : [0m[1mclk_core_unprepare+0xe8/0x120[0m
+[32m[    4.412529] [0m[33mlr : [0m[1mclk_core_unprepare+0xe8/0x120[0m
+[32m[    4.417697] [0m[33msp : [0m[1mffff8000808335c0[0m
+[32m[    4.421748] [0m[33mx29: [0m[1mffff8000808335c0 x28: ffffbceb173a5000 x27: 000000007fffffff[0m
+[32m[    4.429658] [0m[33mx26: [0m[1mffff000080be6288 x25: 0000000000000000 x24: ffff0000fd929080[0m
+[32m[    4.437565] [0m[33mx23: [0m[1mffff0000fd92f180 x22: ffff000080a5e300 x21: ffffbceb178c2000[0m
+[32m[    4.445474] [0m[33mx20: [0m[1mffffbceb178c2000 x19: ffff000083e45600 x18: ffff8000806c1118[0m
+[32m[    4.453390] [0m[33mx17: [0m[1m00000000fed73151 x16: 00000000fed73151 x15: 0000000000000003[0m
+[32m[    4.461304] [0m[33mx14: [0m[1mffffbceb173e4e48 x13: 0000000000000fff x12: 0000000000000003[0m
+[32m[    4.469214] [0m[33mx11: [0m[1m0000000000000003 x10: 0000000000000002 x9 : 1cbf3487123b6f00[0m
+[32m[    4.477129] [0m[33mx8 : [0m[1m1cbf3487123b6f00 x7 : 205d373036303533 x6 : 332e34202020205b[0m
+[32m[    4.485046] [0m[33mx5 : [0m[1mffffbceb17890258 x4 : ffff8000808331a7 x3 : 0000000000000000[0m
+[32m[    4.492967] [0m[33mx2 : [0m[1m0000000000000000 x1 : ffff800080833390 x0 : 000000000000002a[0m
+[32m[    4.500881] [0m[1mCall trace:[0m
+[32m[    4.504076] [0m[1m clk_core_unprepare+0xe8/0x120 (P)[0m
+[32m[    4.509286] [0m[1m clk_core_unprepare_lock+0x80/0x104[0m
+[32m[    4.514594] [0m[1m __clk_set_parent_after+0x64/0x8c[0m
+[32m[    4.519722] [0m[1m clk_core_reparent_orphans_nolock+0xa8/0xf0[0m
+[32m[    4.525698] [0m[1m clk_core_reparent_orphans+0x78/0xfc[0m
+[32m[    4.531098] [0m[1m of_clk_add_hw_provider+0x9c/0x148[0m
+[32m[    4.536326] [0m[1m devm_of_clk_add_hw_provider+0xc0/0x10c[0m
+[32m[    4.541977] [0m[1m dsi_phy_driver_probe+0x334/0x364[0m
+[32m[    4.547114] [0m[1m platform_probe+0x84/0xcc[0m
+[32m[    4.551540] [0m[1m really_probe+0x1dc/0x4f4[0m
+[32m[    4.555941] [0m[1m __driver_probe_device+0xdc/0x168[0m
+[32m[    4.561065] [0m[1m driver_probe_device+0x4c/0x238[0m
+[32m[    4.566028] [0m[1m __device_attach_driver+0x154/0x224[0m
+[32m[    4.571319] [0m[1m bus_for_each_drv+0x11c/0x17c[0m
+[32m[    4.576081] [0m[1m __device_attach+0x10c/0x1d4[0m
+[32m[    4.580761] [0m[1m device_initial_probe+0x48/0x6c[0m
+[32m[    4.585702] [0m[1m bus_probe_device+0x9c/0x128[0m
+[32m[    4.590378] [0m[1m device_add+0x274/0x4e0[0m
+[32m[    4.594622] [0m[1m of_platform_device_create_pdata+0xdc/0x198[0m
+[32m[    4.600621] [0m[1m of_platform_bus_create+0x274/0x4b8[0m
+[32m[    4.605918] [0m[1m of_platform_populate+0x7c/0x168[0m
+[32m[    4.610947] [0m[1m mdss_probe+0x320/0x408[0m
+[32m[    4.615176] [0m[1m platform_probe+0x84/0xcc[0m
+[32m[    4.619575] [0m[1m really_probe+0x1dc/0x4f4[0m
+[32m[    4.623967] [0m[1m __driver_probe_device+0xdc/0x168[0m
+[32m[    4.629069] [0m[1m driver_probe_device+0x4c/0x238[0m
+[32m[    4.634004] [0m[1m __device_attach_driver+0x154/0x224[0m
+[32m[    4.639284] [0m[1m bus_for_each_drv+0x11c/0x17c[0m
+[32m[    4.644031] [0m[1m __device_attach+0x10c/0x1d4[0m
+[32m[    4.648692] [0m[1m device_initial_probe+0x48/0x6c[0m
+[32m[    4.653624] [0m[1m bus_probe_device+0x9c/0x128[0m
+[32m[    4.658284] [0m[1m deferred_probe_work_func+0xb0/0x11c[0m
+[32m[    4.663634] [0m[1m process_scheduled_works+0x1a0/0x4b4[0m
+[32m[    4.668984] [0m[1m worker_thread+0x280/0x3fc[0m
+[32m[    4.673461] [0m[1m kthread+0x12c/0x15c[0m
+[32m[    4.677393] [0m[1m ret_from_fork+0x10/0x20[0m
+[32m[    4.681676] [0m[1m---[ end trace 0000000000000000 ]---[0m
+[32m[    4.694908] [0m[33mufshcd-qcom 1d84000.ufshc: [0mfreq-table-hz property not specified
+[32m[    4.702570] [0m[33mufshcd-qcom 1d84000.ufshc: [0mufshcd_populate_vreg: Unable to find vdd-hba-supply regulator, assuming enabled
+[32m[    4.714002] [0m[33mufshcd-qcom 1d84000.ufshc: [0mufshcd_populate_vreg: Unable to find vccq-supply regulator, assuming enabled
+[32m[    4.725108] [0m[33mufshcd-qcom 1d84000.ufshc: [0mufshcd_populate_vreg: Unable to find vccq2-supply regulator, assuming enabled
+[32m[    4.738430] [0m[33mufshcd-qcom 1d84000.ufshc: [0mFound QC Inline Crypto Engine (ICE) v3.1.75
+[32m[    4.746720] [0m[33mufshcd-qcom 1d84000.ufshc: [0mA supported HWKM is not present. Supporting raw keys only.
+[32m[    4.777450] [0m[33mscsi host0: [0mufshcd
+[32m[    4.981969] [0m[33mscsi 0:0:0:49488: [0mWell-known LUN    SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[32m[    4.988198] [0m[33m/soc@0/display-subsystem@ae00000/dsi@ae94000: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+[32m[    5.008480] [0m[33m/soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: [0mFixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[32m[    5.024755] [0m[33mmsm_dpu ae01000.display-controller: [0mbound ae94000.dsi (ops dsi_ops)
+[32m[    5.025486] [0m[33mscsi 0:0:0:49476: [0mWell-known LUN    SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[32m[    5.027601] [0m[33madreno 5000000.gpu: [0m[1msupply vdd not found, using dummy regulator[0m
+[32m[    5.027685] [0m[33madreno 5000000.gpu: [0m[1msupply vddcx not found, using dummy regulator[0m
+[32m[    5.037972] [0m[33mscsi 0:0:0:49456: [0mWell-known LUN    SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[32m[    5.053597] [0m[33mmsm_dpu ae01000.display-controller: [0mbound 5000000.gpu (ops a3xx_ops)
+[32m[    5.058095] [0m[33mscsi 0:0:0:0: [0mDirect-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[32m[    5.089059] [0m[33mConsole: [0mswitching to colour dummy device 80x25
+[32m[    5.099459] [0m[drm:dpu_kms_hw_init:1168] dpu hardware revision:0x40000000
+[32m[    5.103706] [0m[33mscsi 0:0:0:1: [0mDirect-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[32m[    5.114482] [0m[drm] Initialized msm 1.13.0 for ae01000.display-controller on minor 0
+[32m[    5.122410] [0m[33mmsm_dpu ae01000.display-controller: [0m[1mDirect firmware load for qcom/a630_sqe.fw failed with error -2[0m
+[32m[    5.123756] [0m[33mscsi 0:0:0:2: [0mDirect-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[32m[    5.132522] [0m[33mmsm_dpu ae01000.display-controller: [0m[31m[drm:adreno_request_fw] *ERROR* failed to load a630_sqe.fw[0m
+[32m[    5.152240] [0m[33mscsi 0:0:0:3: [0mDirect-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[32m[    5.164972] [0m[33mscsi 0:0:0:4: [0mDirect-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[32m[    5.168025] [0m[33mscsi 0:0:0:5: [0mDirect-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[32m[    5.171008] [0m[33msd 0:0:0:0: [0m[sda] 15591424 4096-byte logical blocks: (63.9 GB/59.5 GiB)
+[32m[    5.171258] [0m[33msd 0:0:0:0: [0m[sda] Write Protect is off
+[32m[    5.171264] [0m[33msd 0:0:0:1: [0m[sdb] 1024 4096-byte logical blocks: (4.19 MB/4.00 MiB)
+[32m[    5.171266] [0m[33msd 0:0:0:0: [0m[sda] Mode Sense: 00 32 00 10
+[32m[    5.171534] [0m[33msd 0:0:0:1: [0m[sdb] Write Protect is off
+[32m[    5.171541] [0m[33msd 0:0:0:1: [0m[sdb] Mode Sense: 00 32 00 10
+[32m[    5.171646] [0m[33msd 0:0:0:0: [0m[sda] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[32m[    5.171944] [0m[33msd 0:0:0:0: [0m[sda] Preferred minimum I/O size 786432 bytes
+[32m[    5.171954] [0m[33msd 0:0:0:0: [0m[sda] Optimal transfer size 786432 bytes
+[32m[    5.172012] [0m[33msd 0:0:0:1: [0m[sdb] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[32m[    5.172307] [0m[33msd 0:0:0:1: [0m[sdb] Preferred minimum I/O size 786432 bytes
+[32m[    5.172315] [0m[33msd 0:0:0:1: [0m[sdb] Optimal transfer size 786432 bytes
+[32m[    5.172406] [0m[33msd 0:0:0:2: [0m[sdc] 1024 4096-byte logical blocks: (4.19 MB/4.00 MiB)
+[32m[    5.172769] [0m[33msd 0:0:0:2: [0m[sdc] Write Protect is off
+[32m[    5.172776] [0m[33msd 0:0:0:2: [0m[sdc] Mode Sense: 00 32 00 10
+[32m[    5.175908] [0m[33msd 0:0:0:4: [0m[sde] 8192 4096-byte logical blocks: (33.6 MB/32.0 MiB)
+[32m[    5.175954] [0m[33msd 0:0:0:2: [0m[sdc] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[32m[    5.175962] [0m[33msd 0:0:0:5: [0m[sdf] 18432 4096-byte logical blocks: (75.5 MB/72.0 MiB)
+[32m[    5.175982] [0m[33msd 0:0:0:4: [0m[sde] Write Protect is off
+[32m[    5.175996] [0m[33msd 0:0:0:4: [0m[sde] Mode Sense: 00 32 00 10
+[32m[    5.176021] [0m[33msd 0:0:0:3: [0m[sdd] 2048 4096-byte logical blocks: (8.39 MB/8.00 MiB)
+[32m[    5.176067] [0m[33msd 0:0:0:2: [0m[sdc] Preferred minimum I/O size 786432 bytes
+[32m[    5.176074] [0m[33msd 0:0:0:2: [0m[sdc] Optimal transfer size 786432 bytes
+[32m[    5.176079] [0m[33msd 0:0:0:5: [0m[sdf] Write Protect is off
+[32m[    5.176084] [0m[33msd 0:0:0:5: [0m[sdf] Mode Sense: 00 32 00 10
+[32m[    5.176122] [0m[33msd 0:0:0:3: [0m[sdd] Write Protect is off
+[32m[    5.176127] [0m[33msd 0:0:0:3: [0m[sdd] Mode Sense: 00 32 00 10
+[32m[    5.176163] [0m[33msd 0:0:0:4: [0m[sde] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[32m[    5.176229] [0m[33msd 0:0:0:4: [0m[sde] Preferred minimum I/O size 786432 bytes
+[32m[    5.176232] [0m[33msd 0:0:0:4: [0m[sde] Optimal transfer size 786432 bytes
+[32m[    5.176368] [0m[33msd 0:0:0:5: [0m[sdf] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[32m[    5.176370] [0m[33msd 0:0:0:3: [0m[sdd] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[32m[    5.176493] [0m[33msd 0:0:0:5: [0m[sdf] Preferred minimum I/O size 786432 bytes
+[32m[    5.176496] [0m[33msd 0:0:0:3: [0m[sdd] Preferred minimum I/O size 786432 bytes
+[32m[    5.176499] [0m[33msd 0:0:0:5: [0m[sdf] Optimal transfer size 786432 bytes
+[32m[    5.176501] [0m[33msd 0:0:0:3: [0m[sdd] Optimal transfer size 786432 bytes
+[32m[    5.188063] [0m[33m sde: [0msde1 sde2 sde3 sde4 sde5 sde6 sde7 sde8 sde9 sde10 sde11 sde12 sde13 sde14 sde15 sde16 sde17 sde18 sde19 sde20 sde21 sde22 sde23 sde24
+[32m[    5.188291] [0m[33m sdc: [0msdc1 sdc2
+[32m[    5.188587] [0m[33m sdb: [0msdb1 sdb2
+[32m[    5.188604] [0m[33msd 0:0:0:2: [0m[sdc] Attached SCSI disk
+[32m[    5.188668] [0m[33m sda: [0msda1 sda2 sda3 sda4 sda5 sda6 sda7 sda8 sda9 sda10 sda11 sda12 sda13 sda14 sda15 sda16 sda17 sda18 sda19 sda20 sda21
+[32m[    5.188746] [0m[33m sdd: [0msdd1 sdd2 sdd3 sdd4 sdd5 sdd6
+[32m[    5.189159] [0m[33msd 0:0:0:1: [0m[sdb] Attached SCSI disk
+[32m[    5.189404] [0m[33m sdf: [0msdf1 sdf2 sdf3 sdf4 sdf5 sdf6 sdf7 sdf8 sdf9 sdf10 sdf11 sdf12 sdf13 sdf14 sdf15
+[32m[    5.190299] [0m[33msd 0:0:0:3: [0m[sdd] Attached SCSI disk
+[32m[    5.191421] [0m[33msd 0:0:0:4: [0m[sde] Attached SCSI disk
+[32m[    5.192757] [0m[33msd 0:0:0:5: [0m[sdf] Attached SCSI disk
+[32m[    5.193696] [0m[33msd 0:0:0:0: [0m[sda] Attached SCSI disk
+[32m[    5.502628] [0m[33mfb0: [0m[1msys_imageblit: framebuffer is not in virtual address space.[0m
+[32m[    5.536641] [0m[33mConsole: [0mswitching to colour frame buffer device 135x135
+[32m[    5.902315] [0m[33mmsm_dpu ae01000.display-controller: [0m[drm] fb0: msmdrmfb frame buffer device
+[32m[    5.917679] [0m[33minput: [0mVolume keys as /devices/platform/gpio-keys/input/input2
+[32m[    5.924972] [0m[33mclk: [0mDisabling unused clocks
+[32m[    5.929219] [0m[33mPM: [0mgenpd: Disabling unused power domains
+[32m[    5.936237] [0m[33mFreeing unused kernel memory: [0m2048K
+[32m[    5.940881] [0mRun /init as init process
+[32m[    5.944592] [0m  with arguments:
+[32m[    5.947602] [0m    /init
+[32m[    5.949912] [0m  with environment:
+[32m[    5.953096] [0m    HOME=/
+[32m[    5.955489] [0m    TERM=linux
+[32m[    5.977829] [0m[33momamobile-blueline: [0m[1mwatchdog-Knoten /dev/watchdog0[0m
+[32m[    5.979647] [0m[33momamobile-blueline: [0m[1mkernel 7.1.0-rc1-sdm845 aarch64[0m
+[32m[    5.991143] [0m[33momamobile-blueline: [0m[1mgadget-module-dir gefunden[0m
+[32m[    5.999995] [0m[33mfb0: [0m[1msys_fillrect: framebuffer is not in virtual address space.[0m
+[32m[    6.014421] [0m[33momamobile-blueline: [0m[1mmodul libcomposite.ko geladen[0m
+[32m[    6.029313] [0m[33momamobile-blueline: [0m[1mmodul u_ether.ko geladen[0m
+[32m[    6.040129] [0m[33momamobile-blueline: [0m[1mmodul usb_f_ncm.ko geladen[0m
+[32m[    6.058255] [0m[33momamobile-blueline: [0m[1mmodul u_serial.ko geladen[0m
+[32m[    6.070884] [0m[33momamobile-blueline: [0m[1mmodul usb_f_acm.ko geladen[0m
+[32m[    6.074687] [0m[33momamobile-blueline: [0m[1mmoduli: 1 geladen, usb_f_ncm 3[0m
+[32m[    6.087301] [0m[33momamobile-blueline: [0m[1musb gadget setup (reference sequence)[0m
+[32m[    6.088165] [0m[33momamobile-blueline: [0m[1mvor mkdir: configfs=$(grep -c " type configfs " /proc/mounts) libcomposite=$(grep -c libcomposite /proc/modules 2>/dev/null) module=$(wc -l < /proc/modules 2>/dev/null)[0m
+[32m[    6.123416] [0m[33momamobile-blueline: [0m[1mnach mount: configfs=$(grep -c " type configfs " /proc/mounts) ordner=$([ -d "$CONFIGFS" ] && echo ja || echo nein) udc=$(ls /sys/class/udc 2>/dev/null | xargs)[0m
+[32m[    6.128911] [0m[33momamobile-blueline: [0m[1mudc-lesung 1: uptime 6.11s, inhalt: a600000.usb [0m
+[32m[    6.155840] [0m[33momamobile-blueline: [0m[1mudc nach 0 runden gefunden: a600000.usb, uptime 6.14s[0m
+[32m[    6.160268] [0m[33momamobile-blueline: [0m[1mnetwork function: ncm.usb0[0m
+[32m[    6.181671] [0m[33momamobile-blueline: [0m[1mbinding UDC a600000.usb[0m
+[32m[    6.182396] [0m[33mconfigfs-gadget.g1 gadget.0: [0mHOST MAC 42:03:99:18:8f:e7
+[32m[    6.190028] [0m[33mrandom: [0mcrng init done
+[32m[    6.190751] [0m[33mconfigfs-gadget.g1 gadget.0: [0mMAC 5e:e0:bf:3d:d9:ee
+[32m[    6.218724] [0m[33momamobile-blueline: [0m[1mUDC steht auf: a600000.usb[0m
+[32m[    6.228378] [0m[33momamobile-blueline: [0m[1mifconfig usb0 172.16.42.1[0m
+[32m[    6.242494] [0m[33momamobile-blueline: [0m[1mnetwork bring-up[0m
+[32m[    6.243907] [0m[1m===== PSTORE console-ramoops-0 begin =====[0m
+[32m[    6.255474] [0m[33momamobile-blueline: [0m[1mboot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)[0m
+[32m[    6.256967] [0m[33momamobile-blueline: [0m[1mdebug shell: telnetd -l /bin/sh (Port 23, alle Adressen)[0m
+[32m[    6.257295] [0m[1m===== PSTORE console-ramoops-0 end =====[0m
+[32m[    6.257343] [0m[1m===== PSTORE dmesg-ramoops-0 begin =====[0m
+[32m[    6.257922] [0m[1m===== PSTORE dmesg-ramoops-0 end =====[0m
+[32m[    6.260137] [0m[33momamobile-blueline: [0m[1mbeat 6s steps:[6s] step: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)[0m
+[32m[    6.266526] [0m[33momamobile-blueline: [0m[1mboot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)[0m
+[32m[    6.321757] [0m[33momamobile-blueline: [0m[1mraw log channel live on /dev/sda11[0m
+[32m[    6.327367] [0m[33momamobile-blueline: [0m[1mboot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)[0m
+[32m[    6.343860] [0m[33momamobile-blueline: [0m[1mdebug shell armed[0m
+[32m[    6.359058] [0m[33momamobile-blueline: [0m[1mSSH ready: root@172.16.42.1; all storage read-only[0m
+[32m[    6.374269] [0m[33momamobile-blueline: [0m[1mstorage guard pass 1[0m
+[32m[    6.568557] [0m[33momamobile-blueline: [0m[1mstorage guard: 0 device(s) could not be write-protected[0m
+[32m[    6.586655] [0m[33momamobile-blueline: [0m[1mstorage guard pass 1 done[0m
+[32m[    6.598488] [0m[33momamobile-blueline: [0m[1minit main flow complete; PID 1 parking[0m
+[32m[    6.608953] [0m[33momamobile-blueline: [0m[1minit main flow complete; v0aa steuert den Selbst-Rueckweg an[0m
+[32m[    6.620810] [0m[33momamobile-blueline: [0m[1mv0aa wartet das Messfenster der Runde aus[0m
+[32m[    7.385242] [0m[33momamobile-blueline: [0m[1mschreib_rc=0 8+0 records in 8+0 records out 1048576 bytes (1.0MB) copied, 0.011459  platte=/dev/sda ro_achter=1[0m
+[32m[   16.363679] [0m[33mplatform 888000.i2c: [0m[1mdeferred probe pending: geni_i2c: Failed to get tx DMA ch[0m
+[32m[   16.376305] [0m[33mgcc-sdm845 100000.clock-controller: [0msync_state() pending due to 793000.rng
+[32m[   16.388461] [0m[33mqnoc-sdm845 1380000.interconnect: [0msync_state() pending due to 1436400.pmu
+[32m[   16.400135] [0m[33mqnoc-sdm845 1380000.interconnect: [0msync_state() pending due to 114a000.pmu
+[32m[   16.410626] [0m[33mqnoc-sdm845 1500000.interconnect: [0msync_state() pending due to 1e40000.ipa
+[32m[   16.420381] [0m[33mqnoc-sdm845 1620000.interconnect: [0msync_state() pending due to 1e40000.ipa
+[32m[   16.430077] [0m[33mqnoc-sdm845 1380000.interconnect: [0msync_state() pending due to 1e40000.ipa
+[32m[   16.439759] [0m[33mqnoc-sdm845 1700000.interconnect: [0msync_state() pending due to 1e40000.ipa
+[32m[   16.449445] [0m[33mgcc-sdm845 100000.clock-controller: [0msync_state() pending due to 4080000.remoteproc
+[32m[   16.459924] [0m[33mqnoc-sdm845 1500000.interconnect: [0msync_state() pending due to aa00000.video-codec
+[32m[   16.470287] [0m[33mqnoc-sdm845 1380000.interconnect: [0msync_state() pending due to aa00000.video-codec
+[32m[   16.480630] [0m[33mqnoc-sdm845 1740000.interconnect: [0msync_state() pending due to aa00000.video-codec
+[32m[   16.490954] [0m[33msdm845-videocc ab00000.clock-controller: [0msync_state() pending due to aa00000.video-codec
+[32m[   16.501884] [0m[33mgcc-sdm845 100000.clock-controller: [0msync_state() pending due to acb3000.camss
+[32m[   16.511863] [0m[33mgcc-sdm845 100000.clock-controller: [0msync_state() pending due to 506a000.gmu
+[32m[   16.521664] [0m[33msdm845-gpucc 5090000.clock-controller: [0msync_state() pending due to 506a000.gmu
+[32m[   16.531752] [0m[33mqnoc-sdm845 17900000.interconnect: [0msync_state() pending due to aa00000.video-codec
+[32m[   16.542167] [0m[33mqnoc-sdm845 17900000.interconnect: [0msync_state() pending due to 1e40000.ipa
+[32m[   16.551882] [0m[33mqnoc-sdm845 17900000.interconnect: [0msync_state() pending due to 1436400.pmu
+[32m[   16.561593] [0m[33mqcom-rpmhpd 179c0000.rsc:power-controller: [0msync_state() pending due to aa00000.video-codec
+[32m[   16.572684] [0m[33mqcom-rpmhpd 179c0000.rsc:power-controller: [0msync_state() pending due to 4080000.remoteproc
+[32m[   16.583702] [0m[33mqnoc-sdm845 1380000.interconnect: [0msync_state() pending due to 888000.i2c
+[32m[   16.593210] [0m[33mqnoc-sdm845 17900000.interconnect: [0msync_state() pending due to 888000.i2c
+[32m[   16.602825] [0m[33mqnoc-sdm845 1500000.interconnect: [0msync_state() pending due to 888000.i2c
+[32m[   16.612351] [0m[33mqnoc-sdm845 16e0000.interconnect: [0msync_state() pending due to 888000.i2c
+[32m[   16.621879] [0m[33mqcom-rpmhpd 179c0000.rsc:power-controller: [0msync_state() pending due to 888000.i2c
+[32m[   16.632216] [0m[33mgcc-sdm845 100000.clock-controller: [0msync_state() pending due to 888000.i2c
+@@ENDE dmesg.txt

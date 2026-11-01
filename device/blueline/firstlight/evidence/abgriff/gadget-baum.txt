@@ -1,0 +1,38 @@
+lrwxrwxrwx    1 root     root             0 Jan  1 00:00 [1;36ma600000.usb[m -> [1;34m../../devices/platform/soc@0/a6f8800.usb/a600000.usb/udc/a600000.usb[m
+@@ENDE udc-liste.txt
+_speed); do echo "$f: $(cat $f 2>/dev/null)"; done | wc -c)
+/bin/sh: syntax error: unexpected "("
+ 2>/dev/null)"; done
+/bin/sh: syntax error: unexpected "("
+@@ENDE udc-state.txt
+ 3 2>/dev/null | wc -c)
+@@ANFANG gadget-baum.txt 1253
+/sys/kernel/config/usb_gadget
+/sys/kernel/config/usb_gadget/g1
+/sys/kernel/config/usb_gadget/g1/max_speed
+/sys/kernel/config/usb_gadget/g1/UDC
+/sys/kernel/config/usb_gadget/g1/bcdUSB
+/sys/kernel/config/usb_gadget/g1/bcdDevice
+/sys/kernel/config/usb_gadget/g1/idProduct
+/sys/kernel/config/usb_gadget/g1/idVendor
+/sys/kernel/config/usb_gadget/g1/bMaxPacketSize0
+/sys/kernel/config/usb_gadget/g1/bDeviceProtocol
+/sys/kernel/config/usb_gadget/g1/bDeviceSubClass
+/sys/kernel/config/usb_gadget/g1/bDeviceClass
+/sys/kernel/config/usb_gadget/g1/functions
+/sys/kernel/config/usb_gadget/g1/functions/ncm.usb0
+/sys/kernel/config/usb_gadget/g1/functions/acm.GS0
+/sys/kernel/config/usb_gadget/g1/configs
+/sys/kernel/config/usb_gadget/g1/configs/c.1
+/sys/kernel/config/usb_gadget/g1/strings
+/sys/kernel/config/usb_gadget/g1/strings/0x409
+/sys/kernel/config/usb_gadget/g1/os_desc
+/sys/kernel/config/usb_gadget/g1/os_desc/qw_sign
+/sys/kernel/config/usb_gadget/g1/os_desc/b_vendor_code
+/sys/kernel/config/usb_gadget/g1/os_desc/use
+/sys/kernel/config/usb_gadget/g1/webusb
+/sys/kernel/config/usb_gadget/g1/webusb/landingPage
+/sys/kernel/config/usb_gadget/g1/webusb/bVendorCode
+/sys/kernel/config/usb_gadget/g1/webusb/bcdVersion
+/sys/kernel/config/usb_gadget/g1/webusb/use
+@@ENDE gadget-baum.txt

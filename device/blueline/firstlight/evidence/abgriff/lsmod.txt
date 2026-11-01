@@ -1,0 +1,2 @@
+@@ANFANG lsmod.txt 273
+echo @@ENDE lsmod.txt

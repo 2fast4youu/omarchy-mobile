@@ -1,0 +1,27 @@
+@@ANFANG ramdisk-inhalt.txt 468
+/usr/lib/modules:
+7.1.0-rc1-sdm845
+
+/usr/lib/modules/7.1.0-rc1-sdm845:
+kernel
+
+/usr/lib/modules/7.1.0-rc1-sdm845/kernel:
+drivers
+
+/usr/lib/modules/7.1.0-rc1-sdm845/kernel/drivers:
+usb
+
+/usr/lib/modules/7.1.0-rc1-sdm845/kernel/drivers/usb:
+gadget
+
+/usr/lib/modules/7.1.0-rc1-sdm845/kernel/drivers/usb/gadget:
+function
+libcomposite.ko
+
+/usr/lib/modules/7.1.0-rc1-sdm845/kernel/drivers/usb/gadget/function:
+u_ether.ko
+u_serial.ko
+usb_f_acm.ko
+usb_f_ncm.ko
+usb_f_rndis.ko
+@@ENDE ramdisk-inhalt.txt

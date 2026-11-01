@@ -1,0 +1,21 @@
+20:45:48 === Abgriff beginnt, Fenster 320s ===
+20:45:48 uname.txt                              22 B  ok  sha f125c1348bef630a
+20:45:48 cmdline.txt                          1932 B  ok  sha 657cd18531840ffe
+20:45:48 uptime.txt                             59 B  ok  sha e919006d7cd0c755
+20:45:48 lsmod.txt                              45 B  ok  sha bb07c65a99079f81
+20:45:48 proc-modules.txt                       29 B  ok  sha 465b4984f170d660
+20:45:48 udc-liste.txt                         325 B  ok  sha a9dcfadcc4d60f47
+20:45:48 udc-state.txt                          26 B  ok  sha fe9415509447bd2c
+20:45:48 gadget-baum.txt                      1690 B  ok  sha cb3c2b4f1e94d7dc
+20:45:48 gadget-udc.txt                        207 B  ok  sha 8b105f1ca9a148d6
+20:45:48 netz.txt                             2434 B  ok  sha c69f824518b5075d
+20:45:48 ACHTUNG dekodieren fehlgeschlagen: kernel-config.gz.b64 (sequence item 0: expected a bytes-like object, str found)
+20:45:48 kernel-config.gz.gz                 76836 B  ok  sha 90959d79396fe15a
+20:45:48 steps.log                            1747 B  ok  sha a254b1351828debd
+20:45:48 dmesg.txt                           72381 B  ok  sha dd28eaba79faa562
+20:45:48 pstore-dmesg-ramoops.txt            70279 B  ok  sha 18a10337764bb79e
+20:45:48 pstore-console-ramoops.txt          85750 B  ok  sha c31c82fb90d42b38
+20:45:48 dtb-modell.txt                        246 B  ok  sha 26e2c214c2c940eb
+20:45:48 storage-ro.txt                        417 B  ok  sha 930aace697ac611e
+20:45:49 ramdisk-inhalt.txt                    526 B  ok  sha cb0a33fdd8be901c
+20:45:49 === Abgriff fertig: 314951 Bytes in device/blueline/firstlight/evidence/abgriff ===

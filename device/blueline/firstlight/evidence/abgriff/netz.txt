@@ -1,0 +1,34 @@
+c
+ -c)
+@@ANFANG netz.txt 1: lo inet 127.0.0.1/8 scope host lo\ valid_lft forever preferred_lft forever 1: lo inet6 ::1/128 scope host proto kernel_lo \ valid_lft forever preferred_lft forever 3: usb0 inet 172.16.42.1/16 brd 172.16.255.255 scope global usb0\ valid_lft forever preferred_lft forever 3: usb0 inet 172.16.42.1/24 scope global usb0\ valid_lft forever preferred_lft forever 3: usb0 inet6 fe80::5ce0:bfff:fe3d:d9ee/64 scope link proto kernel_ll \ valid_lft forever preferred_lft forever 172.16.0.0/16 dev usb0 proto kernel scope link src 172.16.42.1 172.16.42.0/24 dev usb0 proto kernel scope link src 172.16.42.1 1160
+1: lo    inet 127.0.0.1/8 scope host lo\       valid_lft forever preferred_lft forever
+1: lo    inet6 ::1/128 scope host proto kernel_lo \       valid_lft forever preferred_lft forever
+3: usb0    inet 172.16.42.1/16 brd 172.16.255.255 scope global usb0\       valid_lft forever preferred_lft forever
+3: usb0    inet 172.16.42.1/24 scope global usb0\       valid_lft forever preferred_lft forever
+3: usb0    inet6 fe80::5ce0:bfff:fe3d:d9ee/64 scope link proto kernel_ll \       valid_lft forever preferred_lft forever
+172.16.0.0/16 dev usb0 proto kernel scope link src 172.16.42.1 
+172.16.42.0/24 dev usb0 proto kernel scope link src 172.16.42.1 
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:65536  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+sit0      Link encap:IPv6-in-IPv4  
+          NOARP  MTU:1480  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:0 (0.0 B)  TX bytes:0 (0.0 B)
+
+usb0      Link encap:Ethernet  HWaddr 5E:E0:BF:3D:D9:EE  
+          inet addr:172.16.42.1  Bcast:172.16.255.255  Mask:255.255.0.0
+          inet6 addr: fe80::5ce0:bfff:fe3d:d9ee/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:165 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:97 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:20997 (20.5 KiB)  TX bytes:18380 (17.9 KiB)

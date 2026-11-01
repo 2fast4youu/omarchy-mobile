@@ -1,0 +1,868 @@
+@@ANFANG pstore-dmesg-ramoops.txt 70078
+Panic#1 Part1
+<6>[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x517f803c]
+<5>[    0.000000] Linux version 7.1.0-rc1-sdm845 (pmos@build) (Alpine clang version 22.1.8, LLD 22.1.8) #5-postmarketos-qcom-sdm845 SMP PREEMPT Tue Jul 14 03:51:45 UTC 
+<6>[    0.000000] KASLR enabled
+<6>[    0.000000] Machine model: Google Pixel 3
+<6>[    0.000000] efi: UEFI not found.
+<4>[    0.000000] [Firmware Bug]: Kernel image misaligned at boot, please fix your bootloader!
+<6>[    0.000000] OF: reserved mem: 0x00000000bfffc000..0x00000000bfffffff (16 KiB) nomap non-reusable mpss-metadata
+<6>[    0.000000] Reserved memory: created CMA memory pool at 0x00000000fec00000, size 16 MiB
+<6>[    0.000000] OF: reserved mem: initialized node fastrpc, compatible id shared-dma-pool
+<6>[    0.000000] OF: reserved mem: 0x00000000fec00000..0x00000000ffbfffff (16384 KiB) map reusable fastrpc
+<6>[    0.000000] OF: reserved mem: 0x0000000085700000..0x0000000085cfffff (6144 KiB) nomap non-reusable hyp-mem@85700000
+<6>[    0.000000] OF: reserved mem: 0x0000000085e00000..0x0000000085efffff (1024 KiB) nomap non-reusable xbl-mem@85e00000
+<6>[    0.000000] OF: reserved mem: 0x0000000085fc0000..0x0000000085fdffff (128 KiB) nomap non-reusable aop-mem@85fc0000
+<6>[    0.000000] OF: reserved mem: 0x0000000085fe0000..0x0000000085ffffff (128 KiB) nomap non-reusable aop-cmd-db-mem@85fe0000
+<6>[    0.000000] OF: reserved mem: 0x0000000086000000..0x00000000861fffff (2048 KiB) nomap non-reusable smem@86000000
+<6>[    0.000000] OF: reserved mem: 0x0000000086200000..0x0000000088efffff (46080 KiB) nomap non-reusable tz@86200000
+<6>[    0.000000] OF: reserved mem: 0x000000008ab00000..0x000000008befffff (20480 KiB) nomap non-reusable qseecom@8ab00000
+<6>[    0.000000] OF: reserved mem: 0x000000008bf00000..0x000000008c3fffff (5120 KiB) nomap non-reusable camera-mem@8bf00000
+<6>[    0.000000] OF: reserved mem: 0x000000008c400000..0x000000008c40ffff (64 KiB) nomap non-reusable ipa-fw@8c400000
+<6>[    0.000000] OF: reserved mem: 0x000000008c410000..0x000000008c414fff (20 KiB) nomap non-reusable ipa-gsi@8c410000
+<6>[    0.000000] OF: reserved mem: 0x000000008c415000..0x000000008c416fff (8 KiB) nomap non-reusable gpu@8c415000
+<6>[    0.000000] OF: reserved mem: 0x000000008c500000..0x000000008defffff (26624 KiB) nomap non-reusable adsp@8c500000
+<6>[    0.000000] OF: reserved mem: 0x000000008df00000..0x000000008dffffff (1024 KiB) nomap non-reusable wlan-msa@8df00000
+<6>[    0.000000] OF: reserved mem: 0x000000009d400000..0x000000009f7fffff (36864 KiB) nomap non-reusable splash@9d400000
+<6>[    0.000000] OF: reserved mem: 0x000000008e000000..0x00000000977fffff (155648 KiB) nomap non-reusable memory@8e000000
+<6>[    0.000000] OF: reserved mem: 0x0000000097800000..0x0000000097cfffff (5120 KiB) nomap non-reusable venus@97800000
+<6>[    0.000000] OF: reserved mem: 0x0000000097d00000..0x00000000984fffff (8192 KiB) nomap non-reusable cdsp-mem@97D00000
+<6>[    0.000000] OF: reserved mem: 0x0000000098500000..0x00000000986fffff (2048 KiB) nomap non-reusable mba@98500000
+<6>[    0.000000] OF: reserved mem: 0x0000000098700000..0x0000000099afffff (20480 KiB) nomap non-reusable slpi@98700000
+<6>[    0.000000] OF: reserved mem: 0x0000000099b00000..0x0000000099bfffff (1024 KiB) nomap non-reusable spss@99B00000
+<6>[    0.000000] OF: reserved mem: 0x00000000f2700000..0x00000000f2901fff (2056 KiB) nomap non-reusable rmtfs-region@f2700000
+<6>[    0.000000] OF: reserved mem: 0x000000009f800000..0x000000009f8fffff (1024 KiB) nomap non-reusable ramoops@9f800000
+<6>[    0.000000] NUMA: Faking a node at [mem 0x0000000080000000-0x000000017e09ffff]
+<6>[    0.000000] NODE_DATA(0) allocated [mem 0x17d8a8a80-0x17d8ab8ff]
+<6>[    0.000000] cma: Reserved 256 MiB at 0x00000000e2600000
+<6>[    0.000000] psci: probing for conduit method from DT.
+<6>[    0.000000] psci: PSCIv1.1 detected in firmware.
+<6>[    0.000000] psci: Using standard PSCI v0.2 function IDs
+<6>[    0.000000] psci: MIGRATE_INFO_TYPE not supported.
+<6>[    0.000000] psci: SMC Calling Convention v1.2
+<6>[    0.000000] psci: OSI mode supported.
+<6>[    0.000000] psci: [Firmware Bug]: failed to set PC mode: -3
+<6>[    0.000000] Zone ranges:
+<6>[    0.000000]   DMA      [mem 0x0000000080000000-0x00000000ffffffff]
+<6>[    0.000000]   DMA32    empty
+<6>[    0.000000]   Normal   [mem 0x0000000100000000-0x000000017e09ffff]
+<6>[    0.000000] Movable zone start for each node
+<6>[    0.000000] Early memory node ranges
+<6>[    0.000000]   node   0: [mem 0x0000000080000000-0x00000000856fffff]
+<6>[    0.000000]   node   0: [mem 0x0000000085700000-0x0000000085cfffff]
+<6>[    0.000000]   node   0: [mem 0x0000000085d00000-0x0000000085dfffff]
+<6>[    0.000000]   node   0: [mem 0x0000000085e00000-0x0000000085efffff]
+<6>[    0.000000]   node   0: [mem 0x0000000085f00000-0x0000000085fbffff]
+<6>[    0.000000]   node   0: [mem 0x0000000085fc0000-0x0000000088efffff]
+<6>[    0.000000]   node   0: [mem 0x0000000088f00000-0x000000008aafffff]
+<6>[    0.000000]   node   0: [mem 0x000000008ab00000-0x000000008c416fff]
+<6>[    0.000000]   node   0: [mem 0x000000008c417000-0x000000008c4fffff]
+<6>[    0.000000]   node   0: [mem 0x000000008c500000-0x0000000099bfffff]
+<6>[    0.000000]   node   0: [mem 0x0000000099c00000-0x000000009d3fffff]
+<6>[    0.000000]   node   0: [mem 0x000000009d400000-0x000000009f8fffff]
+<6>[    0.000000]   node   0: [mem 0x000000009f900000-0x00000000bfffbfff]
+<6>[    0.000000]   node   0: [mem 0x00000000bfffc000-0x00000000bfffffff]
+<6>[    0.000000]   node   0: [mem 0x00000000c0000000-0x00000000f26fffff]
+<6>[    0.000000]   node   0: [mem 0x00000000f2700000-0x00000000f2901fff]
+<6>[    0.000000]   node   0: [mem 0x00000000f2902000-0x000000017e09ffff]
+<6>[    0.000000] Initmem setup node 0 [mem 0x0000000080000000-0x000000017e09ffff]
+<6>[    0.000000] On node 0, zone Normal: 8032 pages in unavailable ranges
+<5>[    0.000000] Kernel is locked down from Kernel configuration; see man kernel_lockdown.7
+<6>[    0.000000] percpu: Embedded 35 pages/cpu s103896 r8192 d31272 u143360
+<7>[    0.000000] pcpu-alloc: s103896 r8192 d31272 u143360 alloc=35*4096
+<7>[    0.000000] pcpu-alloc: [0] 0 [0] 1 [0] 2 [0] 3 [0] 4 [0] 5 [0] 6 [0] 7 
+<6>[    0.000000] Detected VIPT I-cache on CPU0
+<6>[    0.000000] CPU features: detected: GICv3 CPU interface
+<6>[    0.000000] CPU features: kernel page table isolation forced ON by KASLR
+<6>[    0.000000] CPU features: detected: Kernel page table isolation (KPTI)
+<6>[    0.000000] alternatives: applying boot alternatives
+<5>[    0.000000] Kernel command line: rootwait ro init=/init androidboot.bootdevice=1d84000.ufshc androidboot.baseband=sdm androidboot.keymaster=1 msm_drm.dsi_display0=dsi_sw43408_cmd_display::timing0 androidboot.force_normal_boot=1 androidboot.serialno=PIXEL3-SERIAL androidboot.slot_suffix=_a androidboot.slot_retry_count=0 androidboot.slot_successful=no androidboot.hardware.platform=sdm845 androidboot.hardware=blueline androidboot.revision=MP1.0 androidboot.bootloader=b1c1-0.4-7617406 androidboot.hardware.sku=G013A androidboot.hardware.radio.subtype=0 androidboot.hardware.dsds=0 androidboot.secure_boot=PRODUCTION androidboot.cdt_hwid=0x05022800 androidboot.hardware.majorid=0x02 androidboot.dtb_idx=0 androidboot.bootreason=watchdog androidboot.hardware.ddr=4GB,Micron,LPDDR4X androidboot.ddr_info=Micron androidboot.ddr_size=4GB androidboot.hardware.ufs=64GB,SKHynix androidboot.cid=00000000 androidboot.boottime=0BLE:59,1BLL:29,1BLE:543,2BLL:121,2BLE:206,SW:10022,KL:0,KD:468,ODT:0,AVB:1001,AFTL:0 androidboot.ramdump=disabled \
+<5>[    0.000000] Kernel command line: androidboot.blockchain=disabled usbcfg.suzyq=disabled androidboot.theme=1 androidboot.hardware.pcbcfg=G650-02573-01 androidboot.hardware.devcfg=G950-01035-02 androidboot.vbmeta.device=PARTUUID=b7fc981c-7b25-4f78-848a-e5015e7b3cf5 androidboot.vbmeta.avb_version=1.1 androidboot.vbmeta.device_state=unlocked androidboot.vbmeta.hash_alg=sha256 androidboot.vbmeta.size=4224 androidboot.vbmeta.digest=1752749d02b07df912ddba18c6c915ac5944b2529547781482d421f7882ad660 androidboot.veritymode=enforcing androidboot.verifiedbootstate=orange androidboot.aftlstate=8 console=tty0 loglevel=8 priecho @@Entk.devkmsg=on nowatchdog noreboot.not panic=120 androidboot.hardware=qcom androidboot.board=blueline rdinit=/init console=null
+<6>[    0.000000] printk: log buffer data + meta data: 131072 + 458752 = 589824 bytes
+<6>[    0.000000] Dentry cache hash table entries: 524288 (order: 10, 4194304 bytes, linear)
+<6>[    0.000000] Inode-cache hash table entries: 262144 (order: 9, 2097152 bytes, linear)
+<6>[    0.000000] software IO TLB: area num 8.
+<6>[    0.000000] software IO TLB: mapped [mem 0x00000000fac00000-0x00000000fec00000] (64MB)
+<6>[    0.000000] Fallback order for Node 0: 0 
+<6>[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 1040544
+<6>[    0.000000] Policy zone: Normal
+<6>[    0.000000] mem auto-init: stack:all(zero), heap alloc:off, heap free:off
+<6>[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=8, Nodes=1
+<6>[    0.000000] ftrace: allocating 55992 entries in 220 pages
+<6>[    0.000000] ftrace: allocated 220 pages with 5 groups
+<6>[    0.000000] rcu: Preemptible hierarchical RCU implementation.
+<6>[    0.000000] rcu:  RCU event tracing is enabled.
+<6>[    0.000000]       Trampoline variant of Tasks RCU enabled.
+<6>[    0.000000]       NDE pstore-dmesg-ramoops.txt
+Rude variant of Tasks RCU enabled.
+<6>[    0.000000]       Tracing variant of Tasks RCU enabled.
+<6>[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 100 jiffies.
+<6>[    0.000000] RCU Tasks: Setting shift to 3 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=8.
+<6>[    0.000000] RCU Tasks Rude: Setting shift to 3 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=8.
+<6>[    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+<6>[    0.000000] GICv3: 768 SPIs implemented
+<6>[    0.000000] GICv3: 0 Extended SPIs implemented
+<6>[    0.000000] Root IRQ handler: gic_handle_irq
+<6>[    0.000000] GICv3: GICv3 features: 16 PPIs
+<6>[    0.000000] GICv3: GICD_CTLR.DS=0, SCR_EL3.FIQ=1
+<6>[    0.000000] GICv3: CPU0: found redistributor 0 region 0:0x0000000017a60000
+<4>[    0.000000] ITS: No ITS available, not enabling LPIs
+<6>[    0.000000] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+<6>[    0.000000] arch_timer: cp15 timer running at 19.20MHz (virt).
+<6>[    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x46d987e47, max_idle_ns: 440795202767 ns
+<6>[    0.000001] sched_clock: 56 bits at 19MHz, resolution 52ns, wraps every 4398046511078ns
+<6>[    0.000273] Console: colour dummy device 80x25
+<6>[    0.000289] printk: legacy console [tty0] enabled
+<6>[    0.001365] Calibrating delay loop (skipped), value calculated using timer frequency.. 38.40 BogoMIPS (lpj=19200)
+<6>[    0.001392] pid_max: default: 32768 minimum: 301
+<6>[    0.001646] Yama: becoming mindful.
+<6>[    0.002492] LSM support for eBPF active
+<6>[    0.002643] Mount-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+<6>[    0.002668] Mountpoint-cache hash table entries: 8192 (order: 4, 65536 bytes, linear)
+<6>[    0.003069] VFS: Finished mounting rootfs on nullfs
+<6>[    0.005620] rcu: Hierarchical SRCU implementation.
+<6>[    0.005633] rcu:  Max phase no-delay instances is 400.
+<6>[    0.005846] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+<6>[    0.007037] EFI services will not be available.
+<6>[    0.007467] smp: Bringing up secondary CPUs ...
+<6>[    0.009313] Detected VIPT I-cache on CPU1
+<6>[    0.009496] GICv3: CPU1: found redistributor 100 region 0:0x0000000017a80000
+<6>[    0.009574] CPU1: Booted secondary processor 0x0000000100 [0x517f803c]
+<6>[    0.011358] Detected VIPT I-cache on CPU2
+<6>[    0.011489] GICv3: CPU2: found redistributor 200 region 0:0x0000000017aa0000
+<6>[    0.011542] CPU2: Booted secondary processor 0x0000000200 [0x517f803c]
+<6>[    0.013393] Detected VIPT I-cache on CPU3
+<6>[    0.013519] GICv3: CPU3: found redistributor 300 region 0:0x0000000017ac0000
+<6>[    0.013569] CPU3: Booted secondary processor 0x0000000300 [0x517f803c]
+<6>[    0.016000] CPU features: detected: Spectre-v2
+<6>[    0.016015] CPU features: detected: Spectre-BHB
+<6>[    0.016026] Detected VIPT I-cache on CPU4
+<6>[    0.016176] GICv3: CPU4: found redistributor 400 region 0:0x0000000017ae0000
+<6>[    0.016227] CPU4: Booted secondary processor 0x0000000400 [0x516f802d]
+<6>[    0.018456] Detected VIPT I-cache on CPU5
+<6>[    0.018619] GICv3: CPU5: found redistributor 500 region 0:0x0000000017b00000
+<6>[    0.018672] CPU5: Booted secondary processor 0x0000000500 [0x516f802d]
+<6>[    0.021084] Detected VIPT I-cache on CPU6
+<6>[    0.021247] GICv3: CPU6: found redistributor 600 region 0:0x0000000017b20000
+<6>[    0.021299] CPU6: Booted secondary processor 0x0000000600 [0x516f802d]
+<6>[    0.023820] Detected VIPT I-cache on CPU7
+<6>[    0.023984] GICv3: CPU7: found redistributor 700 region 0:0x0000000017b40000
+<6>[    0.024036] CPU7: Booted secondary processor 0x0000000700 [0x516f802d]
+<6>[    0.024148] smp: Brought up 1 node, 8 CPUs
+<6>[    0.024301] SMP: Total of 8 processors activated.
+<6>[    0.024311] CPU: All CPU(s) started at EL1
+<6>[    0.024339] CPU features: detected: 32-bit EL0 Support
+<6>[    0.024349] CPU features: detected: 32-bit EL1 Support
+<6>[    0.024359] CPU features: detected: Data cache clean to the PoU not required for I/D coherence
+<6>[    0.024382] CPU features: detected: Common not Private translations
+<6>[    0.024392] CPU features: detected: CRC32 instructions
+<6>[    0.024406] CPU features: detected: RCpc load-acquire (LDAPR)
+<6>[    0.024416] CPU features: detected: LSE atomic instructions
+<6>[    0.024426] CPU features: detected: Privileged Access Never
+<6>[    0.024437] CPU features: detected: PMUv3
+<6>[    0.024445] CPU features: detected: RAS Extension Support
+<6>[    0.024456] CPU features: detected: XNX
+<6>[    0.024549] alternatives: applying system-wide alternatives
+<6>[    0.031035] CPU features: detected: Hardware dirty bit management on CPU0-7
+<6>[    0.031446] Memory: 3339768K/4162176K available (18624K kernel code, 4870K rwdata, 17168K rodata, 2048K init, 479K bss, 536976K reserved, 278528K cma-reserved)
+<6>[    0.033525] devtmpfs: initialized
+<6>[    0.047778] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 1911260446275000 ns
+<6>[    0.047822] posixtimers hash table entries: 4096 (order: 4, 65536 bytes, linear)
+<6>[    0.047882] futex hash table entries: 2048 (131072 bytes on 1 NUMA nodes, total 128 KiB, linear).
+<6>[    0.049454] 2G module region forced by RANDOMIZE_MODULE_REGION_FULL
+<6>[    0.049488] 0 pages in range for non-PLT usage
+<6>[    0.049493] 513424 pages in range for PLT usage
+<6>[    0.050790] DMI: not present or invalid.
+<6>[    0.053310] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+<6>[    0.054429] DMA: preallocated 512 KiB GFP_KERNEL pool for atomic allocations
+<6>[    0.054572] DMA: preallocated 512 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+<6>[    0.054623] audit: initializing netlink subsys (disabled)
+<5>[    0.054813] audit: type=2000 audit(0.048:1): state=initialized audit_enabled=0 res=1
+<6>[    0.056876] thermal_sys: Registered thermal governor 'step_wise'
+<6>[    0.056882] thermal_sys: Registered thermal governor 'power_allocator'
+<6>[    0.056963] cpuidle: using governor menu
+<6>[    0.057441] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+<6>[    0.057685] ASID allocator initialised with 32768 entries
+<6>[    0.058855] Serial: AMBA PL011 UART driver
+<6>[    0.061316] pstore: Using crash dump compression: deflate
+<6>[    0.061337] printk: legacy console [ramoops-1] enabled
+<6>[    0.062225] pstore: Registered ramoops as persistent store backend
+<6>[    0.062240] ramoops: using 0x100000@0x9f800000, ecc: 0
+<6>[    0.064195] CPUidle PSCI: Initialized CPU PM domain topology using OSI mode
+<6>[    0.075279] /soc@0/ufshc@1d84000: Fixed dependency cycle(s) with /soc@0/phy@1d87000
+<6>[    0.075331] /soc@0/phy@1d87000: Fixed dependency cycle(s) with /soc@0/ufshc@1d84000
+<6>[    0.075557] /soc@0/stm@6002000: Fixed dependency cycle(s) with /soc@0/funnel@6041000
+<6>[    0.075589] /soc@0/funnel@6041000: Fixed dependency cycle(s) with /soc@0/stm@6002000
+<6>[    0.075643] /soc@0/funnel@6041000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+<6>[    0.075695] /soc@0/funnel@6043000: Fixed dependency cycle(s) with /soc@0/funnel@7810000
+<6>[    0.075731] /soc@0/funnel@6043000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+<6>[    0.075783] /soc@0/funnel@6045000: Fixed dependency cycle(s) with /soc@0/funnel@6043000
+<6>[    0.075811] /soc@0/funnel@6045000: Fixed dependency cycle(s) with /soc@0/funnel@6041000
+<6>[    0.075839] /soc@0/funnel@6045000: Fixed dependency cycle(s) with /soc@0/etf@6047000
+<6>[    0.075900] /soc@0/replicator@6046000: Fixed dependency cycle(s) with /soc@0/etf@6047000
+<6>[    0.075926] /soc@0/replicator@6046000: Fixed dependency cycle(s) with /soc@0/etr@6048000
+<6>[    0.075984] /soc@0/etf@6047000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+<6>[    0.076011] /soc@0/etf@6047000: Fixed dependency cycle(s) with /soc@0/replicator@6046000
+<6>[    0.076073] /soc@0/etr@6048000: Fixed dependency cycle(s) with /soc@0/replicator@6046000
+<6>[    0.076133] /soc@0/etm@7040000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.076194] /soc@0/etm@7140000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.076254] /soc@0/etm@7240000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.076313] /soc@0/etm@7340000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.076372] /soc@0/etm@7440000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.076438] /soc@0/etm@7540000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.076500] /soc@0/etm@7640000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.076561] /soc@0/etm@7740000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.076590] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7740000
+<6>[    0.076614] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7640000
+<6>[    0.076638] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7540000
+<6>[    0.076663] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7440000
+<6>[    0.076687] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7340000
+<6>[    0.076711] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7240000
+<6>[    0.076736] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7140000
+<6>[    0.076760] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7040000
+<6>[    0.076799] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/funnel@7810000
+<6>[    0.076855] /soc@0/funnel@7810000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.076892] /soc@0/funnel@7810000: Fixed dependency cycle(s) with /soc@0/funnel@6043000
+<6>[    0.076957] /soc@0/phy@88e8000: Fixed dependency cycle(s) with /soc@0/usb@a6f8800/usb@a600000
+<6>[    0.077016] /soc@0/usb@a6f8800/usb@a600000: Fixed dependency cycle(s) with /soc@0/phy@88e8000
+<6>[    0.077088] /soc@0/camss@acb3000: Fixed dependency cycle(s) with /soc@0/cci@ac4a000/i2c-bus@1/camera@10
+<6>[    0.077125] /soc@0/camss@acb3000: Fixed dependency cycle(s) with /soc@0/cci@ac4a000/i2c-bus@1/camera@1a
+<6>[    0.077203] /soc@0/cci@ac4a000/i2c-bus@1/camera@10: Fixed dependency cycle(s) with /soc@0/camss@acb3000
+<6>[    0.077260] /soc@0/cci@ac4a000/i2c-bus@1/camera@1a: Fixed dependency cycle(s) with /soc@0/camss@acb3000
+<6>[    0.077409] /soc@0/display-subsystem@ae00000/display-controller@ae01000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+<6>[    0.077518] /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+<6>[    0.077602] /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/display-controller@ae01000
+<6>[    0.077831] /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+<6>[    0.077898] /soc@0/display-subsystem@ae00000/phy@ae94400: Fixed dependency cycle(s) with /soc@0/clock-controller@af00000
+<6>[    0.077984] /soc@0/clock-controller@af00000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/phy@ae94400
+<6>[    0.078246] /soc@0/interrupt-controller@17a00000: Fixed dependency cycle(s) with /soc@0/interrupt-controller@17a00000
+<6>[    0.083639] /soc@0/ufshc@1d84000: Fixed dependency cycle(s) with /soc@0/phy@1d87000
+<6>[    0.083953] /soc@0/ufshc@1d84000: Fixed dependency cycle(s) with /soc@0/phy@1d87000
+<6>[    0.084032] /soc@0/phy@1d87000: Fixed dependency cycle(s) with /soc@0/ufshc@1d84000
+<6>[    0.086784] /soc@0/stm@6002000: Fixed dependency cycle(s) with /soc@0/funnel@6041000
+<6>[    0.086925] /soc@0/stm@6002000: Fixed dependency cycle(s) with /soc@0/funnel@6041000
+<6>[    0.086999] /soc@0/funnel@6041000: Fixed dependency cycle(s) with /soc@0/stm@6002000
+<6>[    0.087089] /soc@0/funnel@6041000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+<6>[    0.087207] /soc@0/funnel@6043000: Fixed dependency cycle(s) with /soc@0/funnel@7810000
+<6>[    0.087247] /soc@0/funnel@6043000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+<6>[    0.087362] /soc@0/funnel@6043000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+<6>[    0.087470] /soc@0/funnel@6041000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+<6>[    0.087567] /soc@0/funnel@6045000: Fixed dependency cycle(s) with /soc@0/funnel@6043000
+<6>[    0.087630] /soc@0/funnel@6045000: Fixed dependency cycle(s) with /soc@0/funnel@6041000
+<6>[    0.087695] /soc@0/funnel@6045000: Fixed dependency cycle(s) with /soc@0/etf@6047000
+<6>[    0.087826] /soc@0/replicator@6046000: Fixed dependency cycle(s) with /soc@0/etf@6047000
+<6>[    0.087853] /soc@0/replicator@6046000: Fixed dependency cycle(s) with /soc@0/etr@6048000
+<6>[    0.087980] /soc@0/replicator@6046000: Fixed dependency cycle(s) with /soc@0/etf@6047000
+<6>[    0.088045] /soc@0/funnel@6045000: Fixed dependency cycle(s) with /soc@0/etf@6047000
+<6>[    0.088134] /soc@0/etf@6047000: Fixed dependency cycle(s) with /soc@0/funnel@6045000
+<6>[    0.088195] /soc@0/etf@6047000: Fixed dependency cycle(s) with /soc@0/replicator@6046000
+<6>[    0.088330] /soc@0/replicator@6046000: Fixed dependency cycle(s) with /soc@0/etr@6048000
+<6>[    0.088432] /soc@0/etr@6048000: Fixed dependency cycle(s) with /soc@0/replicator@6046000
+<6>[    0.088601] /soc@0/etm@7040000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.088733] /soc@0/etm@7140000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.088861] /soc@0/etm@7240000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.088985] /soc@0/etm@7340000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.089104] /soc@0/etm@7440000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.089233] /soc@0/etm@7540000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.089354] /soc@0/etm@7640000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.089477] /soc@0/etm@7740000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.089616] /soc@0/etm@7740000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.089718] /soc@0/etm@7640000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.089824] /soc@0/etm@7540000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.089920] /soc@0/etm@7440000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.090011] /soc@0/etm@7340000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.090103] /soc@0/etm@7240000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.090200] /soc@0/etm@7140000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.090299] /soc@0/etm@7040000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.090355] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7740000
+<6>[    0.090408] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7640000
+<6>[    0.090463] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7540000
+<6>[    0.090524] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7440000
+<6>[    0.090588] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7340000
+<6>[    0.090648] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7240000
+<6>[    0.090708] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7140000
+<6>[    0.090763] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/etm@7040000
+<6>[    0.090843] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/funnel@7810000
+<6>[    0.090963] /soc@0/funnel@7800000: Fixed dependency cycle(s) with /soc@0/funnel@7810000
+<6>[    0.091047] /soc@0/funnel@6043000: Fixed dependency cycle(s) with /soc@0/funnel@7810000
+<6>[    0.091123] /soc@0/funnel@7810000: Fixed dependency cycle(s) with /soc@0/funnel@7800000
+<6>[    0.091193] /soc@0/funnel@7810000: Fixed dependency cycle(s) with /soc@0/funnel@6043000
+<6>[    0.092127] /soc@0/phy@88e8000: Fixed dependency cycle(s) with /soc@0/usb@a6f8800/usb@a600000
+<6>[    0.092593] /soc@0/usb@a6f8800/usb@a600000: Fixed dependency cycle(s) with /soc@0/phy@88e8000
+<6>[    0.093710] /soc@0/camss@acb3000: Fixed dependency cycle(s) with /soc@0/cci@ac4a000/i2c-bus@1/camera@10
+<6>[    0.093751] /soc@0/camss@acb3000: Fixed dependency cycle(s) with /soc@0/cci@ac4a000/i2c-bus@1/camera@1a
+<6>[    0.094097] /soc@0/cci@ac4a000/i2c-bus@1/camera@10: Fixed dependency cycle(s) with /soc@0/camss@acb3000
+<6>[    0.094232] /soc@0/cci@ac4a000/i2c-bus@1/camera@1a: Fixed dependency cycle(s) with /soc@0/camss@acb3000
+<6>[    0.094978] /soc@0/display-subsystem@ae00000: Fixed dependency cycle(s) with /soc@0/clock-controller@af00000
+<6>[    0.095165] /soc@0/display-subsystem@ae00000/display-controller@ae01000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+<6>[    0.095330] /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+<6>[    0.095443] /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/display-controller@ae01000
+<6>[    0.095832] /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+<6>[    0.095943] /soc@0/display-subsystem@ae00000/phy@ae94400: Fixed dependency cycle(s) with /soc@0/clock-controller@af00000
+<6>[    0.097264] /soc@0/display-subsystem@ae00000/phy@ae94400: Fixed dependency cycle(s) with /soc@0/clock-controller@af00000
+<6>[    0.097422] /soc@0/display-subsystem@ae00000: Fixed dependency cycle(s) with /soc@0/clock-controller@af00000
+<6>[    0.097505] /soc@0/clock-controller@af00000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/phy@ae94400
+<6>[    0.111598] /soc@0/rsc@179c0000/regulators-0: Fixed dependency cycle(s) with /soc@0/rsc@179c0000/regulators-0/smps5
+<6>[    0.111645] /soc@0/rsc@179c0000/regulators-0: Fixed dependency cycle(s) with /soc@0/rsc@179c0000/regulators-0/smps3
+<6>[    0.111680] /soc@0/rsc@179c0000/regulators-0: Fixed dependency cycle(s) with /soc@0/rsc@179c0000/regulators-0/smps7
+<6>[    0.117907] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
+<6>[    0.117935] HugeTLB: 0 KiB vmemmap can be freed for a 1.00 GiB page
+<6>[    0.117954] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
+<6>[    0.117970] HugeTLB: 0 KiB vmemmap can be freed for a 32.0 MiB page
+<6>[    0.117986] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+<6>[    0.118001] HugeTLB: 0 KiB vmemmap can be freed for a 2.00 MiB page
+<6>[    0.118018] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
+<6>[    0.118032] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
+<6>[    0.119860] ACPI: Interpreter disabled.
+<6>[    0.123349] iommu: Default domain type: Translated
+<6>[    0.123366] iommu: DMA domain TLB invalidation policy: strict mode
+<5>[    0.124840] SCSI subsystem initialized
+<6>[    0.125010] usbcore: registered new interface driver usbfs
+<6>[    0.125051] usbcore: registered new interface driver hub
+<6>[    0.125098] usbcore: registered new device driver usb
+<6>[    0.125257] pps_core: LinuxPPS API ver. 1 registered
+<6>[    0.125271] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+<6>[    0.125296] PTP clock support registered
+<6>[    0.125355] EDAC MC: Ver: 3.0.0
+<6>[    0.125628] scmi_core: SCMI protocol bus registered
+<6>[    0.125734] qcom_scm firmware:scm: SHM Bridge not supported
+<6>[    0.125771] qcom_scm: convention: smc arm 64
+<6>[    0.126045] qcom_scm firmware:scm: qseecom: found qseecom with version 0x1400000
+<6>[    0.126081] qcom_scm firmware:scm: qseecom: untested machine, skipping
+<6>[    0.127657] vgaarb: loaded
+<6>[    0.128172] clocksource: Switched to clocksource arch_sys_counter
+<5>[    0.128580] VFS: Disk quotas dquot_6.6.0
+<6>[    0.128611] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+<6>[    0.128911] pnp: PnP ACPI: disabled
+<6>[    0.135342] NET: Registered PF_INET protocol family
+<6>[    0.135512] IP idents hash table entries: 65536 (order: 7, 524288 bytes, linear)
+<6>[    0.138552] tcp_listen_portaddr_hash hash table entries: 2048 (order: 3, 32768 bytes, linear)
+<6>[    0.138604] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+<6>[    0.138628] TCP established hash table entries: 32768 (order: 6, 262144 bytes, linear)
+<6>[    0.138810] TCP bind hash table entries: 32768 (order: 8, 1048576 bytes, linear)
+<6>[    0.139557] TCP: Hash tables configured (established 32768 bind 32768)
+<6>[    0.139657] UDP hash table entries: 2048 (order: 5, 131072 bytes, linear)
+<6>[    0.139931] NET: Registered PF_UNIX/PF_LOCAL protocol family
+<6>[    0.139984] PCI: CLS 0 bytes, default 64
+<6>[    0.140215] Trying to unpack rootfs image as initramfs...
+<6>[    0.143370] kvm [1]: HYP mode not available
+<5>[    0.144469] Initialise system trusted keyrings
+<6>[    0.144680] workingset: timestamp_bits=42 (anon: 38) max_order=20 bucket_order=0 (anon: 0)
+<6>[    0.145495] NET: Registered PF_ALG protocol family
+<5>[    0.145520] Key type asymmetric registered
+<5>[    0.145536] Asymmetric key parser 'x509' registered
+<6>[    0.145594] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 241)
+<6>[    0.145784] io scheduler mq-deadline registered
+<6>[    0.145800] io scheduler kyber registered
+<6>[    0.145838] io scheduler bfq registered
+<6>[    0.204260] ledtrig-cpu: registered to indicate activity on CPUs
+<6>[    0.206124] simple-framebuffer chosen:framebuffer-0: framebuffer at 0x9d400000, 0x2400000 bytes
+<6>[    0.206161] simple-framebuffer chosen:framebuffer-0: format=a8r8g8b8, mode=1080x2160x32, linelength=4320
+<6>[    0.210584] Console: switching to colour frame buffer device 135x135
+<6>[    0.214960] simple-framebuffer chosen:framebuffer-0: fb0: simplefb registered!
+<6>[    0.227730] bob: Setting 3312000-3600000uV
+<6>[    0.227770] smps3: Setting 600000-600000uV
+<6>[    0.231477] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+<6>[    0.234024] msm_serial: driver initialized
+<6>[    0.234362] STM32 USART driver initialized
+<5>[    0.237725] arm-smmu 15000000.iommu: probing hardware configuration...
+<5>[    0.237766] arm-smmu 15000000.iommu: SMMUv2 with:
+<5>[    0.237821] arm-smmu 15000000.iommu:      stage 1 translation
+<5>[    0.237855] arm-smmu 15000000.iommu:      non-coherent table walk
+<5>[    0.237887] arm-smmu 15000000.iommu:      (IDR0.CTTW overridden by FW configuration)
+<5>[    0.237924] arm-smmu 15000000.iommu:      stream matching with 76 register groups
+<5>[    0.237977] arm-smmu 15000000.iommu:      45 context banks (0 stage-2 only)
+<5>[    0.238882] arm-smmu 15000000.iommu:      Supported page sizes: 0x61311000
+<5>[    0.238921] arm-smmu 15000000.iommu:      Stage-1: 48-bit VA -> 48-bit IPA
+<5>[    0.239030] arm-smmu 15000000.iommu:      preserved 0 boot mappings
+<6>[    0.241831] platform 800000.dma-controller: Adding to iommu group 0
+<6>[    0.242026] platform 8c0000.geniqup: Adding to iommu group 1
+<6>[    0.242236] platform a00000.dma-controller: Adding to iommu group 2
+<6>[    0.242427] platform ac0000.geniqup: Adding to iommu group 3
+<6>[    0.242772] platform 1d84000.ufshc: Adding to iommu group 4
+<6>[    0.243079] platform 1dc4000.dma-controller: Adding to iommu group 5
+<6>[    0.243314] platform 1e40000.ipa: Adding to iommu group 6
+<6>[    0.243695] platform aa00000.video-codec: Adding to iommu group 7
+<6>[    0.243982] platform acb3000.camss: Adding to iommu group 8
+<6>[    0.244238] platform ae00000.display-subsystem: Adding to iommu group 9
+<6>[    0.244945] platform 17184000.dma-controller: Adding to iommu group 10
+<6>[    0.245213] platform 18800000.wifi: Adding to iommu group 11
+<6>[    0.258034] loop: module loaded
+<6>[    0.258514] zram: Added device: zram0
+<6>[    0.259940] spmi_pmic_arb c440000.spmi: PMIC arbiter version v5 (0x50000000)
+<6>[    0.275657] thunder_xcv, ver 1.0
+<6>[    0.275734] thunder_bgx, ver 1.0
+<6>[    0.275788] nicpf, ver 1.0
+<6>[    0.275835] e1000: Intel(R) PRO/1000 Network Driver
+<6>[    0.275862] e1000: Copyright (c) 1999-2006 Intel Corporation.
+<6>[    0.275918] e1000e: Intel(R) PRO/1000 Network Driver
+<6>[    0.275943] e1000e: Copyright(c) 1999 - 2015 Intel Corporation.
+<6>[    0.276135] sky2: driver version 1.30
+<6>[    0.276578] VFIO - User Level meta-driver version: 0.3
+<6>[    0.292204] i2c_dev: i2c /dev entries driver
+<6>[    0.294750] input: pm8941_pwrkey as /devices/platform/soc@0/c440000.spmi/spmi-0/0-00/c440000.spmi:pmic@0:pon@800/c440000.spmi:pmic@0:pon@800:pwrkey/input/input0
+<6>[    0.296077] input: pm8941_resin as /devices/platform/soc@0/c440000.spmi/spmi-0/0-00/c440000.spmi:pmic@0:pon@800/c440000.spmi:pmic@0:pon@800:resin/input/input1
+<6>[    0.319658] device-mapper: ioctl: 4.50.0-ioctl (2025-04-28) initialised: dm-devel@lists.linux.dev
+<6>[    0.322745] SMCCC: SOC_ID: ARCH_SOC_ID not implemented, skipping ....
+<6>[    0.323389] clocksource: arch_mmio_counter: mask: 0xffffffffffffff max_cycles: 0x46d987e47, max_idle_ns: 440795202767 ns
+<6>[    0.323449] arch-timer-mmio 17c90000.timer: mmio timer running at 19.20MHz (virt)
+<6>[    0.323810] hid: raw HID events driver (C) Jiri Kosina
+<6>[    0.323893] usbcore: registered new interface driver usbhid
+<6>[    0.323923] usbhid: USB HID core driver
+<6>[    0.329182] hw perfevents: enabled with armv8_pmuv3 PMU driver, 7 (0,8000003f) counters available
+<6>[    0.363162] NET: Registered PF_INET6 protocol family
+<6>[    0.364831] Segment Routing with IPv6
+<6>[    0.364888] In-situ OAM (IOAM) with IPv6
+<6>[    0.364961] sit: IPv6, IPv4 and MPLS over IPv4 tunneling driver
+<6>[    0.365419] NET: Registered PF_PACKET protocol family
+<5>[    0.365470] Key type dns_resolver registered
+<6>[    0.373542] registered taskstats version 1
+<5>[    0.373994] Loading compiled-in X.509 certificates
+<6>[    0.380920] Freeing initrd memory: 4688K
+<5>[    0.387851] Loaded X.509 cert 'Build time autogenerated kernel key: cd8571b914e13c88ad09bcea68ebdc1b28dac735'
+<6>[    0.395026] Demotion targets for Node 0: null
+<5>[    0.395128] Key type .fscrypt registered
+<5>[    0.395154] Key type fscrypt-provisioning registered
+<6>[    0.421242] smps3: Setting 1352000-1352000uV
+<6>[    0.421508] smps5: Setting 1904000-2040000uV
+<5>[    0.421694] arm-smmu 5040000.iommu: probing hardware configuration...
+<6>[    0.421711] smps7: Setting 900000-1028000uV
+<5>[    0.421733] arm-smmu 5040000.iommu: SMMUv2 with:
+<5>[    0.421802] arm-smmu 5040000.iommu:       stage 1 translation
+<5>[    0.421835] arm-smmu 5040000.iommu:       address translation ops
+<5>[    0.421865] arm-smmu 5040000.iommu:       non-coherent table walk
+<5>[    0.421893] arm-smmu 5040000.iommu:       (IDR0.CTTW overridden by FW configuration)
+<5>[    0.421927] arm-smmu 5040000.iommu:       stream matching with 5 register groups
+<6>[    0.421927] ldo1: Setting 880000-880000uV
+<5>[    0.421993] arm-smmu 5040000.iommu:       5 context banks (0 stage-2 only)
+<5>[    0.422046] arm-smmu 5040000.iommu:       Supported page sizes: 0x61311000
+<5>[    0.422083] arm-smmu 5040000.iommu:       Stage-1: 48-bit VA -> 36-bit IPA
+<6>[    0.422206] ldo5: Setting 800000-800000uV
+<5>[    0.422219] arm-smmu 5040000.iommu:       preserved 0 boot mappings
+<6>[    0.422428] ldo12: Setting 1800000-1800000uV
+<6>[    0.422663] ldo7: Setting 1800000-1800000uV
+<6>[    0.422918] ldo13: Setting 1800000-2960000uV
+<6>[    0.423132] platform 5000000.gpu: Adding to iommu group 12
+<6>[    0.423247] ldo14: Setting 1800000-1800000uV
+<6>[    0.423398] platform 506a000.gmu: Adding to iommu group 13
+<6>[    0.423659] ldo17: Setting 1304000-1304000uV
+<6>[    0.423892] ldo19: Setting 3300000-3312000uV
+<6>[    0.424124] ldo20: Setting 2960000-2968000uV
+<6>[    0.424368] ldo21: Setting 2960000-2968000uV
+<6>[    0.424681] ldo22: Setting 2864000-2864000uV
+<6>[    0.425308] ldo24: Setting 3088000-3088000uV
+<6>[    0.425543] ldo25: Setting 3300000-3312000uV
+<6>[    0.425834] ldo26: Setting 1200000-1200000uV
+<6>[    0.426206] ldo28: Setting 2856000-3008000uV
+<6>[    0.433525] platform a600000.usb: Adding to iommu group 14
+<6>[    0.433748] /soc@0/phy@88e8000: Fixed dependency cycle(s) with /soc@0/usb@a6f8800/usb@a600000
+<6>[    0.433886] /soc@0/usb@a6f8800/usb@a600000: Fixed dependency cycle(s) with /soc@0/phy@88e8000
+<6>[    0.440070] ufshcd-qcom 1d84000.ufshc: freq-table-hz property not specified
+<6>[    0.440120] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vdd-hba-supply regulator, assuming enabled
+<6>[    0.440220] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vccq-supply regulator, assuming enabled
+<6>[    0.440268] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vccq2-supply regulator, assuming enabled
+<6>[    0.453585] cpufreq: cpufreq_policy_online: CPU0: Running at unlisted initial frequency: 2995200 kHz, changing to: 1766400 kHz
+<7>[    0.455507] cpu cpu0: EM: OPP:652800 is inefficient
+<7>[    0.457357] cpu cpu0: EM: OPP:576000 is inefficient
+<7>[    0.459180] cpu cpu0: EM: OPP:480000 is inefficient
+<7>[    0.460985] cpu cpu0: EM: OPP:403200 is inefficient
+<7>[    0.462778] cpu cpu0: EM: OPP:300000 is inefficient
+<6>[    0.464858] cpu cpu0: EM: created perf domain
+<6>[    0.476618] cpufreq: cpufreq_policy_online: CPU4: Running at unlisted initial frequency: 2995200 kHz, changing to: 2649600 kHz
+<6>[    0.477481] cpu cpu4: EM: created perf domain
+<7>[    0.478151] energy_model: updating cpu0 cpu_cap=407 old capacity=611
+<7>[    0.478853] cpu cpu0: EM: OPP:576000 is inefficient
+<7>[    0.479860] cpu cpu0: EM: OPP:480000 is inefficient
+<7>[    0.480538] cpu cpu0: EM: OPP:403200 is inefficient
+<7>[    0.481187] cpu cpu0: EM: OPP:300000 is inefficient
+<3>[    0.484921] aux_bridge.aux_bridge aux_bridge.aux_bridge.0: error -ENODEV: failed to acquire drm_bridge
+<6>[    0.490540] geni_i2c 88c000.i2c: Bus frequency not specified, default to 100kHz.
+<6>[    0.495506] 898000.serial: ttyHS1 at MMIO 0x898000 (irq = 125, base_baud = 0) is a MSM
+<6>[    0.497665] serial serial0: tty port ttyHS1 registered
+<6>[    0.500762] a84000.serial: ttyMSM0 at MMIO 0xa84000 (irq = 126, base_baud = 0) is a MSM
+<6>[    0.504510] geni_i2c a90000.i2c: Bus frequency not specified, default to 100kHz.
+<6>[    0.508741] /soc@0/display-subsystem@ae00000/display-controller@ae01000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+<6>[    0.510816] /soc@0/display-subsystem@ae00000/display-controller@ae01000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+<6>[    0.512216] /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+<6>[    0.513620] /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/display-controller@ae01000
+<6>[    0.515152] /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+<3>[    0.522755] msm_dsi_phy ae94400.phy: [drm:dsi_pll_10nm_vco_prepare] *ERROR* DSI PLL(0) lock failed, status=0x00000000
+<3>[    0.523515] msm_dsi_phy ae94400.phy: [drm:dsi_pll_10nm_vco_prepare] *ERROR* PLL(0) lock failed
+<4>[    0.524282] ------------[ cut here ]------------
+<4>[    0.525038] dsi0_phy_pll_out_dsiclk already disabled
+<4>[    0.525812] WARNING: drivers/clk/clk.c:1188 at clk_core_disable+0xb0/0xd0, CPU#4: kworker/u32:1/60
+<4>[    0.526589] Modules linked in:
+<4>[    0.527367] CPU: 4 UID: 0 PID: 60 Comm: kworker/u32:1 Not tainted 7.1.0-rc1-sdm845 #5-postmarketos-qcom-sdm845 PREEMPT 
+<4>[    0.528155] Hardware name: Google Pixel 3 (DT)
+<4>[    0.528932] Workqueue: events_unbound deferred_probe_work_func
+<4>[    0.529718] pstate: 604000c5 (nZCv daIF +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+<4>[    0.530517] pc : clk_core_disable+0xb0/0xd0
+<4>[    0.531307] lr : clk_core_disable+0xb0/0xd0
+<4>[    0.532094] sp : ffff80008067b5b0
+<4>[    0.532874] x29: ffff80008067b5b0 x28: ffffb15f5b9a5000 x27: 000000007fffffff
+<4>[    0.533675] x26: ffff00008083a348 x25: 0000000000000000 x24: ffff0000fd929080
+<4>[    0.534463] x23: ffff000080a50000 x22: ffffb15f5bec2000 x21: ffffb15f5bec2000
+<4>[    0.535245] x20: ffff000080be6a00 x19: ffff000080be6a00 x18: ffff80008034d118
+<4>[    0.536035] x17: 00000000fed73151 x16: 00000000fed73151 x15: 0000000000000003
+<4>[    0.536814] x14: ffffb15f5b9e4e48 x13: 0000000000000fff x12: 0000000000000003
+<4>[    0.537605] x11: 0000000000000003 x10: 0000000000000002 x9 : 7f47f060b5f77900
+<4>[    0.538398] x8 : 7f47f060b5f77900 x7 : 205d383330353235 x6 : 352e30202020205b
+<4>[    0.539184] x5 : ffffb15f5be90258 x4 : ffff80008067b197 x3 : 0000000000000000
+<4>[    0.539973] x2 : 0000000000000000 x1 : ffff80008067b380 x0 : 0000000000000028
+<4>[    0.540761] Call trace:
+<4>[    0.541493]  clk_core_disable+0xb0/0xd0 (P)
+<4>[    0.542295]  clk_core_disable_lock+0x94/0x120
+<4>[    0.543080]  __clk_set_parent_after+0x5c/0x8c
+<4>[    0.543863]  clk_core_reparent_orphans_nolock+0xa8/0xf0
+<4>[    0.544658]  clk_core_reparent_orphans+0x78/0xfc
+<4>[    0.545454]  of_clk_add_hw_provider+0x9c/0x148
+<4>[    0.546247]  devm_of_clk_add_hw_provider+0xc0/0x10c
+<4>[    0.547044]  dsi_phy_driver_probe+0x334/0x364
+<4>[    0.547829]  platform_probe+0x84/0xcc
+<4>[    0.548615]  really_probe+0x1dc/0x4f4
+<4>[    0.549402]  __driver_probe_device+0xdc/0x168
+<4>[    0.550188]  driver_probe_device+0x4c/0x238
+<4>[    0.550971]  __device_attach_driver+0x154/0x224
+<4>[    0.551741]  bus_for_each_drv+0x11c/0x17c
+<4>[    0.552505]  __device_attach+0x10c/0x1d4
+<4>[    0.553260]  device_initial_probe+0x48/0x6c
+<4>[    0.554008]  bus_probe_device+0x9c/0x128
+<4>[    0.554748]  device_add+0x274/0x4e0
+<4>[    0.555493]  of_platform_device_create_pdata+0xdc/0x198
+<4>[    0.556222]  of_platform_bus_create+0x274/0x4b8
+<4>[    0.556949]  of_platform_populate+0x7c/0x168
+<4>[    0.557672]  mdss_probe+0x320/0x408
+<4>[    0.558388]  platform_probe+0x84/0xcc
+<4>[    0.559104]  really_probe+0x1dc/0x4f4
+<4>[    0.559822]  __driver_probe_device+0xdc/0x168
+<4>[    0.560543]  driver_probe_device+0x4c/0x238
+<4>[    0.561247]  __device_attach_driver+0x154/0x224
+<4>[    0.561963]  bus_for_each_drv+0x11c/0x17c
+<4>[    0.562671]  __device_attach+0x10c/0x1d4
+<4>[    0.563378]  device_initial_probe+0x48/0x6c
+<4>[    0.564094]  bus_probe_device+0x9c/0x128
+<4>[    0.564802]  deferred_probe_work_func+0xb0/0x11c
+<4>[    0.565507]  process_scheduled_works+0x1a0/0x4b4
+<4>[    0.566221]  worker_thread+0x280/0x3fc
+<4>[    0.566924]  kthread+0x12c/0x15c
+<4>[    0.567616]  ret_from_fork+0x10/0x20
+<4>[    0.568310] ---[ end trace 0000000000000000 ]---
+<4>[    0.569014] ------------[ cut here ]------------
+<4>[    0.569669] dsi0_phy_pll_out_dsiclk already unprepared
+<4>[    0.570363] WARNING: drivers/clk/clk.c:1048 at clk_core_unprepare+0xe8/0x120, CPU#4: kworker/u32:1/60
+<4>[    0.571069] Modules linked in:
+<4>[    0.571763] CPU: 4 UID: 0 PID: 60 Comm: kworker/u32:1 Tainted: G        W           7.1.0-rc1-sdm845 #5-postmarketos-qcom-sdm845 PREEMPT 
+<4>[    0.573191] Tainted: [W]=WARN
+<4>[    0.573904] Hardware name: Google Pixel 3 (DT)
+<4>[    0.574623] Workqueue: events_unbound deferred_probe_work_func
+<4>[    0.575336] pstate: 60400005 (nZCv daif +PAN -UAO -TCO -DIT -SSBS BTYPE=--)
+<4>[    0.576061] pc : clk_core_unprepare+0xe8/0x120
+<4>[    0.576786] lr : clk_core_unprepare+0xe8/0x120
+<4>[    0.577506] sp : ffff80008067b5c0
+<4>[    0.578217] x29: ffff80008067b5c0 x28: ffffb15f5b9a5000 x27: 000000007fffffff
+<4>[    0.578945] x26: ffff00008083a348 x25: 0000000000000000 x24: ffff0000fd929080
+<4>[    0.579663] x23: ffff0000fd92f180 x22: ffff000080a50000 x21: ffffb15f5bec2000
+<4>[    0.580390] x20: ffffb15f5bec2000 x19: ffff000080be6a00 x18: ffff80008034d118
+<4>[    0.581113] x17: 00000000fed73151 x16: 00000000fed73151 x15: 0000000000000003
+<4>[    0.581830] x14: ffffb15f5b9e4e48 x13: 0000000000000fff x12: 0000000000000003
+<4>[    0.582558] x11: 0000000000000003 x10: 0000000000000002 x9 : 7f47f060b5f77900
+<4>[    0.583280] x8 : 7f47f060b5f77900 x7 : 205d393636393635 x6 : 352e30202020205b
+<4>[    0.584006] x5 : ffffb15f5be90258 x4 : ffff80008067b1a7 x3 : 0000000000000000
+<4>[    0.584731] x2 : 0000000000000000 x1 : ffff80008067b390 x0 : 000000000000002a
+<4>[    0.585459] Call trace:
+<4>[    0.586186]  clk_core_unprepare+0xe8/0x120 (P)
+<4>[    0.586926]  clk_core_unprepare_lock+0x80/0x104
+<4>[    0.587660]  __clk_set_parent_after+0x64/0x8c
+<4>[    0.588399]  clk_core_reparent_orphans_nolock+0xa8/0xf0
+<4>[    0.589138]  clk_core_reparent_orphans+0x78/0xfc
+<4>[    0.589867]  of_clk_add_hw_provider+0x9c/0x148
+<4>[    0.590601]  devm_of_clk_add_hw_provider+0xc0/0x10c
+<4>[    0.591345]  dsi_phy_driver_probe+0x334/0x364
+<4>[    0.592093]  platform_probe+0x84/0xcc
+<4>[    0.592826]  really_probe+0x1dc/0x4f4
+<4>[    0.593557]  __driver_probe_device+0xdc/0x168
+<4>[    0.594286]  driver_probe_device+0x4c/0x238
+<4>[    0.595014]  __device_attach_driver+0x154/0x224
+<4>[    0.595744]  bus_for_each_drv+0x11c/0x17c
+<4>[    0.596468]  __device_attach+0x10c/0x1d4
+<4>[    0.597180]  device_initial_probe+0x48/0x6c
+<4>[    0.597888]  bus_probe_device+0x9c/0x128
+<4>[    0.598599]  device_add+0x274/0x4e0
+<4>[    0.599313]  of_platform_device_create_pdata+0xdc/0x198
+<4>[    0.600036]  of_platform_bus_create+0x274/0x4b8
+<4>[    0.600758]  of_platform_populate+0x7c/0x168
+<4>[    0.601477]  mdss_probe+0x320/0x408
+<4>[    0.602203]  platform_probe+0x84/0xcc
+<4>[    0.602912]  really_probe+0x1dc/0x4f4
+<4>[    0.603617]  __driver_probe_device+0xdc/0x168
+<4>[    0.604322]  driver_probe_device+0x4c/0x238
+<4>[    0.605026]  __device_attach_driver+0x154/0x224
+<4>[    0.605725]  bus_for_each_drv+0x11c/0x17c
+<4>[    0.606429]  __device_attach+0x10c/0x1d4
+<4>[    0.607134]  device_initial_probe+0x48/0x6c
+<4>[    0.607840]  bus_probe_device+0x9c/0x128
+<4>[    0.608541]  deferred_probe_work_func+0xb0/0x11c
+<4>[    0.609231]  process_scheduled_works+0x1a0/0x4b4
+<4>[    0.609920]  worker_thread+0x280/0x3fc
+<4>[    0.610606]  kthread+0x12c/0x15c
+<4>[    0.611284]  ret_from_fork+0x10/0x20
+<4>[    0.611952] ---[ end trace 0000000000000000 ]---
+<6>[    0.619917] ufshcd-qcom 1d84000.ufshc: freq-table-hz property not specified
+<6>[    0.620547] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vdd-hba-supply regulator, assuming enabled
+<6>[    0.621192] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vccq-supply regulator, assuming enabled
+<6>[    0.621845] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vccq2-supply regulator, assuming enabled
+<6>[    0.624035] ufshcd-qcom 1d84000.ufshc: Found QC Inline Crypto Engine (ICE) v3.1.75
+<6>[    0.624675] ufshcd-qcom 1d84000.ufshc: A supported HWKM is not present. Supporting raw keys only.
+<6>[    0.646485] scsi host0: ufshcd
+<5>[    0.846532] scsi 0:0:0:49488: Well-known LUN    SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+<6>[    0.852662] /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+<6>[    0.855517] /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+<6>[    0.858953] msm_dpu ae01000.display-controller: bound ae94000.dsi (ops dsi_ops)
+<5>[    0.859365] scsi 0:0:0:49476: Well-known LUN    SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+<4>[    0.861693] adreno 5000000.gpu: supply vdd not found, using dummy regulator
+<4>[    0.863265] adreno 5000000.gpu: supply vddcx not found, using dummy regulator
+<5>[    0.865345] scsi 0:0:0:49456: Well-known LUN    SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+<5>[    0.870430] scsi 0:0:0:0: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+<6>[    0.872252] msm_dpu ae01000.display-controller: bound 5000000.gpu (ops a3xx_ops)
+<5>[    0.873769] scsi 0:0:0:1: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+<6>[    0.875404] Console: switching to colour dummy device 80x25
+<6>[    0.876906] [drm:dpu_kms_hw_init:1168] dpu hardware revision:0x40000000
+<6>[    0.878634] [drm] Initialized msm 1.13.0 for ae01000.display-controller on minor 0
+<4>[    0.878875] msm_dpu ae01000.display-controller: Direct firmware load for qcom/a630_sqe.fw failed with error -2
+<5>[    0.878897] scsi 0:0:0:2: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+<3>[    0.878899] msm_dpu ae01000.display-controller: [drm:adreno_request_fw] *ERROR* failed to load a630_sqe.fw
+<5>[    0.880411] scsi 0:0:0:3: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+<5>[    0.881697] scsi 0:0:0:4: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+<5>[    0.882994] scsi 0:0:0:5: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+<5>[    0.884696] sd 0:0:0:0: [sda] 15591424 4096-byte logical blocks: (63.9 GB/59.5 GiB)
+<5>[    0.884851] sd 0:0:0:0: [sda] Write Protect is off
+<7>[    0.884868] sd 0:0:0:0: [sda] Mode Sense: 00 32 00 10
+<5>[    0.885303] sd 0:0:0:0: [sda] Write cache: enabled, read cache: enabled, supports DPO and FUA
+<5>[    0.885684] sd 0:0:0:2: [sdc] 1024 4096-byte logical blocks: (4.19 MB/4.00 MiB)
+<5>[    0.885796] sd 0:0:0:2: [sdc] Write Protect is off
+<7>[    0.885815] sd 0:0:0:2: [sdc] Mode Sense: 00 32 00 10
+<6>[    0.885890] sd 0:0:0:0: [sda] Preferred minimum I/O size 786432 bytes
+<6>[    0.885906] sd 0:0:0:0: [sda] Optimal transfer size 786432 bytes
+<5>[    0.885938] sd 0:0:0:1: [sdb] 1024 4096-byte logical blocks: (4.19 MB/4.00 MiB)
+<5>[    0.886128] sd 0:0:0:3: [sdd] 2048 4096-byte logical blocks: (8.39 MB/8.00 MiB)
+<5>[    0.886270] sd 0:0:0:1: [sdb] Write Protect is off
+<7>[    0.886290] sd 0:0:0:1: [sdb] Mode Sense: 00 32 00 10
+<5>[    0.886418] sd 0:0:0:3: [sdd] Write Protect is off
+<7>[    0.886425] sd 0:0:0:3: [sdd] Mode Sense: 00 32 00 10
+<5>[    0.886497] sd 0:0:0:2: [sdc] Write cache: enabled, read cache: enabled, supports DPO and FUA
+<5>[    0.886558] sd 0:0:0:3: [sdd] Write cache: enabled, read cache: enabled, supports DPO and FUA
+<6>[    0.886590] sd 0:0:0:2: [sdc] Preferred minimum I/O size 786432 bytes
+<6>[    0.886608] sd 0:0:0:2: [sdc] Optimal transfer size 786432 bytes
+<6>[    0.886621] sd 0:0:0:3: [sdd] Preferred minimum I/O size 786432 bytes
+<6>[    0.886628] sd 0:0:0:3: [sdd] Optimal transfer size 786432 bytes
+<5>[    0.886896] sd 0:0:0:1: [sdb] Write cache: enabled, read cache: enabled, supports DPO and FUA
+<5>[    0.886925] sd 0:0:0:4: [sde] 8192 4096-byte logical blocks: (33.6 MB/32.0 MiB)
+<6>[    0.887133] sd 0:0:0:1: [sdb] Preferred minimum I/O size 786432 bytes
+<6>[    0.887149] sd 0:0:0:1: [sdb] Optimal transfer size 786432 bytes
+<5>[    0.887390] sd 0:0:0:4: [sde] Write Protect is off
+<7>[    0.887408] sd 0:0:0:4: [sde] Mode Sense: 00 32 00 10
+<5>[    0.887426] sd 0:0:0:5: [sdf] 18432 4096-byte logical blocks: (75.5 MB/72.0 MiB)
+<5>[    0.887514] sd 0:0:0:5: [sdf] Write Protect is off
+<7>[    0.887523] sd 0:0:0:5: [sdf] Mode Sense: 00 32 00 10
+<5>[    0.887690] sd 0:0:0:5: [sdf] Write cache: enabled, read cache: enabled, supports DPO and FUA
+<5>[    0.887784] sd 0:0:0:4: [sde] Write cache: enabled, read cache: enabled, supports DPO and FUA
+<6>[    0.888014] sd 0:0:0:5: [sdf] Preferred minimum I/O size 786432 bytes
+<6>[    0.888021] sd 0:0:0:5: [sdf] Optimal transfer size 786432 bytes
+<6>[    0.888111] sd 0:0:0:4: [sde] Preferred minimum I/O size 786432 bytes
+<6>[    0.888116] sd 0:0:0:4: [sde] Optimal transfer size 786432 bytes
+<6>[    0.898290]  sda: sda1 sda2 sda3 sda4 sda5 sda6 sda7 sda8 sda9 sda10 sda11 sda12 sda13 sda14 sda15 sda16 sda17 sda18 sda19 sda20 sda21
+<6>[    0.898917]  sdc: sdc1 sdc2
+<5>[    0.899873] sd 0:0:0:2: [sdc] Attached SCSI disk
+<6>[    0.902022]  sdf: sdf1 sdf2 sdf3 sdf4 sdf5 sdf6 sdf7 sdf8 sdf9 sdf10 sdf11 sdf12 sdf13 sdf14 sdf15
+<6>[    0.902403]  sde: sde1 sde2 sde3 sde4 sde5 sde6 sde7 sde8 sde9 sde10 sde11 sde12 sde13 sde14 sde15 sde16 sde17 sde18 sde19 sde20 sde21 sde22 sde23 sde24
+<6>[    0.902853]  sdd: sdd1 sdd2 sdd3 sdd4 sdd5 sdd6
+<6>[    0.903318]  sdb: sdb1 sdb2
+<5>[    0.904072] sd 0:0:0:1: [sdb] Attached SCSI disk
+<5>[    0.906013] sd 0:0:0:3: [sdd] Attached SCSI disk
+<5>[    0.907085] sd 0:0:0:0: [sda] Attached SCSI disk
+<5>[    0.907878] sd 0:0:0:5: [sdf] Attached SCSI disk
+<5>[    0.908658] sd 0:0:0:4: [sde] Attached SCSI disk
+<4>[    1.219415] fb0: sys_imageblit: framebuffer is not in virtual address space.
+<6>[    1.243113] Console: switching to colour frame buffer device 135x135
+<6>[    1.273773] msm_dpu ae01000.display-controller: [drm] fb0: msmdrmfb frame buffer device
+<6>[    1.278230] input: Volume keys as /devices/platform/gpio-keys/input/input2
+<6>[    1.278720] clk: Disabling unused clocks
+<6>[    1.279030] PM: genpd: Disabling unused power domains
+<6>[    1.282057] Freeing unused kernel memory: 2048K
+<6>[    1.282182] Run /init as init process
+<7>[    1.282200]   with arguments:
+<7>[    1.282214]     /init
+<7>[    1.282228]   with environment:
+<7>[    1.282243]     HOME=/
+<7>[    1.282257]     TERM=linux
+<12>[    1.299291] omamobile-blueline: watchdog-Knoten /dev/watchdog0
+<12>[    1.300752] omamobile-blueline: kernel 7.1.0-rc1-sdm845 aarch64
+<12>[    1.302306] omamobile-blueline: usb gadget setup
+<4>[    1.308367] fb0: sys_fillrect: framebuffer is not in virtual address space.
+<12>[    1.308667] omamobile-blueline: gadget bind skipped (--no-gadget instrument)
+<12>[    1.312711] omamobile-blueline: network bring-up
+<12>[    1.313739] ===== PSTORE console-ramoops-0 begin =====
+<12>[    1.314613] ===== PSTORE console-ramoops-0 end =====
+<12>[    1.318968] ===== PSTORE dmesg-ramoops-0 begin =====
+<12>[    1.319747] ===== PSTORE dmesg-ramoops-0 end =====
+<12>[    1.321671] omamobile-blueline: beat 1s steps:[1s] step: network bring-up
+<12>[    1.323246] omamobile-blueline: dropbear start
+<12>[    1.357964] omamobile-blueline: SSH ready: root@172.16.42.1; all storage read-only
+<12>[    1.363592] omamobile-blueline: storage guard pass 1
+<12>[    1.532022] omamobile-blueline: storage guard: 0 device(s) could not be write-protected
+<12>[    1.539707] omamobile-blueline: storage guard pass 1 done
+<12>[    1.543108] omamobile-blueline: init main flow complete; PID 1 parking
+<12>[    3.330314] omamobile-blueline: beat 3s steps:[1s] step: init main flow complete; PID 1 parking
+<5>[    4.322290] random: crng init done
+<12>[    5.338381] omamobile-blueline: beat 5s steps:[1s] step: init main flow complete; PID 1 parking
+<12>[    7.346631] omamobile-blueline: beat 7s steps:[1s] step: init main flow complete; PID 1 parking
+<12>[    9.352587] omamobile-blueline: beat 9s steps:[1s] step: init main flow complete; PID 1 parking
+<12>[   11.361325] omamobile-blueline: beat 11s steps:[1s] step: init main flow complete; PID 1 parking
+<4>[   11.757203] platform 888000.i2c: deferred probe pending: geni_i2c: Failed to get tx DMA ch
+<6>[   11.760531] gcc-sdm845 100000.clock-controller: sync_state() pending due to 793000.rng
+<6>[   11.763714] qnoc-sdm845 1380000.interconnect: sync_state() pending due to 1436400.pmu
+<6>[   11.766901] qnoc-sdm845 1380000.interconnect: sync_state() pending due to 114a000.pmu
+<6>[   11.770095] qnoc-sdm845 1500000.interconnect: sync_state() pending due to 1e40000.ipa
+<6>[   11.773282] qnoc-sdm845 1620000.interconnect: sync_state() pending due to 1e40000.ipa
+<6>[   11.776453] qnoc-sdm845 1380000.interconnect: sync_state() pending due to 1e40000.ipa
+<6>[   11.779625] qnoc-sdm845 1700000.interconnect: sync_state() pending due to 1e40000.ipa
+<6>[   11.782793] gcc-sdm845 100000.clock-controller: sync_state() pending due to 4080000.remoteproc
+<6>[   11.786022] qnoc-sdm845 1500000.interconnect: sync_state() pending due to aa00000.video-codec
+<6>[   11.789218] qnoc-sdm845 1380000.interconnect: sync_state() pending due to aa00000.video-codec
+<6>[   11.792390] qnoc-sdm845 1740000.interconnect: sync_state() pending due to aa00000.video-codec
+<6>[   11.795535] sdm845-videocc ab00000.clock-controller: sync_state() pending due to aa00000.video-codec
+<6>[   11.798694] gcc-sdm845 100000.clock-controller: sync_state() pending due to acb3000.camss
+<6>[   11.801859] gcc-sdm845 100000.clock-controller: sync_state() pending due to 506a000.gmu
+<6>[   11.805129] sdm845-gpucc 5090000.clock-controller: sync_state() pending due to 506a000.gmu
+<6>[   11.807837] qnoc-sdm845 17900000.interconnect: sync_state() pending due to aa00000.video-codec
+<6>[   11.810563] qnoc-sdm845 17900000.interconnect: sync_state() pending due to 1e40000.ipa
+<6>[   11.813058] qnoc-sdm845 17900000.interconnect: sync_state() pending due to 1436400.pmu
+<6>[   11.815595] qcom-rpmhpd 179c0000.rsc:power-controller: sync_state() pending due to aa00000.video-codec
+<6>[   11.817945] qcom-rpmhpd 179c0000.rsc:power-controller: sync_state() pending due to 4080000.remoteproc
+<6>[   11.820358] qnoc-sdm845 1380000.interconnect: sync_state() pending due to 888000.i2c
+<6>[   11.822443] qnoc-sdm845 17900000.interconnect: sync_state() pending due to 888000.i2c
+<6>[   11.824531] qnoc-sdm845 1500000.interconnect: sync_state() pending due to 888000.i2c
+<6>[   11.826446] qnoc-sdm845 16e0000.interconnect: sync_state() pending due to 888000.i2c
+<6>[   11.828379] qcom-rpmhpd 179c0000.rsc:power-controller: sync_state() pending due to 888000.i2c
+<6>[   11.830178] gcc-sdm845 100000.clock-controller: sync_state() pending due to 888000.i2c
+<12>[   13.368615] omamobile-blueline: beat 13s steps:[1s] step: init main flow complete; PID 1 parking
+<12>[   15.376051] omamobile-blueline: beat 15s steps:[1s] step: init main flow complete; PID 1 parking
+<12>[   17.384100] omamobile-blueline: beat 17s steps:[1s] step: init main flow complete; PID 1 parking
+<12>[   19.391717] omamobile-blueline: beat 19s steps:[1s] step: init main flow complete; PID 1 parking
+<12>[   21.396825] omamobile-blueline: raw log channel dead: no boot_a link in 20 s
+<12>[   21.400011] omamobile-blueline: beat 21s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   23.412514] omamobile-blueline: beat 23s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   25.423430] omamobile-blueline: beat 25s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   27.434052] omamobile-blueline: beat 27s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   29.445941] omamobile-blueline: beat 29s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   31.457511] omamobile-blueline: beat 31s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<6>[   31.719271] ldo22: disabling
+<12>[   33.468033] omamobile-blueline: beat 33s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   35.480225] omamobile-blueline: beat 35s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   37.490623] omamobile-blueline: beat 37s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   39.502162] omamobile-blueline: beat 39s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   41.513380] omamobile-blueline: beat 41s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   43.523467] omamobile-blueline: beat 43s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   45.534573] omamobile-blueline: beat 45s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   47.542189] omamobile-blueline: beat 47s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   49.551666] omamobile-blueline: beat 49s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   51.560816] omamobile-blueline: beat 51s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   53.570955] omamobile-blueline: beat 53s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   55.577827] omamobile-blueline: beat 55s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   57.584208] omamobile-blueline: beat 57s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   59.596105] omamobile-blueline: beat 59s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   61.605759] omamobile-blueline: beat 61s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   63.617215] omamobile-blueline: beat 63s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   65.627554] omamobile-blueline: beat 65s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   67.635942] omamobile-blueline: beat 67s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   69.646791] omamobile-blueline: beat 69s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   71.657107] omamobile-blueline: beat 71s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   73.667564] omamobile-blueline: beat 73s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   75.678447] omamobile-blueline: beat 75s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   77.688753] omamobile-blueline: beat 77s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   79.699145] omamobile-blueline: beat 79s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   81.710804] omamobile-blueline: beat 81s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   83.723182] omamobile-blueline: beat 83s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   85.734395] omamobile-blueline: beat 85s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   87.744561] omamobile-blueline: beat 87s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   89.756531] omamobile-blueline: beat 89s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   91.767224] omamobile-blueline: beat 91s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   93.777413] omamobile-blueline: beat 93s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   95.786502] omamobile-blueline: beat 95s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   97.798546] omamobile-blueline: beat 97s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[   99.809673] omamobile-blueline: beat 99s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  101.821055] omamobile-blueline: beat 101s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  103.830102] omamobile-blueline: beat 103s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  105.840266] omamobile-blueline: beat 105s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  107.852105] omamobile-blueline: beat 107s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  109.863584] omamobile-blueline: beat 109s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  111.873940] omamobile-blueline: beat 111s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  113.885788] omamobile-blueline: beat 113s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  115.893859] omamobile-blueline: beat 115s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  117.905674] omamobile-blueline: beat 117s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  119.918563] omamobile-blueline: beat 119s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  121.930535] omamobile-blueline: beat 121s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  123.941268] omamobile-blueline: beat 123s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  125.950438] omamobile-blueline: beat 125s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  127.959994] omamobile-blueline: beat 127s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  129.971456] omamobile-blueline: beat 129s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  131.984673] omamobile-blueline: beat 131s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  133.996484] omamobile-blueline: beat 133s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  136.006210] omamobile-blueline: beat 135s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  138.018200] omamobile-blueline: beat 138s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  140.029203] omamobile-blueline: beat 140s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  142.040524] omamobile-blueline: beat 142s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  144.052214] omamobile-blueline: beat 144s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  146.060614] omamobile-blueline: beat 146s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  148.070237] omamobile-blueline: beat 148s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  150.082465] omamobile-blueline: beat 150s steps:[21s] step: raw log channel dead: no boot_a link in 20 s
+<12>[  151.311162] omamobile-blueline: probe firing at 150s (last step: [21s] step: raw log channel dead: no boot_a link in 20 s)
+<12>[  151.313515] omamobile-blueline: PROBE: kernel alive, PID1 liveness proven
+<12>[  151.329206] omamobile-blueline: restart2 bootloader zurueck: 0
+<12>[  152.093568] omamobile-blueline: beat 152s steps:[151s] step: restart2 bootloader zurueck: 0
+<12>[  154.104588] omamobile-blueline: beat 154s steps:[151s] step: restart2 bootloader zurueck: 0
+<12>[  156.115919] omamobile-blueline: beat 156s steps:[151s] step: restart2 bootloader zurueck: 0
+<12>[  158.125602] omamobile-blueline: beat 158s steps:[151s] step: restart2 bootloader zurueck: 0
+<12>[  160.134780] omamobile-blueline: beat 160s steps:[151s] step: restart2 bootloader zurueck: 0
+<12>[  162.146131] omamobile-blueline: beat 162s steps:[151s] step: restart2 bootloader zurueck: 0
+<12>[  164.156525] omamobile-blueline: beat 164s steps:[151s] step: restart2 bootloader zurueck: 0
+<12>[  166.166437] omamobile-blueline: beat 166s steps:[151s] step: restart2 bootloader zurueck: 0
+<12>[  168.178581] omamobile-blueline: beat 168s steps:[151s] step: restart2 bootloader zurueck: 0
+<12>[  170.189645] omamobile-blueline: beat 170s steps:[151s] step: restart2 bootloader zurueck: 0
+<12>[  172.200324] omamobile-blueline: beat 172s steps:[151s] step: restart2 bootloader zurueck: 0
+<12>[  174.212440] omamobile-blueline: beat 174s steps:[151s] step: restart2 bootloader zurueck: 0
+<12>[  176.221071] omamobile-blueline: beat 176s steps:[151s] step: restart2 bootloader zurueck: 0
+<12>[  178.231160] omamobile-blueline: beat 178s steps:[151s] step: restart2 bootloader zurueck: 0
+<12>[  180.242315] omamobile-blueline: beat 180s steps:[151s] step: restart2 bootloader zurueck: 0
+<12>[  181.337699] omamobile-blueline: restart2 wirkte nicht — sysrq-crash als Notnagel
+<6>[  181.340666] sysrq: Trigger a crash
+<0>[  181.343917] Kernel panic - not syncing: sysrq triggered crash
+<4>[  181.346646] CPU: 1 UID: 0 PID: 176 Comm: init Tainted: G        W           7.1.0-rc1-sdm845 #5-postmarketos-qcom-sdm845 PREEMPT 
+<4>[  181.349417] Tainted: [W]=WARN
+<4>[  181.352118] Hardware name: Google Pixel 3 (DT)
+<4>[  181.354850] Call trace:
+<4>[  181.357578]  show_stack+0x28/0x3c (C)
+<4>[  181.360337]  __dump_stack+0x2c/0x44
+<4>[  181.363093]  dump_stack_lvl+0x28/0x74
+<4>[  181.365849]  dump_stack+0x1c/0x2c
+<4>[  181.368612]  vpanic+0x1f4/0x530
+<4>[  181.371377]  panic+0x58/0x5c
+<4>[  181.374146]  sysrq_handle_crash+0x2c/0x30
+<4>[  181.376890]  __handle_sysrq+0x16c/0x170
+<4>[  181.379633]  write_sysrq_trigger+0xe4/0x114
+<4>[  181.382376]  proc_reg_write+0xd0/0x14c
+<4>[  181.385109]  vfs_write+0x184/0x3fc
+<4>[  181.387809]  ksys_write+0x88/0x104
+<4>[  181.390468]  __arm64_sys_write+0x2c/0x40
+<4>[  181.393132]  invoke_syscall+0x6c/0x11c
+<4>[  181.395802]  el0_svc_common+0x98/0xe8
+<4>[  181.398449]  do_el0_svc+0x2c/0x3c
+<4>[  181.401061]  el0_svc+0x40/0xb4
+<4>[  181.403680]  el0t_64_sync_handler+0x88/0x134
+<4>[  181.406305]  el0t_64_sync+0x1a0/0x1a4
+<2>[  181.408935] SMP: stopping secondary CPUs
+<0>[  181.412399] Kernel Offset: 0x315ed9480000 from 0xffff800080000000
+<0>[  181.415058] PHYS_OFFSET: 0xfff1000080000000
+<0>[  181.417734] CPU features: 0x00000000,0049000a,00460501,0400721b
+<0>[  181.420428] Memory Limit: none
+@@ENDE pstore-dmesg-ramoops.txt

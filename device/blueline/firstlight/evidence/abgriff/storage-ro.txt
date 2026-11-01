@@ -1,0 +1,16 @@
+r f in /sys/block/sd*/ro /sys/block/sd*/siz
+e; do echo "$f=$(cat $f 2>/dev/null)"; done | wc -c)
+@@ANFANG storage-ro.txt 279
+null)"; done
+/sys/block/sda/ro=1
+/sys/block/sdb/ro=1
+/sys/block/sdc/ro=1
+/sys/block/sdd/ro=1
+/sys/block/sde/ro=1
+/sys/block/sdf/ro=1
+/sys/block/sda/size=124731392
+/sys/block/sdb/size=8192
+/sys/block/sdc/size=8192
+/sys/block/sdd/size=16384
+/sys/block/sde/size=65536
+/sys/block/sdf/size=147456

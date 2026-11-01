@@ -52,7 +52,14 @@ ARTIKEL = [
 
 def hole(verbinder, name, befehl, frist_s):
     """Eine Datei im Rahmen @@ANFANG/@@ENDE abholen. Gibt (bytes, text) zurueck."""
-    groesse = "echo @@ANFANG %s $(%s | wc -c)" % (name, befehl)
+    # Der Rahmen wird gebaut, statt ihn zu schreiben: die Shell wiederholt jeden
+    # Befehl im Echo, und ein geschriebenes `@@ANFANG` taucht damit ZWEI mal auf —
+    # der Sammler hielt das Echo fuer die Antwort und alles verrutschte um eine
+    # Datei (gemessen 20:45, sieben Artefakte verschoben). Mit der.Concatenation
+    # steht im Echo `@@AN${''}FANG`, in der Ausgabe `@@ANFANG`.
+    anfang = "@@AN${''}FANG"
+    ende = "@@EN${''}DE"
+    groesse = "echo %s %s $(%s | wc -c)" % (anfang, name, befehl)
     verbinder.sendall((groesse + "\r\n").encode())
     text = sammle(verbinder, "@@ANFANG %s" % name, frist_s)
     if text is None:
@@ -60,7 +67,7 @@ def hole(verbinder, name, befehl, frist_s):
     teil = text.split("@@ANFANG %s" % name, 1)[1].strip().split()
     gesamt = int(teil[1]) if len(teil) > 1 and teil[1].isdigit() else -1
     verbinder.sendall((befehl + "\r\n").encode())
-    verbinder.sendall(("echo @@ENDE %s\r\n" % name).encode())
+    verbinder.sendall(("echo %s %s\r\n" % (ende, name)).encode())
     payload = sammle(verbinder, "@@ENDE %s" % name, frist_s)
     if payload is None:
         return None
@@ -133,11 +140,11 @@ def main():
         if name.endswith(".b64"):
             import base64
             try:
-                dat = gzip.decompress(base64.b64decode(b"".join(text.split())))
+                dat = gzip.decompress(base64.b64decode("".join(text.split()).encode()))
             except Exception as e:
                 sage("ACHTUNG dekodieren fehlgeschlagen: %s (%s)" % (name, e))
                 dat = text.encode()
-        pfad = os.path.join(ZIEL, name.replace(".b64", ".gz" if name.endswith(".b64") else ""))
+        pfad = os.path.join(ZIEL, (name[:-4] + ".gz") if name.endswith(".b64") else name)
         with open(pfad, "wb") as f:
             f.write(dat)
         sha = hashlib.sha256(dat).hexdigest()
