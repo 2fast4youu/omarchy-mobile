@@ -21,6 +21,37 @@ BILD = "/Users/gregor/hermes-workspace/images/fl-v0af/firstlight.img"
 MEBI = int(sys.argv[1]) if len(sys.argv) > 1 else 8
 
 
+
+def wecke_shell(s, frist=6):
+    """Die Cursor-Auskunft beantworten, sonst fuehrt die Shell nichts aus.
+
+    Busybox-ash mit Zeilenbearbeitung schickt am Prompt 'ESC[6n' und wartet auf
+    die Positions-Meldung. Ein Client, die nicht antwortet, sieht nur Echo: die
+    Befehle gehen in die Warteschlange, als waere die Leitung kaputt. Um 00:20
+    hat das einen ganzen Abgriff leer laufen lassen (18 Dateien, 0 Bytes).
+    """
+    ende, ton = time.time() + frist, b""
+    while time.time() < ende:
+        try:
+            d = s.recv(4096)
+        except socket.timeout:
+            continue
+        except OSError:
+            break
+        if not d:
+            break
+        ton += d
+        if b"\x1b[6n" in ton:
+            s.sendall(b"\x1b[1;1R")
+            try:
+                ton += s.recv(4096)
+            except (socket.timeout, OSError):
+                pass
+            break
+        if b"#" in ton and b"\x1b[6n" not in ton:
+            break
+    return ton
+
 def notiz(m):
     print(time.strftime("%H:%M:%S ") + m, flush=True)
 
@@ -30,6 +61,7 @@ notiz("lokaler Kopf (%d MiB von %s): %s" % (MEBI, os.path.basename(BILD), lokal[
 
 s = socket.create_connection(("172.16.42.1", 23), timeout=10)
 s.settimeout(20)
+wecke_shell(s)
 # Erst die Shell wecken: busybox telnetd gibt ein Pseudo-TTY aus, aber erst ein
 # Zeilensprung bringt den Prompt. Ohne diesen Schritt frisst der Login den Befehl
 # und die Leitung geht zu — um 00:20:07 genau so passiert.

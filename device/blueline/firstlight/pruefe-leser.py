@@ -191,6 +191,44 @@ muster = re.compile(r"^/sys/block/([^/]+)/size (\d+)$")
 treffer = [bool(muster.match(z)) for z in ("/sys/block/sda/size 122147840",
                                           "/sys/block/sda/sda11/size 65536")]
 pruefung("Plattenzeile naechst nur der Platte, nicht der Partition", treffer, [True, False])
+# --- die Cursor-Auskunft: ohne sie fuehrt die Shell nichts aus ---
+class ScheinShell:
+    """Nachbau eines busybox-ash mit Zeilenbearbeitung.
+
+    Sie meldet 'ESC[6n' und ruehrt danach nichts an, bis die Positions-Meldung
+    kommt. Ein Client, der schweigt, sieht nur Echo — genau der Fall von 00:20.
+    """
+
+    def __init__(self):
+        self.eingang = b""
+        self.ausgesandt = []
+        self.gefragt = False
+        self.beantwortet = False
+
+    def sendall(self, daten):
+        self.ausgesandt.append(daten)
+        if b"\x1b[1;1R" in daten:
+            self.beantwortet = True
+
+    def recv(self, n):
+        if not self.gefragt:
+            self.gefragt = True
+            return b"\r\n~ # \x1b[6n"
+        if not self.beantwortet:
+            raise socket.timeout
+        return b""
+
+    def settimeout(self, t):
+        pass
+
+
+schein = ScheinShell()
+try:
+    gk.wecke_shell(schein, frist=3)
+except socket.timeout:
+    pass
+pruefung("die Cursor-Auskunft geht an die Shell zurueck",
+         any(b"\x1b[1;1R" in d for d in schein.ausgesandt), True)
 shutil.rmtree(zielpfad, ignore_errors=True)
 print("\n%d Pruefpunkte, %d Fehler" % (PUNKTE[0], len(fehlt)))
 sys.exit(1 if fehlt else 0)

@@ -1,0 +1,5 @@
+usb_f_acm 24576 2 - Live 0xffffa6a075d66000
+u_serial 32768 4 usb_f_acm, Live 0xffffa6a075d54000
+usb_f_ncm 32768 2 - Live 0xffffa6a075d3a000
+u_ether 36864 1 usb_f_ncm, Live 0xffffa6a075d47000
+libcomposite 98304 14 usb_f_acm,u_serial,usb_f_ncm,u_ether, Live 0xffffa6a075d1e000

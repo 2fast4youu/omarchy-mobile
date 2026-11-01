@@ -40,6 +40,37 @@ GRUND = "/run/ab.bin"
 Q = chr(39)
 
 
+
+def wecke_shell(s, frist=6):
+    """Die Cursor-Auskunft beantworten, sonst fuehrt die Shell nichts aus.
+
+    Busybox-ash mit Zeilenbearbeitung schickt am Prompt 'ESC[6n' und wartet auf
+    die Positions-Meldung. Ein Client, die nicht antwortet, sieht nur Echo: die
+    Befehle gehen in die Warteschlange, als waere die Leitung kaputt. Um 00:20
+    hat das einen ganzen Abgriff leer laufen lassen (18 Dateien, 0 Bytes).
+    """
+    ende, ton = time.time() + frist, b""
+    while time.time() < ende:
+        try:
+            d = s.recv(4096)
+        except socket.timeout:
+            continue
+        except OSError:
+            break
+        if not d:
+            break
+        ton += d
+        if b"\x1b[6n" in ton:
+            s.sendall(b"\x1b[1;1R")
+            try:
+                ton += s.recv(4096)
+            except (socket.timeout, OSError):
+                pass
+            break
+        if b"#" in ton and b"\x1b[6n" not in ton:
+            break
+    return ton
+
 def rahmen(wort, merkmal):
     """Befehl, der eine Markierung druckt, ohne dass das Echo sie enthaelt.
 
@@ -105,6 +136,7 @@ def telefon(notiz):
         try:
             s = socket.create_connection(("172.16.42.1", 23), timeout=3)
             s.settimeout(8.0)
+            wecke_shell(s)
             try:
                 s.sendall(b"\r\n")
                 s.recv(4096)

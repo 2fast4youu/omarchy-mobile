@@ -1,0 +1,3 @@
+cat /proc/device-tree/model /proc/device-tree/compatible 2>/dev/null | tr '\
+0' ' '
+Google Pixel 3 google,blueline qcom,sdm845 ~ # printf '@@%s\n' ENDE_dtb-modell-txt

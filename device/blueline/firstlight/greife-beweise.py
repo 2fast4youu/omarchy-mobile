@@ -50,6 +50,37 @@ ARTIKEL = [
 ]
 
 
+
+def wecke_shell(s, frist=6):
+    """Die Cursor-Auskunft beantworten, sonst fuehrt die Shell nichts aus.
+
+    Busybox-ash mit Zeilenbearbeitung schickt am Prompt 'ESC[6n' und wartet auf
+    die Positions-Meldung. Ein Client, die nicht antwortet, sieht nur Echo: die
+    Befehle gehen in die Warteschlange, als waere die Leitung kaputt. Um 00:20
+    hat das einen ganzen Abgriff leer laufen lassen (18 Dateien, 0 Bytes).
+    """
+    ende, ton = time.time() + frist, b""
+    while time.time() < ende:
+        try:
+            d = s.recv(4096)
+        except socket.timeout:
+            continue
+        except OSError:
+            break
+        if not d:
+            break
+        ton += d
+        if b"\x1b[6n" in ton:
+            s.sendall(b"\x1b[1;1R")
+            try:
+                ton += s.recv(4096)
+            except (socket.timeout, OSError):
+                pass
+            break
+        if b"#" in ton and b"\x1b[6n" not in ton:
+            break
+    return ton
+
 def hole(verbinder, name, befehl, frist_s):
     """Eine Datei im Rahmen @@ANFANG/@@ENDE abholen. Gibt (bytes, text) zurueck."""
     # Der Rahmen wird gebaut, statt ihn zu schreiben: die Shell wiederholt jeden
@@ -121,6 +152,7 @@ def main():
     else:
         sage("Fenster in %ds nicht offen" % FRIST)
         return 1
+    wecke_shell(s)
     s.settimeout(6.0)
     try:
         s.sendall(b"\r\n")
