@@ -144,3 +144,16 @@ splash@9d400000..9f7fffff nomap belegt; pstore mountet leer. Ramoops-Modulweg re
 Ram-Boot 14:06 lief mit current-slot a => Overlay dtbo_a (unbekannt, nie gesichert). Slot-Boot 15:06
 mit current-slot b => Overlay dtbo_b (Factory ff7bd6da) und UEBERLEBT (Telnet 73s, Gadget D001 bei 11s).
 Test: Ram-Boot JETZT mit current-slot b.
+2026-11-01 15:37:08 — RAM-Boot-Auflsung
+RAM-Boot der Referenz mit current-slot b (dtbo_b gueltig, Factory ff7bd6da):
+  15:35:26 boot OKAY; Gadget 0xD001 ab t=23s; Telnet offen bei t=72s; ueberlebt.
+RAM-Boot mit current-slot a (dtbo_a leer, seit 28.10. dokumentiert): viermal
+  um 14:06/14:09/14:11/14:18 auf den ~13-s-Tod gefallen. Erklarung: ABOOT
+  haengt die leere dtbo-Partition als Overlay an (cmdline zeigt dtbo_idx=8),
+  der Hauptkernel-Baum wird unbrauchbar. Der Sonderfall vom 31.10. 20:21
+  (Leben mit leerem dtbo_a) bleibt ungeklaert; vermutlich dasselbe 13s-
+  Neustart-Muster, das damals erst spaeter im Fastboot landete (Boot-into-
+  Bootloader-Schalter von busybox reboot bootloader). Fuer den Bringup-
+  Ablauf ist das gleichgueltig: Slot b + dtbo_b ist der verlaessliche Pfad.
+Konsequenz v0z-Umbau: boot_b als Ziel, restart2 (0xa1b2c3d4, bootloader) am
+  Init-Ende, dtbo_b unangetastet, Auslese ueber Referenz-Telnet.
