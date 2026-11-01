@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+# UNTERBAUEN von abgreife-flash-system.py - bei leerem Ergebnis nicht glauben.
+#
+# Dieser Abgreifer redet die alte Sprache (echo-Markierungen). Am 2026-11-02 um
+# 00:20 und 00:25 meldete er 'fertig' und schrieb 18 Dateien mit 0 Bytes, während
+# abgreife-flash-system.py im ersten Lauf 57 842 B durch die printf-Rahmen brachte.
+# Die Cursor-Auskunft (Wurzel #13) ist auch hier beantwortet, das Rahmenlesen
+# bleibt aber unzuverlässig: neue Beweise immer mit dem Nachfolger holen, und ein
+# Leer-Lauf hier ist kein Gerät, sondern das Protokoll.
 """Greift die Beweislage aus der eigenen Shell ab, solange das Fenster offen ist.
 
 Grund fuer die Bauart: der Selbst-Rueckweg holt das Bild nach ~370 s zurueck,
