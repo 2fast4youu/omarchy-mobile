@@ -55,6 +55,7 @@ BLOCK = gk.BLOCK
 groesse, shall = len(PAKET), hashlib.sha256(PAKET).hexdigest()
 klar_g, klar_sha = len(KLAR), hashlib.sha256(KLAR).hexdigest()
 corrupt = [False]
+kleben = [False]
 protokol = []
 
 
@@ -94,7 +95,12 @@ def antworte(ver):
                 stuck = PAKET[nr * BLOCK:(nr + 1) * BLOCK]
                 if nr == 1 and corrupt[0]:
                     stuck = stuck[:40]          # ein Stueck fehlt: muss LUCKERIG
-                ton += base64.b64encode(stuck).decode() + "\r\n"
+                # ohne das abtrennende echo klebt der Prompt an der Payload —
+                # genau der Fall, den der Rohton vom Telefon gezeigt hat
+                if kleben[0]:
+                    ton += base64.b64encode(stuck).decode()
+                else:
+                    ton += base64.b64encode(stuck).decode() + "\r\n"
                 # drei Echo-Stuecke, die auf den ersten Blick wie Payload aussehen
                 ton += "> echo groesse=$(wc -c < /run/ab.bin) count=1 2>/dev/null |\r\n"
                 ton += "!/!/\"\r\n"
@@ -115,8 +121,9 @@ os.makedirs(zielpfad, exist_ok=True)
 gk.ZIEL = zielpfad
 
 
-def lauf(kaputt=False):
+def lauf(kaputt=False, kleben_payload=False):
     corrupt[0] = kaputt
+    kleben[0] = kleben_payload
     a, b = socket.socketpair()
     a.settimeout(5)                       # ohne Frist haengt der Sammler fuer immer
     threading.Thread(target=antworte, args=(b,), daemon=True).start()
@@ -136,6 +143,7 @@ pfad = os.path.join(zielpfad, "lun-test.bin")
 pruefung("geschriebene Datei bytegleich zum Ursprung",
          open(pfad, "rb").read() == KLAR if os.path.exists(pfad) else None, True)
 pruefung("fehlendes Blockstueck gilt als LUECKERIG", lauf(True), False)
+pruefung("angeklebter Prompt kostet keine Payload", lauf(False, True), True)
 pruefung("Echo-Bruchstuecke werden nicht Payload",
          any("count=1" in z for z in ZEILEN), False)
 

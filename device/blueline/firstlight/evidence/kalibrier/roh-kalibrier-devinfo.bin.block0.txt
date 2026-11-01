@@ -1,0 +1,3 @@
+dd if=/run/ab.bin.gz bs=4096 skip=0 count=1 2>/dev/null | base64 | tr -d '\n
+'
+H4sIAAAAAAACA3P0cwny93TRdfL3D1FkYGBkGAWjYBSMglEwCkbBKBgFAwIYGcSDSuYybaj9KXR3l8Sxk6JrIl02BU11rxBpuqL4vUPrWsJoGI2CUTAKRsEoIB8AAKKoTdAAEAAA~ # printf '@@%s\n' ENDE_block-kalibrier-devinfo.bin-0

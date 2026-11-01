@@ -1,0 +1,10 @@
+21:57:07 Telefon erreichbar nach 0s
+21:57:07 === Kalibrier- und GPT-Abgriff, Ziel evidence/kalibrier ===
+21:57:07   lun-karte.txt 27012 B
+21:57:07   Karte: 70 Partitionsnamen, 70 Groessen
+21:57:07   gpt-luna-kopf.bin                   32768 B Klar  dicht  sha d089fc3ebdaa6e8e  (1149 B gepackt, 1 Bloecke)
+21:57:07   gpt-lunb-kopf.bin                   32768 B Klar  dicht  sha 818d31d140dfa829  (3422 B gepackt, 1 Bloecke)
+21:57:07   gpt-lunc-kopf.bin                   32768 B Klar  dicht  sha 96c28040b1458ae9  (3423 B gepackt, 1 Bloecke)
+21:57:07   gpt-lund-kopf.bin                   32768 B Klar  dicht  sha 60d848cd2cf6c773  (583 B gepackt, 1 Bloecke)
+21:57:07   gpt-lune-kopf.bin              Entpacken fehlgeschlagen (EOFError) — LUECKERIG
+21:57:08   gpt-lunf-kopf.bin                   32768 B Klar  dicht  sha b72698e2565e9956  (988 B gepackt, 1 Bloecke)

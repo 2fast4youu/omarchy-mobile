@@ -1,5 +1,6 @@
 for u in /sys/block/sd*/sd*/uevent; do grep -H . $u; done 2>/dev/null; for d
-in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
+in /sys/block/sd*/size /sys/block/sd*/sd*/size; do echo $d $(cat $d); done 2>/d
+ev/null
 /sys/block/sda/sda1/uevent:MAJOR=8
 /sys/block/sda/sda1/uevent:MINOR=1
 /sys/block/sda/sda1/uevent:DEVNAME=sda1
@@ -57,7 +58,7 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sda/sda15/uevent:PARTNAME=apdp_a
 /sys/block/sda/sda15/uevent:PARTUUID=be10a48f-8952-4522-9c0a-382f6bf0d144
 /sys/block/sda/sda16/uevent:MAJOR=259
-/sys/block/sda/sda16/uevent:MINOR=9
+/sys/block/sda/sda16/uevent:MINOR=0
 /sys/block/sda/sda16/uevent:DEVNAME=sda16
 /sys/block/sda/sda16/uevent:DEVTYPE=partition
 /sys/block/sda/sda16/uevent:DISKSEQ=10
@@ -65,7 +66,7 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sda/sda16/uevent:PARTNAME=apdp_b
 /sys/block/sda/sda16/uevent:PARTUUID=bacc35dd-ca39-477e-a58b-114a79632efe
 /sys/block/sda/sda17/uevent:MAJOR=259
-/sys/block/sda/sda17/uevent:MINOR=10
+/sys/block/sda/sda17/uevent:MINOR=1
 /sys/block/sda/sda17/uevent:DEVNAME=sda17
 /sys/block/sda/sda17/uevent:DEVTYPE=partition
 /sys/block/sda/sda17/uevent:DISKSEQ=10
@@ -73,7 +74,7 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sda/sda17/uevent:PARTNAME=msadp_a
 /sys/block/sda/sda17/uevent:PARTUUID=27bd1cfe-38f9-4d49-9fec-9e5cc4aee3dd
 /sys/block/sda/sda18/uevent:MAJOR=259
-/sys/block/sda/sda18/uevent:MINOR=11
+/sys/block/sda/sda18/uevent:MINOR=2
 /sys/block/sda/sda18/uevent:DEVNAME=sda18
 /sys/block/sda/sda18/uevent:DEVTYPE=partition
 /sys/block/sda/sda18/uevent:DISKSEQ=10
@@ -81,7 +82,7 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sda/sda18/uevent:PARTNAME=msadp_b
 /sys/block/sda/sda18/uevent:PARTUUID=70aaca78-c83b-4877-9441-f36ec60cb31d
 /sys/block/sda/sda19/uevent:MAJOR=259
-/sys/block/sda/sda19/uevent:MINOR=12
+/sys/block/sda/sda19/uevent:MINOR=4
 /sys/block/sda/sda19/uevent:DEVNAME=sda19
 /sys/block/sda/sda19/uevent:DEVTYPE=partition
 /sys/block/sda/sda19/uevent:DISKSEQ=10
@@ -97,7 +98,7 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sda/sda2/uevent:PARTNAME=misc
 /sys/block/sda/sda2/uevent:PARTUUID=c4496805-5d12-45fa-92a8-5231b744ccae
 /sys/block/sda/sda20/uevent:MAJOR=259
-/sys/block/sda/sda20/uevent:MINOR=13
+/sys/block/sda/sda20/uevent:MINOR=6
 /sys/block/sda/sda20/uevent:DEVNAME=sda20
 /sys/block/sda/sda20/uevent:DEVTYPE=partition
 /sys/block/sda/sda20/uevent:DISKSEQ=10
@@ -105,7 +106,7 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sda/sda20/uevent:PARTNAME=metadata
 /sys/block/sda/sda20/uevent:PARTUUID=15ce4d88-c2c4-4094-842a-e6aa3fd26e83
 /sys/block/sda/sda21/uevent:MAJOR=259
-/sys/block/sda/sda21/uevent:MINOR=14
+/sys/block/sda/sda21/uevent:MINOR=7
 /sys/block/sda/sda21/uevent:DEVNAME=sda21
 /sys/block/sda/sda21/uevent:DEVTYPE=partition
 /sys/block/sda/sda21/uevent:DISKSEQ=10
@@ -305,7 +306,7 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sde/sde15/uevent:PARTNAME=hyp_b
 /sys/block/sde/sde15/uevent:PARTUUID=1f7f6997-b26f-4bce-aa00-8ae9d7f12470
 /sys/block/sde/sde16/uevent:MAJOR=259
-/sys/block/sde/sde16/uevent:MINOR=0
+/sys/block/sde/sde16/uevent:MINOR=3
 /sys/block/sde/sde16/uevent:DEVNAME=sde16
 /sys/block/sde/sde16/uevent:DEVTYPE=partition
 /sys/block/sde/sde16/uevent:DISKSEQ=14
@@ -313,7 +314,7 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sde/sde16/uevent:PARTNAME=abl_b
 /sys/block/sde/sde16/uevent:PARTUUID=c580dcfb-4f75-416e-b46a-079757b9f64e
 /sys/block/sde/sde17/uevent:MAJOR=259
-/sys/block/sde/sde17/uevent:MINOR=1
+/sys/block/sde/sde17/uevent:MINOR=5
 /sys/block/sde/sde17/uevent:DEVNAME=sde17
 /sys/block/sde/sde17/uevent:DEVTYPE=partition
 /sys/block/sde/sde17/uevent:DISKSEQ=14
@@ -321,7 +322,7 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sde/sde17/uevent:PARTNAME=keymaster_b
 /sys/block/sde/sde17/uevent:PARTUUID=e44b962b-2146-4ecb-bb29-bbf5daa9e28d
 /sys/block/sde/sde18/uevent:MAJOR=259
-/sys/block/sde/sde18/uevent:MINOR=2
+/sys/block/sde/sde18/uevent:MINOR=8
 /sys/block/sde/sde18/uevent:DEVNAME=sde18
 /sys/block/sde/sde18/uevent:DEVTYPE=partition
 /sys/block/sde/sde18/uevent:DISKSEQ=14
@@ -329,7 +330,7 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sde/sde18/uevent:PARTNAME=cmnlib_b
 /sys/block/sde/sde18/uevent:PARTUUID=11e17c8d-c640-4ecb-9457-9ee06b8f66c7
 /sys/block/sde/sde19/uevent:MAJOR=259
-/sys/block/sde/sde19/uevent:MINOR=3
+/sys/block/sde/sde19/uevent:MINOR=9
 /sys/block/sde/sde19/uevent:DEVNAME=sde19
 /sys/block/sde/sde19/uevent:DEVTYPE=partition
 /sys/block/sde/sde19/uevent:DISKSEQ=14
@@ -345,7 +346,7 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sde/sde2/uevent:PARTNAME=tz_a
 /sys/block/sde/sde2/uevent:PARTUUID=4fba9444-7fdd-4e38-ba18-edd4246abd56
 /sys/block/sde/sde20/uevent:MAJOR=259
-/sys/block/sde/sde20/uevent:MINOR=4
+/sys/block/sde/sde20/uevent:MINOR=10
 /sys/block/sde/sde20/uevent:DEVNAME=sde20
 /sys/block/sde/sde20/uevent:DEVTYPE=partition
 /sys/block/sde/sde20/uevent:DISKSEQ=14
@@ -353,7 +354,7 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sde/sde20/uevent:PARTNAME=devcfg_b
 /sys/block/sde/sde20/uevent:PARTUUID=0982ac20-1fc6-478f-86db-2683953e215f
 /sys/block/sde/sde21/uevent:MAJOR=259
-/sys/block/sde/sde21/uevent:MINOR=5
+/sys/block/sde/sde21/uevent:MINOR=11
 /sys/block/sde/sde21/uevent:DEVNAME=sde21
 /sys/block/sde/sde21/uevent:DEVTYPE=partition
 /sys/block/sde/sde21/uevent:DISKSEQ=14
@@ -361,7 +362,7 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sde/sde21/uevent:PARTNAME=qupfw_b
 /sys/block/sde/sde21/uevent:PARTUUID=bc4882dd-6851-4580-b71f-b882a569f31f
 /sys/block/sde/sde22/uevent:MAJOR=259
-/sys/block/sde/sde22/uevent:MINOR=6
+/sys/block/sde/sde22/uevent:MINOR=12
 /sys/block/sde/sde22/uevent:DEVNAME=sde22
 /sys/block/sde/sde22/uevent:DEVTYPE=partition
 /sys/block/sde/sde22/uevent:DISKSEQ=14
@@ -369,7 +370,7 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sde/sde22/uevent:PARTNAME=vbmeta_b
 /sys/block/sde/sde22/uevent:PARTUUID=012d84c5-8761-419a-b524-c38fa2704057
 /sys/block/sde/sde23/uevent:MAJOR=259
-/sys/block/sde/sde23/uevent:MINOR=7
+/sys/block/sde/sde23/uevent:MINOR=13
 /sys/block/sde/sde23/uevent:DEVNAME=sde23
 /sys/block/sde/sde23/uevent:DEVTYPE=partition
 /sys/block/sde/sde23/uevent:DISKSEQ=14
@@ -377,7 +378,7 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sde/sde23/uevent:PARTNAME=dtbo_b
 /sys/block/sde/sde23/uevent:PARTUUID=7a6b0168-eb8b-4aa3-95d4-d103026d0de4
 /sys/block/sde/sde24/uevent:MAJOR=259
-/sys/block/sde/sde24/uevent:MINOR=8
+/sys/block/sde/sde24/uevent:MINOR=14
 /sys/block/sde/sde24/uevent:DEVNAME=sde24
 /sys/block/sde/sde24/uevent:DEVTYPE=partition
 /sys/block/sde/sde24/uevent:DISKSEQ=14
@@ -566,3 +567,73 @@ in /sys/block/sd*/size; do echo $d $(cat $d); done 2>/dev/null
 /sys/block/sdd/size 16384
 /sys/block/sde/size 65536
 /sys/block/sdf/size 147456
+/sys/block/sda/sda1/size 16
+/sys/block/sda/sda10/size 1572864
+/sys/block/sda/sda11/size 131072
+/sys/block/sda/sda12/size 131072
+/sys/block/sda/sda13/size 163840
+/sys/block/sda/sda14/size 163840
+/sys/block/sda/sda15/size 512
+/sys/block/sda/sda16/size 512
+/sys/block/sda/sda17/size 512
+/sys/block/sda/sda18/size 512
+/sys/block/sda/sda19/size 8192
+/sys/block/sda/sda2/size 2048
+/sys/block/sda/sda20/size 32768
+/sys/block/sda/sda21/size 108183512
+/sys/block/sda/sda3/size 1024
+/sys/block/sda/sda4/size 1024
+/sys/block/sda/sda5/size 5767168
+/sys/block/sda/sda6/size 5767168
+/sys/block/sda/sda7/size 614400
+/sys/block/sda/sda8/size 614400
+/sys/block/sda/sda9/size 1572864
+/sys/block/sdb/sdb1/size 7168
+/sys/block/sdb/sdb2/size 256
+/sys/block/sdc/sdc1/size 7168
+/sys/block/sdc/sdc2/size 256
+/sys/block/sdd/sdd1/size 208
+/sys/block/sdd/sdd2/size 256
+/sys/block/sdd/sdd3/size 2048
+/sys/block/sdd/sdd4/size 4096
+/sys/block/sdd/sdd5/size 2048
+/sys/block/sdd/sdd6/size 32
+/sys/block/sde/sde1/size 1024
+/sys/block/sde/sde10/size 128
+/sys/block/sde/sde11/size 16384
+/sys/block/sde/sde12/size 256
+/sys/block/sde/sde13/size 1024
+/sys/block/sde/sde14/size 4096
+/sys/block/sde/sde15/size 1024
+/sys/block/sde/sde16/size 4096
+/sys/block/sde/sde17/size 1024
+/sys/block/sde/sde18/size 1024
+/sys/block/sde/sde19/size 1024
+/sys/block/sde/sde2/size 4096
+/sys/block/sde/sde20/size 256
+/sys/block/sde/sde21/size 128
+/sys/block/sde/sde22/size 128
+/sys/block/sde/sde23/size 16384
+/sys/block/sde/sde24/size 256
+/sys/block/sde/sde3/size 1024
+/sys/block/sde/sde4/size 4096
+/sys/block/sde/sde5/size 1024
+/sys/block/sde/sde6/size 1024
+/sys/block/sde/sde7/size 1024
+/sys/block/sde/sde8/size 256
+/sys/block/sde/sde9/size 128
+/sys/block/sdf/sdf1/size 208
+/sys/block/sdf/sdf10/size 8
+/sys/block/sdf/sdf11/size 2048
+/sys/block/sdf/sdf12/size 16384
+/sys/block/sdf/sdf13/size 4096
+/sys/block/sdf/sdf14/size 4096
+/sys/block/sdf/sdf15/size 32
+/sys/block/sdf/sdf2/size 81920
+/sys/block/sdf/sdf3/size 4096
+/sys/block/sdf/sdf4/size 4096
+/sys/block/sdf/sdf5/size 4096
+/sys/block/sdf/sdf6/size 256
+/sys/block/sdf/sdf7/size 8
+/sys/block/sdf/sdf8/size 2048
+/sys/block/sdf/sdf9/size 16384

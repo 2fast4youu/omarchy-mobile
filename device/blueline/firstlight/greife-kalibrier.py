@@ -163,14 +163,30 @@ def hole(s, notiz, name, quelle, sektoren, start=0):
         # Nur eine Zeile, die ZWISCHEN 40 und 40000 Zeichen lang ist und nur aus
         # Base64-Zeichen besteht, kann Payload sein — kein Echo-Stueck erfuellt
         # das, weil jedes Echo-Stueck Leerzeichen, Klammern oder Punkte haelt.
-        befehl = "dd if=%s.gz bs=%d skip=%d count=1 2>/dev/null | base64 | tr -d %s" % (
+        befehl = "dd if=%s.gz bs=%d skip=%d count=1 2>/dev/null | base64 | tr -d %s; echo" % (
             GRUND, BLOCK, nr, chr(39) + chr(92) + "n" + chr(39))
         text = abfrage(s, befehl, "block-%s-%d" % (name, nr))
         if text is None:
             notiz("  %-30s Block %d/%d ohne Antwort" % (name, nr, brocken))
             return False
-        kandidaten = [z.strip() for z in text.split("\n")
-                      if re.fullmatch(r"[A-Za-z0-9+/]{40,}={0,2}", z.strip())]
+        if nr == 0:
+            # Der Rohton des ersten Blocks: wenn eine Beglaubigung nicht passt,
+            # muss die Leitung selbst nachzulesen sein, nicht nur ihr Ergebnis.
+            with open(os.path.join(ZIEL, "roh-%s.block0.txt" % name), "w") as f:
+                f.write(text)
+        # Ohne das abtrennende echo oben klebt der Prompt an der Payload
+        # (tr -d frisst den Zeilensprung am Ende), und die Zeile ist nicht mehr
+        # rein — der Filter wuerfe sie weg. zusaetzlich wird ein angeklebter
+        # Prompt abgeschnitten, falls er doch einmal mitkommt.
+        kandidaten = []
+        for z in text.split("\n"):
+            # Die langste Fuehrung aus Base64-Zeichen nehmen: klebt der Prompt
+            # an (tr -d frisst den Zeilensprung am Payload-Ende), hoert die Folge
+            # davor auf. Echo-Stuecke erreichen die Laenge fast nie, und wenn,
+            # erwischt es die Beglaubigung.
+            m = re.match(r"[A-Za-z0-9+/]{40,}={0,2}", z.strip())
+            if m:
+                kandidaten.append(m.group(0))
         rein = "".join(kandidaten)
         try:
             daten[nr] = base64.b64decode(rein + "=" * (-len(rein) % 4))
