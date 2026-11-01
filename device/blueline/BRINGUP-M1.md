@@ -3169,7 +3169,7 @@ Gegenseite hat nachgezählt: `sha256 -c` auf der NAS liest **24 von 24 Dateien O
 **2) Der Rückweg ist nicht mehr Slot b.** Seit 20:33 steht `unbootable:b:yes` bei
 `retry b:0`, und um 20:45 starb sogar die Referenz im RAM nach 60 s — Slot b ist
 als Bootquelle unzuverlässig geworden, auch wenn seine Inhalte unangetastet liegen
-(Referenz-`boot_b` `ed2c225f…`, Factory-`dtbo_b` `ff7bd6da…`, Factory-`vbmeta_b`).
+(Nachgemessen um 00:20, an der frischen Sicherung von `boot_b`: Die Partition ist 64 MiB, ihr Inhalt ist **nicht** bytegleich mit `pmos-ref-build/ref/boot.img` — die erste Abweichung liegt bei Byte 44, also im Headerfeld, aber die folgenden 28 725 248 B (Kernel, Ramdisk, Anhang) sind **bytegleich**. Die Rettungsinhalte liegen also unveraendert in Slot b, nur die Ganzen-Partition-sha (`973ead30…`) war eine andere Behauptung, als die Datei haelt. `dtbo_b` traegt den Factory-Inhalt `ff7bd6da…`, `vbmeta_a` und `vbmeta_b` sind identisch `227eb064…`. Die volle `boot_b` ist jetzt erstmals gesichert, an beiden Orten.
 Verlässlich und mehrfach belegt ist stattdessen: `fastboot boot
 images/fl-v0af/firstlight.img` (RAM, schreibt nichts, hält die Leitung offen und
 kehrt allein in den Fastboot-Bildschirm zurück) und, wenn gar nichts mehr antwortet,
