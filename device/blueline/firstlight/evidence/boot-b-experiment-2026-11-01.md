@@ -32,7 +32,11 @@ wie vorher, nur slot-retry-count:b: 3 (Write auf boot_b hat Zaehler gesetzt)
   ACM-Port nie da, iface 172.16.42.* nie vorhanden.
   Mautprotokoll: scratch/maut-141055.log (t=7s "kein Pixel", t=13s Fastboot an).
 - Unveraendert zwischen beiden Daten: ref/boot.img sha256 (ed2c225f…),
-  Cmdline im Bild, dtbo/vbmeta nie angefasst, gleiches Kabel/Hub.
+  Cmdline im Bild gleich. 'dtbo/vbmeta nie angefasst' war falsch und ist
+  berichtigt: dtbo_b/vbmeta_b tragen seit 15:01 Factory-Inhalt, dtbo_a war
+  an diesem Nachmittag leer (erster eigener Schreib 16:31) — das ist der
+  einzige Zustandsunterschied, der die vier 13-s-Tode von 14:06–14:18 von den
+  ueberlebenden Laeufen ab 15:06 trennt (belegt durch den Fuell-Test 16:34).
 - Einzige bekannte Aenderung: Slot a jetzt unbootable:yes (retry 0).
   Das kann den Bootloader-Fallback erklaeren, NACHDEM das geladene Bild
   abstuerzte — aber nicht, warum es heute abstuerzt und gestern nicht.
@@ -157,3 +161,34 @@ RAM-Boot mit current-slot a (dtbo_a leer, seit 28.10. dokumentiert): viermal
   Ablauf ist das gleichgueltig: Slot b + dtbo_b ist der verlaessliche Pfad.
 Konsequenz v0z-Umbau: boot_b als Ziel, restart2 (0xa1b2c3d4, bootloader) am
   Init-Ende, dtbo_b unangetastet, Auslese ueber Referenz-Telnet.
+2026-11-01 16:19:19 — Vorbereiten: dtbo_a mit Factory-dtbo fuellen (Claude-Plan, Gregor-Freigabe)
+16:27:15 --- Rueckweg-Umbau nach Claude-Check-in 16:1x (Gregor-Freigabe) ---
+16:27:15 Fehler berichtigt: 'dtbo nie angefasst' um 14:20 war falsch; dtbo_b wurde um 15:01
+16:27:15 mit Factory dtbo.img (ff7bd6da…) geflasht, dtbo_a blieb leer. Jetzt: dtbo_a fuellen.
+16:27:15 Schritt 0: Rueckweg-Zaehler — vor allem Retry b (stand 1) wieder auf 3.
+16:27:20 Fastboot bereit nach 5s
+16:27:20 vorher current-slot         current-slot: b
+16:27:20 vorher slot-retry-count:a   slot-retry-count:a: 0
+16:27:20 vorher slot-retry-count:b   slot-retry-count:b: 0
+16:27:21 vorher slot-unbootable:a    slot-unbootable:a: yes
+16:27:21 vorher slot-unbootable:b    slot-unbootable:b: yes
+2026-11-01 16:31:51 — Ueberraschung: slot-unbootable:b war um 16:27 ja (retry b 0)
+15:34:18 zeigte noch retry b 1 / unbootable b no. Zwischen 15:35 und 16:27 muss
+ein richtiger Slot-b-Start stattgefunden und nicht durchgelebt haben. Moeglich:
+der restart2-Rueckweg um 15:34 fuehrte zwar sofort nach Fastboot, aber ABOOT
+zaehlte einen Slot-Start; spaeter (Tastendruck oder Automatik) lief Slot b an
+und wurde bei 0 auf unbootable gestellt. boot_b-Inhalt ist unveraendert Referenz
+(ed2c225f), dtbo_b/vbmeta_b Factory. Auffuellen mit --set-active ist daher sicher.
+current-slot: b
+slot-retry-count:b: 3
+slot-unbootable:b: no
+SHA dtbo-Quelle OK (ff7bd6daa08351a3c72992ded9a45d6f50f349d30dc68b1d0cd2eb426f8ab42d)
+Finished. Total time: 0.855s
+current-slot: a
+16:34:15 TEST der dtbo-These: RAM-Boot der Referenz mit current-slot a und JETZT gefuelter dtbo_a (Factory ff7bd6da). Erwartung: ueberlebt (Gadget D001, Telnet). Vier Todesfaelle heute 14:06-14:18 hatten leere dtbo_a.
+16:34:26 boot rc=0               OKAY [  9.963s] Finished. Total time: 10.752s 
+16:34:28 t=  0s usb=0x4EE0 telnet=zu
+16:34:58 t= 31s usb=0xD001 telnet=zu
+16:35:14 t= 47s usb=0xD001 telnet=zu
+16:35:43 UEBERLEBT: Telnet offen bei t=76s (Gadget war ab dem ersten Guck da)
+16:35:44 Nachweis laufend: cat /proc/cmdline | tr ' ' '\n' | grep -E 'slot_suffix|dtbo_idx' | postmarketOS debug shell | https://postmarketos.org/debug-shell |  |   Device: Google Pixel 3

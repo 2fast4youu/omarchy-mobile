@@ -744,6 +744,22 @@ handset — `dtbo_a` is still erased, which the 6.11 survival proves is
 survivable and keeps as the one known state difference the 7.3 deaths
 and the 6.11 survival share.
 
+> **Klarstellung 2026-11-01, nachdem dieselbe Zeile heute beinahe in die
+> Irre gefuehrt haette:** „6.11 ueberlebt mit geloeschtem dtbo_a" gilt weiter,
+> aber der Satz ist duenn: er beruht auf EINEM 6.11er-ueberleben am 28.10.
+> Die 7.1.0-rc1-Referenz ist am 01.11. mit exakt diesem geloeschten dtbo_a
+> viermal innerhalb ~13 s gestorben (14:06, 14:09, 14:11, 14:18, gleiche
+> Bytes ed2c225f, gleiches Kabel) und hat NACH dem Fuellen von dtbo_a mit dem
+> Factory-dtbo (ff7bd6da, Schreib 16:31) zweimal ueberlebt: RAM-Boot ab slot_a
+> 16:34 mit jetzt voller dtbo_a (Telnet 76 s). (Der ueberlebte RAM-Boot 15:35
+> lief ab slot_b mit vollem dtbo_b und zaehlt nicht als Gegenfall.)
+> Ob der 6.11er
+> mit dem heutigen Bootloader/dtbo-Zustand noch ueberlebt, ist ungemessen —
+> „loeschbares dtbo_a ist ueblich" ist damit KEINE sichere Voraussetzung mehr.
+> Regel von jetzt an: dtbo_a und dtbo_b gehalten (Factory-Inhalt), vor jedem
+> Experiment getvars incl. beider Retry-Zaehler lesen (um 16:27 war
+> ueberraschend auch slot-unbootable:b ja).
+
 #### Attempt 2026-10-28: off12 measures — with the dwc3-qcom driver fully off the 7.3 kernel still dies at 5 s
 
 The fixed interpolation put a real `omadwc3q=off` into the header
