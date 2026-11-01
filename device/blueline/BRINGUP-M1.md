@@ -3154,3 +3154,46 @@ zurückbringen, `--set-active=a` ihn wieder nehmen.
 4. Die Selbst-Rückweg-Uhr (372 s) nimmt die Shell weg, während man noch dran
    sitzt. Vorgesehene Änderung: Rückkehr nur noch nach Funkstille (fünf Minuten
    ohne Verbindung oder ohne `/tmp/halt`), obere Grenze bleibt.
+
+## Nachtrag 20 — 2026-11-02, kurz nach Mitternacht: Sicherung an zweitem Ort, Rückweg neu gestellt, und was als Nächstes geschrieben wird
+
+Claude hat vor dem ersten Write auf `boot_a` vier Punkte verlangt. Alle vier sind
+gemessen, nicht versprochen.
+
+**1) Die Sicherungen liegen nicht mehr nur auf dem Mac.** 24 Dateien, 190 MB, nach
+`//gregor@DXP4800-ACC4/hermes-sicherungen/blueline-2026-11-01` (UGREEN, 9 TiB,
+7,8 TiB frei) kopiert, zusammen mit allen Manifesten und der LUN-Karte. Die
+Gegenseite hat nachgezählt: `sha256 -c` auf der NAS liest **24 von 24 Dateien OK**
+(`sha256-kontrolle.txt` dort und hier identisch). Erst danach ist geflasht worden.
+
+**2) Der Rückweg ist nicht mehr Slot b.** Seit 20:33 steht `unbootable:b:yes` bei
+`retry b:0`, und um 20:45 starb sogar die Referenz im RAM nach 60 s — Slot b ist
+als Bootquelle unzuverlässig geworden, auch wenn seine Inhalte unangetastet liegen
+(Referenz-`boot_b` `ed2c225f…`, Factory-`dtbo_b` `ff7bd6da…`, Factory-`vbmeta_b`).
+Verlässlich und mehrfach belegt ist stattdessen: `fastboot boot
+images/fl-v0af/firstlight.img` (RAM, schreibt nichts, hält die Leitung offen und
+kehrt allein in den Fastboot-Bildschirm zurück) und, wenn gar nichts mehr antwortet,
+Power + Leiser für ~20 s. Kein Plan ab hier stützt sich darauf, dass ABOOT von Slot b
+bootet; M1.6 (Slot b bootbar machen) ist davon ausdrücklich unberührt und bleibt offen.
+
+**3) Was geschrieben wird, in einem Satz:** Auf `boot_a` — Partition 11 von LUN a,
+64 MiB — wird bytegenau `images/fl-v0af/firstlight.img` (sha `f097ef0f…`) geschrieben,
+und dieses Bild trägt selbst die Funkstille-Rückkehr: es hält die Shell, solange eine
+Verbindung steht, und kehrt nach fünf Minuten Funkstille von allein in den
+Fastboot-Bildschirm zurück (Obergrenze 60 Minuten), die alte Endlospark-Falle ist also
+nicht wieder eingebaut. Erfolg gilt als erreicht, wenn nach `fastboot reboot` der Port
+23 binnen 300 s offen steht und der gelesene Kopf von `boot_a` die sha des Bildes
+meldet; als Misserfolg gilt ein zu bleibender Port — dann legt `fastboot boot` der
+Referenz das Telefon wieder hin, und `--set-active=a` stellt den Zähler neu.
+
+**4) Das wiederholte Loch ist nicht die Platte, sondern unser eigener Sammler.**
+LUN e misst 65 536 Sektoren zu 512 B (32 MiB) — der gelesene Kopf braucht 64 Sektoren
+bei 0, das Ende liegt bei 65 472, beide Adressen also weit innerhalb der Platte, und
+ein 4K-Sektorbetrieb wäre beim Ende (32 KiB, erfolgreich gelesen) aufgefallen. Was
+fehlt, ist der *letzte, winzige* Block: Die gepackte Kopfdatei ist 4 120 B, Block 0
+liefert 4 096 B, Block 1 die letzten 24 B — und die einzigen Bereiche, die im Manifest
+als Loch stehen, sind genau die mit einem Endblock unter hundert Byte. Zum Vergleich:
+`modemst1` endet bei 4 013 B, `persist` bei 727 B, beide dicht. Ein Loch, das sich
+lückenlos wiederholt, ist hier kein LUN-Defekt, sondern ein Rahmenproblem bei
+Miniaturblöcken; die vorgesehene Änderung legt die Payload zwischen zwei gedruckte
+Markierungen, statt auf Zeilenform zu vertrauen.
