@@ -80,11 +80,36 @@ Vorher-Nachher-Vergleich ist damit moeglich: der Kernel-Text des *vorherigen*
 Laufs liegt beim naechsten Start schon im System, unabhaengig davon, ob das
 Gadget hochkommt.
 
-## Offen
+## v0ae am selben Abend, 20:13 — die eigene Shell spricht
 
-Ob v0ae wirklich ein Gadget bindet, misst der RAM-Lauf ab 19:58 Uhr
-(`v0ae-durchgang-2026-11-01.md`). Erwartung, vorher festgelegt: `moduli:` meldet
-6 geladene Module, `usb_f_ncm 1`, und der Mac sieht 172.16.42.1. Wenn die
-Bind-Runde trotzdem gegen `nonexistent directory` laeuft, ist configfs das
-Problem und nicht die Module — dann meldet das der Beutel in 5 Minuten, nicht
-erst ein Panel-Text.
+`fastboot boot fl-v0ae/firstlight.img` um 20:12:5x, Telnet um **t=24 s offen**,
+Rohprotokoll in `eigene-shell-2026-11-01.md`. Aus der Shell unseres eigenen
+Bildes, im Lauf des eigenen Bildes:
+
+    uname -a                       Linux (none) 7.1.0-rc1-sdm845 #5-postmarketos-qcom-sdm845 … aarch64
+    moduli                         5 geladen, libcomposite 1
+    ls /sys/class/udc              a600000.usb
+    cat /sys/class/udc/*/state     configured
+    ls …/usb_gadget                g1
+    cat …/usb_gadget/g1/UDC        a600000.usb
+    ls …/g1/functions              acm.GS0   ncm.usb0
+    ip -o addr show                usb0  inet 172.16.42.1/24 scope global usb0
+    grep -c nonexistent steps.log  0
+    ls /sys/fs/pstore              console-ramoops-0  dmesg-ramoops-0
+
+Damit ist die Frage „bindet unser Gadget" beantwortet: es bindet, sobald die
+Module wirklich im Wurzelsystem liegen. `schreib_rc=0 … 1048576 bytes copied`
+meldet derselbe Lauf.
+
+## Eigenfehler, den diese Lesung gezeigt hat
+
+Die zwei neuen Marks aus v0ad stehen unverändert im Protokoll:
+
+    [5s] step: vor mkdir: configfs=$(grep -c " type configfs " /proc/mounts) …
+
+Einfache Anführungszeichen — die Befehlsersetzung wird nicht ausgewertet, die
+Zeile druckt ihren eigenen Befehl. Ein Mark, das seine Messung nicht auswertet,
+ist ein dunkles Instrument; in diesem Fall hat die Live-Shell dieselben Zahlen
+geliefert, also ist nichts verloren. In der nächsten Fassung doppelt
+zitieren (`"…$(…)"`) und die Auswertung an einem Mark mit bekanntem Wert
+prüfen, bevor der Lauf zählt.
