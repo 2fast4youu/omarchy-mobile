@@ -25,6 +25,7 @@ import base64
 import binascii
 import gzip
 import hashlib
+import zlib
 import os
 import re
 import socket
@@ -182,8 +183,13 @@ def hole(s, notiz, name, quelle, sektoren, start=0):
     sha = hashlib.sha256(gepackt).hexdigest()
     try:
         klartext = gzip.decompress(gepackt)
-    except (OSError, EOFError):
-        klartext = gepackt
+    except (OSError, EOFError, zlib.error) as fehler:
+        # Ein fehlendes Blockstueck ist kein Absturz: ein abgebrochenes gzip
+        # wirft zlib.error. Genau diese Luecke soll gemeldet werden, nicht der
+        # halbe Rest als Klartext durchgewinkt.
+        notiz("  %-30s Entpacken fehlgeschlagen (%s) — LUECKERIG"
+              % (name, type(fehler).__name__))
+        return False
     dicht = len(gepackt) == groesse and sha == shall
     if k:
         dicht = dicht and len(klartext) == klar_g and hashlib.sha256(klartext).hexdigest() == klar_sha

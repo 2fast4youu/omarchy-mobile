@@ -1,0 +1,17 @@
+21:24:30 Telefon erreichbar nach 28s
+21:24:30 === Kalibrier- und GPT-Abgriff, Ziel evidence/kalibrier ===
+21:24:30   lun-karte.txt 24550 B
+21:24:30   gpt-luna-kopf.bin              Grunddaten unlesbar: 'dd if=/dev/sda bs=512 skip=0 count=64 of=/run/ab.bin 2>/dev/null; gzip -9 -f\n-c /run/ab.bi'
+21:24:30   gpt-lunb-kopf.bin              Grunddaten unlesbar: 'dd if=/dev/sdb bs=512 skip=0 count=64 of=/run/ab.bin 2>/dev/null; gzip -9 -f\n-c /run/ab.bi'
+21:24:30   gpt-lunc-kopf.bin              Grunddaten unlesbar: 'dd if=/dev/sdc bs=512 skip=0 count=64 of=/run/ab.bin 2>/dev/null; gzip -9 -f\n-c /run/ab.bi'
+21:24:30   gpt-lund-kopf.bin              Grunddaten unlesbar: '-c /run/ab.bin > /run/ab.bin.gz 2>/dev/null; echo groesse=wc -c < /run/ab.bin.g\nz sha=sha2'
+21:24:30   gpt-lune-kopf.bin              Grunddaten unlesbar: 'dd if=/dev/sde bs=512 skip=0 count=64 of=/run/ab.bin 2>/dev/null; gzip -9 -f\n-c /run/ab.bi'
+21:24:30   gpt-lunf-kopf.bin              Grunddaten unlesbar: 'dd if=/dev/sdf bs=512 skip=0 count=64 of=/run/ab.bin 2>/dev/null; gzip -9 -f\n-c /run/ab.bi'
+21:24:30   kalibrier-modemst1.bin         Grunddaten unlesbar: 'dd if=$(for u in /sys/block/sd*/sd*/uevent; do grep -q "^PARTNAME=modemst1$"\n"$u" 2>/dev/n'
+21:24:30   kalibrier-modemst2.bin         Grunddaten unlesbar: 'dd if=$(for u in /sys/block/sd*/sd*/uevent; do grep -q "^PARTNAME=modemst2$"\n"$u" 2>/dev/n'
+21:24:31   kalibrier-persist.bin          Grunddaten unlesbar: 'dd if=$(for u in /sys/block/sd*/sd*/uevent; do grep -q "^PARTNAME=persist$"\n"$u" 2>/dev/nu'
+21:24:31   kalibrier-frp.bin              Grunddaten unlesbar: 'dd if=$(for u in /sys/block/sd*/sd*/uevent; do grep -q "^PARTNAME=frp$" "$u"\n2>/dev/null &'
+21:24:31   kalibrier-misc.bin             Grunddaten unlesbar: 'dd if=$(for u in /sys/block/sd*/sd*/uevent; do grep -q "^PARTNAME=misc$" "$u\n" 2>/dev/null'
+21:24:31   kalibrier-devinfo.bin          Grunddaten unlesbar: '"$u" 2>/dev/null && { q="${u%uevent}"; echo /dev/"${q##*/}"; break; }; done) bs=\n512 skip='
+21:24:31   kalibrier-dtbo_b.bin           Grunddaten unlesbar: 'dd if=$(for u in /sys/block/sd*/sd*/uevent; do grep -q "^PARTNAME=dtbo_b$" "\n$u" 2>/dev/nu'
+21:24:31 === Abgriff fertig: evidence/kalibrier ===
