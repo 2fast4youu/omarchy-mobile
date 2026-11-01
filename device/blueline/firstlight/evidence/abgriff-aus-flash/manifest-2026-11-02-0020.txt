@@ -1,0 +1,3 @@
+00:20:44 === Abgriff beginnt, Fenster 240s ===
+00:20:50 ACHTUNG leer: uname.txt (kein Rahmen in 199s)
+00:20:56 ACHTUNG leer: cmdline.txt (kein Rahmen in 193s)

@@ -1,3 +1,2 @@
-[6ndd if=/run/ab.bin.gz bs=4096 skip=0 count=1 2>/dev/null | base64 | tr -d '\n
 '; echo
 H4sIAAAAAAACA3P0cwny93TRdfL3D1FkYGBkGAWjYBSMglEwCkbBKBgFAwIYGcSDSuYybaj9KXR3l8Sxk6JrIl02BU11rxBpuqL4vUPrWsJoGI2CUTAKRsEoIB8AAKKoTdAAEAAA
