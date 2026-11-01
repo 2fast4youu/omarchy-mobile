@@ -24,7 +24,15 @@ def log(m):
 
 
 def fb(args, timeout=60):
-    return subprocess.run([FB] + args, capture_output=True, text=True, timeout=timeout)
+    """Ein Telefon, das in der Referenz-Shell parkt, antwortet auf fastboot nicht.
+    Der Timeout ist ein Zustand, kein Absturz: gemessen 18:10 wurde ein
+    ungefangener TimeoutExpired zum Traceback, bevor der Durchgang mass."""
+    try:
+        return subprocess.run([FB] + args, capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        class _Zeit:
+            returncode, stdout, stderr = 124, "", "(Zeitueberschreitung — Geraet nicht in Fastboot)"
+        return _Zeit()
 
 
 def port_open(port=23):
