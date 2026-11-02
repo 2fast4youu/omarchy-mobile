@@ -1,0 +1,3 @@
+UD=/dev/$(awk '$4~/^sda[0-9]+$/{print $3, $4}' /proc/partitions | sort -n |
+tail -1 | awk '{print $2}'); echo UD=$UD
+UD=/dev/sda21

@@ -1,0 +1,4 @@
+grep -c . /proc/partitions; cat /proc/device-tree/model 2>/dev/null | tr -d
+'\0'
+77
+Google Pixel 3~ # printf '@@%s\n' ENDE_geraet-status-txt
