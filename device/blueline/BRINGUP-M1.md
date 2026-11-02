@@ -3378,3 +3378,54 @@ echten Archiv, ausgepackte Bild-Ramdisk, beide Begleitdateien, Trockenübung des
 Write-Zyklus mit hörendem Fastboot und belegter Reihenfolge. Ausdrücklich nicht
 Suite-Grün; die kanonische Suite (148 ok / 4 skip) erreicht diese Dateien nicht.
 Telefon ist zurück im Fastboot, der Write läuft.
+
+
+## Nachtrag 24 (2026-11-02, 22:4x–23:3x): offset= ist in Byte, und die GPT-These kriegt einen Beweis
+
+**Der Check-in von Claude hatte in einem Punkt recht, in einem zweiten war die Arbeit
+schon erledigt, und in einem dritten hatte er einen unbelegten Satz erwischt.**
+
+1. *Einheit.* `misst-offset-einheit.sh` legt ein ext4 bei 1 MiB in ein Loop-Blockgerät
+   und mountet im arm64-Container — mit **dem** `mount` aus dem ausgelieferten Archiv
+   (util-linux 2.41.6), nicht nur mit dem des Containers (2.42.4):
+
+       offset=1048576 -> ERFOLG (lost+found)
+       offset=1024    -> FEHLER rc=32 bad superblock
+       offset=2048    -> FEHLER rc=32 bad superblock
+
+   `offset=` ist in **Byte**. v0ah hätte damit 1 KiB statt 1 MiB gelesen — ein zweiter,
+   von der GPT-Frage unabhängiger Grund für den Fehlschlag. v0ai (`11afeb3b…`) mountet
+   1048576, und kein `2>/dev/null` mehr: der Wortlaut geht in `$udfehler` und damit in
+   die Marke. Erfolg ist, dass `/ud` in `/proc/mounts` steht, nicht dass der Mount
+   schweigt. Nebenbefund: `mount -o offset=` richtet das Loop selbst ein; der Kernel
+   hat `CONFIG_BLK_DEV_LOOP=y`, MIN_COUNT=8, kein Modul und kein `losetup` nötig.
+   Und die 79-Zeichen-Grenze gilt dem Telnet-Zeileneditor, nicht dem Init: der
+   ausgelieferte Init enthält Zeilen bis 389 Zeichen und ist damit gebootet.
+
+2. *Freigabe der Partition.* War schon vor dem Check-in so, jetzt aber mit Zeilenbeleg:
+   die Wache liest `/tmp/uddev` und überspringt beim gesetzten Wert die
+   userdata-Partition **und** `/dev/sda`, alles andere bleibt einzeln unter ro
+   (init 536–552).
+
+3. *„ABOOT legt sein GPT hin" ist eine These.* Belegt ist nur der Fund nach einem
+   Write — und der lief mit fastboots eigener Umrechnung, die 4096 und 8192 als
+   Löcher ließ. Der Unterscheidungsschritt heißt `marker-4mib.bin` (4 194 304 B,
+   sha256 `39cb098d…`, **ein** DATA-Sack ohne jedes Loch, also wird wirklich jedes
+   Feld zwischen 0 und 4 MiB geschrieben) mit `MK0000-`, `MK4096-` und `MK8192-`
+   Zeilen; `beweise-marker.py` liest die Felder (13 Belege, längster Befehl 71
+   Zeichen). Sind sie nach dem nächsten Boot weg, kann das nicht am Write gelegen
+   haben: bleiben sie, war die These falsch und der Vorlauf überflüssig.
+
+**Der Write-Zyklus heißt jetzt `schreibe-v0ai.sh`** und prüft vor jedem Partitions-
+Write Größe **und** volle sha256 der Sicherung gegen `sha256-lokal.txt`; bei
+Abweichung bricht er ab, ohne geschrieben zu haben (Negativprobe: Exit 1, kein
+`flash boot_a`). Positive Trockenübung: Marker-Bild, boot_a, `--set-active=a`,
+Reboot, Exit 0.
+
+**Ad-hoc-Prüfung: 34 Prüfpunkte, 0 Fehler, Exit 0** (`pruefe-v0ai.py`, ausdrücklich
+nicht Suite-Grün; die kanonische Suite mit 148 Punkten lief nicht). Sie prüft die
+Umformung gegen den *wirklich* ausgelieferten v0ah-Init, die Negativprobe gegen ein
+Archiv ohne Anker, beide Trockenübungen des Zyklus und das fertige Bild von innen
+(745 Einträge, sechs Module, Init mit Byte-Versatz, `aus-bild.cpio` bytegleich).
+Telefon weiterhin stumm im Fastboot; Kabel direkt ans Mac Studio ist der eine
+Handgriff, den nur Gregor tun kann.
