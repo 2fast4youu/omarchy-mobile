@@ -22,33 +22,39 @@ import struct
 import sys
 
 MAGIC = 0xED26FF3A          # im Text als 3A FF 26 ED; 0x3AFF26EA ist falsch
-                           # und wurde von fastboot mit 'Invalid sparse file format at header
-                           # magic' abgelehnt (gemessen 2026-11-02, 17:00)
+                           # und wurde von fastboot mit 'Invalid sparse file format
+                           # at header magic' abgelehnt (gemessen 2026-11-02, 17:00)
 RAW = 0xCAC1
 DONTCARE = 0xCAC3
 BLOCK = 4096
+# Ein Sack pro 4096-Byte-Block ist erlaubt, aber fuer ABOOT Gift: der Write mit
+# 262400 Ein-Block-Saecken kam nach 9 Minuten nicht durch, der Prozess hing mit
+# eingefrorener Rechenzeit am Gerat (gemessen 17:2x). Echte Sparse-Bilder
+# (img2simg) fassen zusammen, also 4096 Baelle = 16 MiB pro Sack, hier 64 Saecke.
+SAECKE = 4096
 
 
 def schreibe(pfad_bild, pfad_sparse):
     groesse = os.path.getsize(pfad_bild)
-    if groesse % BLOCK:
-        raise SystemExit("Bildgroesse %d ist kein Vielfaches von %d" % (groesse, BLOCK))
+    if groesse % (BLOCK * SAECKE):
+        raise SystemExit("Bildgroesse %d ist kein Vielfaches von %d"
+                         % (groesse, BLOCK * SAECKE))
     saecke = groesse // BLOCK
-    brot = 0
+    bruchstuecke = groesse // (BLOCK * SAECKE)
+    gesendet = 0
     with open(pfad_bild, "rb") as Quelle, open(pfad_sparse, "wb") as Z:
         Z.write(struct.pack("<IHHHHIIII", MAGIC, 1, 0, 28, 12, BLOCK, saecke,
-                            1 + saecke, 0))
-        for nr in range(saecke):
-            stueck = Quelle.read(BLOCK)
-            if len(stueck) != BLOCK:
-                raise SystemExit("Bild bricht bei Sack %d ab" % nr)
-            Z.write(struct.pack("<III", RAW, 1, 12 + BLOCK))
-            Z.write(stueck)
-            brot += 1
-            if brot % 4096 == 0:
-                print("  %d/%d Baelle" % (brot, saecke), flush=True)
+                            bruchstuecke + 1, 0))
+        for nr in range(bruchstuecke):
+            leib = Quelle.read(BLOCK * SAECKE)
+            if len(leib) != BLOCK * SAECKE:
+                raise SystemExit("Bild bricht im Brocken %d ab" % nr)
+            Z.write(struct.pack("<III", RAW, SAECKE, 12 + len(leib)))
+            Z.write(leib)
+            gesendet += 1
+            print("  Brocken %d/%d" % (gesendet, bruchstuecke), flush=True)
         Z.write(struct.pack("<III", DONTCARE, 0, 12))      # Abschluss, wie img2simg
-    return brot
+    return gesendet
 
 
 def lies(pfad_sparse):
@@ -82,6 +88,13 @@ def lies(pfad_sparse):
     return bytes(daten), daten_baelle, care
 
 
+def anzahl_brocken(pfad_sparse):
+    """Nachzaehlen, was wirklich im Kopf steht — nicht, was wir wollten."""
+    _, _, _, _, _, _, _, anzahl, _ = struct.unpack(
+        "<IHHHHIIII", open(pfad_sparse, "rb").read(28))
+    return max(anzahl - 1, 0)
+
+
 def haupt():
     if len(sys.argv) != 3:
         print("Gebrauch: baue-sparse.py BILD.EXT4 BILD.SPARSE")
@@ -92,8 +105,9 @@ def haupt():
     anzahl = schreibe(bild, sparse)
     strom, daten_baelle, care = lies(sparse)
     rueck = hashlib.sha256(strom).hexdigest()
-    print("_sparse_: %s, %d B, %d DATA-Baelle, %d DONT_CARE, Abschluss ja"
-          % (os.path.basename(sparse), os.path.getsize(sparse), daten_baelle, care))
+    print("_sparse_: %s, %d B, %d DATA-Baelle in %d Brocken, %d DONT_CARE, Abschluss ja"
+          % (os.path.basename(sparse), os.path.getsize(sparse), daten_baelle,
+             anzahl_brocken(sparse), care))
     print("Rohbild %d B sha %s" % (groesse, echt[:16]))
     print("zurueckgelesen %d B sha %s -> %s" % (len(strom), rueck[:16],
                                                 "dicht" if rueck == echt else "LOCH"))

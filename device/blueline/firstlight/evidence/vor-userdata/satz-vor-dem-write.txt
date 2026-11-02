@@ -8,3 +8,23 @@ userdata traegt weiterhin keine Nutzerdaten (Superblock null, mount -o ro meldet
 wrong fs type, Gerat entsperrt); das Bild ist jetzt rootfs-vorlauf.sparse.img mit
 1 MiB Vorlauf, damit ABOOTs GPT-Bereich (Kopf 4096, Saetze ab 8192) frei bleibt.
 Backup boot_a: 67108864 B, sha256 0478f8dbe456a5877976f2514aa105619acf6c91056afb14eabe824d5c6929a0 (gemessen gegen sha256-lokal.txt).
+Satz vor dem Write, 2026-11-02 17:19:
+userdata traegt weiterhin keine Nutzerdaten (Superblock null, mount -o ro meldet
+wrong fs type, Gerat entsperrt); das Bild ist jetzt rootfs-vorlauf.sparse.img mit
+1 MiB Vorlauf, damit ABOOTs GPT-Bereich (Kopf 4096, Saetze ab 8192) frei bleibt.
+Backup boot_a: 67108864 B, sha256 0478f8dbe456a5877976f2514aa105619acf6c91056afb14eabe824d5c6929a0 (gemessen gegen sha256-lokal.txt).
+Satz vor dem Write, 2026-11-02 17:20:
+userdata traegt weiterhin keine Nutzerdaten (Superblock null, mount -o ro meldet
+wrong fs type, Gerat entsperrt); das Bild ist jetzt rootfs-vorlauf.sparse.img mit
+1 MiB Vorlauf, damit ABOOTs GPT-Bereich (Kopf 4096, Saetze ab 8192) frei bleibt.
+Backup boot_a: 67108864 B, sha256 0478f8dbe456a5877976f2514aa105619acf6c91056afb14eabe824d5c6929a0 (gemessen gegen sha256-lokal.txt).
+Satz vor dem Write, 2026-11-02 17:20:
+userdata traegt weiterhin keine Nutzerdaten (Superblock null, mount -o ro meldet
+wrong fs type, Gerat entsperrt); das Bild ist jetzt rootfs-vorlauf.sparse.img mit
+1 MiB Vorlauf, damit ABOOTs GPT-Bereich (Kopf 4096, Saetze ab 8192) frei bleibt.
+Backup boot_a: 67108864 B, sha256 0478f8dbe456a5877976f2514aa105619acf6c91056afb14eabe824d5c6929a0 (gemessen gegen sha256-lokal.txt).
+--- Write-Zyklus v0ah (zweite Fassung), 2026-11-02 17:24, Frist 300 s
+userdata traegt weiterhin keine Nutzerdaten (Superblock null, mount -o ro
+meldet wrong fs type, Gerat entsperrt). Bild: rootfs-vorlauf.sparse.img mit
+1 MiB Vorlauf, damit ABOOTs GPT-Bereich (Kopf 4096, Saetze ab 8192) frei bleibt.
+Backup boot_a: 67108864 B, sha256 0478f8dbe456a5877976f2514aa105619acf6c91056afb14eabe824d5c6929a0 (gemessen gegen sha256-lokal.txt).
