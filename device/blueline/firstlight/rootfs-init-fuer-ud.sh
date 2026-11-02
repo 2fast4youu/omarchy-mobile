@@ -15,11 +15,11 @@ PATH=/bin:/sbin:/usr/bin:/usr/sbin
 export PATH
 # mountpoint -q ist in diesem busybox nicht garantiert — die Liste der
 # Mounts selbst ist es, also wird dort nachgesehen.
-grep -q ' /proc /proc ' /proc/mounts 2>/dev/null || mount -t proc proc /proc 2>/dev/null
-grep -q ' /sys /sys ' /proc/mounts 2>/dev/null || mount -t sysfs sysfs /sys 2>/dev/null
-grep -q ' /dev /dev ' /proc/mounts 2>/dev/null || mount -t devtmpfs devtmpfs /dev 2>/dev/null
+grep -q '^[^ ]* /proc ' /proc/mounts 2>/dev/null || mount -t proc proc /proc 2>/dev/null
+grep -q '^[^ ]* /sys ' /proc/mounts 2>/dev/null || mount -t sysfs sysfs /sys 2>/dev/null
+grep -q '^[^ ]* /dev ' /proc/mounts 2>/dev/null || mount -t devtmpfs devtmpfs /dev 2>/dev/null
 mkdir -p /dev/pts
-grep -q ' /dev/pts ' /proc/mounts 2>/dev/null || mount -t devpts devpts /dev/pts 2>/dev/null
+grep -q '^[^ ]* /dev/pts ' /proc/mounts 2>/dev/null || mount -t devpts devpts /dev/pts 2>/dev/null
 mkdir -p /omamobile
 
 # Beleg: was steht wirklich auf '/', und seit wann. Das ist die Erfolgsmeldung

@@ -37,17 +37,19 @@ BEWEISE = [
     ("partitionen.txt", "cat /proc/partitions"),
     ("partlabel.txt", "ls /dev/disk/by-partlabel 2>/dev/null | head -30"),
     ("sda-groessen.txt", "awk '$4~/^sda[0-9]+$/{print $3, $4}' /proc/partitions | sort -n"),
-    ("UDSETZEN.txt", "UD=/dev/"
-     "$(awk '$4~/^sda[0-9]+$/{print $3, $4}' /proc/partitions | sort -n | tail -1"
-     " | awk '{print $2}'); echo UD=$UD"),
+    # Die Partition wird ueber ihren Anfangssektor aus der GPT geholt, nicht ueber
+    # 'die groesste Partition' — dieselbe Regel, die der neue Init braucht, und
+    # sort -n auf Nameslisten waehlt 'sda10' vor 'sda2' (gemessen).
+    ("UD-Rahmen.txt", "D=/sys/block/sda; S=16547840"),
+    ("UD- suchen.txt", "for p in $D/sda*; do [ $(cat $p/start) = $S ] && UD=/dev/${p##*/}; done"),
+    ("UD-gefunden.txt", "echo UD=$UD"),
     ("ud-geraet.txt", "echo $UD; ls -l $UD; cat $UD/size 2>/dev/null"),
     ("ud-blockgroesse.txt", "blockdev --getss $UD 2>/dev/null; blockdev --getsize64 $UD 2>/dev/null"),
     ("ud-ro.txt", "blockdev --getro $UD 2>/dev/null; blockdev --getro /dev/sda 2>/dev/null"),
     ("ud-superblock.txt",
      "dd if=$UD bs=1024 skip=1 count=1 2>/dev/null | hexdump -C | sed -n '1,5p'"),
-    ("ud-ext4-makler.txt",
-     "dd if=$UD bs=1024 skip=1 count=1 2>/dev/null | hexdump -e '16/2 \"%04x \" \"\\n\"' | head -2"),
-    ("ud-uuid.txt", "dd if=$UD bs=1 skip=1040 count=16 2>/dev/null | hexdump -e '4/1 \"%02x\" 3/1 \"-%02x\" 2/1 \"-%02x\" \"\\n\"' | head -2"),
+    ("ud-ext4-makler.txt", "dd if=$UD bs=1 skip=1080 count=2 2>/dev/null | hexdump -C"),
+    ("ud-uuid.txt", "dd if=$UD bs=1 skip=1040 count=16 2>/dev/null | hexdump -C"),
     ("ud-name.txt", "dd if=$UD bs=1 skip=122 count=16 2>/dev/null | tr -d '\\0'"),
     ("ud-mount-ro.txt", "mkdir -p /mnt/ud; mount -o ro $UD /mnt/ud 2>&1 | head -2; "
                         "echo rc=$?"),
@@ -57,7 +59,8 @@ BEWEISE = [
     ("ud-tiefste-sicht.txt", "find /mnt/ud -maxdepth 2 2>/dev/null | head -25"),
     ("ud-entfernt.txt", "umount /mnt/ud 2>&1 | head -2; echo rc=$?"),
     ("speicher-ro.txt", "for d in /sys/block/sd*; do echo $d ro=$(cat $d/ro); done"),
-    ("geraet-status.txt", "grep -c . /proc/partitions; cat /proc/device-tree/model 2>/dev/null | tr -d '\\0'"),
+    ("geraet-modell.txt", "cat /proc/device-tree/model 2>/dev/null | tr -d '\\0'"),
+    ("partition-zeilen.txt", "wc -l < /proc/partitions"),
 ]
 
 

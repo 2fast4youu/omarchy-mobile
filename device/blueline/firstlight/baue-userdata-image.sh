@@ -21,7 +21,13 @@ BAU=/tmp/bau-ud   # der Baum lebt auf dem Container-eigenen Overlay:
 # virtiofs-Freigabe keine hat. Overlay kann es, also bleibt die Freigabe nur
 # fuer das fertige Bild zustaendig.
 GRuesse=1073741824                      # 1 GiB, absichtlich klein: schneller Schreib
-apk add --no-cache e2fsprogs curl >/dev/null 2>&1 || apk add --no-cache e2fsprogs curl
+# Achtung: mke2fs nimmt als Schlussfeld die BLOCKZAHL, nicht Bytes — mit der
+# Bytezahl entstand ein 1-TiB-Image. Die Groesse steht nur im truncate.
+# tune2fs liegt in Alpine in einem eigenen Paket; ohne es lief die
+# Kopf-Pruefung als 'tune2fs: not found' durch, weil die Zeile in einer
+# Rohrleitung steht und die Leitung den Exit von sed meldet.
+apk add --no-cache e2fsprogs e2fsprogs-extra curl >/dev/null 2>&1 \
+  || apk add --no-cache e2fsprogs e2fsprogs-extra curl
 # Der Index wird mit wget gelesen: das kahle alpine-Image hat curl nicht, und
 # der erste Lauf scheiterte genau dort ('curl: not found'), weil die Zeile vor
 # dem apk stand.
@@ -47,7 +53,7 @@ rm -f "$ZIEL/rootfs.ext4"
 truncate -s "$GRuesse" "$ZIEL/rootfs.ext4"
 # -d legt die Dateisystem-Inhalte ohne loop-Geraet an (im Container keines da).
 mke2fs -q -t ext4 -d "$BAU/wurzeln/ud" -L OMAMOBILE -U 47a3a1b4-0d0e-4c11-9b7f-000000000155 \
-  "$ZIEL/rootfs.ext4" "$GRuesse"
+  "$ZIEL/rootfs.ext4"
 tune2fs -l "$ZIEL/rootfs.ext4" | sed -n '/Filesystem UUID/,/Free blocks/p;/Block Count/p'
 sha256sum "$ZIEL/rootfs.ext4" | tee "$ZIEL/rootfs.ext4.sha256" > /dev/null
 cat "$ZIEL/rootfs.ext4.sha256"
