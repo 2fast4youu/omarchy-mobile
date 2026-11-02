@@ -35,35 +35,53 @@ SAECKE = 4096
 
 
 def schreibe(pfad_bild, pfad_sparse):
-    """Bilder mit vollen Brocken und einem Reststueck, wie img2simg es tut.
+    """Bilder mit vollen Brocken, einem Reststueck und Loechern fuer Nullserien.
 
-    Die erste Fassung verlangte ein Vielfaches der Brockengroesse und scheiterte
-    damit am 1 MiB-Vorlauf (1 074 790 400 B = 65 x 16 MiB + 1 MiB). Der Fehler
-    verschwand in der Rohrleitung 'python3 … | tail -4 && sh …', also wurde
-    zweimal mit dem alten Bild von 17:11 geflasht — die Brockengroesse ist damit
-    ueberhaupt nicht geprueft, nur die Rohrleitung ist geprueft.
+    Zwei Gruende, beide gemessen. Erstens: ein Bild von 1 MiB Vorlauf + 1 GiB ist
+    kein Vielfaches von 16 MiB — die erste Brockengroessen-Fassung wies es ab, und
+    die Ablehnung verschwand hinter 'python3 … | tail -4 && sh …', weil die
+    Rohrleitung den Exit von tail meldet; zwei Write liefen auf dem alten Bild.
+    Zweitens, und der teurere: fastboot zerlegt eine 1-GiB-Uebertragung in fuenf
+    Sitzungen zu je 262141 KB (max-download-size 268435456). Der erste Hanger blieb
+    beim Uebergang von 'Sending 1/5' auf 'Sending 2/5' stehen. Ein echtes
+    Sparse-Bild mit DONT_CARE fuer die Nullserien (img2simg macht das so) bleibt mit
+    seinem Inhalt von ~60 MiB in EINER Sitzung.
+
+    Achtung, damit die runde Pruefung nicht fuehrt: ein DONT_CARE schreibt das
+    Feld NICHT, dort steht nach dem Write Alteres. Der Round-trip füllt die
+    Loecher mit Nullen und vergleicht gegen das Rohbild — was das wirklich belegt,
+    ist die Summe der DATA-Brocken. Beides wird ausgegeben.
     """
     groesse = os.path.getsize(pfad_bild)
     if groesse % BLOCK:
         raise SystemExit("Bildgroesse %d ist kein Vielfaches von %d" % (groesse, BLOCK))
     saecke = groesse // BLOCK
     brocken = (groesse + BLOCK * SAECKE - 1) // (BLOCK * SAECKE)
-    gesendet = 0
-    with open(pfad_bild, "rb") as Quelle, open(pfad_sparse, "wb") as Z:
-        Z.write(struct.pack("<IHHHHIIII", MAGIC, 1, 0, 28, 12, BLOCK, saecke,
-                            brocken + 1, 0))
-        for nr in range(brocken):
-            leib = Quelle.read(BLOCK * SAECKE)
-            if not leib or len(leib) % BLOCK:
-                raise SystemExit("Brocken %d hat %d Byte" % (nr, len(leib)))
+    daten_brocken = loecher = daten_byte = 0
+    mit = open(pfad_bild, "rb")
+    Z = open(pfad_sparse, "wb")
+    Z.write(struct.pack("<IHHHHIIII", MAGIC, 1, 0, 28, 12, BLOCK, saecke,
+                        brocken + 1, 0))
+    for nr in range(brocken):
+        leib = mit.read(BLOCK * SAECKE)
+        if not leib or len(leib) % BLOCK:
+            raise SystemExit("Brocken %d hat %d Byte" % (nr, len(leib)))
+        if leib.strip(b"\0") == b"":
+            Z.write(struct.pack("<III", DONTCARE, len(leib) // BLOCK, 12))
+            loecher += 1
+        else:
             Z.write(struct.pack("<III", RAW, len(leib) // BLOCK, 12 + len(leib)))
             Z.write(leib)
-            gesendet += 1
-            if nr + 1 == brocken or nr % 8 == 7:
-                print("  Brocken %d/%d (%d B, letzter %d Block)"
-                      % (gesendet, brocken, len(leib), len(leib) // BLOCK), flush=True)
-        Z.write(struct.pack("<III", DONTCARE, 0, 12))      # Abschluss, wie img2simg
-    return gesendet
+            daten_brocken += 1
+            daten_byte += len(leib)
+        if nr + 1 == brocken or (nr + 1) % 8 == 0:
+            print("  Brocken %d/%d (%s, %d B)"
+                  % (nr + 1, brocken, "Loch" if leib.strip(b"\0") == b"" else "Daten",
+                     len(leib)), flush=True)
+    Z.write(struct.pack("<III", DONTCARE, 0, 12))          # Abschluss, wie img2simg
+    mit.close()
+    Z.close()
+    return daten_brocken, loecher, daten_byte
 
 
 def lies(pfad_sparse):
@@ -113,13 +131,16 @@ def haupt():
     bild, sparse = sys.argv[1], sys.argv[2]
     groesse = os.path.getsize(bild)
     echt = hashlib.sha256(open(bild, "rb").read()).hexdigest()
-    anzahl = schreibe(bild, sparse)
+    daten_brocken, loecher, daten_byte = schreibe(bild, sparse)
     strom, daten_baelle, care, blocke = lies(sparse)
     rueck = hashlib.sha256(strom).hexdigest()
-    print("_sparse_: %s, %d B, %d DATA-Saecke ueber %d Blocke, %d DONT_CARE, "
-          "Kopf kuendigt %d an, Abschluss ja"
-          % (os.path.basename(sparse), os.path.getsize(sparse), daten_baelle, blocke,
-             care, anzahl_brocken(sparse)))
+    print("_sparse_: %s, %d B — geschrieben werden %d DATA-Brocken = %d B, "
+          "dazu %d DONT_CARE (Kopf kuendigt %d Saecke an, Abschluss ja)"
+          % (os.path.basename(sparse), os.path.getsize(sparse), daten_brocken,
+             daten_byte, loecher, anzahl_brocken(sparse)))
+    sitzung = 268435456
+    print("Sitzungen bei max-download-size %d B: %d  (eine Sitzung ist das Ziel)"
+          % (sitzung, 1 + (os.path.getsize(sparse) - 1) // sitzung))
     print("Rohbild %d B sha %s" % (groesse, echt[:16]))
     print("zurueckgelesen %d B sha %s -> %s" % (len(strom), rueck[:16],
                                                 "dicht" if rueck == echt else "LOCH"))
