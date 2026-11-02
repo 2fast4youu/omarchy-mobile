@@ -3429,3 +3429,47 @@ Archiv ohne Anker, beide Trockenübungen des Zyklus und das fertige Bild von inn
 (745 Einträge, sechs Module, Init mit Byte-Versatz, `aus-bild.cpio` bytegleich).
 Telefon weiterhin stumm im Fastboot; Kabel direkt ans Mac Studio ist der eine
 Handgriff, den nur Gregor tun kann.
+
+
+## Nachtrag 25 (2026-11-02, 23:0x–23:3x): die GPT-These ist belegt — ABOOT legt bei jedem Start nach
+
+Das Telefon war wieder im Fastboot (Kabel direkt, erzwungener Neustart), und der
+erste-Schreibvorgang  nach der Zwangspause ging in **0,664 s** durch: 4096 KB userdata, `Writing
+OKAY [0.134 s]`. Damit ist auch die zweite Verdachtsreihe erledigt: es war nie das
+Bild, nie die Sitzungsanzahl und nicht der Hub — es war der festgefahrene
+Download-Zustand nach dem ersten Abbruch.
+
+**Die Marker-Messung, entscheidend.** `marker-4mib.bin` (4 194 304 B, sha `39cb098d…`)
+traegt MK0000-, MK4096- und MK8192-Zeilen und war als **ein einziger DATA-Sack**
+unterwegs — kein Loch, also wurde wirklich jedes Feld zwischen 0 und 4 MiB
+geschrieben. Nach einem Boot (uptime 71 s, Belege in `evidence/marker-sofort/`):
+
+    feld 0     : 4d 4b 30 30 30 30 2d 32 30 32 36 2d 31 31 30 32   'MK0000-2026-1102'  -> ueberlebt
+    feld 4096  : 45 46 49 20 50 41 52 54 00 00 01 00 5c 00 00 00   'EFI PART' rev 1.0, Kopf 92 B  -> weg
+    feld 8192  : 28 73 2a c1 1f f8 d2 11 ba 4b 00 a0 c9 3e c9 3b   ESP-SatzGUID, erster Partitionssatz -> weg
+    feld 1 MiB : Nullen  (unsere Nullen)                            -> ueberlebt
+    feld 64 KiB: Nullen  (unsere Nullen)                            -> ueberlebt
+
+Weil der Write nachweislich kein Loch hatte, kann nur ABOOT die beiden Felder
+beschrieben haben: **Wurzel #15 ist belegt**, Claudes Ausweicherklaerung (Locher des
+ersten Writes von 17:01) ist widerlegt. ABOOT nimmt Sektor 1 und 2 der Platte
+(LUN-Sektor 4096 B), laesst Sektor 0 und alles ab 64 KiB in Ruhe — der Vorlauf von
+1 MiB ist damit genau die richtige Stelle, und ext4-Makler bei 4096/8192 waeren bei
+jedem Start zertreten worden.
+
+**Nebenbefund, der die Aenderung von Punkt 1 sofort lohnte:** die Mounts melden
+jetzt ihren Wortlaut in die Marke. Erste Boot-Runde mit Marker-Inhalt:
+
+    v0ai beide Mounts fehl: mount: /ud: wrong fs type, bad option, bad superblock
+                            on /dev/sda21, …   (zuvor: … on /dev/loop0, …)
+
+Der Loop mit `offset=1048576` wird also angelegt (er heisst /dev/loop0) — die
+Ablehnung kam von dem Inhalt, der zu dem Zeitpunkt da war: der Marker, kein
+Dateisystem. Genau so soll es sein.
+
+**Und eine eigene Falle, ehrlich notiert:** der Write-Zyklus lief im Vordergrund mit
+420 s Werkzeugfrist; das Werkzeug ging weg, das Skript nicht. Die naechste
+Telnet-Probe meldete Port 23 zu, dann stand das Telefon wieder in Fastboot — der
+Selbst-Rueckweg des Init hatte nach Funkstille zurueckgegeben, was das Design von
+v0aa/v0ab ist. Laengere Zyklen laufen von jetzt an als Hintergrundprozess mit
+Meldung, nicht als foreground-Kette, die das Werkzeug abreisst.

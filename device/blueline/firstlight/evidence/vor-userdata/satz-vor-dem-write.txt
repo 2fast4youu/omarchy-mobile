@@ -190,3 +190,80 @@ Backup boot_a: 67108864 B, sha256 0478f8dbe456a5877976f2514aa105619acf6c91056afb
     Rueckweg: images/fl-v0af/firstlight.img mit Power+Leiser; Slot b unangetastet.
     Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…
     Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…
+--- Satz vor dem Write, Write-Zyklus v0ai, 2026-11-02 22:59,
+    Frist 900 s.
+    userdata traegt weiterhin keine Nutzerdaten: Superblock null, mount -o ro
+    meldet 'wrong fs type', Gerat entsperrt (getvar unlocked: yes). Belegt am
+    2026-11-02, 16:15 in evidence/vor-userdata/, und ein 51-GiB-Backup gibt es
+    nicht — darum diese Zeilen vor jedem Write.
+    userdata-Inhalt: marker-4mib.sparse.img (4194356 B).
+    boot_a-Inhalt:   firstlight.img (21143552 B).
+    Rueckweg: images/fl-v0af/firstlight.img mit Power+Leiser; Slot b unangetastet.
+    Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…
+    Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…
+--- Satz vor dem Write, Write-Zyklus v0ai, 2026-11-02 22:59,
+    Frist 900 s.
+    userdata traegt weiterhin keine Nutzerdaten: Superblock null, mount -o ro
+    meldet 'wrong fs type', Gerat entsperrt (getvar unlocked: yes). Belegt am
+    2026-11-02, 16:15 in evidence/vor-userdata/, und ein 51-GiB-Backup gibt es
+    nicht — darum diese Zeilen vor jedem Write.
+    userdata-Inhalt: marker-4mib.sparse.img (4194356 B).
+    boot_a-Inhalt:   firstlight.img (21143552 B).
+    Rueckweg: images/fl-v0af/firstlight.img mit Power+Leiser; Slot b unangetastet.
+    Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…
+    Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…
+--- Satz vor dem Write, Write-Zyklus v0ai, 2026-11-02 22:59,
+    Frist 900 s.
+    userdata traegt weiterhin keine Nutzerdaten: Superblock null, mount -o ro
+    meldet 'wrong fs type', Gerat entsperrt (getvar unlocked: yes). Belegt am
+    2026-11-02, 16:15 in evidence/vor-userdata/, und ein 51-GiB-Backup gibt es
+    nicht — darum diese Zeilen vor jedem Write.
+    userdata-Inhalt: marker-4mib.sparse.img (4194356 B).
+    boot_a-Inhalt:   firstlight.img (21143552 B).
+    Rueckweg: images/fl-v0af/firstlight.img mit Power+Leiser; Slot b unangetastet.
+    Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…
+    Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…
+--- Satz vor dem Write, Write-Zyklus v0ai, 2026-11-02 22:59,
+    Frist 900 s.
+    userdata traegt weiterhin keine Nutzerdaten: Superblock null, mount -o ro
+    meldet 'wrong fs type', Gerat entsperrt (getvar unlocked: yes). Belegt am
+    2026-11-02, 16:15 in evidence/vor-userdata/, und ein 51-GiB-Backup gibt es
+    nicht — darum diese Zeilen vor jedem Write.
+    userdata-Inhalt: marker-4mib.sparse.img (4194356 B).
+    boot_a-Inhalt:   firstlight.img (21143552 B).
+    Rueckweg: images/fl-v0af/firstlight.img mit Power+Leiser; Slot b unangetastet.
+    Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…
+    Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…
+--- Satz vor dem Write, Write-Zyklus v0ai, 2026-11-02 23:09,
+    Frist 420 s.
+    userdata traegt weiterhin keine Nutzerdaten: Superblock null, mount -o ro
+    meldet 'wrong fs type', Gerat entsperrt (getvar unlocked: yes). Belegt am
+    2026-11-02, 16:15 in evidence/vor-userdata/, und ein 51-GiB-Backup gibt es
+    nicht — darum diese Zeilen vor jedem Write.
+    userdata-Inhalt: marker-4mib.sparse.img (4194356 B).
+    boot_a-Inhalt:   firstlight.img (21143552 B).
+    Rueckweg: images/fl-v0af/firstlight.img mit Power+Leiser; Slot b unangetastet.
+    Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…
+    Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…
+--- Satz vor dem Write, Write-Zyklus v0ai, 2026-11-02 23:13,
+    Frist 420 s.
+    userdata traegt weiterhin keine Nutzerdaten: Superblock null, mount -o ro
+    meldet 'wrong fs type', Gerat entsperrt (getvar unlocked: yes). Belegt am
+    2026-11-02, 16:15 in evidence/vor-userdata/, und ein 51-GiB-Backup gibt es
+    nicht — darum diese Zeilen vor jedem Write.
+    userdata-Inhalt: rootfs-vorlauf.sparse.img (117441332 B).
+    boot_a-Inhalt:   firstlight.img (21143552 B).
+    Rueckweg: images/fl-v0af/firstlight.img mit Power+Leiser; Slot b unangetastet.
+    Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…
+    Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…
+--- Satz vor dem Write, Write-Zyklus v0ai, 2026-11-02 23:24,
+    Frist 420 s.
+    userdata traegt weiterhin keine Nutzerdaten: Superblock null, mount -o ro
+    meldet 'wrong fs type', Gerat entsperrt (getvar unlocked: yes). Belegt am
+    2026-11-02, 16:15 in evidence/vor-userdata/, und ein 51-GiB-Backup gibt es
+    nicht — darum diese Zeilen vor jedem Write.
+    userdata-Inhalt: rootfs-vorlauf.sparse.img (117441332 B).
+    boot_a-Inhalt:   firstlight.img (21143552 B).
+    Rueckweg: images/fl-v0af/firstlight.img mit Power+Leiser; Slot b unangetastet.
+    Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…
+    Sicherung boot_a: kalibrier-boot_a.bin, 67108864 B, sha256 0478f8dbe456a587…

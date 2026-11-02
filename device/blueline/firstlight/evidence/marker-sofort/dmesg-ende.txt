@@ -1,0 +1,1 @@
+[   61.517121] NOTICE: Automounting of tracing to debugfs is deprecate

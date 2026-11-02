@@ -1,0 +1,1 @@
+sKVDhDd~ # printf '@@%s\n' ENDE_satz-8192-lesbar-txt
