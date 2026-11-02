@@ -3334,3 +3334,47 @@ wo das GPT liegt: Bild mit 1 MiB Null-Vorlauf (`rootfs-vorlauf.ext4`, sha
 EPERM fehl, weil die Wache die Platte im Sekundentakt zurück auf ro legt —
 Wurzel #9 bestätigt sich damit von der Gegenseite. Für Schreibversuche am
 laufenden System muss die Wache zuerst aus.
+
+## Nachtrag 23 (2026-11-02, 17:1x–17:5x): der Hänger hieß max-download-size
+
+**Was die letzten Minuten wirklich gekostet hat, war nicht das Dateisystem,
+sondern die Übertragung.** Der Abbruch des ersten Write-Zyklus ließ den Log
+durchkommen:
+
+    Sending sparse 'userdata' 1/5 (262141 KB)   OKAY [11.926s]
+    Writing  'userdata'                         OKAY [ 0.443s]
+    Sending sparse 'userdata' 2/5 (262141 KB)   …
+
+`fastboot` zerlegt eine 1-GiB-Übertragung in **fünf Sitzungen** zu je
+262 141 KB, begrenzt durch `max-download-size: 268435456`, und der client blieb
+beim Übergang von Sitzung 1 auf Sitzung 2 stehen: Rechenzeit eingefroren
+(5,06 s insgesamt, in 20 s keine Millisekunde dazu), das Telefon danach auf USB
+sichtbar („Pixel 3"), aber gegenüber `fastboot devices` stumm.
+
+**Zwischenbehauptung, die ich zurücknehme:** ich hatte die Sack-Für-Sack-Geometrie
+(262 400 DATA-Säcke) als Ursache verdächtigt und auf 16-MiB-Brocken umgestellt —
+die Umstellung war nie gelaufen. Das gepolsterte Bild (1 MiB + 1 GiB) ist kein
+Vielfaches von 16 MiB, der Bauer lehnte es ab, und `python3 … | tail -4 && sh …`
+meldete den Exit von `tail`. **Beide Hänger liefen auf demselben alten Bild.**
+Lehre: nach jedem Schritt in einer Rohrleitung, die `tail` enthält, Zeitstempel
+oder sha der Ausgabedatei prüfen.
+
+**Fix.** `baue-sparse.py` setzt jetzt wie `img2simg` DONT_CARE für Nullserien:
+117 441 332 B statt 1 077 939 240 B, 7 DATA-Brocken, 58 Löcher — **eine**
+Sitzung. Round-trip gegen das Rohbild bleibt dich; weil ein DONT_CARE das Feld
+nicht schreibt, belegt der Round-trip die DATA-Brocken, nicht das Schreiben der
+Löcher (steht im Code, damit die Prüfung nicht führt).
+
+**Zwei weitere kleine Fallen, beide behoben.** Der Frist-Wächter im
+Write-Zyklus erbte den Standardausgang seines schlafenden Kindes und hielt damit
+die Rohrleitung offen — der Prüfer hing 180 s genau daran; Frist jetzt übergebbar
+und 900 s, weil 300 s einen 1-GiB-Write nicht tragen. Und die Endbedingung des
+Bauers multiplizierte die *Zahl der Säcke* mit 4096, fand einen Widerspruch, wo
+keiner war, und meldete Exit 1 bei dichtem Round-trip.
+
+**Stand.** v0ah (sha256 `88706c1c…`, 677 Zeilen Init, Vorlauf-Mount
+`offset=1024`) ist gebaut und ad-hoc geprüft: 16 Prüfpunkte, 0 Fehler — Umbau am
+echten Archiv, ausgepackte Bild-Ramdisk, beide Begleitdateien, Trockenübung des
+Write-Zyklus mit hörendem Fastboot und belegter Reihenfolge. Ausdrücklich nicht
+Suite-Grün; die kanonische Suite (148 ok / 4 skip) erreicht diese Dateien nicht.
+Telefon ist zurück im Fastboot, der Write läuft.
