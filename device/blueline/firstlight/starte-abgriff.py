@@ -57,14 +57,23 @@ if not offen():
     if not sichtbar():
         notiz("kein Fastboot-Geraet in 240s — nichts gerampt")
     if sichtbar():
-        stand = fb("getvar", "current-slot", frist=10)
-        notiz("Slot-Antwort: " + (stand.strip().splitlines()[-1] if stand.strip() else "leer"))
-        if "current-slot: b" in stand:
-            notiz("Slot b aktiv — zurueck auf a setzen (Wurzel #11)")
-            notiz(fb("--set-active=a", frist=20).strip().splitlines()[-1])
-        elif "current-slot:" not in stand:
-            notiz("Slot nicht gelesen — setzen erzwungen, damit der Zaehler nicht leer bleibt")
-            fb("--set-active=a", frist=20)
+        # Slot a wird von unserem Linux nie als "successful" markiert (kein Android,
+        # das den Schalter am Ende eines sauberen Starts umlegt), also zieht jeder
+        # Start retry a um eins ab — nach drei Starts ist a unbootable und das
+        # Telefon liegt scheinbar grundlos im Fastboot. Messung 2026-11-02: vor
+        # --set-active=a war retry a = 0, danach 3. Deshalb jetzt in JEDEM Zyklus,
+        # nicht nur wenn b aktiv war, und die Zaehler werden vor und nach dem
+        # Setzen abgeschrieben, damit ein Geisterfehler eine Zahl hat.
+        def stand(*antwort):
+            text = fb(*antwort, frist=10).strip()
+            return text.splitlines()[-1] if text else "keine Antwort"
+
+        for klemme in ("current-slot", "slot-retry-count:a", "slot-retry-count:b",
+                       "slot-successful:a", "slot-successful:b"):
+            notiz("vorher " + klemme + ": " + stand("getvar", klemme))
+        notiz("setze a (Zaehlerauffrischung, Claude-Punkt 1): " + stand("--set-active=a"))
+        for klemme in ("current-slot", "slot-retry-count:a"):
+            notiz("nachher " + klemme + ": " + stand("getvar", klemme))
         notiz("starte aus dem RAM: " + fb("boot", BILD, frist=120).strip().splitlines()[-1])
     t0 = time.time()
     while time.time() - t0 < 180 and not offen():

@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+"""Haengt den Leser-Harness an die Suite — 'Suite gruen' deckt damit die Telnet-Leitung ab.
+
+Grund: der Harness (pruefe-leser.py, 18 Pruefpunkte gegen eine nachgebaute
+Telefon-Shell) lief monatelang nur als Ad-hoc-Fussnote. Ein Loeser fuer die
+Cursor-Auskunft (Wurzel #13) fiel schon einmal zwischen zwei Suite-Laeufe und
+war erst wieder auffindbar, nachdem ein ganzer Abgriff 18 Dateien mit 0 Bytes
+geschrieben hatte. Was ohne Geraet pruefbar ist, gehoert in die Suite.
+
+Der Pruefer ruft den Harness als Unterprozess, damit die nachgebaute Shell und
+ihre Zeitfenster isoliert bleiben, und gibt dessen Zahlensatz weiter.
+"""
+import os
+import subprocess
+import sys
+
+HIER = os.path.dirname(os.path.abspath(__file__))
+LESER = os.path.join(HIER, "..", "device", "blueline", "firstlight", "pruefe-leser.py")
+
+if not os.path.exists(LESER):
+    print("ok - leser-harness: # skip — pruefe-leser.py nicht im Baum")
+    raise SystemExit(0)
+
+lauf = subprocess.run([sys.executable, "-u", LESER], capture_output=True, text=True,
+                      timeout=300, cwd=os.path.dirname(LESER))
+zeilen = [z for z in (lauf.stdout + lauf.stderr).splitlines() if z.strip()]
+schluss = next((z for z in reversed(zeilen) if "Pruefpunkte" in z), "kein Zahlensatz")
+fehler = [z for z in zeilen if "FEHLT" in z or z.startswith("not ok")]
+if lauf.returncode == 0 and not fehler and "0 Fehler" in schluss:
+    print("ok - leser-harness: %s (Telnet-Leser: Anker, Payload-Abtrennung, "
+          "Cursor-Auskunft, Rahmen)" % schluss)
+else:
+    print("not ok - leser-harness: %s, Exit %d" % (schluss, lauf.returncode))
+    for z in (fehler or zeilen[-6:])[:8]:
+        print("#   %s" % z)
+raise SystemExit(0 if lauf.returncode == 0 and not fehler else 1)

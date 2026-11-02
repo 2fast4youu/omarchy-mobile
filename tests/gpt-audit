@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+"""Haengt das GPT-Audit an die Suite — M1.4 bleibt damit nachpruefbar ohne Geraet.
+
+Die Partitionstabelle ist die Voraussetzung fuer JEDES Schreiben: wer die
+Sektorgroesse, die Satzweite oder die LBA-Grenzen nicht kennt, schreibt an der
+falschen Stelle. Die Auszuege (64 Sektoren Kopf und 64 Sektoren Ende je UFS-LUN)
+liegen im Baum, der Rechner braucht kein Telefon dazu.
+
+Der Pruefer ruft pruefe-gpt.py als Unterprozess und uebernimmt dessen TAP-Zeilen
+nicht blind: die Zahl der Fehler kommt aus dem Exit-Code, und die Kopf- und
+Sicherungskopf-CRCs werden hier nochmal gegen die Auszuege auf der Platte
+gerechnet — ein Harness, der nur sich selbst abnickt, ist kein Beweis.
+"""
+import binascii
+import glob
+import os
+import struct
+import subprocess
+import sys
+
+HIER = os.path.dirname(os.path.abspath(__file__))
+PRUEFER = os.path.join(HIER, "..", "device", "blueline", "firstlight", "pruefe-gpt.py")
+AUSZUGE = os.path.join(HIER, "..", "device", "blueline", "firstlight", "evidence", "gpt")
+
+
+def own_crc(pfad):
+    """Kopf-CRC und Sicherungskopf-CRC eines Auszugs, unabhaengig vom Pruefer."""
+    roh = open(pfad, "rb").read()
+    out = []
+    for stelle in ([s for s in (512, 4096) if roh[s:s + 8] == b"EFI PART"]
+                   + [roh.rfind(b"EFI PART")]):
+        if stelle < 0 or len(roh) < stelle + 92:
+            continue
+        block = bytearray(roh[stelle:stelle + max(92, struct.unpack("<I", roh[stelle + 12:stelle + 16])[0])])
+        if len(block) < 92:
+            continue
+        block[16:20] = b"\0\0\0\0"
+        out.append((stelle, binascii.crc32(bytes(block)) & 0xFFFFFFFF,
+                    struct.unpack("<I", roh[stelle + 16:stelle + 20])[0]))
+    return out
+
+
+if not os.path.exists(PRUEFER):
+    print("ok - gpt-audit: # skip — pruefe-gpt.py nicht im Baum")
+    raise SystemExit(0)
+
+fehler_gesamt = 0
+if not glob.glob(os.path.join(AUSZUGE, "gpt-lun*-kopf.bin")):
+    print("ok - gpt-audit: # skip — keine GPT-Auszuege im Baum (Abgriff fehlt)")
+    raise SystemExit(0)
+
+lauf = subprocess.run([sys.executable, "-u", PRUEFER], capture_output=True, text=True,
+                      timeout=120, cwd=os.path.dirname(PRUEFER))
+schluss = next((z for z in reversed(lauf.stdout.splitlines()) if z.startswith("#")),
+               "kein Schlusssatz")
+if lauf.returncode != 0 or "not ok" in lauf.stdout:
+    fehler_gesamt += 1
+    print("not ok - gpt-audit: %s" % schluss)
+    for z in [x for x in lauf.stdout.splitlines() if x.startswith("not ok")][:6]:
+        print("#   %s" % z)
+    if lauf.returncode == 0:
+        print("#   ACHTUNG: der Pruefer meldet not-ok-Zeilen und Exit 0 — Zahlensatz luegt")
+else:
+    print("ok - gpt-audit: %s (%d Pruefzeilen)"
+          % (schluss, len([x for x in lauf.stdout.splitlines() if x.startswith("ok - ")])))
+
+# Eigene Rechnung ueber die Auszuege, damit der Pruefer nicht nur sich selbst bestaetigt.
+geprueft = 0
+for pfad in sorted(glob.glob(os.path.join(AUSZUGE, "gpt-lun?-*.bin"))):
+    for stelle, gerechnet, gespeichert in own_crc(pfad):
+        geprueft += 1
+        if gerechnet != gespeichert:
+            fehler_gesamt += 1
+            print("not ok - gpt-audit eigene Rechnung: %s bei Byte %d: Kopf sagt %08x, "
+                  "Platte rechnet %08x" % (os.path.basename(pfad), stelle, gespeichert, gerechnet))
+if geprueft:
+    print("ok - gpt-audit eigene Rechnung: %d Koepfe (Kopf und Sicherung) ueberprueft" % geprueft)
+else:
+    print("ok - gpt-audit eigene Rechnung: # skip — kein Auszug enthielt einen signierten Kopf")
+raise SystemExit(1 if fehler_gesamt else 0)

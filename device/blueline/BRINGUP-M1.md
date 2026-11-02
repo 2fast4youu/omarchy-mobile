@@ -3131,10 +3131,10 @@ zurückbringen, `--set-active=a` ihn wieder nehmen.
 | M1.0 ankommen, entsperren, erfassen | erledigt | — |
 | M1.1 first-light bauen (nur Host) | erledigt 2026-10-27 | — |
 | M1.2 Start aus dem RAM, keine Writes | **erfüllt bis auf eine Zeile** | `uname` nennt den Distro-Build `#5-postmarketos-qcom-sdm845` (Kernel absichtlich der Referenz-kernel, unser Teil sind Init und Initramfs); `compatible` = `google,blueline` ✓; alle UFS-Ganzen Platten ro ✓; kein `ufshcd`/`abr` in dmesg ✓. Offen: „the simple-framebuffer console is the screen we are reading" — das kann nur ein Mensch ablesen. |
-| M1.3 LUN-Karte und Kalibrier-Backups | teilweise | LUN-Karte jetzt gemessen (`evidence/abgriff/storage-ro.txt`: sda 63,9 GB Haupt-LUN, sdb 4 MiB, sdc 4 MiB, sdd 8 MiB, sde 32 MiB, sdf 72 MiB). Kalibrier-Backups (persist, efs/modemst) mit `dd iflag=direct` und zweifachem sha256: stehen aus. |
-| M1.4 GPT vor dem ersten Slot-Flag-Write | offen | LBA-Auszüge + `gdisk v`-CRCs vor/jetzt. Wird dringend, weil die Slot-Schalter heute mehrfach von selbst gelaufen sind (14:13 a/unbootable, 20:33 b/unbootable). |
-| M1.5 Slot B beschreiben, Root auf userdata rw | offen | Rootfs auf userdata `rw`, Rest bleibt ro. Bisher läuft alles als RAM-Bild mit Initramfs-Root; userdata ist von uns nie angefasst. |
-| M1.6 Slot B bootbar markieren | offen, und blockiert | Aktuell `unbootable:b:yes`, `retry b:0`. Vor M1.6 gehört der Zustand repariert und belegt (M1.4), sonst ist der Rettungsweg nur der Fastboot-Bildschirm. |
+| M1.3 LUN-Karte und Kalibrier-Backups | **erledigt 2026-11-02** | LUN-Karte gemessen (`evidence/abgriff/storage-ro.txt`: sda 63,9 GB Haupt-LUN, sdb 4 MiB, sdc 4 MiB, sdd 8 MiB, sde 32 MiB, sdf 72 MiB). Kalibrier-Abgriff 2026-11-01: 13 Bereiche, 56 266 752 B, **12 mit sha256 beglaubigt** (persist `56204d37…`, dtbo_a/b `ff7bd6da…`, boot_a vor Write `0478f8db…`, boot_b `973ead30…`, modemst1/2, misc, frp, devinfo, vbmeta_a/b, beide GPT-Kopfsätze); das 13. Loch ist der 24-Byte-Endblock der gepackten Datei, kein LUN-Defekt. Zweitkopie auf der NAS, 24/24 sha Rücklese OK. |
+| M1.4 GPT vor dem ersten Slot-Flag-Write | **erfüllt 2026-11-02** | GPT-Audit `pruefe-gpt.py`: 47 Prüfpunkte, 0 Fehler, jetzt als `tests/gpt-audit` in der Suite. Sektorabstand 4096 B auf allen sechs LUNs, Kopf- und Sicherungskopf-CRC stimmen, Kopf und Sicherung gehören zusammen (GUID gleich, mein/sicher vertauscht), Geometrie pro Satz deckungsgleich, Referenz-CRCs der belegten Sätze stehen in Nachtrag 21 (LUN a `e9277d82`, b `89f95d74`, c `d6645fd8`, d `1cdb565e`, f `8e2a8772`). ABOOT legt die UEFI-Satz-CRC **nicht** an — der Prüfer rechnet eigene. Offen und notiert: `boot_a`/`boot_b` unterscheiden sich in den Attributbits zwischen Kopf und Sicherung (Nachtrag 21). Dazu aus Flash gestartet: boot_a trägt v0af, Port 23 nach 28 s. |
+| M1.5 Slot B beschreiben, Root auf userdata rw | **als nächstes offen** | Rootfs auf userdata `rw`, Rest bleibt ro. Bisher läuft alles als RAM-Bild oder Flash-Bild mit Initramfs-Root; userdata ist von uns nie angefasst. Vor dem ersten Write: Platte rw (Wurzel #9), Sicherung gegen Manifest prüfen, und ein Satz, was geschrieben wird und woran Erfolg erkennbar ist. |
+| M1.6 Slot B bootbar markieren | offen, und blockiert | Aktuell `unbootable:b:yes`, `retry b:0`. Seit M1.4 ist a die Startquelle (`retry a` wird in jedem Zyklus auf 3 gesetzt, weil unser Linux nie `successful` meldet) und b nur noch Rettungsquelle für `fastboot boot`; die Inhalte von b sind unangetastet. |
 | M1.7 durchstarten bleiben | offen | systemd/Sitzung, dazu die Display-Lücke: dmesg meldet `DSI PLL(0) lock failed` und fehlende `qcom/a630_sqe.fw` — Display und GPU-Firmware sind die nächsten echten Baustellen nach M1.5. |
 
 ### Eigenfehler, die dieser Abend gezeigt hat
@@ -3197,3 +3197,87 @@ als Loch stehen, sind genau die mit einem Endblock unter hundert Byte. Zum Vergl
 lückenlos wiederholt, ist hier kein LUN-Defekt, sondern ein Rahmenproblem bei
 Miniaturblöcken; die vorgesehene Änderung legt die Payload zwischen zwei gedruckte
 Markierungen, statt auf Zeilenform zu vertrauen.
+
+
+## Nachtrag 21 (2026-11-02, nach M1.4): die Partitionstabelle in Zahlen, und ein Zähler, der sonst im Stillen läuft
+
+Zwei Aufträge aus dem Check-in, dann M1.4 zu Ende. Alles ohne Telefon gemessen,
+das Telefon lag die ganze Zeit im Fastboot und ist unangetastet.
+
+**Der Zähler, der im Stillen läuft.** Unser Linux markiert Slot a nie als
+`successful` — diesen Schalter legt bei Android ein System am Ende eines sauberen
+Starts um, und keins davon läuft hier. Also zieht jeder Start aus dem Flash
+`slot-retry-count:a` um eins ab, und nach drei Starts ist Slot a `unbootable`;
+das Telefon landet dann scheinbar grundlos im Fastboot. Genau die Formulierungen,
+die vor M1.4 zur slot-b-Falle führten. `starte-abgriff.py` setzt jetzt in
+**jedem** Zyklus `--set-active=a` und schreibt vorher und nachher fünf Klemmen ab
+(`current-slot`, `slot-retry-count:a`, `slot-retry-count:b`, `slot-successful:a`,
+`slot-successful:b`) — vorher passierte das Setzen nur, wenn b aktiv vorgefunden
+wurde. Beleg aus M1.4: vor dem Setzen `retry a = 0`, danach `3`.
+
+**Die Leser in der Suite.** `tests/leser-harness` ruft `pruefe-leser.py` (18
+Prüfpunkte gegen eine nachgebaute Telefon-Shell: Anker, Payload-Abtrennung,
+Rahmen, und seit heute die Cursor-Auskunft) und gibt seinen Zahlensatz als
+TAP-Zeile weiter; `tests/gpt-audit` tut dasselbe für das GPT-Audit und rechnet
+die Header-CRCs **zweimal** — einmal im Prüfer, einmal hier über die Auszüge auf
+der Platte, damit ein Harness sich nicht selbst abnickt. Beide hängen in der
+ausdrücklichen Liste von `tests/all` (ein neuer Ordner-Eintrag wird geparst, aber
+nicht gerannt, das stand schonmal da). Lokal: 18/0 und 47/0 plus 16 eigene
+Kopfprüfungen. Die Ad-hoc-Fußnote fällt damit weg.
+
+### Das GPT-Audit (M1.4-Abschluss, `pruefe-gpt.py`, 47 Prüfpunkte, 0 Fehler)
+
+Grundlage sind die Auszüge vom 2026-11-01 (64 Sektoren Kopf und 64 Sektoren Ende
+je UFS-LUN), jetzt unter `evidence/gpt/` im Baum — 352 KiB, keine Bilddatei.
+Gemessen, nicht aus dem Handbuch:
+
+* **Sektorabstand 4096 B auf allen sechs LUNs.** Header 92 B, Revision 1.0.
+* **Kopf-CRC und Sicherungskopf-CRC stimmen** über alle fünf erreichbaren Köpfe
+  und alle sechs Sicherungsköpfe (LUN e: Kopf-Auszug fehlt, 24-Byte-Endblock).
+* **Kopf und Sicherungskopf gehören zusammen**: gleiche Disk-GUID, `mein`/`sicher`
+  vertauscht. Die Tabelle existiert also zweifach und inhaltlich gleich.
+* **Feldabstand am Kopfende weicht von UEFI ab.** An Offset 80 sitzt im Kopf die
+  **Zahl der belegten Sätze** (LUN a 21, b 3, c 3, d 32, f 16), im Sicherungskopf
+  eine Null; die von UEFI verlangte CRC32 der Eintragssätze steht **an keiner
+  Stelle** der Auszüge — ABOOT legt sie nicht an, `gdisk` hätte nichts zu prüfen.
+  Deshalb rechnet der Prüfer eine **eigene Referenz-CRC über die belegten Sätze**
+  und gibt sie aus. Das ist der Fingerabdruck, mit dem jeder künftige
+  Schreibvorgang verglichen wird:
+
+  | LUN | Sätze | Kapazität | Referenz-CRC | erster / letzter Satz |
+  |---|---|---|---|---|
+  | a | 21 | 128 | `e9277d82` | apdp_a … vendor_b (enthält userdata, misc, frp) |
+  | b | 3 | 128 | `89f95d74` | xbl_a, xbl_config_a, last_parti |
+  | c | 3 | 128 | `d6645fd8` | xbl_b, xbl_config_b, last_parti |
+  | d | 6 | 128 | `1cdb565e` | ALIGN_TO_128K_1 … uefivar |
+  | e | — | — | fehlt | Kopf-Auszug unvollständig |
+  | f | 15 | 128 | `8e2a8772` | ALIGN_TO_128K_2 … toolsfv |
+
+* **Zwei selbst eingebaute Feldfehler, beide jetzt im Text festgehalten:** Satzweite und
+  Satzanzahl sind keine Halbworte (ich las `128` und `2658147757`), und der
+  Partitionsname sitzt ab Satz-Offset **56**, nicht 72 (16+16+8+8+8). Wer das
+  nächste Mal Namen ins Leere liest, sucht an der richtigen Stelle.
+* **Geometrie-Regel:** Kopf- und Sicherungsfeld müssen pro Partitionsname in
+  LBA-Bereich und Typ übereinstimmen — für alle 21/3/3/6/15 Sätze gegeben. Der
+  rohe 16-KiB-Vergleich taugt nicht als Beweis, weil ABOOT das Sicherungsfeld
+  sektorweise mit demselben Muster füllt (bei LUN b erschien der Dreier-Block
+  zwölfmal); ein Rohvergleich wäre ein Fehlalarm.
+
+**Der offene Befund.** Genau zwei Sätze unterscheiden Kopf von Sicherung, und
+zwar nur in den Hersteller-Attributbits (Satz-Offset 48, keine Geometrie):
+
+| Satz | Kopf | Sicherung |
+|---|---|---|
+| `boot_a` | `0x0070000000000000` | `0x0570000000000000` |
+| `boot_b` | `0x0082000000000000` | `0x0020000000000000` |
+
+Alle übrigen 19 Sätze der LUN a sind bytegleich. Aufgenommen am 2026-11-01, also
+**vor** unserem `--set-active=a` — die Abweichung ist nicht von uns gemacht.
+Zwei Lesarten: ABOOT schreibt beim Slot-Wechsel nur das Kopffeld, oder die
+Sicherung ist seit einem früheren Factory-Write alt. Entscheidbar ist das nur am
+Gerät, und zwar billig: im nächsten Fenster beide Felder von `boot_a`/`boot_b`
+ablesen, einmal `--set-active=b` und zurück, und schauen, welches Feld sich bewegt.
+Bis das entschieden ist, gilt für jedes Schreiben: **die Geometrie ist die
+Verpflichtung, die Attributbits sind eine Beobachtung** — und nach jedem
+Schreibvorgang werden beide Felder neu abgegriffen und gegen die Referenz-CRCs
+oben gehalten.
