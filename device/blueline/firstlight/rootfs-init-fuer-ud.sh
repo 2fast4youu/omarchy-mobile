@@ -1,19 +1,19 @@
 #!/bin/sh
 # /init IN DER USERDATA-WURZEL (M1.5). Wird vom Initramfs aus mit switch_root
 # gestartet; bis hierher hat das Initramfs Gadget, Netzwerk und Shell schon
-# stehen — switch_root verlagert nur die Wurzel, der laufende Kernel bleibt.
+# stehen - switch_root verlagert nur die Wurzel, der laufende Kernel bleibt.
 #
 # Dieses Stueck hat genau vier Aufgaben: Pseudo-Dateisysteme nachziehen, eine
 # Beleg-Datei auf die echte Partition schreiben, eine Shell offenhalten, und den
 # Funkstille-Rueckweg weiterfuehren. Der Rueckweg MUSS hier stehen: wer ihn nur
 # im Initramfs haelt, verliert ihn genau in dem Moment, in dem die neue Wurzel
-# uebernimmt — dieselbe Klasse wie das Modul hinter dem cpio-TRAILER.
+# uebernimmt - dieselbe Klasse wie das Modul hinter dem cpio-TRAILER.
 #
 # Kein Nicht-ASCII in diesem Block (Regel aus der Bring-up-Arbeit: die Zeilen
 # laufen durch mehrere Schichten Text-Transport).
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
 export PATH
-# mountpoint -q ist in diesem busybox nicht garantiert — die Liste der
+# mountpoint -q ist in diesem busybox nicht garantiert - die Liste der
 # Mounts selbst ist es, also wird dort nachgesehen.
 grep -q '^[^ ]* /proc ' /proc/mounts 2>/dev/null || mount -t proc proc /proc 2>/dev/null
 grep -q '^[^ ]* /sys ' /proc/mounts 2>/dev/null || mount -t sysfs sysfs /sys 2>/dev/null
@@ -21,6 +21,68 @@ grep -q '^[^ ]* /dev ' /proc/mounts 2>/dev/null || mount -t devtmpfs devtmpfs /d
 mkdir -p /dev/pts
 grep -q '^[^ ]* /dev/pts ' /proc/mounts 2>/dev/null || mount -t devpts devpts /dev/pts 2>/dev/null
 mkdir -p /omamobile
+
+# ---------------------------------------------------------------------------
+# Sichtbar machen, was hier laeuft. switch_root haelt den Kernel, aber es haengt
+# auch das configfs ab: der Gadget-Satz des Initramfs ist damit weg, und ohne
+# Netz ist diese Wurzel fuer den Mac taub - genau so in der Nacht auf den
+# 2026-11-03 gemessen: kein Ping auf 172.16.42.1, kein Port 23, nur der
+# USB-Name 'Pixel 3 (blueline)' am Baum. Der Block folgt Zeile fuer Zeile dem
+# arbeitenden Gadget-Block des Initramfs (idVendor 18D1, idProduct D002,
+# ncm.usb0 + acm.GS0, Konfiguration c.1, dann der UDC-Write, dann ifconfig).
+# ---------------------------------------------------------------------------
+mkdir -p /sys/kernel/config
+grep -q '^[^ ]* /sys/kernel/config ' /proc/mounts 2>/dev/null \
+  || mount -t configfs -o nodev,noexec,nosuid configfs /sys/kernel/config 2>/dev/null
+CFG=/sys/kernel/config/usb_gadget
+NETZ=keins
+if ! [ -d "$CFG/g1" ]; then
+    UDCNEU=$(ls /sys/class/udc 2>/dev/null | head -1)
+    if [ -n "${UDCNEU:-}" ]; then
+        mkdir -p "$CFG/g1/strings/0x409" "$CFG/g1/functions" "$CFG/g1/configs/c.1/strings/0x409"
+        echo 0x18D1 > "$CFG/g1/idVendor" 2>/dev/null
+        echo 0xD002 > "$CFG/g1/idProduct" 2>/dev/null
+        echo 'Omarchy Mobile' > "$CFG/g1/strings/0x409/manufacturer" 2>/dev/null
+        echo 'omamobile-blueline' > "$CFG/g1/strings/0x409/serialnumber" 2>/dev/null
+        echo 'Pixel 3 (blueline)' > "$CFG/g1/strings/0x409/product" 2>/dev/null
+        NETF=ncm.usb0
+        mkdir "$CFG/g1/functions/$NETF" 2>/dev/null \
+          || { mkdir "$CFG/g1/functions/rndis.usb0" 2>/dev/null && NETF=rndis.usb0; }
+        echo 'USB network' > "$CFG/g1/configs/c.1/strings/0x409/configuration" 2>/dev/null
+        ln -s "$CFG/g1/functions/$NETF" "$CFG/g1/configs/c.1" 2>/dev/null
+        mkdir "$CFG/g1/functions/acm.GS0" 2>/dev/null \
+          && ln -s "$CFG/g1/functions/acm.GS0" "$CFG/g1/configs/c.1" 2>/dev/null
+        sleep 1
+        echo "$UDCNEU" > "$CFG/g1/UDC" 2>/dev/null
+    fi
+fi
+ip link set lo up 2>/dev/null
+z=0
+while [ "$z" -lt 30 ]; do
+    for iface in usb0 eth0 ncm0; do
+        if [ -e "/sys/class/net/$iface" ]; then
+            ip link set "$iface" up 2>/dev/null
+            ifconfig "$iface" 172.16.42.1 2>/dev/null
+            NETZ=$iface
+            break 2
+        fi
+    done
+    z=$((z + 1)); sleep 1
+done
+
+# Stempel auf der echten Partition: wann hat diese Wurzel uebernommen, von wo
+# und mit welchem Kernel. Das ist der Beleg fuer M1.5, nicht das Fehlen einer
+# Fehlermeldung. Datei bleibt, ein Neustart mit switch_root schreibt sie um.
+{
+    echo "uebergabe-zeit=$(date -u +%FT%TZ)"
+    echo "uptime=$(cut -d' ' -f1 /proc/uptime)"
+    echo "wurzel=$(awk '$2=="/"{print $1" "$3" "$4}' /proc/mounts | head -1)"
+    echo "kernel=$(uname -r)"
+    echo "netz=$NETZ udc=$(cat $CFG/g1/UDC 2>/dev/null)"
+} > /omamobile/LEBEN 2>/dev/null
+sync
+( while :; do telnetd -l /bin/sh; sleep 2; done ) &
+
 
 # Beleg: was steht wirklich auf '/', und seit wann. Das ist die Erfolgsmeldung
 # fuer M1.5, nicht das Verschwinden einer Fehlermeldung.
@@ -37,7 +99,7 @@ echo "OMAMOBILE: Wurzel auf userdata, $QUELLE, Shell 172.16.42.1:23" > /dev/cons
 
 # Shell: der Telnetd-Master aus dem Initramfs laeuft weiter (sein Programm liegt
 # im Speicher), also braucht die neue Wurzel nur einen Sprung, falls keiner mehr
-# auf 23 horcht. Neue Verbindungen exec /bin/sh — das ist jetzt HIER.
+# auf 23 horcht. Neue Verbindungen exec /bin/sh - das ist jetzt HIER.
 if ! grep -q ':0017 ' /proc/net/tcp 2>/dev/null; then
     if [ -x /usr/sbin/telnetd ]; then
         /usr/sbin/telnetd -l /bin/sh -b 172.16.42.1:23 2>/dev/null
