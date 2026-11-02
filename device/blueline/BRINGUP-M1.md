@@ -3281,3 +3281,56 @@ Bis das entschieden ist, gilt für jedes Schreiben: **die Geometrie ist die
 Verpflichtung, die Attributbits sind eine Beobachtung** — und nach jedem
 Schreibvorgang werden beide Felder neu abgegriffen und gegen die Referenz-CRCs
 oben gehalten.
+
+## Nachtrag 22 (2026-11-02, 16:15–17:2x): M1.5 — die Wurzel will auf userdata, aber die Partition gehört ABOOT
+
+**Beleg vor dem Write (16:15, `evidence/vor-userdata/`, 20 Dateien).** `userdata`
+= `/dev/sda21`, 51 GiB, LBA 2068480. Die Superblock-Region bei Offset 1024 ist
+null, `mount -o ro` meldet `wrong fs type, bad superblock`, `unlocked: yes`. Auf
+der Partition steht kein Dateisystem, also auch keine Nutzerdaten; ein 64-GB-
+Backup gibt es nicht und wird nicht gebraucht.
+
+**Bild.** Alpine-arm64-minirootfs in 1 GiB ext4, eigener `/init` mit
+switch_root-Beleg und Funkstille-Rückweg. Bau im Container-eigenen Overlay
+(`virtiofs` auf der Mac-Freigabe hat keine xattrs — `set_inode_xattr: No such file
+or directory`), das fertige Bild auf die Freigabe. sha256 `c4e43c11fa66…`.
+
+**Bild v0ag.** Suche über `/sys/block/sda/sdaN/start` (kein `by-partlabel` in
+dieser Ramdisk), Sektor 16547840, Platte erst `--setrw`, dann die anderen
+Partitionen einzeln zurück unter ro; die Wache bekommt ihre Ausnahme über
+`/tmp/uddev`, weil ihr Hintergrund-Unterlauf die Variablen des Vaters nicht sieht.
+Auf dem Telefon belegt: `partition=sda21 sektor=16547840` bei 6 s, Mountversuch
+bei 167 s, dort `EXT4-fs (sda21): group descriptors corrupted`.
+
+**Wurzel #15.** Der Kernel meldete den Block `58080576997508677`; little-endian
+ist das `45 46 49 20 …` = „EFI ". Der Bytestellenvergleich Telefon gegen Mac-Bild:
+
+| Offset | Telefon | Bild |
+|---|---|---|
+| 1024 | `00 00 01 00 00 00 04 00 33 33…` | gleich |
+| 4096 | `45 46 49 20 50 41 52 54` („EFI PART") | `81 00 00 00 89 00 00 00` |
+| 8192 | GUID-Bytes des alten Partitionssatzes | `02 80 00 00 02 80 01 00` |
+| 65536 | `10 80 00 00 10 80 01 00` | gleich |
+
+`81 00 00 00 89 00 00 00` ist der erste Gruppenbeschreiber (Block-Bitmap 129,
+Inode-Bitmap 137). Bei 4096-Byte-LUN-Sektoren liegen GPT-Kopf (Sektor 1 = Offset
+4096) und -sätze (ab 8192) genau in diesem Feld, und **ABOOT legt sie bei jedem
+Start wieder hin**. Ein dichtes Sparse-Bild (262 144 DATA-Säcke, zurückgelesen,
+sha gleich dem Rohbild) ändert daran nichts.
+
+**Zwei Fehler vorher, beide behoben.** `fastboot flash userdata rootfs.ext4`
+rechnet selbst um, meldet `Invalid sparse file format at header magic`, schickt
+nur 9588 KB für 1 GiB und lässt Löcher (1024 und 65536 dicht, 4096/8192 nicht).
+`-S 0` ändert daran nichts. Ein eigenes Sparse-Bild braucht die Magie `0xED26FF3A`
+(auf dem Draht `3A FF 26 ED`) und einen 28-Byte-Kopf, dessen Größenfelder
+`file_hdr_sz` und `chunk_hdr_sz` **u16** sind; als u32 gepackt lehnt fastboot ab.
+
+**Folgerung und nächster Schnitt (v0ah).** Das Dateisystem darf nicht dort liegen,
+wo das GPT liegt: Bild mit 1 MiB Null-Vorlauf (`rootfs-vorlauf.ext4`, sha
+`0de3fd84e0fd…`, Superblock bei 1 MiB + 1024), Mount mit `offset=1024` (Einheit
+1024-Byte-Blöcke), zweiter Versuch ohne Versatz als Messung im selben Zweig.
+
+**Nebenbefund.** Ein Markentel aus dem laufenden Linux auf Offset 4096 schlägt mit
+EPERM fehl, weil die Wache die Platte im Sekundentakt zurück auf ro legt —
+Wurzel #9 bestätigt sich damit von der Gegenseite. Für Schreibversuche am
+laufenden System muss die Wache zuerst aus.
