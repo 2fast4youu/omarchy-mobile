@@ -35,24 +35,33 @@ SAECKE = 4096
 
 
 def schreibe(pfad_bild, pfad_sparse):
+    """Bilder mit vollen Brocken und einem Reststueck, wie img2simg es tut.
+
+    Die erste Fassung verlangte ein Vielfaches der Brockengroesse und scheiterte
+    damit am 1 MiB-Vorlauf (1 074 790 400 B = 65 x 16 MiB + 1 MiB). Der Fehler
+    verschwand in der Rohrleitung 'python3 … | tail -4 && sh …', also wurde
+    zweimal mit dem alten Bild von 17:11 geflasht — die Brockengroesse ist damit
+    ueberhaupt nicht geprueft, nur die Rohrleitung ist geprueft.
+    """
     groesse = os.path.getsize(pfad_bild)
-    if groesse % (BLOCK * SAECKE):
-        raise SystemExit("Bildgroesse %d ist kein Vielfaches von %d"
-                         % (groesse, BLOCK * SAECKE))
+    if groesse % BLOCK:
+        raise SystemExit("Bildgroesse %d ist kein Vielfaches von %d" % (groesse, BLOCK))
     saecke = groesse // BLOCK
-    bruchstuecke = groesse // (BLOCK * SAECKE)
+    brocken = (groesse + BLOCK * SAECKE - 1) // (BLOCK * SAECKE)
     gesendet = 0
     with open(pfad_bild, "rb") as Quelle, open(pfad_sparse, "wb") as Z:
         Z.write(struct.pack("<IHHHHIIII", MAGIC, 1, 0, 28, 12, BLOCK, saecke,
-                            bruchstuecke + 1, 0))
-        for nr in range(bruchstuecke):
+                            brocken + 1, 0))
+        for nr in range(brocken):
             leib = Quelle.read(BLOCK * SAECKE)
-            if len(leib) != BLOCK * SAECKE:
-                raise SystemExit("Bild bricht im Brocken %d ab" % nr)
-            Z.write(struct.pack("<III", RAW, SAECKE, 12 + len(leib)))
+            if not leib or len(leib) % BLOCK:
+                raise SystemExit("Brocken %d hat %d Byte" % (nr, len(leib)))
+            Z.write(struct.pack("<III", RAW, len(leib) // BLOCK, 12 + len(leib)))
             Z.write(leib)
             gesendet += 1
-            print("  Brocken %d/%d" % (gesendet, bruchstuecke), flush=True)
+            if nr + 1 == brocken or nr % 8 == 7:
+                print("  Brocken %d/%d (%d B, letzter %d Block)"
+                      % (gesendet, brocken, len(leib), len(leib) // BLOCK), flush=True)
         Z.write(struct.pack("<III", DONTCARE, 0, 12))      # Abschluss, wie img2simg
     return gesendet
 
@@ -64,7 +73,7 @@ def lies(pfad_sparse):
     assert magic == MAGIC and major == 1 and fgroesse == 28 and chgroesse == 12, \
         "Kopf nicht dicht: %s" % hex(magic)
     daten = bytearray()
-    daten_baelle = care = 0
+    daten_baelle = care = blocke = 0
     mit = open(pfad_sparse, "rb")
     mit.read(fgroesse)
     while True:
@@ -77,15 +86,17 @@ def lies(pfad_sparse):
             assert len(leib) == stueck * block, "DATA-Sack zu kurz"
             daten += leib
             daten_baelle += 1
+            blocke += stueck
         elif art == DONTCARE:
             if stueck == 0:
                 break
             daten += b"\0" * (stueck * block)
+            blocke += stueck
             care += 1
         else:
             raise SystemExit("unerwarteter Sacktyp %s" % hex(art))
     mit.close()
-    return bytes(daten), daten_baelle, care
+    return bytes(daten), daten_baelle, care, blocke
 
 
 def anzahl_brocken(pfad_sparse):
@@ -103,15 +114,16 @@ def haupt():
     groesse = os.path.getsize(bild)
     echt = hashlib.sha256(open(bild, "rb").read()).hexdigest()
     anzahl = schreibe(bild, sparse)
-    strom, daten_baelle, care = lies(sparse)
+    strom, daten_baelle, care, blocke = lies(sparse)
     rueck = hashlib.sha256(strom).hexdigest()
-    print("_sparse_: %s, %d B, %d DATA-Baelle in %d Brocken, %d DONT_CARE, Abschluss ja"
-          % (os.path.basename(sparse), os.path.getsize(sparse), daten_baelle,
-             anzahl_brocken(sparse), care))
+    print("_sparse_: %s, %d B, %d DATA-Saecke ueber %d Blocke, %d DONT_CARE, "
+          "Kopf kuendigt %d an, Abschluss ja"
+          % (os.path.basename(sparse), os.path.getsize(sparse), daten_baelle, blocke,
+             care, anzahl_brocken(sparse)))
     print("Rohbild %d B sha %s" % (groesse, echt[:16]))
     print("zurueckgelesen %d B sha %s -> %s" % (len(strom), rueck[:16],
                                                 "dicht" if rueck == echt else "LOCH"))
-    if rueck != echt or daten_baelle * BLOCK != groesse:
+    if rueck != echt or len(strom) != groesse or blocke * BLOCK != groesse:
         return 1
     with open(sparse + ".sha256", "w", encoding="utf-8") as f:
         f.write("%s  %s\n" % (hashlib.sha256(open(sparse, "rb").read()).hexdigest(),
