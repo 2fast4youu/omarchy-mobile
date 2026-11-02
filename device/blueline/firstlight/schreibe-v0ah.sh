@@ -2,7 +2,7 @@
 # Write-Zyklus fuer v0ah, zweite Fassung: mit Wachhueter ueber jedem Write.
 #
 # Warum der Wachhueter noetig ist (gemessen 2026-11-02, 17:2x): der erste Zyklus
-# hing 9 Minuten in 'fastboot flash userdata' — der Prozess hatte 5,06 s
+# hing 9 Minuten in 'fastboot flash userdata': der Prozess hatte 5,06 s
 # Rechenzeit und bekam in 20 s keine Millisekunde dazu, er wartete auf das Gerat.
 # Nach dem Abbruch lief das Skript weiter, weil die Rohrleitung den Exit der
 # Pipeline meldet, und wartete anschliessend bei '--set-active=a'. Ein haengender
@@ -14,13 +14,19 @@ FB=${FB:-/Users/gregor/Library/Android/sdk/platform-tools/fastboot}
 FL=/Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
 BILD=/Users/gregor/hermes-workspace/images
 LOG=$FL/evidence/vor-userdata/satz-vor-dem-write.txt
-FRIST=${FRIST:-300}
+FRIST=${FRIST:-900}
 
 schreib() {
     # schreib PARTITION DATEI: ein Write mit Frist. Ueber der Frist wird
-    # abgebrochen und der Zyklus endet mit Grund, statt weiterzulaufen.
+    # abgebrochen und der Zyklus endet mit Grund, statt weiterzulaufen. Der
+    # Unterlauf bekommt keinen Standardausgang: sein schlafender Kindprozess
+    # erbt den Ausgang des Vaters, und eine Rohrleitung hinter diesem Skript
+    # bliebe bis zu seinem Ende offen (gemessen: der Prueflauf hing 180 s genau
+    # daran). Die Frist war mit 300 s zu eng: ein 1-GiB-Write braucht laenger,
+    # wenn das Gerat traegt. FRIST ist darum uebergebbar, Default 900 s.
     partei=$1; datei=$2
-    ( sleep "$FRIST"; pkill -f "fastboot flash $partei" 2>/dev/null ) &
+    ( sleep "$FRIST"; pkill -f "fastboot flash $partei" 2>/dev/null ) </dev/null \
+        >/dev/null 2>&1 &
     waechter=$!
     if $FB flash "$partei" "$datei" 2>&1 | tail -3; then
         kill "$waechter" 2>/dev/null || true
@@ -32,7 +38,8 @@ schreib() {
 }
 
 {
-  echo "--- Write-Zyklus v0ah (zweite Fassung), $(date '+%Y-%m-%d %H:%M'), Frist $FRIST s"
+  echo "--- Satz vor dem Write, Write-Zyklus v0ah (zweite Fassung)," 
+  echo "    $(date '+%Y-%m-%d %H:%M'), Frist $FRIST s, Bild und Backup unten:"
   echo "userdata traegt weiterhin keine Nutzerdaten (Superblock null, mount -o ro"
   echo "meldet wrong fs type, Gerat entsperrt). Bild: rootfs-vorlauf.sparse.img mit"
   echo "1 MiB Vorlauf, damit ABOOTs GPT-Bereich (Kopf 4096, Saetze ab 8192) frei bleibt."
