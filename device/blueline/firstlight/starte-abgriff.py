@@ -65,8 +65,20 @@ if not offen():
         # nicht nur wenn b aktiv war, und die Zaehler werden vor und nach dem
         # Setzen abgeschrieben, damit ein Geisterfehler eine Zahl hat.
         def stand(*antwort):
-            text = fb(*antwort, frist=10).strip()
-            return text.splitlines()[-1] if text else "keine Antwort"
+            text = fb(*antwort, frist=10).strip().replace("\r", "")
+            zeilen = [z.strip() for z in text.splitlines() if z.strip()]
+            if len(antwort) > 1:
+                # getvar schreibt erst den Wert, dann OKAY, dann finished. Die
+                # letzte Zeile ist also bei JEDEM erfolgreichen getvar das
+                # finished. total time — wer sie nimmt, protokolliert eine
+                # Zeit statt eines Wertes. Bleibt die Wertzeile ganz aus, ist
+                # das ebenfalls kein Wert: hier wird er benannt, nicht gemogelt.
+                wert = [z for z in zeilen if z.startswith(antwort[1])]
+                if wert:
+                    return wert[-1]
+                if zeilen:
+                    return "kein Wert in der Antwort (letzte Zeile: %s)" % zeilen[-1]
+            return zeilen[-1] if zeilen else "keine Antwort"
 
         for klemme in ("current-slot", "slot-retry-count:a", "slot-retry-count:b",
                        "slot-successful:a", "slot-successful:b"):
