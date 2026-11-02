@@ -1,0 +1,1 @@
+/sys/class/udc/a600000.usb configured

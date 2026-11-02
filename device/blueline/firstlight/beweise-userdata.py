@@ -61,6 +61,12 @@ BEWEISE = [
     ("speicher-ro.txt", "for d in /sys/block/sd*; do echo $d ro=$(cat $d/ro); done"),
     ("geraet-modell.txt", "cat /proc/device-tree/model 2>/dev/null | tr -d '\\0'"),
     ("partition-zeilen.txt", "wc -l < /proc/partitions"),
+    # Vergleich mit dem Bild auf dem Mac: wo genau ist der geschriebene Satz?
+    ("ud-versatz-1024.txt", "dd if=/dev/sda21 bs=1 skip=1024 count=64 2>/dev/null | hexdump -C"),
+    ("ud-versatz-2048.txt", "dd if=/dev/sda21 bs=1 skip=2048 count=64 2>/dev/null | hexdump -C"),
+    ("ud-versatz-8192.txt", "dd if=/dev/sda21 bs=1 skip=8192 count=64 2>/dev/null | hexdump -C"),
+    ("ud-blockgroesse.txt", "dum2fs -h /dev/sda21 2>&1 | head -6"),
+    ("ud-gpt-kopf.txt", "dd if=/dev/sda21 bs=1 skip=512 count=32 2>/dev/null | hexdump -C"),
 ]
 
 

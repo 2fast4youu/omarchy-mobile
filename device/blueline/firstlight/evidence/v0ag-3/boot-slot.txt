@@ -1,0 +1,3 @@
+androidboot.slot_suffix=_a
+androidboot.slot_retry_count=2
+androidboot.slot_successful=no

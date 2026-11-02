@@ -1,0 +1,300 @@
+[    4.583340]  device_add+0x274/0x4e0
+[    4.587591]  of_platform_device_create_pdata+0xdc/0x198
+[    4.593592]  of_platform_bus_create+0x274/0x4b8
+[    4.598884]  of_platform_populate+0x7c/0x168
+[    4.603909]  mdss_probe+0x320/0x408
+[    4.608139]  platform_probe+0x84/0xcc
+[    4.612508]  really_probe+0x1dc/0x4f4
+[    4.616916]  __driver_probe_device+0xdc/0x168
+[    4.622023]  driver_probe_device+0x4c/0x238
+[    4.626958]  __device_attach_driver+0x154/0x224
+[    4.632241]  bus_for_each_drv+0x11c/0x17c
+[    4.637003]  __device_attach+0x10c/0x1d4
+[    4.641667]  device_initial_probe+0x48/0x6c
+[    4.646594]  bus_probe_device+0x9c/0x128
+[    4.651252]  deferred_probe_work_func+0xb0/0x11c
+[    4.656604]  process_scheduled_works+0x1a0/0x4b4
+[    4.661960]  worker_thread+0x280/0x3fc
+[    4.666439]  kthread+0x12c/0x15c
+[    4.670381]  ret_from_fork+0x10/0x20
+[    4.674666] ---[ end trace 0000000000000000 ]---
+[    4.687514] ufshcd-qcom 1d84000.ufshc: freq-table-hz property not specified
+[    4.695162] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vdd-hba-supply regulator, assuming enabled
+[    4.706588] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vccq-supply regulator, assuming enabled
+[    4.717713] ufshcd-qcom 1d84000.ufshc: ufshcd_populate_vreg: Unable to find vccq2-supply regulator, assuming enabled
+[    4.732593] ufshcd-qcom 1d84000.ufshc: Found QC Inline Crypto Engine (ICE) v3.1.75
+[    4.740882] ufshcd-qcom 1d84000.ufshc: A supported HWKM is not present. Supporting raw keys only.
+[    4.771940] scsi host0: ufshcd
+[    4.964375] scsi 0:0:0:49488: Well-known LUN    SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    4.970134] /soc@0/display-subsystem@ae00000/dsi@ae94000: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0
+[    4.990648] /soc@0/display-subsystem@ae00000/dsi@ae94000/panel@0: Fixed dependency cycle(s) with /soc@0/display-subsystem@ae00000/dsi@ae94000
+[    5.006948] msm_dpu ae01000.display-controller: bound ae94000.dsi (ops dsi_ops)
+[    5.007614] scsi 0:0:0:49476: Well-known LUN    SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    5.009926] adreno 5000000.gpu: supply vdd not found, using dummy regulator
+[    5.020248] scsi 0:0:0:49456: Well-known LUN    SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    5.027209] adreno 5000000.gpu: supply vddcx not found, using dummy regulator
+[    5.031769] scsi 0:0:0:0: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    5.047205] msm_dpu ae01000.display-controller: bound 5000000.gpu (ops a3xx_ops)
+[    5.057303] scsi 0:0:0:1: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    5.081385] Console: switching to colour dummy device 80x25
+[    5.084800] scsi 0:0:0:2: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    5.099654] scsi 0:0:0:3: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    5.100054] [drm:dpu_kms_hw_init:1168] dpu hardware revision:0x40000000
+[    5.110737] scsi 0:0:0:4: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    5.122949] [drm] Initialized msm 1.13.0 for ae01000.display-controller on minor 0
+[    5.125510] scsi 0:0:0:5: Direct-Access     SKhynix  H28S7Q302BMR     A202 PQ: 0 ANSI: 6
+[    5.130855] msm_dpu ae01000.display-controller: Direct firmware load for qcom/a630_sqe.fw failed with error -2
+[    5.147722] sd 0:0:0:0: [sda] 15591424 4096-byte logical blocks: (63.9 GB/59.5 GiB)
+[    5.148004] sd 0:0:0:1: [sdb] 1024 4096-byte logical blocks: (4.19 MB/4.00 MiB)
+[    5.148005] sd 0:0:0:2: [sdc] 1024 4096-byte logical blocks: (4.19 MB/4.00 MiB)
+[    5.148080] sd 0:0:0:2: [sdc] Write Protect is off
+[    5.148085] sd 0:0:0:2: [sdc] Mode Sense: 00 32 00 10
+[    5.148208] sd 0:0:0:1: [sdb] Write Protect is off
+[    5.148214] sd 0:0:0:1: [sdb] Mode Sense: 00 32 00 10
+[    5.148477] sd 0:0:0:2: [sdc] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    5.148605] sd 0:0:0:1: [sdb] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    5.148686] sd 0:0:0:3: [sdd] 2048 4096-byte logical blocks: (8.39 MB/8.00 MiB)
+[    5.148695] sd 0:0:0:1: [sdb] Preferred minimum I/O size 786432 bytes
+[    5.148700] sd 0:0:0:1: [sdb] Optimal transfer size 786432 bytes
+[    5.148840] sd 0:0:0:2: [sdc] Preferred minimum I/O size 786432 bytes
+[    5.148846] sd 0:0:0:2: [sdc] Optimal transfer size 786432 bytes
+[    5.148888] msm_dpu ae01000.display-controller: [drm:adreno_request_fw] *ERROR* failed to load a630_sqe.fw
+[    5.148907] sd 0:0:0:3: [sdd] Write Protect is off
+[    5.149056] sd 0:0:0:4: [sde] 8192 4096-byte logical blocks: (33.6 MB/32.0 MiB)
+[    5.149238] sd 0:0:0:4: [sde] Write Protect is off
+[    5.149244] sd 0:0:0:4: [sde] Mode Sense: 00 32 00 10
+[    5.151221] sd 0:0:0:4: [sde] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    5.151324] sd 0:0:0:4: [sde] Preferred minimum I/O size 786432 bytes
+[    5.151331] sd 0:0:0:4: [sde] Optimal transfer size 786432 bytes
+[    5.151383] sd 0:0:0:5: [sdf] 18432 4096-byte logical blocks: (75.5 MB/72.0 MiB)
+[    5.151503] sd 0:0:0:5: [sdf] Write Protect is off
+[    5.151509] sd 0:0:0:5: [sdf] Mode Sense: 00 32 00 10
+[    5.151741] sd 0:0:0:5: [sdf] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    5.151836] sd 0:0:0:5: [sdf] Preferred minimum I/O size 786432 bytes
+[    5.151842] sd 0:0:0:5: [sdf] Optimal transfer size 786432 bytes
+[    5.156789] sd 0:0:0:0: [sda] Write Protect is off
+[    5.164435] sd 0:0:0:3: [sdd] Mode Sense: 00 32 00 10
+[    5.171454] sd 0:0:0:0: [sda] Mode Sense: 00 32 00 10
+[    5.348693] sd 0:0:0:3: [sdd] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    5.348714] sd 0:0:0:0: [sda] Write cache: enabled, read cache: enabled, supports DPO and FUA
+[    5.348740] sd 0:0:0:3: [sdd] Preferred minimum I/O size 786432 bytes
+[    5.348742] sd 0:0:0:3: [sdd] Optimal transfer size 786432 bytes
+[    5.348786] sd 0:0:0:0: [sda] Preferred minimum I/O size 786432 bytes
+[    5.348787] sd 0:0:0:0: [sda] Optimal transfer size 786432 bytes
+[    5.350148]  sdc: sdc1 sdc2
+[    5.350281]  sdf: sdf1 sdf2 sdf3 sdf4 sdf5 sdf6 sdf7 sdf8 sdf9 sdf10 sdf11 sdf12 sdf13 sdf14 sdf15
+[    5.350426] sd 0:0:0:2: [sdc] Attached SCSI disk
+[    5.351286] sd 0:0:0:5: [sdf] Attached SCSI disk
+[    5.355428]  sde: sde1 sde2 sde3 sde4 sde5 sde6 sde7 sde8 sde9 sde10 sde11 sde12 sde13 sde14 sde15 sde16 sde17 sde18 sde19 sde20 sde21 sde22 sde23 sde24
+[    5.355974]  sdb: sdb1 sdb2
+[    5.356104] sd 0:0:0:1: [sdb] Attached SCSI disk
+[    5.359546] sd 0:0:0:4: [sde] Attached SCSI disk
+[    5.363183]  sda: sda1 sda2 sda3 sda4 sda5 sda6 sda7 sda8 sda9 sda10 sda11 sda12 sda13 sda14 sda15 sda16 sda17 sda18 sda19 sda20 sda21
+[    5.365173] sd 0:0:0:0: [sda] Attached SCSI disk
+[    5.367849]  sdd: sdd1 sdd2 sdd3 sdd4 sdd5 sdd6
+[    5.369221] sd 0:0:0:3: [sdd] Attached SCSI disk
+[    5.682546] fb0: sys_imageblit: framebuffer is not in virtual address space.
+[    5.720445] Console: switching to colour frame buffer device 135x135
+[    5.883583] msm_dpu ae01000.display-controller: [drm] fb0: msmdrmfb frame buffer device
+[    5.894556] input: Volume keys as /devices/platform/gpio-keys/input/input2
+[    5.901887] clk: Disabling unused clocks
+[    5.906159] PM: genpd: Disabling unused power domains
+[    5.913247] Freeing unused kernel memory: 2048K
+[    5.917912] Run /init as init process
+[    5.921629]   with arguments:
+[    5.924638]     /init
+[    5.926967]   with environment:
+[    5.930181]     HOME=/
+[    5.932591]     TERM=linux
+[    5.957272] omamobile-blueline: watchdog-Knoten /dev/watchdog0
+[    5.958760] omamobile-blueline: kernel 7.1.0-rc1-sdm845 aarch64
+[    5.970287] omamobile-blueline: gadget-module-dir gefunden
+[    5.984415] omamobile-blueline: modul libcomposite.ko geladen
+[    5.994154] fb0: sys_fillrect: framebuffer is not in virtual address space.
+[    5.996306] omamobile-blueline: modul u_ether.ko geladen
+[    6.024404] omamobile-blueline: modul usb_f_ncm.ko geladen
+[    6.034850] omamobile-blueline: modul u_serial.ko geladen
+[    6.051872] omamobile-blueline: modul usb_f_acm.ko geladen
+[    6.057295] omamobile-blueline: moduli: 1 geladen, usb_f_ncm 3
+[    6.070753] omamobile-blueline: usb gadget setup (reference sequence)
+[    6.076870] omamobile-blueline: vor mkdir: configfs=0 libcomposite=1 module=5
+[    6.101275] omamobile-blueline: nach mount: configfs=0 ordner=ja udc=a600000.usb
+[    6.105915] omamobile-blueline: udc-lesung 1: uptime 6.09s, inhalt: a600000.usb
+[    6.124717] omamobile-blueline: udc nach 0 runden gefunden: a600000.usb, uptime 6.11s
+[    6.128247] omamobile-blueline: network function: ncm.usb0
+[    6.150674] omamobile-blueline: binding UDC a600000.usb
+[    6.151366] configfs-gadget.g1 gadget.0: HOST MAC ee:54:c5:fc:21:aa
+[    6.151375] configfs-gadget.g1 gadget.0: MAC 86:d3:a3:d8:fc:bd
+[    6.156264] omamobile-blueline: UDC steht auf: a600000.usb
+[    6.186509] omamobile-blueline: ifconfig usb0 172.16.42.1
+[    6.201204] omamobile-blueline: network bring-up
+[    6.202044] ===== PSTORE console-ramoops-0 begin =====
+[    6.212638] omamobile-blueline: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+[    6.213876] omamobile-blueline: debug shell: telnetd -l /bin/sh (Port 23, alle Adressen)
+[    6.216850] ===== PSTORE console-ramoops-0 end =====
+[    6.223615] omamobile-blueline: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+[    6.227775] ===== PSTORE dmesg-ramoops-0 begin =====
+[    6.231057] omamobile-blueline: raw log channel live on /dev/sda11
+[    6.232663] ===== PSTORE dmesg-ramoops-0 end =====
+[    6.239856] omamobile-blueline: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+[    6.245718] omamobile-blueline: beat 6s steps:[6s] step: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+[    6.302929] omamobile-blueline: debug shell armed
+[    6.314009] omamobile-blueline: SSH ready: root@172.16.42.1; all storage read-only
+[    6.328254] omamobile-blueline: storage guard pass 1
+[    6.504943] omamobile-blueline: storage guard: 0 device(s) could not be write-protected
+[    6.520284] omamobile-blueline: storage guard pass 1 done
+[    6.555614] omamobile-blueline: v0ag userdata-suche: partition=sda21 sektor=16547840
+[    6.575983] omamobile-blueline: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+[    6.956359] random: crng init done
+[    7.401652] omamobile-blueline: schreib_rc=1 dd: error writing '/dev/sda11': No space left on device 9+0 records in platte=/dev/sda ro_achter=1
+[    7.709011] omamobile-blueline: schreib_rc=1 dd: error writing '/dev/sda11': No space left on device 9+0 records in platte=/dev/sda ro_achter=1
+[    7.729817] omamobile-blueline: init main flow complete; PID 1 parking
+[    7.740313] omamobile-blueline: init main flow complete; v0aa steuert den Selbst-Rueckweg an
+[    7.752974] omamobile-blueline: v0aa wartet das Messfenster der Runde aus
+[   16.361303] platform 888000.i2c: deferred probe pending: geni_i2c: Failed to get tx DMA ch
+[   16.372519] gcc-sdm845 100000.clock-controller: sync_state() pending due to 793000.rng
+[   16.384695] qnoc-sdm845 1380000.interconnect: sync_state() pending due to 1436400.pmu
+[   16.396704] qnoc-sdm845 1380000.interconnect: sync_state() pending due to 114a000.pmu
+[   16.408699] qnoc-sdm845 1500000.interconnect: sync_state() pending due to 1e40000.ipa
+[   16.419709] qnoc-sdm845 1620000.interconnect: sync_state() pending due to 1e40000.ipa
+[   16.430067] qnoc-sdm845 1380000.interconnect: sync_state() pending due to 1e40000.ipa
+[   16.439972] qnoc-sdm845 1700000.interconnect: sync_state() pending due to 1e40000.ipa
+[   16.449599] gcc-sdm845 100000.clock-controller: sync_state() pending due to 4080000.remoteproc
+[   16.460023] qnoc-sdm845 1500000.interconnect: sync_state() pending due to aa00000.video-codec
+[   16.470317] qnoc-sdm845 1380000.interconnect: sync_state() pending due to aa00000.video-codec
+[   16.480591] qnoc-sdm845 1740000.interconnect: sync_state() pending due to aa00000.video-codec
+[   16.490844] sdm845-videocc ab00000.clock-controller: sync_state() pending due to aa00000.video-codec
+[   16.501723] gcc-sdm845 100000.clock-controller: sync_state() pending due to acb3000.camss
+[   16.511653] gcc-sdm845 100000.clock-controller: sync_state() pending due to 506a000.gmu
+[   16.521405] sdm845-gpucc 5090000.clock-controller: sync_state() pending due to 506a000.gmu
+[   16.531454] qnoc-sdm845 17900000.interconnect: sync_state() pending due to aa00000.video-codec
+[   16.541842] qnoc-sdm845 17900000.interconnect: sync_state() pending due to 1e40000.ipa
+[   16.551517] qnoc-sdm845 17900000.interconnect: sync_state() pending due to 1436400.pmu
+[   16.561204] qcom-rpmhpd 179c0000.rsc:power-controller: sync_state() pending due to aa00000.video-codec
+[   16.572317] qcom-rpmhpd 179c0000.rsc:power-controller: sync_state() pending due to 4080000.remoteproc
+[   16.583389] qnoc-sdm845 1380000.interconnect: sync_state() pending due to 888000.i2c
+[   16.592913] qnoc-sdm845 17900000.interconnect: sync_state() pending due to 888000.i2c
+[   16.602516] qnoc-sdm845 1500000.interconnect: sync_state() pending due to 888000.i2c
+[   16.612037] qnoc-sdm845 16e0000.interconnect: sync_state() pending due to 888000.i2c
+[   16.621535] qcom-rpmhpd 179c0000.rsc:power-controller: sync_state() pending due to 888000.i2c
+[   16.631816] gcc-sdm845 100000.clock-controller: sync_state() pending due to 888000.i2c
+[   21.337723] udc a600000.usb: UDC had already started
+[   23.485057] omamobile-blueline: beat 23s steps:[7s] step: v0aa wartet das Messfenster der Runde aus
+[   25.507914] omamobile-blueline: beat 25s steps:[7s] step: v0aa wartet das Messfenster der Runde aus
+[   26.348432] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[   26.360710] omamobile-blueline:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[   26.573196] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   27.530537] omamobile-blueline: beat 27s steps:[26s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[   27.594818] omamobile-blueline: weicher-bind 1: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1= text1=, UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0
+[   29.565304] omamobile-blueline: beat 29s steps:[26s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[   31.598102] omamobile-blueline: beat 31s steps:[26s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[   32.647189] omamobile-blueline: weicher-bind 1 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[   36.326556] ldo22: disabling
+[   40.506190] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   40.548219] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   41.409127] udc a600000.usb: UDC had already started
+[   41.762240] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[   41.841978] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   41.880512] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   46.431753] omamobile-blueline:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[   48.005529] omamobile-blueline: dmesg gesichert: /run/dmesg-12s.txt /run/dmesg-2s.txt /run/dmesg-42s.txt
+[   52.725995] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[   52.940522] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   53.961082] omamobile-blueline: weicher-bind 2: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0
+[   59.015346] omamobile-blueline: weicher-bind 2 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[   60.252915] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   60.305389] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   61.492304] udc a600000.usb: UDC had already started
+[   61.520899] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[   61.607429] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   61.658218] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   66.517939] omamobile-blueline:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[   79.084507] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[   79.277375] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   80.299158] omamobile-blueline: weicher-bind 3: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0
+[   81.007255] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   81.057482] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[   81.618054] udc a600000.usb: UDC had already started
+[   85.349370] omamobile-blueline: weicher-bind 3 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[   86.642001] omamobile-blueline:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[  100.380429] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  100.466650] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  100.522636] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  101.738556] udc a600000.usb: UDC had already started
+[  101.778192] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  101.865697] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  101.919699] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  105.445875] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  105.690397] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  106.714177] omamobile-blueline: weicher-bind 4: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0
+[  106.771691] omamobile-blueline:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[  111.766226] omamobile-blueline: weicher-bind 4 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  120.345256] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  120.398781] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  121.748794] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  121.808534] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  121.940294] udc a600000.usb: UDC had already started
+[  126.958717] omamobile-blueline:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[  131.867145] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  132.115875] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  133.136532] omamobile-blueline: weicher-bind 5: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0
+[  138.190320] omamobile-blueline: weicher-bind 5 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  140.360074] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  140.415921] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  141.770592] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  141.818942] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  142.114710] udc a600000.usb: UDC had already started
+[  158.291752] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  158.544471] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  159.565471] omamobile-blueline: weicher-bind 6: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0
+[  160.259621] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  160.317715] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  161.666004] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  161.722443] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  162.179752] udc a600000.usb: UDC had already started
+[  164.619123] omamobile-blueline: weicher-bind 6 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  167.885239] omamobile-blueline: warten beendet nach 160s, runde  fertig
+[  167.922168] EXT4-fs (sda21): ext4_check_descriptors: Block bitmap for group 0 not in group (block 58080576997508677)!
+[  167.937280] EXT4-fs (sda21): group descriptors corrupted!
+[  167.958093] omamobile-blueline: v0ag userdata mount rw fehlgeschlagen: [  167.885239] omamobile-blueline: warten beendet nach 160s, runde  fertig;[  167.922168] EXT4-fs (sda21): ext4_check_descriptors: Block bitmap for group 0 not in group (block 58080576997508677)!;[  167.937280] EXT4-fs (sda21): group descriptors corrupted!;
+[  168.018753] omamobile-blueline: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+[  169.063544] omamobile-blueline: schreib_rc=0 8+0 records in 8+0 records out 1048576 bytes (1.0MB) copied, 0.011647  platte=/dev/sda ro_achter=1
+[  181.093551] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  181.187679] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  181.246511] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  184.719286] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  184.977127] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  185.996790] omamobile-blueline: weicher-bind 7: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0
+[  191.056968] omamobile-blueline: weicher-bind 7 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  200.723286] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  200.779281] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  202.122375] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  202.180151] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  211.156634] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  211.423433] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  212.442210] omamobile-blueline: weicher-bind 8: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0
+[  217.498857] omamobile-blueline: weicher-bind 8 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  220.613265] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  220.671720] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  222.005713] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  222.050844] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  237.603065] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  237.856182] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  238.876804] omamobile-blueline: weicher-bind 9: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0
+[  240.460926] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  240.515083] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  241.859288] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  241.915023] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  243.932726] omamobile-blueline: weicher-bind 9 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  260.365610] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  260.420633] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  261.734742] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  261.790621] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  264.004180] NOTICE: Automounting of tracing to debugfs is deprecated and will be removed in 2030
+[  264.274096] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  265.297744] omamobile-blueline: weicher-bind 10: write rc=1 text=sh: write error: Resource busy vorher= pfad= gefunden=0 suche= scrca=9 modepfad=1 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted rc0=9 text0=kein Knopf rc1=9 text1=kein Knopf, Suche: , UDC steht auf a600000.usb, staat=, interfaces=lo sit0 usb0
+[  270.355253] omamobile-blueline: weicher-bind 10 spaeter 5s: sc1rc=9 sc1text=kein Knopf, Suche:  scrca=9 gefunden=0 modewert=cat: can't open '/sys/kernel/debug/usb/a600000.usb/mode': Operation not permitted, UDC steht auf a600000.usb, staat=, udc-state=configured
+[  280.243517] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  280.287256] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  281.637296] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7
+[  281.692592] Lockdown: cat: debugfs access is restricted; see man kernel_lockdown.7

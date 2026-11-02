@@ -1,0 +1,5 @@
+Satz vor dem Write, 2026-11-02 16:42:
+userdata traegt keine Nutzerdaten - Superblock-Region bei Offset 1024 ist null, mount -o ro meldet wrong fs type bad superblock, das Gerat ist entsperrt (unlocked: yes) und ein Entsperren loescht auf diesem Gerat die Nutzerdaten; belegt in diesem Ordner (ud-superblock.txt, ud-mount-ro.txt, geraete-status.txt).
+Backup boot_a vor dem Write: 67108864 B, sha256 0478f8dbe456a5877976f2514aa105619acf6c91056afb14eabe824d5c6929a0, gemessen gegen sha256-lokal.txt.
+Bild boot_a: v0ag, sha256 a6467b1a88b308d462b714ab62da71608c24b89c066556dda1ea7981cb885168.
+Bild userdata: 1073741824 B, sha256 c4e43c11fa6660df34b87bb10ed265ccce2e7897b935b3490722c17cb67592c3.

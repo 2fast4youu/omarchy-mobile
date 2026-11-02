@@ -1,0 +1,2 @@
+0' ' '
+Google Pixel 3 google,blueline qcom,sdm845 ~ # printf '@@%s\n' ENDE_dtb-modell-txt

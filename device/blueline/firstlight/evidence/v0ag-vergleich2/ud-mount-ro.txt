@@ -1,0 +1,2 @@
+mount: /mnt/ud: can't find in /etc/fstab.
+rc=0

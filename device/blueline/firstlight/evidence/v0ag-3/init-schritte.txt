@@ -1,0 +1,40 @@
+[6s] step: modul u_serial.ko geladen
+[6s] step: modul usb_f_acm.ko geladen
+[6s] step: moduli: 1 geladen, usb_f_ncm 3
+[6s] step: usb gadget setup (reference sequence)
+[6s] step: vor mkdir: configfs=0 libcomposite=1 module=5
+[6s] step: nach mount: configfs=0 ordner=ja udc=a600000.usb
+[6s] step: udc-lesung 1: uptime 6.09s, inhalt: a600000.usb
+[6s] step: udc nach 0 runden gefunden: a600000.usb, uptime 6.11s
+[6s] step: network function: ncm.usb0
+[6s] step: binding UDC a600000.usb
+[6s] step: UDC steht auf: a600000.usb
+[6s] step: ifconfig usb0 172.16.42.1
+[6s] step: network bring-up
+[6s] step: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+[6s] step: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+[6s] step: raw log channel live on /dev/sda11
+[6s] step: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+[6s] step: debug shell armed
+[6s] step: storage guard pass 1
+[6s] step: storage guard pass 1 done
+[6s] step: v0ag userdata-suche: partition=sda21 sektor=16547840
+[6s] step: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+[7s] step: schreib_rc=1 dd: error writing '/dev/sda11': No space left on device 9+0 records in platte=/dev/sda ro_achter=1
+[7s] step: schreib_rc=1 dd: error writing '/dev/sda11': No space left on device 9+0 records in platte=/dev/sda ro_achter=1
+[7s] step: init main flow complete; PID 1 parking
+[7s] step: init main flow complete; v0aa steuert den Selbst-Rueckweg an
+[7s] step: v0aa wartet das Messfenster der Runde aus
+[26s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[46s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[47s] step: dmesg gesichert: /run/dmesg-12s.txt /run/dmesg-2s.txt /run/dmesg-42s.txt
+[66s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[86s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[106s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[126s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[147s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[167s] step:  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0  | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[167s] step: warten beendet nach 160s, runde  fertig
+[167s] step: v0ag userdata mount rw fehlgeschlagen: [  167.885239] omamobile-blueline: warten beendet nach 160s, runde  fertig;[  167.922168] EXT4-fs (sda21): ext4_check_descriptors: Block bitmap for group 0 not in group (block 58080576997508677)!;[  167.937280] EXT4-fs (sda21): group descriptors corrupted!;
+[168s] step: boot_a selbst gefunden: sda11 (aus /sys/block/sda/sda11/uevent)
+[169s] step: schreib_rc=0 8+0 records in 8+0 records out 1048576 bytes (1.0MB) copied, 0.011647  platte=/dev/sda ro_achter=1

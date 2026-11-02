@@ -1,0 +1,20 @@
+total 36
+drwxr-xr-x    2 root     root          1840 Oct 28  2026 [1;34mbin[m
+drwxr-xr-x    8 root     root          4640 Jan  1 00:00 [1;34mdev[m
+drwxr-xr-x   17 root     root           820 Oct 28  2026 [1;34metc[m
+drwxr-xr-x    2 root     root            40 Oct 28  2026 [1;34mhome[m
+-rwxr-xr-x    1 root     root         34505 Oct 28  2026 [1;32minit[m
+drwxr-xr-x    6 root     root           160 Oct 28  2026 [1;34mlib[m
+drwxr-xr-x    5 root     root           100 Oct 28  2026 [1;34mmedia[m
+drwxr-xr-x    2 root     root            40 Oct 28  2026 [1;34mmnt[m
+drwxr-xr-x    2 root     root            40 Oct 28  2026 [1;34mopt[m
+dr-xr-xr-x  217 root     root             0 Jan  1 00:00 [1;34mproc[m
+drwx------    3 root     root            60 Oct 28  2026 [1;34mroot[m
+drwxrwxrwt    3 root     root           260 Jan  1 00:00 [1;34mrun[m
+drwxr-xr-x    2 root     root          1840 Oct 28  2026 [1;34msbin[m
+drwxr-xr-x    2 root     root            40 Oct 28  2026 [1;34msrv[m
+dr-xr-xr-x   13 root     root             0 Jan  1 00:00 [1;34msys[m
+drwxrwxrwt    2 root     root            60 Jan  1 00:00 [1;34mtmp[m
+drwxr-xr-x    7 root     root           140 Jan  1 00:02 [1;34mud[m
+drwxr-xr-x    7 root     root           140 Oct 28  2026 [1;34musr[m
+drwxr-xr-x   11 root     root           260 Oct 28  2026 [1;34mvar[m

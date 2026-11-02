@@ -1,0 +1,2 @@
+total 0
+drwxr-xr-x    7 root     root             0 Jan  1 00:04 [1;34mg1[m

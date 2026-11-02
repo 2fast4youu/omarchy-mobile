@@ -1,0 +1,1 @@
+Linux (none) 7.1.0-rc1-sdm845 #5-postmarketos-qcom-sdm845 SMP PREEMPT Tue Jul 14 03:51:45 UTC  aarch64 Linux
