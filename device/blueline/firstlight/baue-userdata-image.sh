@@ -11,7 +11,7 @@
 # Das Image traegt neben dem Alpine-minirootfs einen eigenen /init: der
 # Initramfs-Teil hat das Gadget schon gebunden und das Netzwerk steht, also muss
 # /init nur Haenden, Belegen und den Funkstille-Rueckweg mitbringen. Ohne
-# restart2 im neuen Root waere der Rueckweg nach dem switch_root weg — derselbe
+# restart2 im neuen Root waere der Rueckweg nach dem switch_root weg - derselbe
 # Fehler wie das Modul, das im Archiv hinter dem TRAILER lag.
 set -eu
 ZIEL=/ws/images/userdata-alpine
@@ -21,7 +21,7 @@ BAU=/tmp/bau-ud   # der Baum lebt auf dem Container-eigenen Overlay:
 # virtiofs-Freigabe keine hat. Overlay kann es, also bleibt die Freigabe nur
 # fuer das fertige Bild zustaendig.
 GRuesse=1073741824                      # 1 GiB, absichtlich klein: schneller Schreib
-# Achtung: mke2fs nimmt als Schlussfeld die BLOCKZAHL, nicht Bytes — mit der
+# Achtung: mke2fs nimmt als Schlussfeld die BLOCKZAHL, nicht Bytes - mit der
 # Bytezahl entstand ein 1-TiB-Image. Die Groesse steht nur im truncate.
 # tune2fs liegt in Alpine in einem eigenen Paket; ohne es lief die
 # Kopf-Pruefung als 'tune2fs: not found' durch, weil die Zeile in einer
@@ -42,13 +42,13 @@ mkdir -p "$BAU/wurzeln/ud"
 tar -xzf "$MINI" -C "$BAU/wurzeln/ud"
 # restart2 muss aus dem Baum kommen; der Pfad wird gesucht, nicht geraten.
 R2=$(ls /w/device/blueline/firstlight/*/restart2 /w/device/blueline/firstlight/restart2 2>/dev/null | head -1)
-[ -n "${R2:-}" ] || { echo "restart2 nicht gefunden — Rueckweg waere blind"; exit 1; }
+[ -n "${R2:-}" ] || { echo "restart2 nicht gefunden - Rueckweg waere blind"; exit 1; }
 install -m 755 "$R2" "$BAU/wurzeln/ud/bin/restart2"
 cp /w/device/blueline/firstlight/rootfs-init-fuer-ud.sh "$BAU/wurzeln/ud/init" 2>/dev/null \
   || echo "ACHTUNG: rootfs-init-fuer-ud.sh fehlt, /init bleibt der Alpine-init"
 chmod 755 "$BAU/wurzeln/ud/init" 2>/dev/null
 # Der Uebergabetest im Init lautet [ -x /ud/init ]. Eine 644-Quelldatei bleibt im
-# Dateisystem 644, und die Uebergabe bleibt stumm aus — genau so in der Nacht auf
+# Dateisystem 644, und die Uebergabe bleibt stumm aus - genau so in der Nacht auf
 # den 2026-11-02 gemessen: 'uebergabe bleibt aus: init_da=66 schalter=/sbin/switch_root'.
 [ -x "$BAU/wurzeln/ud/init" ] || { echo "/init im Bild ist nicht ausfuehrbar"; exit 1; }
 mkdir -p "$BAU/wurzeln/ud/omamobile"
