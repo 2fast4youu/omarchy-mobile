@@ -46,6 +46,11 @@ R2=$(ls /w/device/blueline/firstlight/*/restart2 /w/device/blueline/firstlight/r
 install -m 755 "$R2" "$BAU/wurzeln/ud/bin/restart2"
 cp /w/device/blueline/firstlight/rootfs-init-fuer-ud.sh "$BAU/wurzeln/ud/init" 2>/dev/null \
   || echo "ACHTUNG: rootfs-init-fuer-ud.sh fehlt, /init bleibt der Alpine-init"
+chmod 755 "$BAU/wurzeln/ud/init" 2>/dev/null
+# Der Uebergabetest im Init lautet [ -x /ud/init ]. Eine 644-Quelldatei bleibt im
+# Dateisystem 644, und die Uebergabe bleibt stumm aus — genau so in der Nacht auf
+# den 2026-11-02 gemessen: 'uebergabe bleibt aus: init_da=66 schalter=/sbin/switch_root'.
+[ -x "$BAU/wurzeln/ud/init" ] || { echo "/init im Bild ist nicht ausfuehrbar"; exit 1; }
 mkdir -p "$BAU/wurzeln/ud/omamobile"
 echo "M1.5-Wurzel auf userdata, gebaut $(date -u +%FT%TZ)" > "$BAU/wurzeln/ud/omamobile/HERKUNFT"
 df -k "$BAU/wurzeln/ud" | tail -1

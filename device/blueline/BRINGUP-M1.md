@@ -3473,3 +3473,79 @@ Telnet-Probe meldete Port 23 zu, dann stand das Telefon wieder in Fastboot — d
 Selbst-Rueckweg des Init hatte nach Funkstille zurueckgegeben, was das Design von
 v0aa/v0ab ist. Laengere Zyklen laufen von jetzt an als Hintergrundprozess mit
 Meldung, nicht als foreground-Kette, die das Werkzeug abreisst.
+
+
+## Nachtrag 26 (2026-11-02, 23:2x  - 2026-11-03, 00:5x): Wurzel #17, und die Wurzel auf userdata
+
+**Zuerst der Erfolg.** Nach dem erzwungenen Neustart laeuft der Write-Zyklus in
+**50 Sekunden** durch: userdata 114 688 KB in `Sending OKAY [2.970 s]` /
+`Writing OKAY [0.135 s]`, boot_a 20 648 KB, `--set-active=a`, Reboot, Exit 0.
+Hub, Sackgeometrie und Sitzungsanzahl sind damit endgueltig draussen.
+
+**Erste Partitions-Marke (Wurzel #16).** Der Mount scheiterte weiterhin, jetzt aber
+mit Wortlaut (seit v0ai ohne `2>/dev/null`):
+
+    EXT4-fs (loop0): I/O error while writing superblock
+    mount: /ud: can't read superblock on /dev/loop0
+
+Von Hand am laufenden Telefon gemessen:
+
+    losetup -f --show -o 1048576 /dev/sda21  -> /dev/loop0
+    losetup -l /dev/loop0                     -> /dev/loop0 0 1048576 0 0 /dev/sda21 0 512
+    dd if=/dev/loop0 bs=1 skip=1080 count=2  -> 53 ef            (Superblock steht da)
+    blockdev --getro /dev/sda21               -> 1               (Partition ist zu)
+
+Der Byte-Versatz war von Anfang an richtig. **pass 1 der Wache legt jede Partition
+einzeln unter ro**, und die Ausnahme in der Halteschleife verhindert nur das
+*erneute* Setzen  - sie hebt ein vorhandenes ro nicht auf. Der Init gab je nur die
+*Platte* frei. Von Hand freigegeben montierte derselbe Loop sofort:
+
+    mount -o rw /dev/loop0 /ud            -> /dev/loop0 /ud ext4 rw,relatime 0 0
+    ls /ud                                -> bin dev etc home init lib
+    cat /ud/etc/alpine-release            -> 3.24.3
+
+**v0aj** (sha `0206cb16...`) gibt deshalb Platte *und* Partition frei und haelt die
+Partition aktiv rw. Boot damit, Marke bei 172 s:
+
+    v0aj userdata rw: /dev/sda21 on /ud type ext4 (rw,relatime)
+    v0aj wache: platte_ro=0 ud_ro=0 schreibtest=probe
+
+**Zweite Partitions-Marke (Wurzel #17).** Sechs Sekunden spaeter trotzdem:
+
+    [  174.114810] Buffer I/O error on dev loop0, logical block 131072, lost sync page write
+
+und danach `touch /ud/.probe-zwei` → `Read-only file system`. Der Grund sitzt in
+derselben Schleife, Zeile 537 des Init: sie laeuft ueber **`/sys/class/block/sd*`**  -
+das Muster erfasst auch **`/dev/sda` selbst**. Freigegeben war nur `$ud`, also legte
+die Halteschleife die Platte jede Sekunde erneut unter ro, und die Partition folgt
+dem Plattenschalter (Wurzel #9, jetzt von der anderen Seite: nicht das Setzen auf
+der Partition, sondern das Setzen auf der Platte). **v0ak** (sha `f5ac4efd...`)
+verschont deshalb die Platte der Userdata-Partition und haelt Platte wie Partition
+aktiv rw.
+
+**Haltbarkeit ist belegt.** UEber einen echten Neustart hinweg blieben auf dem
+Dateisystem:
+
+    /ud/.probe-leben     -> ueberlebt-v0ai      (vor dem Neustart geschrieben)
+    /ud/.v0aj-besuch     -> die init-Marke selbst
+    /ud/.v0aj-schreib    -> der Schreibtest der Wache
+
+Damit ist M1.5 Kriterium "eine geschriebene Datei ueberlebt einen Neustart" erfuellt.
+
+**Uebergabe blieb zweimal aus  - aus zwei verschiedenen Gruenden.** Zuerst
+`uebergabe bleibt aus: init_da=66 schalter=/sbin/switch_root`: das Bild liefert
+`/ud/init` mit 0644 aus, der Test heisst aber `[ -x /ud/init ]`. Von Hand auf 0755
+gesetzt, **und der chmod war nach dem Neustart wieder weg**  - weil die Platte
+bereits wieder unter ro lag (Wurzel #17) und ext4 mit `errors=remount-ro` geantwortet
+hatte. Zweitens: `chmod 755` steht jetzt auch im Image-Bauer
+(`baue-userdata-image.sh`, mit Abbruch, wenn die Bit nicht gesetzt wird) und
+vorsichtshalber im Init vor der Uebergabe (`v0ak init scharf gemacht:`).
+
+**Stand um 00:5x:** v0ak bootet, und das Telefon meldet sich **nicht** mehr auf
+Telnet (172.16.42.1 und 192.168.5.1, Port 23, kein Ping)  - waehrend es am USB-Baum
+als "Pixel 3 (blueline)" haengt, also in Linux ist. Genau das erwartet dieses Bild:
+die Userdata-Wurzel bringt kein Gadget und kein telnetd mit, ihr `/init` haelt nur
+eine Shell am Panel offen und fuehrt nach fuenf Minuten Funkstille `restart2` in den
+Bootloader. Die Uebergabe ist damit stark belegt, aber **nicht abgelesen**  - dafuer
+muss die neue Wurzel selbst sichtbar werden (Gadget + telnetd + Stempel-Datei), und
+das Panel kann nur ein Mensch lesen (M1.2).
