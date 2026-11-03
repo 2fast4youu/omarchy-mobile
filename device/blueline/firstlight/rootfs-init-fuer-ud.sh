@@ -23,6 +23,38 @@ grep -q '^[^ ]* /dev/pts ' /proc/mounts 2>/dev/null || mount -t devpts devpts /d
 mkdir -p /omamobile
 
 # ---------------------------------------------------------------------------
+# Die Platte offenhalten, fuer die ganze Laufzeit. switch_root laesst die
+# Hintergrundprozesse des Initramfs laufen, aber seine Halteschleife lebte im
+# Init-Skript selbst und stirbt in dem Moment, in der switch_root die Wurzel
+# ersetzt. Danach legt die Storage-Wache die UFS-Platte wieder unter ro, und
+# ext4 verliert den naechsten Schreibvorgang. Gemessen 2026-11-03 15:2x in der
+# ersten erfolgreichen Uebergabe: 'EXT4-fs (loop0): I/O error while writing
+# superblock', 'Remounting filesystem read-only' bei Uptime 169 s, dazu
+# blockdev --getro = 1 auf Platte UND Partition, waehrend loop0 selbst rw meldet.
+# Getragen wird, was in der Mount-Zeile der Wurzel steht - bei einem Loop-Geraet
+# der Datentraeger dahinter, denn die Partition folgt dem Schalter der Platte.
+# ---------------------------------------------------------------------------
+WURZEL=$(awk '$2=="/" {print $1; exit}' /proc/mounts 2>/dev/null)
+HALTETRN="keins"
+case "${WURZEL:-}" in
+    /dev/loop*)
+        KNOTEN=$(cat "/sys/class/block/${WURZEL##*/}/loop/${WURZEL##*/}/backing_dev" 2>/dev/null) ;;
+    /dev/*)
+        KNOTEN=$(basename "$(readlink -f "$WURZEL")" 2>/dev/null) ;;
+    *)
+        KNOTEN="" ;;
+esac
+if [ -n "${KNOTEN:-}" ] && [ -e "/sys/dev/block/$KNOTEN" ]; then
+    PART=$(basename "$(readlink -f "/sys/dev/block/$KNOTEN")" 2>/dev/null)
+    PLATTE=$(basename "$(dirname "$(readlink -f "/sys/dev/block/$KNOTEN")")" 2>/dev/null)
+    HALTETRN="$PLATTE $PART"
+fi
+( while :; do
+    for knoten in $HALTETRN; do blockdev --setrw "/dev/$knoten" 2>/dev/null; done
+    sleep 1
+  done ) &
+
+# ---------------------------------------------------------------------------
 # Sichtbar machen, was hier laeuft. switch_root haelt den Kernel, aber es haengt
 # auch das configfs ab: der Gadget-Satz des Initramfs ist damit weg, und ohne
 # Netz ist diese Wurzel fuer den Mac taub - genau so in der Nacht auf den
@@ -79,6 +111,7 @@ done
     echo "wurzel=$(awk '$2=="/"{print $1" "$3" "$4}' /proc/mounts | head -1)"
     echo "kernel=$(uname -r)"
     echo "netz=$NETZ udc=$(cat $CFG/g1/UDC 2>/dev/null)"
+    echo "halte=${HALTETRN} ro=$(blockdev --getro "/dev/${HALTETRN%% *}" 2>/dev/null)/$(blockdev --getro "/dev/${HALTETRN##* }" 2>/dev/null)"
 } > /omamobile/LEBEN 2>/dev/null
 sync
 ( while :; do telnetd -l /bin/sh; sleep 2; done ) &
