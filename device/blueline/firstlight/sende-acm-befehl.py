@@ -26,7 +26,8 @@ def oeffne(pfad):
     a = termios.tcgetattr(fd)
     a[0] = termios.IGNBRK | termios.ICRNL          # rohe Leitung, aber CR -> LF
     a[1] = 0
-    a[2] = termios.CS8 | termios.CREAD | termios.CLOCAL | termios.PARENB  # 8N1
+    a[2] = termios.CS8 | termios.CREAD | termios.CLOCAL
+    a[2] &= ~termios.PARENB                                    # echtes 8N1, kein Paritaetsbit
     a[3] = 0
     a[4] = termios.B115200
     a[5] = termios.B115200
