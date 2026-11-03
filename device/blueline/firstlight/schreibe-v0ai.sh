@@ -52,11 +52,19 @@ schreib() {
     ( sleep "$FRIST"; pkill -f "fastboot flash $partei" 2>/dev/null ) </dev/null \
         >/dev/null 2>&1 &
     waechter=$!
-    if $FB flash "$partei" "$datei" 2>&1 | tail -3; then
-        kill "$waechter" 2>/dev/null || true
-    else
-        kill "$waechter" 2>/dev/null || true
-        echo "FEHLER: Write auf $partei brachte kein OKAY"
+    # Kein Rohrleitung-Exit: 'flash … | tail -3' meldet tails Ausgang, nicht den
+    # von fastboot, und ein abgebrochener Write gilt als gelungen (dieselbe Falle
+    # wie beim '… | tail' der Bauern). Der Ausgang kommt aus einer Datei.
+    aus=$LOG.schreib-$partei.txt
+    if $FB flash "$partei" "$datei" >"$aus" 2>&1; then rc=0; else rc=$?; fi
+    kill "$waechter" 2>/dev/null || true
+    tail -3 "$aus"
+    if [ "$rc" -ne 0 ]; then
+        echo "FEHLER: Write auf $partei endete mit Ausgang $rc (Volles Protokoll: $aus)"
+        return 1
+    fi
+    if ! grep -q OKAY "$aus"; then
+        echo "FEHLER: Write auf $partei meldete kein OKAY (Volles Protokoll: $aus)"
         return 1
     fi
 }
