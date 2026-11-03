@@ -20,7 +20,8 @@ grep -q '^[^ ]* /sys ' /proc/mounts 2>/dev/null || mount -t sysfs sysfs /sys 2>/
 grep -q '^[^ ]* /dev ' /proc/mounts 2>/dev/null || mount -t devtmpfs devtmpfs /dev 2>/dev/null
 mkdir -p /dev/pts
 grep -q '^[^ ]* /dev/pts ' /proc/mounts 2>/dev/null || mount -t devpts devpts /dev/pts 2>/dev/null
-mkdir -p /omamobile
+# /omamobile entsteht erst nach dem Freigeben der Platte (weiter unten): der
+# erste Schreibvorgang auf der Wurzel darf nicht ins ro-Fenster fallen.
 
 # ---------------------------------------------------------------------------
 # Die Platte offenhalten, fuer die ganze Laufzeit. switch_root laesst die
@@ -91,6 +92,16 @@ for knotenpfad in "${TRAGER:-}" $(awk '$3!="rootfs" && $1 ~ /^\/dev\/sd/ {print 
 done
 HALTETRN=$(printf '%s' "$HALTETRN" | sed -e 's/^ //')
 
+# v0al: das Geraet VOR dem ersten Schreibvorgang freigeben. Beim Uebergang ist
+# es noch ro (der 1-MB-Test des Initramfs auf boot_a endet mit ro_achter=1);
+# ein mkdir auf der Wurzel loeste sonst den Journal-Fehler aus, und ext4 bliebe
+# fuer den ganzen Boot zu (gemessen 16:30: I/O error bei 29.303 s, danach
+# emergency_ro, obwohl die Schleife ab 29 s ro=0/0 meldet). Die Schleife unten
+# haelt danach weiter.
+for knoten in $HALTETRN; do
+    blockdev --setrw "/dev/$knoten" 2>/dev/null
+done
+
 # Halten, gegenmessen, melden. Die Gegenmessung ist der eigentliche Grund, diese
 # Fassung zu bauen: eine Schleife, die gegen ein nicht existentes Geraet laeuft,
 # sah bisher von aussen lebendig aus. Alle 30 Runden geht eine Zeile nach
@@ -113,6 +124,7 @@ HALTETRN=$(printf '%s' "$HALTETRN" | sed -e 's/^ //')
     fi
     sleep 1
   done ) &
+mkdir -p /omamobile
 
 # ---------------------------------------------------------------------------
 # Sichtbar machen, was hier laeuft. switch_root haelt den Kernel, aber es haengt
