@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ein Befehl ueber die ACM-Serielle-Konsole am Telefon (ttyGS0 -> /dev/cu.*).
+"""Ein Befehl ueber die ACM-Serielle-Konsole am Telefon (ttyGS0 auf /dev/cu.*).
 
 Anlass: in der Nacht auf 2026-11-03 ist das Telefon auf USB sichtbar
 (0x18d1:0xd002, Hersteller 'Omarchy Mobile'), aber ohne IP und ohne Fastboot.
@@ -7,7 +7,7 @@ Dafuer steht einshell auf der seriellen Konsole: /dev/cu.usbmodem103303
 antwortet auf jede Zeile mit '~ #'. Diese Leitung war bisher nie benutzt.
 
 Die Shell buegelt ihre Antwort mit CR LF und schickt die Cursor-Auskunft
-ESC[6n — beides wird hier weggenommen, bevor gerahmt wird.
+ESC[6n - beides wird hier weggenommen, bevor gerahmt wird.
 """
 import os
 import re
@@ -61,9 +61,9 @@ def main():
             os.write(fd, (befehl + "\n").encode())
             antwort = lies(fd, 3.0).decode("utf-8", "replace")
             antwort = re.sub(r"\x1b\[[0-9;?]*[A-Za-z]", "", antwort)
-            zeilen = [z.strip() for z in antwort.splitlines() if z.strip()]
-            while zeilen and befehl[:20] in zeilen[0]:
-                zeilen.pop(0)
+            alle = [z.strip() for z in antwort.splitlines() if z.strip()]
+            ki = befehl[:20]
+            zeilen = [z for z in alle if ki not in z and not z.startswith("~ #") and z not in ("$", "#")]
             print("# %s" % befehl)
             for z in zeilen[:14]:
                 print("   " + z[:150])
