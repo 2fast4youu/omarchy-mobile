@@ -1,0 +1,40 @@
+v0am: Wurzel bleibt rw, gemessen 2026-11-03 16:50-16:55
+========================================================
+
+Bild:   images/fl-v0am/firstlight.img, 21143552 B,
+        sha256 3f0faa69262544205baa715bc0ec7cccf55e9f7355a74b04b41c87c4959dec46
+Userdata: rootfs-vorlauf.sparse.img, sha256 822890f5485413c9e2949763fe0e2c398fa42dce9ee50156c5b0950de72194aa
+        (/init 6fbd21b319dc4d52e738f1419ec72d54467a8fbc8a94a4683322fa27f4a92c73, mit
+        synchronem setrw vor dem ersten Schreibvorgang)
+boot_a v0am, Slot a, retry-count 3; userdata-only-Write davor, boot_a danach.
+
+Neustart 16:50:53, Port 23 offen 16:51:19 = 26 s.
+
+/omamobile/LEBEN (uptime 29.28 s), woertlich:
+    uebergabe-zeit=1970-01-01T00:00:29Z
+    uptime=29.28
+    wurzel=/dev/loop0 ext4 rw,relatime
+    kernel=7.1.0-rc1-sdm845
+    netz=usb0 udc=a600000.usb
+    halte=sda sda21 ro=0/0
+
+/proc/mounts bei Uptime 232 s:  /dev/loop0 / ext4 rw,relatime 0 0
+Schreibtest bei 232 s:          echo probe > /omamobile/rw-probe; sync; cat -> "probe-"
+dmesg 'I/O error':              0
+
+Damit ist die Grenze von 15:34 (I/O error bei 169 s, emergency_ro) ueberschritten:
+die Wurzel bleibt rw, der Stempel steht auf der echten Partition, und die
+Halteschleife meldet Platte und Partition mit ro=0/0.
+
+Warum v0am noetig war (Messung 16:45, /init 6fbd21b3, v0al):
+    [   29.205376] Trying to write to read-only block-device sda21
+    [   29.318391] EXT4-fs (loop0): I/O error while writing superblock
+    [   29.325592] EXT4-fs (loop0): Remounting filesystem read-only
+Die Wache des Initramfs laeuft nach switch_root weiter; ihre Ausnahme stand in
+/tmp/uddev, und /tmp ist mit dem alten Root verschwunden. Ihr naechster
+Durchlauf legte sda21 ro, 0,1 s nachdem die neue Halteschleife freigegeben
+hatte. v0am schreibt den Namen zusaetzlich nach /run/uddev (ueberlebt den
+Uebergang) und die Wache liest /run zuerst.
+
+Nebenwirkungen: switch_root bei 29 s statt 169 s (v0al, Runde bricht nach dem
+ersten configured ab); keine Aenderung an boot_b oder dtbo_b.
