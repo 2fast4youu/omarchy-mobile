@@ -55,6 +55,23 @@ ohne Stempel = Uebergabe vor dem Stempel gescheitert; Stempel da ohne Netz =
 Gadget-Aufbau in der neuen Wurzel fehlgeschlagen, die `/ud`-Lesung aus dem
 Initramfs bleibt als Beweis erhalten.
 
+Wartend jetzt in einer Dauerschleife, nicht mehr in einzelnen Fenstern:
+
+```sh
+cd /Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
+while :; do aus=$(mktemp -t warte-fenster)
+  FRIST_RUNDEN=1440 sh warte-und-schreibe.sh >"$aus" 2>&1; zy=$?
+  sed 's/^/  /' "$aus"
+  grep -q "telefon im fastboot" "$aus" && { echo "Zyklus durchgelaufen, Exit $zy"; break; }
+  echo "Fenster um, nichts geschrieben (Exit $zy)"; sleep 20
+done
+```
+
+Der Grund fuer die Zeile mit `grep` statt eines Blicks auf den Ausgang:
+`warte-und-schreibe.sh` meldet Ausgang 1 fuer BEIDES - kein Geraet im Fenster und
+ein fehlgeschlagener Write (der Zyklus selbst endet mit 1). Wer eine Schleife auf
+den Ausgang baut, hoert nach dem ersten echten Fehler einfach auf.
+
 Der Handgriff bleibt der einzige Weg ins Fastboot: Power + Leiser 10-20 s, bis
 FASTBOOT MODE im Display steht. Von der seriellen Shell aus ist kein Neustart
 moeglich, der dort ankommt - die ueberlebende Shell hat eine geleerte Wurzel,
