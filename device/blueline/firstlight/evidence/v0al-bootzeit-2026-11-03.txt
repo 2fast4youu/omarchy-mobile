@@ -1,0 +1,39 @@
+v0al: Bootzeit gemessen, 2026-11-03 16:11-16:12
+=================================================
+
+Bild:   /Users/gregor/hermes-workspace/images/fl-v0al/firstlight.img
+        21143552 B, sha256 5eeb6bedfa7a81116f0320912cf2835c0a2ded3e03d3d4ce07f3276c5d34c5b3
+Flash:  boot_a, Sending OKAY [0.620s], Writing OKAY [0.178s]
+        slot-retry-count:a vorher 2, nachher 3; slot-unbootable:a no
+Rueckweg geprueft: fl-v0ak f5ac4efda70345d864ea9bf431c4fb6d930b686e6dc97b4b00da37f4f25a426a,
+        pmos-ref ed2c225f79ad6e5ad2dc8a7ac8582fdfdeadddfd76805fdeddd0b75311f76f82
+
+Neustart kommandiert 16:11:37, Port 23 offen 16:12:03 = 26 s.
+
+Schritt-Log (/run/steps.log) dieses Boots, woertlich:
+[7s]  step: init main flow complete; v0aa steuert den Selbst-Rueckweg an
+[7s]  step: v0aa wartet das Messfenster der Runde aus
+[21s] step: v0al runde 1 bei 21s: debugfsrc=0 configfsrc=0 udc=a600000.usb | g1 war da: g1  | gebunden=a600000.usb | connect rc=0 text=ohne pfad=/sys/class/udc/a600000.usb/soft_connect state=configured netz=lo sit0 usb0
+[26s] step: v0al runde frueh raus: state=configured nach 1 Runde(n)
+[27s] step: warten beendet nach 20s, runde  fertig
+[27s] step: v0ak freigabe: platte rc=0 partition rc=0 ro=0 text=
+[27s] step: v0ak userdata rw: /dev/sda21 on /ud type ext4 (rw,relatime)
+[29s] step: v0ak uebergabe: switch_root /ud /init
+
+Vorher (v0ak, 15:34): [167s] warten beendet nach 160s, switch_root bei 169 s.
+Also: switch_root 169 s -> 29 s (5,8x), Runde 8 -> 1, Port 23 169 s -> 26 s.
+
+Der Zustand war beim Rundenstart (6 s) noch nicht configured; die Runde schlief
+ihr sleep 15 ab, legte an, drueckte connect und brach in der naechsten Pruefung
+ab. Die verbleibenden ~15 s sind genau dieser sleep vor der ersten Pruefung.
+
+Der ro-Fehler ist von der Bootzeit unabhaengig und bleibt: bei 78 s stand die
+Wurzel wieder auf 'emergency_ro', der Stempel /omamobile/LEBEN trug
+'halte=keins ro=/' - die Aufloesung der Halteschleife greift nicht.
+
+Messung zur Aufloesung (gleicher Boot, /sys/class/block/loop0):
+  ls loop/ = autoclear backing_file dio offset partscan sizelimit
+  backing_dev existiert NICHT - weder loop/backing_dev noch loop/loop0/backing_dev
+  (beide: No such file or directory); backing_file = /dev/sda21, offset = 1048576
+Der /init der laufenden Wurzel liest loop/loop0/backing_dev und bekommt damit
+leer; das ist die Ursache von halte=keins in diesem Boot.
