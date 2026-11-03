@@ -1,0 +1,233 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+"""tests/halte-aufloesung: haelt die Platte offen, an dem Geraet, das die Wurzel traegt.
+
+Die Userdata-Wurzel (M1.5, blueline) haelt die UFS-Platte und ihre Partition
+selbst read-write, weil die Halteschleife des Initramfs mit `switch_root` stirbt
+und die Storage-Wache die Platte danach wieder unter ro legt - gemessen
+2026-11-03 an der ersten erfolgreichen Uebergabe: 'EXT4-fs (loop0): I/O error
+while writing superblock' und 'Remounting filesystem read-only', bei
+`blockdev --getro` = 1 auf Platte und Partition.
+
+Diese Datei stellt vier_SYS-Formen nach und laesst den Aufloesungsblock aus
+`device/blueline/firstlight/rootfs-init-fuer-ud.sh` dagegen laufen. Der
+Gegentest baut die Fassung vor dem Umbau wieder auf: die hielt beim Fall 'Wurzel
+direkt auf der Partition' nichts, weil sie `/sys/dev/block/<NAME>` prueft und
+dort nur `major:minor`-Eintraege stehen. Kein Telefon, kein Write, kein git.
+"""
+import os
+import subprocess
+import shutil
+import sys
+import tempfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+QUELLE = os.path.normpath(os.path.join(HERE, "..", "device", "blueline", "firstlight",
+                                      "rootfs-init-fuer-ud.sh"))
+PUNKTE = 0
+FEHLER = 0
+
+
+def ok(beschreibung, bedingung):
+    global PUNKTE, FEHLER
+    PUNKTE += 1
+    if bedingung:
+        print("ok - " + beschreibung)
+    else:
+        FEHLER += 1
+        print("not ok - " + beschreibung)
+
+
+def block(text):
+    anfang = text.index("WURZEL=$(awk")
+    ende = text.index("done ) &", anfang) + len("done ) &")
+    return text[anfang:ende]
+
+
+ALTFASSUNG_ANKER = [
+    ('    /dev/*)\n        KNOTEN=$(basename "$(readlink -f "$WURZEL")" 2>/dev/null) ;;',
+     'zweite Fall mit basename(readlink) auf dem Geraeteknoten'),
+    ('if [ -n "${KNOTEN:-}" ] && [ -e "/sys/dev/block/$KNOTEN" ]; then',
+     'Pruefung auf /sys/dev/block/<NAME> statt auf <major>:<minor>'),
+]
+
+
+def altfassung(schnipsel):
+    """Rueckbau der Fassung vor dem Umbau: zwei Bereiche ersetzt, Rest bleibt.
+
+    Bereiche statt ganzer Ankertexte: der uebrige Block traegt Kommentare, die
+    bei einem woertlichen Vergleich mitlaufen muessten und sonst still
+    daneben liegen wuerden.
+    """
+    try:
+        a = schnipsel.index('    /dev/*)')
+        b = schnipsel.index(';;', a) + len(';;')
+        alt_case = ('    /dev/*)\n'
+                    '        KNOTEN=$(basename "$(readlink -f "$WURZEL")" 2>/dev/null) ;;')
+        text = schnipsel[:a] + alt_case + schnipsel[b:]
+        c = text.index('for grund in')
+        d = text.index('\ndone', c) + len('\ndone')
+        alt_if = ('if [ -n "${KNOTEN:-}" ] && [ -e "/sys/dev/block/$KNOTEN" ]; then\n'
+                  '    PART=$(basename "$(readlink -f "/sys/dev/block/$KNOTEN")" 2>/dev/null)\n'
+                  '    PLATTE=$(basename "$(dirname "$(readlink -f "/sys/dev/block/$KNOTEN")")" 2>/dev/null)\n'
+                  '    HALTETRN="$PLATTE $PART"\n'
+                  'fi')
+        return text[:c] + alt_if + text[d:]
+    except ValueError:
+        return None
+
+
+def sandbox(ordner):
+    os.makedirs(os.path.join(ordner, "sys/dev/block"), exist_ok=True)
+    os.makedirs(os.path.join(ordner, "sys/class/block"), exist_ok=True)
+    off = open(os.path.join(ordner, "blockdev"), "w")
+    off.write('#!/bin/sh\n{ echo "$1 $2"; } >> "$AKTIONEN"\n'
+              'if [ "$1" = --getro ]; then\n'
+              '  case "${2##*/}" in sda21) cat "$ZUSTAND/sda21" 2>/dev/null;;'
+              ' sda|sdb) cat "$ZUSTAND/sda" 2>/dev/null;; esac\nfi\n')
+    off.close()
+    os.chmod(os.path.join(ordner, "blockdev"), 0o755)
+    os.makedirs(os.path.join(ordner, "zustand"), exist_ok=True)
+    open(os.path.join(ordner, "zustand/sda"), "w").write("1\n")
+    open(os.path.join(ordner, "zustand/sda21"), "w").write("1\n")
+    return ordner
+
+
+def partition(ordner, name="sda21", platte="sda", knoten="8:17"):
+    echt = os.path.join(ordner, "sys/devices/soc/ufs/block", platte, name)
+    os.makedirs(echt, exist_ok=True)
+    # Nachbau der Sysfs-Form: der Klassenknoten traegt den Namen, der
+    # dev-Knoten nur major:minor - genau der Unterschied, der hier zaehlt.
+    for teil, knotenname in (("sys/class/block", name), ("sys/dev/block", knoten)):
+        ziel = os.path.join(ordner, teil, knotenname)
+        if not os.path.islink(ziel):
+            os.symlink(os.path.relpath(echt, os.path.dirname(ziel)), ziel)
+
+
+def ganzes_platte(ordner, platte="sdb"):
+    echt = os.path.join(ordner, "sys/devices/soc/ufs2/block", platte)
+    os.makedirs(echt, exist_ok=True)
+    ziel = os.path.join(ordner, "sys/class/block", platte)
+    if not os.path.islink(ziel):
+        os.symlink(os.path.relpath(echt, os.path.dirname(ziel)), ziel)
+
+
+def loop(ordner, name="loop0", knoten="8:17"):
+    zweig = os.path.join(ordner, "sys/class/block", name, "loop", name)
+    os.makedirs(zweig, exist_ok=True)
+    open(os.path.join(zweig, "backing_dev"), "w").write(knoten + "\n")
+
+
+def laufe(schnipsel, ordner):
+    """Den Block laufen lassen; returns (Haltespur, blockdev-Aktionen, stderr)."""
+    schnipsel = schnipsel.replace(" /proc/mounts", ' "$SYS/mounts"').replace('"/sys/', '"$SYS/sys/')
+    off = open(os.path.join(ordner, "schnipsel.sh"), "w")
+    off.write(schnipsel + '\nsleep 2; ER="leer"; [ -n "${HALTETRN+x}" ] && ER="$HALTETRN";'
+                          ' kill $! 2>/dev/null; echo "ERGEBNIS|${ER}|"\n')
+    off.close()
+    umg = dict(os.environ, SYS=ordner, AKTIONEN=os.path.join(ordner, "aktionen.log"),
+               ZUSTAND=os.path.join(ordner, "zustand"), PATH=ordner + os.pathsep + os.environ["PATH"])
+    r = subprocess.run(["/bin/sh", os.path.join(ordner, "schnipsel.sh")], capture_output=True,
+                       text=True, env=umg, timeout=60)
+    zeilen = [z for z in (r.stdout or "").splitlines() if z.startswith("ERGEBNIS|")]
+    spur = zeilen[0].split("|")[1] if zeilen else None
+    aktien = ""
+    pfad = os.path.join(ordner, "aktionen.log")
+    if os.path.isfile(pfad):
+        aktien = open(pfad).read()
+    return spur, aktien, (r.stderr or "").strip()
+
+
+def frische_sandkiste(mount_zeile):
+    o = sandbox(tempfile.mkdtemp(prefix="hermes-halte-"))
+    open(os.path.join(o, "mounts"), "w").write(mount_zeile)
+    return o
+
+
+def main():
+    if not os.path.isfile(QUELLE):
+        print("not ok - Quelle fehlt: " + QUELLE)
+        return 1
+    text = open(QUELLE, encoding="utf-8").read()
+    ok("Init liegt da und parst", subprocess.run(["/bin/sh", "-n", QUELLE],
+       capture_output=True, text=True).returncode == 0)
+    ok("Init traegt kein Nicht-ASCII", not [c for c in text if ord(c) > 127])
+    try:
+        schnipsel = block(text)
+    except ValueError:
+        print("not ok - der Aufloesungsblock ist im Init nicht zu finden")
+        return 1
+    ok("Aufloesungsblock gefunden (%d Zeilen)" % schnipsel.count("\n"),
+       10 < schnipsel.count("\n") < 45)
+    ok("Halteschleife steht vor dem ersten Schreibvorgang",
+       text.index("blockdev --setrw") < text.index("> /omamobile/LEBEN"))
+
+    # Fall 1: Uebergabe ueber ein Loop-Geraet - der Stand der Dinge auf dem Telefon
+    o = frische_sandkiste("/dev/loop0 / ext4 rw,relatime 0 0\n")
+    partition(o); loop(o)
+    spur, aktien, fehlerausgabe = laufe(schnipsel, o)
+    ok("Loop-Wurzel haelt Platte und Partition ('sda sda21', war %r)" % spur, spur == "sda sda21")
+    ok("Platte wird rw gesetzt", "--setrw /dev/sda" in aktien)
+    ok("Partition wird rw gesetzt", "--setrw /dev/sda21" in aktien)
+    ok("Schleife laeuft wiederholt", aktien.count("--setrw /dev/sda\n") >= 2)
+    ok("keine Fehlerausgabe", fehlerausgabe == "")
+    shutil.rmtree(o, ignore_errors=True)
+
+    # Fall 2: Wurzel direkt auf der Partition - hier glitt die alte Fassung durch
+    o = frische_sandkiste("/dev/sda21 / ext4 rw 0 0\n")
+    partition(o)
+    spur, aktien, _ = laufe(schnipsel, o)
+    ok("Partition ohne Loop haelt ebenso ('sda sda21', war %r)" % spur, spur == "sda sda21")
+    alt = altfassung(schnipsel)
+    ok("Gegentest: die alte Fassung ist aufbaubar (beide Merkmale stecken drin)",
+       alt is not None and all(anker in alt for anker, _ in ALTFASSUNG_ANKER))
+    o2 = frische_sandkiste("/dev/sda21 / ext4 rw 0 0\n")
+    partition(o2)
+    spur_alt, aktien_alt, _ = laufe(alt, o2)
+    ok("Gegentest: die alte Fassung haelt hier nichts (spur %r, aktionen %d)" % (spur_alt, len(aktien_alt.splitlines())),
+       spur_alt not in ("sda sda21", "sda21") and "--setrw /dev/sda21" not in aktien_alt)
+    shutil.rmtree(o, ignore_errors=True); shutil.rmtree(o2, ignore_errors=True)
+
+    # Fall 3: Wurzel auf einer ganzen Platte - kein Elternpaar, nur die Platte
+    o = frische_sandkiste("/dev/sdb / ext4 rw 0 0\n")
+    ganzes_platte(o)
+    spur, aktien, _ = laufe(schnipsel, o)
+    ok("Ganze Platte haelt nur die Platte ('sdb', war %r)" % spur, spur == "sdb")
+    ok("kein Geraet '/dev/block' erfunden", "/dev/block" not in aktien)
+    shutil.rmtree(o, ignore_errors=True)
+
+    # Fall 4: Initramfs-Wurzel - nichts zu halten, und doch kein Aufruf ins Leere
+    o = frische_sandkiste("rootfs / rootfs rw,size=1673248k 0 0\n")
+    partition(o)
+    spur, aktien, fehlerausgabe = laufe(schnipsel, o)
+    ok("rootfs-Wurzel laesst die Schleife leer laufen (war %r)" % spur, spur == "")
+    ok("kein einziger blockdev-Aufruf in diesem Fall", aktien.strip() == "")
+    ok("keine Fehlerausgabe", fehlerausgabe == "")
+    shutil.rmtree(o, ignore_errors=True)
+
+    # Stempelzeile: wortlich aus dem Init, damit ein nachgebauter Text keinen
+    # echten Fehler durchlaesst
+    zeile = [z for z in text.splitlines() if z.strip().startswith('echo "halte=')]
+    ok("Stempelzeile mit der Haltespur steht im Init", len(zeile) == 1)
+    if zeile:
+        for spur, erwartet in (("sda sda21", "halte=sda sda21 ro=1/0"), ("", "halte=keins ro=/")):
+            o = sandbox(tempfile.mkdtemp(prefix="hermes-halte-"))
+            open(os.path.join(o, "zustand/sda21"), "w").write("0\n")
+            off = open(os.path.join(o, "stempel.sh"), "w")
+            off.write('HALTETRN="%s"\nblockdev() { %s/blockdev "$@"; }\n' % (spur, o))
+            off.write(zeile[0].strip() + "\n")
+            off.close()
+            r = subprocess.run(["/bin/sh", os.path.join(o, "stempel.sh")], capture_output=True,
+                               text=True, env=dict(os.environ, AKTIONEN=os.path.join(o, "a"),
+                                                   ZUSTAND=os.path.join(o, "zustand")), timeout=30)
+            ausgabe = (r.stdout or "").strip()
+            ok("Stempelzeile fuer Haltespur %r lautet %r" % (spur, erwartet),
+               ausgabe.startswith(erwartet))
+            shutil.rmtree(o, ignore_errors=True)
+
+    print("# PUEFPUNKTE %d, FEHLER %d" % (PUNKTE, FEHLER))
+    return 1 if FEHLER else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

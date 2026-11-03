@@ -19,6 +19,11 @@
 # before boot_a, the slot and the reboot (the old `flash ... | tail -3` branch
 # reported tail's status and ran on), and its own counter-state rebuilds that
 # branch to prove the check can say not ok.
+# tests/halte-aufloesung runs the new root's hold-loop resolver against four
+# synthetic sysfs shapes (loop root, partition root, whole-disk root, initramfs
+# root) and rebuilds the pre-fix shape as a counter-test: it held nothing when
+# the root sat directly on the partition, because /sys/dev/block holds
+# major:minor entries, never names.
 # (tests/flash-block: every hash, size, path, expectation line and collect-file
 # name in the block is checked against the disk and the runner, because that
 # block is what survives a context compaction and a stale number in it would
@@ -42,7 +47,7 @@ sh -n device/flame/initramfs/init
 sh -n device/flame/initramfs/build
 bash -n tools/build-flame-probe
 echo "ok - scripts parse"
-for t in tests/pr-check tests/kernel-pr-check tests/install-phone tests/phone-provision tests/initramfs-grow tests/images-layout tests/device-overlays tests/simplefb-trigger tests/storage-guard tests/usb-product tests/boot-method tests/bootimg-v0 tests/gadget-reference tests/gadget-modules tests/ref-enumeration tests/bisection tests/flash-block tests/flame-probe tests/leser-harness tests/gpt-audit tests/write-zyklus packages/omamobile-firstboot/test/all packages/omamobile-device-felix/test/all; do
+for t in tests/pr-check tests/kernel-pr-check tests/install-phone tests/phone-provision tests/initramfs-grow tests/images-layout tests/device-overlays tests/simplefb-trigger tests/storage-guard tests/usb-product tests/boot-method tests/bootimg-v0 tests/gadget-reference tests/gadget-modules tests/ref-enumeration tests/bisection tests/flash-block tests/flame-probe tests/leser-harness tests/gpt-audit tests/write-zyklus tests/halte-aufloesung packages/omamobile-firstboot/test/all packages/omamobile-device-felix/test/all; do
   echo "# $t"
   "$t"
 done

@@ -35,20 +35,23 @@ mkdir -p /omamobile
 # der Datentraeger dahinter, denn die Partition folgt dem Schalter der Platte.
 # ---------------------------------------------------------------------------
 WURZEL=$(awk '$2=="/" {print $1; exit}' /proc/mounts 2>/dev/null)
-HALTETRN="keins"
+KNOTEN=""
 case "${WURZEL:-}" in
-    /dev/loop*)
-        KNOTEN=$(cat "/sys/class/block/${WURZEL##*/}/loop/${WURZEL##*/}/backing_dev" 2>/dev/null) ;;
-    /dev/*)
-        KNOTEN=$(basename "$(readlink -f "$WURZEL")" 2>/dev/null) ;;
-    *)
-        KNOTEN="" ;;
+    /dev/loop*) KNOTEN=$(cat "/sys/class/block/${WURZEL##*/}/loop/${WURZEL##*/}/backing_dev" 2>/dev/null) ;;
+    /dev/*)     KNOTEN="${WURZEL##*/}" ;;
 esac
-if [ -n "${KNOTEN:-}" ] && [ -e "/sys/dev/block/$KNOTEN" ]; then
-    PART=$(basename "$(readlink -f "/sys/dev/block/$KNOTEN")" 2>/dev/null)
-    PLATTE=$(basename "$(dirname "$(readlink -f "/sys/dev/block/$KNOTEN")")" 2>/dev/null)
-    HALTETRN="$PLATTE $PART"
-fi
+HALTETRN=""   # leer = nichts zu halten; die Schleife geht dann ins Leere statt ein Geraet "keins" zu suchen
+for grund in "/sys/dev/block/$KNOTEN" "/sys/class/block/$KNOTEN"; do
+    if [ -n "${KNOTEN:-}" ] && [ -e "$grund" ]; then
+        PFAD=$(readlink -f "$grund")
+        PART=$(basename "$PFAD")
+        PLATTE=$(basename "$(dirname "$PFAD")")
+        # Haengt die Wurzel direkt auf einer ganzen Platte, ist der Elternordner
+        # 'block' selbst - dann gibt es nur die Platte zu halten, kein Elternpaar.
+        if [ "$PLATTE" = block ]; then HALTETRN="$PART"; else HALTETRN="$PLATTE $PART"; fi
+        break
+    fi
+done
 ( while :; do
     for knoten in $HALTETRN; do blockdev --setrw "/dev/$knoten" 2>/dev/null; done
     sleep 1
@@ -111,7 +114,7 @@ done
     echo "wurzel=$(awk '$2=="/"{print $1" "$3" "$4}' /proc/mounts | head -1)"
     echo "kernel=$(uname -r)"
     echo "netz=$NETZ udc=$(cat $CFG/g1/UDC 2>/dev/null)"
-    echo "halte=${HALTETRN} ro=$(blockdev --getro "/dev/${HALTETRN%% *}" 2>/dev/null)/$(blockdev --getro "/dev/${HALTETRN##* }" 2>/dev/null)"
+    echo "halte=${HALTETRN:-keins} ro=$(blockdev --getro "/dev/${HALTETRN%% *}" 2>/dev/null)/$(blockdev --getro "/dev/${HALTETRN##* }" 2>/dev/null)"
 } > /omamobile/LEBEN 2>/dev/null
 sync
 ( while :; do telnetd -l /bin/sh; sleep 2; done ) &
