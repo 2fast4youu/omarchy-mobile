@@ -43,8 +43,10 @@ Slot a, Neustart, Ausgang 0).
 
 | Partition | Datei | Groesse | sha256 |
 | --- | | --- | --- |
-| userdata | `/Users/gregor/hermes-workspace/images/userdata-alpine/rootfs-vorlauf.sparse.img` | 117441332 B | `484b72fe9ce77b3b8acbe0fd10dbb1cb4276a7b4724bbf8feeebcd749c72baaa` |
-| (Rohbild dazu) | `.../rootfs-vorlauf.ext4` | 1074790400 B | `9c0263c1eb4206eb49cc6e95fd3102bfb193885fcd9f9ade59598e4027f5cbd5` |
+| userdata (NEU GEBAUT 16:26, haelt den gefixten /init) | `/Users/gregor/hermes-workspace/images/userdata-alpine/rootfs-vorlauf.sparse.img` | 117441332 B | `98c5a4879010fd96a05b8632a93cf8583db1feac0d7ff6ed155fe3aeb52e38e8` |
+| (Rohbild dazu, NEU) | `.../rootfs-vorlauf.ext4` | 1074790400 B | `ec70d5f70c8c14954ecae1348a02e8b535914659566d055d27669097bb4f405c` |
+| (ext4 ohne Vorlauf, NEU) | `.../rootfs.ext4` | 1073741824 B | `4083818a581e4484cd6d57ee4e149968ab7ccb2dfa26158733d951e864eff9c7` |
+| (/init in diesem Bild) | wortgleich mit `device/blueline/firstlight/rootfs-init-fuer-ud.sh` | 12350 B | `3bebb54b3a80ebbb61f3d88d1c3c5a0ddde08522bc78541fcba0f8672bb55067` |
 | boot_a | `/Users/gregor/hermes-workspace/images/fl-v0ak/firstlight.img` | 21143552 B | `f5ac4efda70345d864ea9bf431c4fb6d930b686e6dc97b4b00da37f4f25a426a` |
 | Rueckweg STUFE 1 | `/Users/gregor/hermes-workspace/images/fl-v0af/firstlight.img` (mit Power+Leiser starten) | 21143552 B | `f097ef0f9a1a858a15d72aad023be27f9a02e419116d25c580d99fe86d1a2c9d` |
 
@@ -77,6 +79,33 @@ umgebaut worden (im leeren Fall ruft die Schleife jetzt gar nichts mehr auf stat
 ein Geraet `/dev/keins`, und eine Wurzel auf einer ganzen Platte erfindet keinen
 Elternordner `/dev/block` mehr) - der Unterschied sitzt im naechsten Bild, der
 Gegentest im Test haelt die alte Fassung weiter daran.
+
+## v0al am Telefon gemessen (2026-11-03, 16:11-16:12) - und was das fuer den naechsten Write heisst
+
+Nicht aus meinen Schritten dieser Stunde, sondern aus dem Parallelarbeiter am
+derselben Platte, hierher uebernommen weil es die Aufloesung der Halteschleife
+direkt bestaetigt (Beleg: `firstlight/evidence/v0al-bootzeit-2026-11-03.txt`).
+
+- boot_a traegt jetzt **v0al** (`images/fl-v0al/firstlight.img`, 21143552 B,
+  sha `5eeb6bedfa7a81116f0320912cf2835c0a2ded3e03d3d4ce07f3276c5d34c5b3`),
+  geflasht 16:11, `slot-retry-count:a` vorher 2 nachher 3, `slot-unbootable:a no`
+- Neustart kommandiert 16:11:37, Port 23 offen 16:12:03 = **26 s**
+- Schritt-Log dieses Boots: Runde 1 bei 21 s mit `state=configured`,
+  `v0ak freigabe: platte rc=0 partition rc=0 ro=0`,
+  `userdata rw: /dev/sda21 on /ud type ext4 (rw,relatime)`,
+  **`switch_root /ud /init` bei 29 s** (vorher, v0ak 15:34: Runde 8,
+  switch_root bei 169 s)
+- **der ro-Fehler ist unabhaengig von der Bootzeit und bleibt:** bei 78 s stand die
+  Wurzel wieder auf `emergency_ro`, der Stempel trug `halte=keins ro=/`
+- dieselbe Aufloesungs-Messung, unabhaengig wiederholt: `ls loop/` = autoclear,
+  **backing_file**, dio, offset, partscan, sizelimit; `backing_dev` fehlt in
+  beiden erwarteten Formen, `backing_file` = `/dev/sda21`, `offset` = 1048576
+
+**Folge fuer den naechsten Write:** `boot_a` darf NICHT mehr mit v0ak
+(`f5ac4efd…`) beschrieben werden - das wuerfe die 5,8-fach schnellere Uebergabe
+wieder weg. Der anstehende Write geht nur auf `userdata` (das Bild von 16:26 mit
+dem gefixten `/init`), `boot_a` bleibt v0al. Der Rueckweg ueber
+`fastboot boot images/fl-v0ak/firstlight.img` bleibt unberuehrt.
 
 ## ROOT CAUSE #22 (2026-11-03, 16:2x): die Halteschleife der neuen Wurzel haelt nichts - `backing_dev` fehlt auf diesem Kernel
 
