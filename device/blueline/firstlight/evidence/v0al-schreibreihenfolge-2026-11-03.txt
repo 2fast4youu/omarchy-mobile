@@ -1,0 +1,41 @@
+v0al-Boot 16:30: der erste Schreibvorgang kommt vor der Halteschleife
+======================================================================
+
+Boot nach dem Nur-userdata-Write (16:30:56), boot_a bleibt v0al, /init im Bild
+3bebb54b3a80ebbb61f3d88d1c3c5a0ddde08522bc78541fcba0f8672bb55067 (== Quelle).
+
+dmesg:
+  [   29.303940] I/O error, dev loop0, sector 0 op 0x1:(WRITE) ...
+  [   29.303940] EXT4-fs (loop0): I/O error while writing superblock
+  [   29.311169] EXT4-fs (loop0): Remounting filesystem read-only
+
+Halteschleife, kmsg-Zeile alle 30 Runden (Traeger und gemessene Schalter):
+  [29s]  omamobile: halte=sda sda21 ro= sda=0 sda21=0
+  [59s]  omamobile: halte=sda sda21 ro= sda=0 sda21=0
+  [89s]  omamobile: halte=sda sda21 ro= sda=0 sda21=0
+  [119s] omamobile: halte=sda sda21 ro= sda=0 sda21=0
+  [149s] omamobile: halte=sda sda21 ro= sda=0 sda21=0
+
+Der Schalter steht ab 29 s auf 0 - trotzdem starb ext4 bei 29.30. Die
+Aufloesung ist also richtig und die Schleife haelt; sie kommt nur zu spaet:
+
+  * Der erste Schreibvorgang des neuen /init ist `mkdir -p /omamobile`
+    (Zeile 23). Die Halteschleife beginnt erst bei Zeile 55 und laeuft im
+    Hintergrund.
+  * Das Geraet ist beim Uebergang noch ro: der 1-MB-Schreibtest des Initramfs
+    auf boot_a steht in steps.log bei [29s] mit `ro_achter=1`, unmittelbar
+    vor `switch_root`.
+  * Das mkdir loest damit den Journal-Fehler aus, ext4 remountet ro - bevor
+    die Schleife das erste Mal setrw ruft. Danach steht der Schalter auf 0,
+    aber ext4 bleibt in diesem Boot zu (`mount -o remount,rw /` war schon
+    am 15:34-Boot 'Invalid argument').
+
+Kein 0,2-s-Rennen: zwanzig Abtastungen von /sys/class/block/sda21/ro in einer
+Sekunde ergaben durchgehend 0 (00000000000000000000). Die Wache dreht den
+Schalter in diesem Boot nach dem ersten setrw nicht wieder um; es ist die
+Reihenfolge im /init.
+
+Fix im /init: Aufloesung und ein synchrones `blockdev --setrw` fuer Platte und
+Partition VOR den ersten Schreibvorgang ziehen (vor `mkdir -p /omamobile`),
+die Schleife danach weiterlaufen lassen. Die Aufloesung selbst (backing_file,
+sda sda21) ist bereits belegt und muss nicht angefasst werden.
