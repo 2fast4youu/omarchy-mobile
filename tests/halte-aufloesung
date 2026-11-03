@@ -306,6 +306,22 @@ def main():
                ausgabe.startswith(erwartet))
             shutil.rmtree(o, ignore_errors=True)
 
+    # Wurzel 23: die Gegenmessung darf nicht unmittelbar nach dem eigenen
+    # Freigeben stehen - sonst misst sie die eigene Tat und nicht den Zustand.
+    # Und die ehrliche Nachmessung muss da sein, mit echtem Schreibversuch.
+    anker_herz = "if [ $((runden % 30)) -eq 1 ]; then"
+    herz = text[text.index(anker_herz):]
+    vorgelagert = herz[:herz.index('schalter=""')]
+    ok("Herzschlag wartet eine volle Runde, bevor er die Schalter abliest",
+       "sleep 1" in vorgelagert)
+    ok("ohne diese Wartezeiten waere die Messung wieder selbstblind (Gegentest)",
+       "sleep" not in vorgelagert.replace("sleep 1", ""))
+    ok("ehrliche Nachmessung nach drei Sekunden steht im Init",
+       "/omamobile/LEBEN-nach3s" in text and "sleep 3" in text)
+    nach = text[max(0, text.index("/omamobile/LEBEN-nach3s") - 900):text.index("/omamobile/LEBEN-nach3s")]
+    ok("die Nachmessung prueft das Schreiben selbst und zaehlt Fehlerzeilen",
+       "schreib=$?" in nach and "fehlerzeilen=" in nach and "aborted journal" in nach)
+
     print("# PUEFPUNKTE %d, FEHLER %d" % (PUNKTE, FEHLER))
     return 1 if FEHLER else 0
 

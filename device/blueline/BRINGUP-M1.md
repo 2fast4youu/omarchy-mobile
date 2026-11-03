@@ -1,6 +1,48 @@
 <!-- SPDX-License-Identifier: MIT -->
 # Pixel 3 (blueline): first light
 
+## SCHREIB-LAGE 2026-11-03, 17:0x - von zweiter Hand bestaetigt, und die selbstblinde Messung
+
+Zweiter Leser, eigener Zugang, eigener Schreibversuch (Uptime 279 s, Boot 16:50:53,
+`/init` = `6fbd21b3…`, HERKUNFT gebaut 15:44:46Z):
+
+```
+/dev/loop0 / ext4 rw,relatime 0 0                <- kein emergency_ro
+echo marke-rw > /omamobile/rw-marke; schreib=0   <- eigene Datei, gelesen: marke-rw
+dmesg | grep -cE 'I/O error|aborted journal'     -> 0
+/herzschlag: halte=sda sda21 ro= sda=0 sda21=0 zeit=210 / 240 / 270
+```
+
+Damit ist die Uebergabe nicht nur behauptet, sondern von unabhaengiger Seite mit
+einem echten Schreibvorgang auf der Partition belegt.
+
+Zwei Messgroessen, die vorher fehlten und die Schwankerklassen erklaeren:
+
+- Die Fehlerzeit war nie eine Eigenschaft der Wurzel, sondern der Zeitpunkt des
+  **ersten Schreibvorgangs nach dem Mount**: 78 s, 169 s, 29.2 s in drei Bootes -
+  die Wache der Initramfs schaltet im Sekunden-takt, und der erste Schreibvorgang
+  fiel je nach Phase ins offene oder zu-Fenster. Der Unterschied zwischen Boot
+  16:45 und Boot 16:50 in einem Bild: im guten Boot schreibt die Journal-Rekon-
+  struktion schon um 27.935 s (Trager offen), im schlechten bleibt sie aus und
+  die erste WRITE kommt erst nach dem Zuschalten.
+- Unterschieden werden kann das nur mit einem **gepufferten gegen einen
+  synchronen Schreibvorgang**: `dd bs=1M count=1 conv=notrunc` auf `/dev/loop0`
+  gelang auch im kranken Boot (Seite im Cache, Medie nie beruehrt), waehrend
+  `conv=notrunc,fsync` auf demselben Sektor mit `I/O error` Ausgang 1 lieferte.
+  Wer nur den ungepuelten Test macht, erklaert einen kaputten Traeger fuer gesund.
+
+Und ein eigener Denkfehler, festgehalten, weil er drei Herzschlaege lang getaeuscht
+hat: die Halteschleife gab die Platte frei und las den ro-Schalter **unmittelbar
+danach** ab. Gemessen wurde die eigene Tat, nicht der Zustand - `ro=0/0` war auch
+dann wahr, wenn die Wache die Platte in der Zwischenzeit zweimal zugeschaltet
+hatte. Fix in dieser Fassung (`67f92ab7`): der Herzschlag wartet eine volle
+Runde, bevor er misst, und die neue Datei `/omamobile/LEBEN-nach3s` meldet drei
+Sekunden nach der Uebergung unabhaengig den Mount, die Schalter, einen echten
+Schreibversuch und die Zahl der Fehlerzeilen. Ein Boot, das dort `ro=…1` oder
+`schreib=!=0` meldet, hat die Uebergabe nicht gehalten, was `LEBEN` auch sagt.
+Pruefpunkte in `tests/halte-aufloesung`: 29, Fehler 0 (inkl. Gegentest gegen die
+selbstblinde Messung).
+
 ## SCHREIB-LAGE 2026-11-03, 15:4x - dieser Block ersetzt alles darunter (Stand des Wartenden: 08:0x)
 
 M1.5 hat seinen Kern erreicht, belegt durch die Wurzel selbst. Erste erfolgreiche

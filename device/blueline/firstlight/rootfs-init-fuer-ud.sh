@@ -115,6 +115,12 @@ done
     done
     runden=$((runden + 1))
     if [ $((runden % 30)) -eq 1 ]; then
+      # Erst eine volle Runde warten, dann messen. Wer den Schalter direkt nach
+      # dem eigenen Setzen abliest, misst die eigene Tat und nicht den Zustand:
+      # genau diese Selbstblindheit liess die Halteschleife Herzschlag fuer
+      # Herzschlag ro=0/0 melden, waehrend die Wache der Initramfs die Platte
+      # zwischen den Runden zuschaltete (Wurzel 23, am Telefon gemessen).
+      sleep 1
       schalter=""
       for knoten in $HALTETRN; do
         schalter="$schalter $knoten=$(blockdev --getro "/dev/$knoten" 2>/dev/null)"
@@ -197,6 +203,25 @@ sync
     echo "halte=${HALTETRN:-keins} ro=$(blockdev --getro "/dev/${HALTETRN%% *}" 2>/dev/null)/$(blockdev --getro "/dev/${HALTETRN##* }" 2>/dev/null)"
 } > /omamobile/LEBEN 2>/dev/null
 sync
+
+# Ehrliche Nachmessung, drei Sekunden spaeter: die beiden Stempel oben lesen die
+# Schalter unmittelbar nach dem eigenen Freigeben, melden also die eigene Tat.
+# Diese Datei hier entsteht, nachdem die Wache der Initramfs zwei bis drei Runden
+# hatte - sie zeigt, was ein Schreibvorgang WIRKLICH antrifft, und prueft das mit
+# einer echten Datei auf der Partition gleich selbst. Ein Boot, das hier ro=1 oder
+# schreib=!=0 meldet, hat die Uebergabe nicht gehalten, egal was LEBEN sagt.
+(
+    sleep 3
+    {
+        echo "nach3s-uptime=$(cut -d' ' -f1 /proc/uptime)"
+        echo "wurzel=$(awk '$2=="/"{print $1" "$3" "$4}' /proc/mounts | head -1)"
+        echo "halte=${HALTETRN:-keins} ro=$(for k in ${HALTETRN:-}; do printf '%s=%s ' "$k" "$(blockdev --getro "/dev/$k" 2>/dev/null)"; done)"
+        echo probe > /omamobile/.schreibtest 2>/dev/null
+        echo "schreib=$? geles=$(cat /omamobile/.schreibtest 2>/dev/null)"
+        echo "fehlerzeilen=$(dmesg 2>/dev/null | grep -cE 'I/O error|aborted journal|emergency_ro')"
+    } > /omamobile/LEBEN-nach3s 2>/dev/null
+    sync
+) &
 ( while :; do telnetd -l /bin/sh; sleep 2; done ) &
 
 
