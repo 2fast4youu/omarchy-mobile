@@ -1,6 +1,59 @@
 <!-- SPDX-License-Identifier: MIT -->
 # Pixel 3 (blueline): first light
 
+## Wurzel 24 (2026-11-03, 17:1x): die Wache schaltet die PLATTE zu, nicht die Partition
+
+Der Halte-Beweis ueber drei Bootes (Laeufer `halte-beweis-1700.log`, Wurzel
+`67f92ab7…`, boot_a unveraendert) ist **gegen** die Uebergabe ausgefallen -
+dreimal dasselbe Bild, jeweils bei 29.2 s:
+
+```
+RUNDE 1 (17:01)  RUNDE 2 (17:03)  RUNDE 3 (17:05)     je: /dev/loop0 / ext4 rw,relatime,emergency_ro
+                                                       je: LEBEN-nach3s fehlt (der Schreibtest bei +3 s
+                                                           kam nach dem Already-Absturz nicht mehr durch)
+```
+
+Der Mechanismus ist am laufenden System gemessen, drei Befehle, keine Deutung:
+
+```
+blockdev --setro  /dev/sda    -> platte=1 partition=1     <- die Platte nimmt die Partition mit
+blockdev --setrw  /dev/sda21  -> Ausgang 0, bleibt 1/1    <- die Partition alone ist nicht zu oeffnen
+blockdev --setrw  /dev/sda    -> platte=0 partition=0
+```
+
+Die Ausnahme, die v0am der Wache mitgibt (`/run/uddev`, im Boot vorhanden, Inhalt
+`sda21`), nennt also genau das eine Geraet, das die Wache gar nicht anfasst: sie
+ueberspringt die Partition, schaltet aber im Sekundentakt die **Platte** zu, und
+darueber wird die Partition zu. Halteschleife der Wurzel und Wache laufen beide
+im Sekundentakt; entscheidet die Phase. Der Boot 16:50, der die Grenze von 279 s
+ohne einen einzigen I/O-Fehler ueberstand, war der Gluecksfall dieses Rennens -
+die drei Bootes um 17:01/17:03/17:05 waren seine Verlierer. Der Satz "M1.5-Kern
+steht" gilt deshalb erst wieder, wenn eine Korrektur mehrfach hintereinander
+traegt, nicht nach einem guten Boot.
+
+Zwei Versuche, die nicht funktionieren, beide gemessen statt angenommen:
+
+- **Abschirmen mit offenem Deskriptor:** `exec 9>/dev/sda; blockdev --setro
+  /dev/sda` liefert Ausgang 0 und `platte=1 partition=1`. Ein gewoehnlicher
+  Schreib-Deskriptor hindert das Zuschalten nicht (nur ein exklusiver Haelter
+  oder ein Haengender Dateisystem-Writer waere ein Grund - die Schleife haelt
+  die Partition, nicht die Platte).
+- **Prozessjagd ueber `unreachable`-Deskriptoren:** alle neun Initramfs-Kinder
+  melden `unreachable=0`; wer nach switch_root aus dem alten Root stammt, ist an
+  den Deskriptoren nicht zu erkennen.
+
+Korrektur in dieser Fassung (`e59b319b`, 327 Zeilen, `sh -n` sauber): die neue
+Wurzel **raeumt auf**, bevor sie das erste Mal schreibt. Sie sammelt alle Kinder
+von PID 1, die noch die Kommandozeile `/bin/sh /init` des Initramfs fuehren
+(Wache, Getty-Schleifen, Uebergabereste), toetet sie, und laesst Daemons mit
+eigener Kommandozeile (dropbear, udhcpd) sowie PID 1 selbst in Ruhe. Danach zehn
+Stichproben der ro-Schalter im Zehntelsekundentakt, die zusammen mit der Zahl der
+getoeteten Prozesse in `/omamobile/LEBEN-frueh` landen - damit steht kinftig in
+einer einzigen Datei, was die erste WRITE angetroffen hat, statt dass man es aus
+ihrem Fehlschlag erschliessen muss. Pruefpunkte in `tests/halte-aufloesung`: 34,
+Fehler 0 (neue Nachbildungen: der Killer erwischt im Sandkasten genau die zwei
+Initramfs-Shells, nicht die Daemons, nicht die eigene PID).
+
 ## SCHREIB-LAGE 2026-11-03, 17:0x - von zweiter Hand bestaetigt, und die selbstblinde Messung
 
 Zweiter Leser, eigener Zugang, eigener Schreibversuch (Uptime 279 s, Boot 16:50:53,

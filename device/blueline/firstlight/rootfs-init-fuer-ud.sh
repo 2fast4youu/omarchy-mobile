@@ -102,6 +102,48 @@ for knoten in $HALTETRN; do
     blockdev --setrw "/dev/$knoten" 2>/dev/null
 done
 
+# ---------------------------------------------------------------------------
+# Wurzel 24, am Geraet gemessen 2026-11-03 17:1x: die Wache des Initramfs laeuft
+# nach switch_root weiter und schaltet im Sekundentakt die GANZE PLATTE zu, nicht
+# die Partition. Gegenprobe auf dem laufenden System:
+#     blockdev --setro /dev/sda      -> platte=1 partition=1
+#     blockdev --setrw /dev/sda21    -> meldet Ausgang 0, bewirkt nichts (1/1)
+#     blockdev --setrw /dev/sda      -> erst damit wieder 0/0
+# Die Ausnahme in /run/uddev nennt aber genau eine Partition (sda21); die Platte
+# bleibt der Wache also zum Zuschalten. Halteschleife und Wache laufen beide im
+# Sekundentakt, entscheidet die Phase: der Boot 16:50 glueckte, die Bootes 17:01,
+# 17:03 und 17:05 verloren (dreimal Journal-Abbruch bei 29.2 s, dreimal dasselbe
+# Bild). Ein offener Schreib-Deskriptor auf der Platte schirmt nicht ab -
+# gemessen: `exec 9>/dev/sda; blockdev --setro /dev/sda` meldet Ausgang 0. Also
+# wird nicht gerennt, sondern weggeraeumt: jedes Shell-Kind von PID 1, das noch
+# die Kommandozeile des Initramfs traegt (Wache, Getty-Schleifen, Reste der
+# Uebergabe), stirbt, bevor diese Wurzel das erste Mal schreibt. Daemons mit
+# eigener Kommandozeile (dropbear, udhcpd) bleiben am Netz, PID 1 ist schon die
+# neue Wurzel und wird nicht angefasst. Danach zehn Stichproben im
+# Zehntelsekundentakt: ob die erste WRITE ein offenes oder ein zues Geraet
+# antrifft, war bisher nur aus ihrem Fehlschlag zu erschliessen.
+# ---------------------------------------------------------------------------
+WACHE_RUHE=""
+for p in $(ls /proc 2>/dev/null | grep -E '^[0-9]+$'); do
+    [ "$p" = "$$" ] && continue
+    vater=$(awk '{print $4}' "/proc/$p/stat" 2>/dev/null)
+    [ "$vater" = 1 ] || continue
+    befehl=$(tr '\0' ' ' < "/proc/$p/cmdline" 2>/dev/null)
+    case "$befehl" in
+        "/bin/sh /init"*) WACHE_RUHE="$WACHE_RUHE $p" ;;
+    esac
+done
+[ -n "${WACHE_RUHE:-}" ] && kill $WACHE_RUHE 2>/dev/null
+echo "omamobile: Initramfs-Reste getoetet:${WACHE_RUHE:- keine}, halte=${HALTETRN:-keins}" > /dev/kmsg 2>/dev/null
+sleep 2
+SCHNELLPROBE=""
+for stich in 1 2 3 4 5 6 7 8 9 10; do
+    for knoten in ${HALTETRN:-}; do
+        SCHNELLPROBE="$SCHNELLPROBE$(cat "/sys/class/block/$knoten/ro" 2>/dev/null)"
+    done
+    sleep 0.2
+done
+
 # Halten, gegenmessen, melden. Die Gegenmessung ist der eigentliche Grund, diese
 # Fassung zu bauen: eine Schleife, die gegen ein nicht existentes Geraet laeuft,
 # sah bisher von aussen lebendig aus. Alle 30 Runden geht eine Zeile nach
@@ -188,6 +230,7 @@ done
 {
     echo "frueh-zeit=$(date -u +%FT%TZ) uptime=$(cut -d' ' -f1 /proc/uptime)"
     echo "halte=${HALTETRN:-keins} ro_vorher=$(for k in ${HALTETRN:-}; do printf '%s=%s ' \"$k\" \"$(blockdev --getro \"/dev/$k\" 2>/dev/null)\"; done)"
+    echo "stichproben=${SCHNELLPROBE:-keine} getoetet=${WACHE_RUHE:-keiner}"
 } > /omamobile/LEBEN-frueh 2>/dev/null
 sync
 

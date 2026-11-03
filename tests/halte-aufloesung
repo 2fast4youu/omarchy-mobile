@@ -211,8 +211,11 @@ def main():
     except ValueError:
         print("not ok - der Aufloesungsblock ist im Init nicht zu finden")
         return 1
+    # Die Obergrenze faengt Anker-Drift, nicht Wachstum: der Block waechst, weil
+    # seit Wurzel 24 auch das Wegraeumen der Initramfs-Reste darin liegt (Vorlauf
+    # und Stichproben brauchen selbst vier Sekunden).
     ok("Aufloesungsblock gefunden (%d Zeilen)" % schnipsel.count("\n"),
-       10 < schnipsel.count("\n") < 90)
+       10 < schnipsel.count("\n") < 150)
     ok("Halteschleife steht vor dem ersten Schreibvorgang",
        text.index("blockdev --setrw") < text.index("> /omamobile/LEBEN"))
 
@@ -321,6 +324,47 @@ def main():
     nach = text[max(0, text.index("/omamobile/LEBEN-nach3s") - 900):text.index("/omamobile/LEBEN-nach3s")]
     ok("die Nachmessung prueft das Schreiben selbst und zaehlt Fehlerzeilen",
        "schreib=$?" in nach and "fehlerzeilen=" in nach and "aborted journal" in nach)
+
+    # Wurzel 24: der Killer der Initramfs-Reste muss vor dem ersten Schreibvorgang
+    # stehen und genau die richtigen erwischen. Sandkasten mit vorgetaeuschtem
+    # /proc: zwei Initramfs-Shells, zwei Daemons, und das Kind, das die Wurzel
+    # selbst ist (PID des laufenden Skripts) - das darf nicht sterben.
+    anker_killer = 'WACHE_RUHE=""'
+    hat_killer = anker_killer in text
+    ok("Killer der Initramfs-Reste steht in der Wurzel", hat_killer)
+    if hat_killer:
+        anfang = text.index(anker_killer)
+        ende = text.index("\n", text.index("> /dev/kmsg 2>/dev/null", anfang))
+        killer = text[anfang:ende]
+        ok("er wirkt, bevor diese Wurzel das erste Mal auf die Partition schreibt",
+           text.index("> /omamobile/LEBEN-frueh") > anfang)
+        o = tempfile.mkdtemp(prefix="hermes-wache-")
+        proz = os.path.join(o, "proc")
+        os.makedirs(proz)
+        for pid, befehl in (("179", "/bin/sh /init"), ("260", "/bin/sh /init"),
+                            ("274", "udhcpd /run/udhcpd.conf"), ("319", "dropbear -R -E -s")):
+            os.makedirs(os.path.join(proz, pid))
+            open(os.path.join(proz, pid, "stat"), "w").write(
+                "1 (sh) S 1 1 1 0 -1 0 1 1 0 0 0 0 0 0 20 0 1 0 100 100\n")
+            open(os.path.join(proz, pid, "cmdline"), "wb").write(
+                befehl.replace(" ", "\000").encode() + b"\000")
+        off = open(os.path.join(o, "killer.sh"), "w")
+        off.write('kill() { echo "getoetet:$*"; }\n')
+        off.write('mkdir -p "$PROZ/$$"\n')
+        off.write('printf \'1 (sh) S 1 1 1 0 -1 0 1 1 0 0 0 0 0 0 20 0 1 0 100 100\\n\' > "$PROZ/$$/stat"\n')
+        off.write("printf '/bin/sh\\000/init\\000' > \"$PROZ/$$/cmdline\"\n")
+        off.write(killer.replace("/proc", '"$PROZ"').replace("/dev/kmsg", '"/dev/null"') + "\n")
+        off.write('echo "liste=$WACHE_RUHE selber=$$"\n')
+        off.close()
+        rr = subprocess.run(["/bin/sh", os.path.join(o, "killer.sh")], capture_output=True, text=True,
+                            env=dict(os.environ, PROZ=proz), timeout=90)
+        zeile = [z for z in (rr.stdout or "").splitlines() if z.startswith("liste=")]
+        liste, selber = (zeile[0][6:].split(" selber=") + ["?"])[:2] if zeile else ("", "?")
+        ok("er erwischt die beiden Initramfs-Shells (%r)" % liste, "179" in liste and "260" in liste)
+        ok("er laesst Daemons in Ruhe (%r)" % liste, "274" not in liste and "319" not in liste)
+        ok("er bringt nicht die neue Wurzel selbst um (eigene PID %s, Liste %r)" % (selber, liste),
+           selber != "?" and selber not in liste)
+        shutil.rmtree(o, ignore_errors=True)
 
     print("# PUEFPUNKTE %d, FEHLER %d" % (PUNKTE, FEHLER))
     return 1 if FEHLER else 0
