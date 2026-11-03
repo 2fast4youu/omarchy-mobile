@@ -1,87 +1,76 @@
 <!-- SPDX-License-Identifier: MIT -->
 # Pixel 3 (blueline): first light
 
-## AUSSTEHENDER WRITE (2026-11-03, gemessen um 08:0x) - dieser Block ersetzt fuer den naechsten Write alles darunter
+## SCHREIB-LAGE 2026-11-03, 15:4x - dieser Block ersetzt alles darunter (Stand des Wartenden: 08:0x)
 
-Was aussteht und warum: v0ak haelt die Userdata-Wurzel read-write und haltbar, und
-die Uebergabe laeuft (auf der seriellen Konsole als leere alte Wurzel gelesen,
-Nachtrag 27). Es fehlt nur das neue Userdata-Bild: traegt als Wurzel-`/init` den
-Gadget-Aufbau (configfs, `ncm.usb0` + `acm.GS0`, `172.16.42.1`, `telnetd -l /bin/sh`)
-und schreibt `/omamobile/LEBEN` auf die echte Partition. Beides fehlt in der Wurzel,
-die jetzt laeuft - deshalb ist das Telefon fuer den Mac taub, obwohl es lebt.
+M1.5 hat seinen Kern erreicht, belegt durch die Wurzel selbst. Erste erfolgreiche
+Uebergabe um 15:2x (Start aus Slot a, boot_a = v0ak):
 
-Anruf (wartet auf das Telefon im Fastboot, dann der Zyklus von selbst; Frist hier
-1440 Runden a 10 s = 4 h, sonst Standard 40 min):
-
-```sh
-cd /Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
-FRIST_RUNDEN=1440 sh warte-und-schreibe.sh
+```
+uebergabe-zeit=1970-01-01T00:02:49Z      uptime=169.25      kernel=7.1.0-rc1-sdm845
+wurzel=/dev/loop0 ext4 rw,relatime       netz=usb0 udc=a600000.usb
+HERKUNFT: M1.5-Wurzel auf userdata, gebaut 2026-11-02T23:14:43Z
+/dev/loop0 / ext4 rw,relatime,emergency_ro
 ```
 
-Der Laeufer ruebergibt an `schreibe-v0ai.sh` mit `BOOTIMG` auf v0ak und `FRIST=420`.
-Beide Skripte sind ungeaendert im Einsatz seit den Commits `e19c509` (Write-Meldung)
-und `cca2331` (Pruefung dazu); kanonische Suite auf diesem Stand: 164 ok, 4 skip,
-0 not-ok, Ausgang 0.
+Damit ist belegt: das Sparse-Bild ist wirklich geschrieben (die Wurzel enthaelt
+Alpine 3.24.3, busybox und `/bin/restart2`), der 1-MiB-Vorlauf traegt den
+Ext4-Superblock (Magik `53ef` bei 1 MiB + 1024), der Loop-Mount mit
+`offset=1048576` haengt read-write, `switch_root` hat uebernommen, das Gadget in
+der neuen Wurzel steht (Ping und Port 23 offen), und der Stempel liegt auf der
+echten Partition. Die Claude-Gegenfrage nach der Schreibzeit ist damit
+beantwortet: `Writing 'userdata' OKAY [0.067s]` fuer 114688 KB ist keine
+Fehlmeldung - 58 von 65 Saecken sind DONT_CARE, die ABOOT durch Suchen statt
+Schreiben ueberspringt, und der Inhalt ist da.
 
-Inhalte, alle soeben von der Platte gemessen (nicht aus der Erinnerung):
+Was an diesem Beleg fehlte, steht in der vierten Zeile: `emergency_ro`.
+Wurzel 21, belegt. Bei Uptime 169 s - genau beim Stempelschreiben - meldet der
+Kernel `EXT4-fs (loop0): I/O error while writing superblock` und
+`Remounting filesystem read-only`. `blockdev --getro` liefert 1 auf Platte UND
+Partition, waehrend `/dev/loop0` selbst rw meldet. Grund: die Halteschleife, die
+v0ak rw haelt, steht im Init-Skript des Initramfs. Hintergrundprozesse ueberleben
+`switch_root`, das Skript nicht - es wird durch switch_root ersetzt. Danach legt
+die Storage-Wache die UFS-Platte wieder unter ro, und die Partition folgt dem
+Schalter der Platte (Wurzel 17). Der Mount bleibt bestehen; jede
+Metadaten-Aktualisierung laeuft ins Leere. Fix im neuen `/init` (Commit `b963b8e`):
+die Wurzel loest ihr Traegergeraet selbst auf und haelt Platte und Partition die
+ganze Laufzeit auf rw, ab vor dem ersten Schreibvorgang; der Stempel haelt
+zusaetzlich die ro-Schalter fest.
+
+Ausstehend: die erste Boot-Antwort auf den Fix. Das Bild ist geschrieben um
+15:34:58 (userdata `Writing OKAY`, boot_a nach Gegenpruefung der Sicherung,
+Slot a, Neustart, Ausgang 0).
 
 | Partition | Datei | Groesse | sha256 |
-| --- | | --- | --- | --- |
-| userdata | `/Users/gregor/hermes-workspace/images/userdata-alpine/rootfs-vorlauf.sparse.img` | 117441332 B | `7d9f217928cf3866d2fa02f166502cbef2ddd7bb8e93c03adb6bac8ce6e52b03` |
+| --- | | --- | --- |
+| userdata | `/Users/gregor/hermes-workspace/images/userdata-alpine/rootfs-vorlauf.sparse.img` | 117441332 B | `484b72fe9ce77b3b8acbe0fd10dbb1cb4276a7b4724bbf8feeebcd749c72baaa` |
+| (Rohbild dazu) | `.../rootfs-vorlauf.ext4` | 1074790400 B | `9c0263c1eb4206eb49cc6e95fd3102bfb193885fcd9f9ade59598e4027f5cbd5` |
 | boot_a | `/Users/gregor/hermes-workspace/images/fl-v0ak/firstlight.img` | 21143552 B | `f5ac4efda70345d864ea9bf431c4fb6d930b686e6dc97b4b00da37f4f25a426a` |
 | Rueckweg STUFE 1 | `/Users/gregor/hermes-workspace/images/fl-v0af/firstlight.img` (mit Power+Leiser starten) | 21143552 B | `f097ef0f9a1a858a15d72aad023be27f9a02e419116d25c580d99fe86d1a2c9d` |
-| Sicherung boot_a | `/Users/gregor/hermes-workspace/backups/blueline-2026-11-01/kalibrier-boot_a.bin` | 67108864 B | `0478f8dbe456a5877976f2514aa105619acf6c91056afb14eabe824d5c6929a0` |
 
-Zu den beiden Bildern liegen `.sha256`-Begleitdateien mit denselben Summen; der
-Zyklus prueft sie vor dem ersten Write und prueft vor dem boot_a-Write die
-Sicherung gegen `sha256-lokal.txt` - bei Abweichung bricht er ab, ohne geschrieben
-zu haben. Rueckweg STUFE 2 bleibt das Factory-Image (loescht userdata).
+Erwartung an diesen Start, vor dem Write festgelegt: `/omamobile/LEBEN` traegt
+eine Zeile `halte=sda sda21 ro=0/0`, die Mount-Zeile der Wurzel endet auf
+`rw,relatime` OHNE `emergency_ro`, und `dmesg` nennt keinen weiteren
+`I/O error while writing superblock`. Die Gegenseite: `emergency_ro` wieder da
+und `halte=keins` = die Aufloesung ueber `backing_dev` greift nicht (dann
+`/sys/class/block/loop0/loop/loop0/backing_dev` vor Ort lesen); `halte=sda sda21
+ro=1/...` = etwas anderes legt die Platte ro, und die Wache selbst ist es
+(dann ihre Prozesskette suchen, nicht die Schleife).
 
-Vor dem Write, in diesem Fastboot-Moment, als Erstes die Slot-Lesungen (seit
-2026-11-03 00:3x nicht mehr gelesen, der Wiederholungs-Zaehler ist unbkannt):
-`getvar current-slot`, `getvar slot-retry-count:a`, `getvar slot-unbootable:a`.
-Steht `retry-count:a` auf 0, zuerst `--set-active=a` und die Lesung danach
-dokumentieren - ohne Fuellung macht der erste Start des Slots den Slot unbootbar.
+Wiederholungs-Zaehler, gemessen 15:29: nach fuenf Starts ohne Erfolgsmeldung
+stand `slot-retry-count:a` auf 1; `fastboot --set-active=a` fuellt ihn auf **3**
+(nicht 7, wie frueher notiert) und macht den Slot bootbar. Ein fehlgeschlagener
+Zaehler macht den Slot unbootbar - also bei jedem Fastboot-Kontakt gegenlesen.
 
-ERWARTUNG, jetzt vor dem Flash festgelegt (jede Zeile ist im ausgelieferten
-Userdata-Bild nachzulesen, nicht im Kopf): spaetestens vier Minuten nach dem
-Neustart antwortet `ping 172.16.42.1`, Port 23 ist offen, und auf dem Telefon
-steht `cat /omamobile/LEBEN` mit Zeitstempel, Wurzelgeraet und Kernel; in
-`grep " / " /proc/mounts` steht das Userdata-Geraet mit `rw`; der Gadget-Schalter
-`state` steht auf `configured`. Die Gegenseiten: kein Eintrag am Bus = der
-Gadget-Block in der neuen Wurzel lief nicht (dann die Marke in
-`/omamobile/LEBEN` auf der Partition suchen, sie liegt trotzdem da); Port offen
-ohne Stempel = Uebergabe vor dem Stempel gescheitert; Stempel da ohne Netz =
-Gadget-Aufbau in der neuen Wurzel fehlgeschlagen, die `/ud`-Lesung aus dem
-Initramfs bleibt als Beweis erhalten.
+Der Handgriff am Telefon ist nicht mehr der einzige Weg zurueck: die neue Wurzel
+traegt `/bin/restart2` (162336 B, 0755, aus dem Bild zurueckgelesen) und kann
+damit von selbst ins Fastboot. Telegram meldet sich nur noch, wenn es wirklich
+klemmt (Weg: lokale Bot-API, Chat 1335604113).
 
-Wartend jetzt in einer Dauerschleife, nicht mehr in einzelnen Fenstern:
-
-```sh
-cd /Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
-while :; do aus=$(mktemp -t warte-fenster)
-  FRIST_RUNDEN=1440 sh warte-und-schreibe.sh >"$aus" 2>&1; zy=$?
-  sed 's/^/  /' "$aus"
-  grep -q "telefon im fastboot" "$aus" && { echo "Zyklus durchgelaufen, Exit $zy"; break; }
-  echo "Fenster um, nichts geschrieben (Exit $zy)"; sleep 20
-done
-```
-
-Der Grund fuer die Zeile mit `grep` statt eines Blicks auf den Ausgang:
-`warte-und-schreibe.sh` meldet Ausgang 1 fuer BEIDES - kein Geraet im Fenster und
-ein fehlgeschlagener Write (der Zyklus selbst endet mit 1). Wer eine Schleife auf
-den Ausgang baut, hoert nach dem ersten echten Fehler einfach auf.
-
-Der Handgriff bleibt der einzige Weg ins Fastboot: Power + Leiser 10-20 s, bis
-FASTBOOT MODE im Display steht. Von der seriellen Shell aus ist kein Neustart
-moeglich, der dort ankommt - die ueberlebende Shell hat eine geleerte Wurzel,
-kein Programm und kein `/proc` (Nachtrag 27), und ein Panic-Neustart wuerde
-Slot a normal starten und wieder in dieselbe stumme Wurzel fallen.
-
-Hinweis auf die Falle darunter: der folgende Block `FLASH-BEREIT v0z` beschreibt
-den Stand vom 31.10. (v0z, Panelablesung, Runner `run-flash-observe.sh`) und ist
-geschichte - er wird weiterhin vom Blockwart gegen Bild und Runner geprueft, aber
-fueralles, was jetzt ansteht, gilt der Block oben.
+Hinweis auf die Falle darunter: der Block `FLASH-BEREIT v0z` beschreibt den Stand
+vom 31.10. und ist geschichte; er wird weiterhin vom Blockwart gegen Bild und
+Runner geprueft (12 Pruefpunkte, 0 Fehler), gilt aber fuer nichts, was jetzt
+ansteht.
 
 ## FLASH-BEREIT v0z — der echte Knopf, am Panel abgelesen und am Quelltext gemessen (2026-10-31, 13:3x; Flash-Freigabe von Gregor liegt vor, Working Directive: weiterarbeiten und melden wenn etwas gebraucht wird)
 
