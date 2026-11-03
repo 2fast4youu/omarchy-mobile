@@ -3885,3 +3885,66 @@ oben in dieser Form.
 telnetd und `/omamobile/LEBEN` (sparse sha `7d9f2179…`, eine Sitzung). Um es zu
 schreiben, muss das Telefon zurueck ins Fastboot — die Uebergabe-Shell kann nicht
 einmal `reboot`, weil keinProgramm mehr da ist. Ein Handgriff: Power+Leiser halten.
+
+## Nachtrag 28 (2026-11-03, 16:3x–17:5x): die Platte war schon zu, bevor die neue Wurzel anfing
+
+Vier Bootes hintereinander, alle mit demselben Bild (Wurzel `e59b319b`, boot_a
+v0am), alle vier mit Journal-Abbruch, alle vier bei 29.2 s: 17:01, 17:03, 17:05,
+17:29. Die Startspur nennt in allen vieren den Schreiber:
+
+    EXT4-fs error (device loop0): ext4_journal_check_start:86: comm switch_root
+
+`comm switch_root` ist der entscheidende Buchstabe. Die erste WRITE kommt von
+`switch_root` selbst, das beim Schliessen des alten Roots den Superblock
+nachschreibt — *bevor* die neue Wurzel irgendetwas tut. Deshalb konnten die
+Korrekturen in der neuen Wurzel nichts werden: Halteschleife (119 s),
+Halteschleife vorgezogen (15 s), Initramfs-Reste getoetet (29.3 s) — alle drei
+greifen spaeter als die WRITE, und die drei verlorenen Bootes zeigen genau das.
+
+Wer die Platte zushat, steht im Initramfs, Wort fuer Wort (v0am, 708 Zeilen):
+
+    306  logflush()
+    326      platte=/dev/$(echo "$bootdev" | sed 's/[0-9]*$//')
+    327      blockdev --setrw "$platte"
+    329      dd if=/run/log.pad of="$d" bs=131072 seek=504 conv=notrunc,fsync
+    331      blockdev --setro "$d"
+    332      blockdev --setro "$platte"     <- hier geht die Platte zu
+    641  logflush           (direkt vor switch_root in Zeile 648)
+
+Der Roh-Log-Kanal oeffnet die Platte, schreibt seinen Beutel auf boot_a und
+schliesst sie wieder. Der Platten-Schalter nimmt die Partition mit — am
+laufenden Geraet gemessen: `blockdev --setro /dev/sda` ergibt `platte=1
+partition=1`, und ein danach gerufenes `--setrw /dev/sda21` meldet Ausgang 0 und
+bewirkt nichts. Nur `--setrw /dev/sda` oeffnet wieder. Das erklaert auch, warum
+ein Boot (16:50) zufaellig gluckte: die Wache und der Log-Kanal laufen beide im
+Sekundentakt, die Phase entscheidet.
+
+**Fix v0an** (ein Ast, in `logflush`): die Platte bleibt offen, solange die
+userdata-Wurzel haengt; boot_a wird weiterhin ro geschrieben und danach ro
+gesetzt. `baue-v0an-umbau.py` (15 Grundannahmen, Runde-durch-Kontrolle),
+`build-v0an.sh` (dieselbe Pruefkette wie v0am: Bildhuelle 28 Pruefpunkte 0
+Fehler, Binde-Reihenfolge, POSIX- und bash-Syntax, 745 Eintraege, 6 Module,
+keine Datei ohne Elternordner). Neues Bild: `firstlight.img` 21143552 B,
+sha256 `efdc60cf0f8d6f7e…`, init 718 Zeilen (708 Grund + 10 neue).
+
+Write 17:41:40 auf boot_a (boot_b und dtbo_b bleiben, die Wurzel bleibt),
+Neustart 17:42:00, Port 23 nach 30 s. Lesung bei 306 s Laufzeit:
+
+    /dev/loop0 / ext4 rw,relatime 0 0
+    stichproben=00000000000000000000  (zwanzig Stichproben im Zehntelsekundentakt, keine einzige ro)
+    getoetet= 169 171 252 284 298 542 543 546
+    schreib=0 geles=probe  fehlerzeilen=0  platte=0 partition=0
+    die neue Markzeile 'v0an: Platte bleibt rw' genau einmal im dmesg
+
+Erste Wurzel seit Beginn der Messreihe, die den Schreibtest ueberlebt. Zwei
+Dinge zusammen halten sie: die offene Platte (v0an) und das Wegraeumen der
+Initramfs-Reste (die Wache haette sie spaeter doch noch zugedreht).
+
+Fallstricke fuer die naechste Lesung: die Uebergabe-Shell kommt ohne PATH aus
+der Funkstille, ohne `PATH=/usr/bin:/bin` meldet sie `cat: not found` und die
+ganze Lesung ist taub — die Lesung von 17:42 war deshalb wertlos. Und:
+`sende-befehl.py` liefert den *Schwanz* der Antwort, kurze Fragen also separat
+stellen, sonst verschwindet der Kopf (Upetime, Mount-Zeile) hinter dem Rand.
+
+Beweis ueber drei kalte Neustarts laeuft (`halte-drei-neustart.sh`, ohne ein
+einziges Neuschreiben).
