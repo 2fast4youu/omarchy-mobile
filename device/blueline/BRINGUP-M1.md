@@ -80,6 +80,31 @@ ein Geraet `/dev/keins`, und eine Wurzel auf einer ganzen Platte erfindet keinen
 Elternordner `/dev/block` mehr) - der Unterschied sitzt im naechsten Bild, der
 Gegentest im Test haelt die alte Fassung weiter daran.
 
+## Der Write um 16:30 und der erste Knopflose Rueckweg in Aktion
+
+Gemessen, nicht angenommen:
+
+- `restart2 bootloader` per Telnet um 16:30:2x: **`fastboot devices` antwortete
+  nach 3 s** - das erste Mal, dass dieser Weg am Geraet gebraucht und gemessen
+  wurde, ohne dass jemand am Telefon gedrueckt hat
+- Summenprobe VOR dem Schreiben: gemessen und notiert identisch
+  `98c5a4879010fd96a05b8632a93cf8583db1feac0d7ff6ed155fe3aeb52e38e8`,
+  117441332 B
+- vor dem Write: `current-slot: a`, `slot-retry-count:a 2`, `slot-retry-count:b 0`,
+  `slot-unbootable:a no`, `slot-unbootable:b yes`
+- `flash userdata` 16:30:28: `Sending 'userdata' (114688 KB) OKAY [2.990s]`,
+  `Writing 'userdata' OKAY [0.137s]`, Ausgang 0; danach unveraenderte Zaehler,
+  `--set-active=a`, Neustart kommandiert 16:30:34 (Beleg:
+  `firstlight/evidence/userdata-write-1630-wurzel22-fix.txt`)
+- `boot_a` ist in diesem Durchgang **nicht** beschrieben worden - es traegt v0al
+
+Ein eigener Fehler, vom Ad-hoc-Nachweis erwischt und behoben: der Belegblock von
+`schreibe-nur-userdata.sh` lief durch `| tee`, ein `exit 1` in der Gruppe endet
+aber nur in der Pipeline - der Lueufer meldete Ausgang 0, auch als der
+gefaelschte Schreibvorgang mit `FAILED` antwortete. Jetzt schreibt die Gruppe in
+die Datei, haengt die Summe selbst an und gibt ihre Zahl weiter. Dieselbe Falle
+lag vorher schon in `schreibe-v0ai.sh` (Fix dort: `PIPESTATUS`).
+
 ## v0al am Telefon gemessen (2026-11-03, 16:11-16:12) - und was das fuer den naechsten Write heisst
 
 Nicht aus meinen Schritten dieser Stunde, sondern aus dem Parallelarbeiter am

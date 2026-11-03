@@ -1,4 +1,4 @@
 Warning: skip copying userdata image avb footer due to sparse image.
 Sending 'userdata' (114688 KB)                     OKAY [  2.930s]
-Writing 'userdata'                                 OKAY [  0.135s]
-Finished. Total time: 3.395s
+Writing 'userdata'                                 OKAY [  0.068s]
+Finished. Total time: 3.327s

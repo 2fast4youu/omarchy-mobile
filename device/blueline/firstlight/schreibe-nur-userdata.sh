@@ -3,6 +3,9 @@
 # darf nicht mehr mit v0ak ueberschrieben werden. Bildsumme wird gegen ihre
 # Begleitdatei gemessen, bevor irgendetwas geschrieben wird.
 set -u
+# Kein 'block | tee': ein exit inside die Gruppe erreicht den Aufrufer nur, wenn
+# die Gruppe keine Pipeline ist - mit tee meldete der Lueufer Ausgang 0, auch wenn
+# der Schreibvorgang fehlgeschlagen waere (gemessen im Ad-hoc-Nachweis 16:35).
 FB=${FB:-/Users/gregor/Library/Android/sdk/platform-tools/fastboot}
 BILD=${BILD:-/Users/gregor/hermes-workspace/images/userdata-alpine}
 DATEI=$BILD/rootfs-vorlauf.sparse.img
@@ -32,4 +35,7 @@ LOG=${LOG:-/Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstli
   $FB --set-active=a 2>&1 | tail -2
   $FB reboot 2>&1 | tail -1
   echo "Neustart kommandiert $(date '+%T')"
-} 2>&1 | tee "$LOG"
+} > "$LOG" 2>&1
+zy=$?
+cat "$LOG"
+exit $zy
