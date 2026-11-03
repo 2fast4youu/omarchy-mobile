@@ -3549,3 +3549,49 @@ eine Shell am Panel offen und fuehrt nach fuenf Minuten Funkstille `restart2` in
 Bootloader. Die Uebergabe ist damit stark belegt, aber **nicht abgelesen**  - dafuer
 muss die neue Wurzel selbst sichtbar werden (Gadget + telnetd + Stempel-Datei), und
 das Panel kann nur ein Mensch lesen (M1.2).
+
+
+## Nachtrag 27 (2026-11-03, 01:1x): die Uebergabe ist passiert — gelesen auf einer Leitung, die wir nie benutzt haben
+
+Der Wartelaufer hat 40 Minuten kein Fastboot-Geraet gesehen und **nichts
+geschrieben** (Exit 1, die Negativprobe gilt also auch am echten Geraet). Dafuer
+hat die Suche nach dem Zustand etwas Neues zutage gefoerdert.
+
+**Das Telefon haengt am Bus, und zwar als unser Bild:**
+
+    ioreg: Pixel 3 (blueline)@10330000  ->  idVendor 0x18d1, idProduct 0xd002
+           USB Product Name "Pixel 3 (blueline)", USB Vendor Name "Omarchy Mobile",
+           USB Serial Number "omamobile-blueline"
+
+Diese Produktkennung traegt nur unser Gadget. Kein Fastboot (`getvar` laeuft in der
+Frist auf), keine IP auf 172.16.42.1, kein Port 23 — aber am selben USB-Platz
+existiert ein serielles Knoten: **/dev/cu.usbmodem103303**. Da antwortet eine Shell.
+
+**Was diese Shell ist, entscheidet mehr als jede Mount-Marke.** Sie antwortet auf
+jede Zeile, ist eine busybox-ash, aber:
+
+    echo PFAD=$PATH                       -> /usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    cat /proc/uptime                      -> /bin/sh: cat: not found
+    while read l; do ...; done < /proc/mounts   -> can't open /proc/mounts: no such file
+    for f in /*; do echo $f; done         -> /*            (das Glob expandiert auf nichts)
+    echo cat_da=$(if [ -e /bin/cat ] ...) -> weg          pwd -> /
+
+Wurzel da, aber **leer**: kein /bin, kein /proc, keine einzige Datei unter `/`. Das
+ist die Signatur von `switch_root`: es schiebt die neue Wurzel vor und **loescht die
+alte Wurzel**; ein Prozess, der aus dem Initramfs schon lief (hier die
+serielle Konsole), behaelt diese ausgeloeschte alte Wurzel als seine. Eine leere `/`
+in einer lebenden Shell ist damit der Beleg, dass die Uebergabe gelaufen ist —
+unabhaengig davon, dass die neue Wurzel sich gegenueber dem Mac immer noch nicht
+meldet, weil das alte Userdata-Init weder Gadget noch telnetd mitbringt.
+
+**Neues Werkzeug:** `sende-acm-befehl.py` — ein Befehl nach dem anderen ueber
+/dev/cu.<knoten>, 115200 8N1, Fluchtsequenzen (die Cursor-Auskunft) werden vor der
+Ausgabe entfernt. In einer ausgeloeschten Wurzel sind nur noch die eingebauten
+Kommandos der Shell brauchbar (`echo`, `pwd`, `[`, `while read … < Datei` ueber
+Glob- und Test-Builtins); jeder externe Applet fehlt. Deshalb stehen die Lesungen
+oben in dieser Form.
+
+**Was daraus folgt:** es fehlt nur noch das neue Userdata-Bild mit eigenem Gadget,
+telnetd und `/omamobile/LEBEN` (sparse sha `7d9f2179…`, eine Sitzung). Um es zu
+schreiben, muss das Telefon zurueck ins Fastboot — die Uebergabe-Shell kann nicht
+einmal `reboot`, weil keinProgramm mehr da ist. Ein Handgriff: Power+Leiser halten.
