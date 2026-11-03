@@ -1,0 +1,222 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+"""Schreibt der Write-Zyklus die Wahrheit, wenn ein Write fehlschlaegt?
+
+`device/blueline/firstlight/schreibe-v0ai.sh` entscheidet ueber zwei
+Partitionsschreiben (userdata, boot_a), dann Slot und Neustart - und laeuft
+unbetreut, sobald das Telefon im Fastboot erscheint. Der Zweig war urspruenglich
+`flash <partei> <datei> 2>&1 | tail -3` in einer Wenn-Bedingung: die Rohrleitung
+meldet den Ausgang von `tail`, nicht den von fastboot, also galt ein
+abgebrochener Write auf userdata als gelungen und der Zyklus lief weiter bis
+Slot und Neustart durch. Kein Telefon im Spiel: ein nachgebauter fastboot
+schreibt jeden Aufruf nach `aktionen.txt`, verglichen wird diese Liste, nicht die
+Ausgabe. Der Log-Pfad des Zyklus zeigt in einen Nachbauordner, damit ein Test
+nicht in die Belegdateien des Projekts schreibt.
+
+Der Gegentest (Punkt 7) baut die alte Rohrleitung in eine Kopie zurueck und muss
+sehen, dass der Fehlschlag dann unentdeckt durchgeht - eine Pruefung, die nie
+`not ok` sagen kann, schlaeft. Gegen die alte Fassung aus dem Versionsstand
+meldete diese Sonde 14 Pruefpunkte mit 6 Fehlern, gegen die gefixte 20 mit 0.
+"""
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+
+WURZEL = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ZYKLUS = os.path.join(WURZEL, "device/blueline/firstlight", "schreibe-v0ai.sh")
+ZEILE = 'if $FB flash "$partei" "$datei" >"$aus" 2>&1; then rc=0; else rc=$?; fi'
+ALTZEILE = 'if $FB flash "$partei" "$datei" >"$aus" 2>&1 | tail -3 >/dev/null; then rc=0; else rc=$?; fi'
+# Der Gegentest baut die alte Fassung wieder zusammen: die Entscheidung
+# wieder einer Rohrleitung uebergeben (deren letztes Kind immer gelingt) und die
+# beiden Pruefungen danach ausschalten, die es vorher nicht gab. Drei Anker, und jeder fehlende Anker meldet sich - eine still
+# weggelassene Gegenseite waere eine Pruefung, die schlaeft.
+TAUSCH_ALTFASSUNG = [
+    (ZEILE, ALTZEILE),
+    ('if [ "$rc" -ne 0 ]; then', 'if false; then'),
+    ('if ! grep -q OKAY "$aus"; then', 'if false; then'),
+]
+FAKE = """#!/bin/sh
+echo "$*" >> "$AKTIONEN"
+partei=$2
+case "$1" in
+  devices) echo "PIXEL3-SERIAL fastboot" ;;
+  flash)
+    if [ "$FAILRAUS" = "$partei" ]; then
+      echo "Sending '$partei' (4 B)"
+      echo "FAILED (Command failed)"
+      [ "$FEHLERAUSGANG" = null ] && exit 0
+      exit 1
+    fi
+    echo "Sending '$partei' (4 B) OKAY"
+    echo "Writing '$partei' OKAY"
+    echo "Finished. total time: 0s000ms" ;;
+  --set-active=a) echo "OKAY" ;;
+  reboot) echo "OKAY: Rebooting device" ;;
+  *) echo "OKAY" ;;
+esac
+exit 0
+"""
+PRUEFUNGEN, FEHLER, SKIPS = [], [], []
+
+
+def pruef(gelingt, text_ja, text_nein):
+    PRUEFUNGEN.append(text_ja if gelingt else text_nein)
+    if gelingt:
+        print("ok - " + text_ja)
+        return
+    FEHLER.append(text_nein)
+    print("not ok - " + text_nein)
+
+
+def skip(text):
+    PRUEFUNGEN.append(text)
+    SKIPS.append(text)
+    print("ok - # skip: " + text)
+
+
+def bilanz():
+    print("# pruefungen=%d fehler=%d skips=%d" % (len(PRUEFUNGEN), len(FEHLER), len(SKIPS)))
+
+
+if not os.path.isfile(ZYKLUS):
+    skip("Write-Zyklus nicht lesbar: %s" % ZYKLUS)
+    bilanz()
+    raise SystemExit(0)
+
+text = open(ZYKLUS, encoding="utf-8").read()
+pruef(subprocess.run(["sh", "-n", ZYKLUS], capture_output=True).returncode == 0,
+      "Write-Zyklus parst (sh -n)", "Write-Zyklus parst nicht")
+
+GRUND = tempfile.mkdtemp(prefix="write-zyklus-")
+ORT = os.path.join(GRUND, "fakes")
+os.makedirs(ORT, exist_ok=True)
+FAKE_FB = os.path.join(ORT, "fastboot")
+open(FAKE_FB, "w").write(FAKE)
+os.chmod(FAKE_FB, 0o755)
+PRUEFBAR = shutil.which("shasum") is not None
+if PRUEFBAR:
+    PRUEFUNGEN.append("shasum ist da")
+    print("ok - shasum ist da, die Backup-Gegenprobe ist messbar")
+else:
+    skip("kein shasum auf diesem Rechner: die Backup-Gegenprobe ist nicht messbar")
+
+
+def summe(pfad):
+    return subprocess.run(["shasum", "-a", "256", pfad], capture_output=True, text=True).stdout.split()[0]
+
+
+def kopie(ordner, tausch=None):
+    """Kopie des Zyklus mit in den Nachbau umgebogenem Log-Pfad.
+
+    Rueckgabe (pfad, "") oder ("", grund), wenn ein Anker nicht steht.
+    """
+    quelltext = text
+    for alter, neuer in (tausch or []):
+        if alter not in quelltext:
+            return "", "Anker nicht gefunden: %s" % alter[:40]
+        quelltext = quelltext.replace(alter, neuer)
+    logzeile = [z for z in quelltext.splitlines() if z.startswith("LOG=")]
+    if len(logzeile) != 1:
+        return "", "Log-Zeile nicht eindeutig (%d)" % len(logzeile)
+    os.makedirs(ordner, exist_ok=True)
+    ziel = os.path.join(ordner, "zyklus.sh")
+    offen = open(ziel, "w", encoding="utf-8")
+    offen.write(quelltext.replace(logzeile[0], 'LOG="%s/satz.txt"' % ordner))
+    offen.close()
+    return ziel, ""
+
+
+def lauf(kopie_pfad, name, umgebung):
+    ordner = os.path.join(GRUND, "lauf-" + name)
+    os.makedirs(ordner, exist_ok=True)
+    aktionen = os.path.join(ordner, "aktionen.txt")
+    open(aktionen, "w").close()
+    u = dict(os.environ)
+    u.update(umgebung)
+    u["FB"] = FAKE_FB
+    u["AKTIONEN"] = aktionen
+    u["PATH"] = ORT + ":" + u["PATH"]
+    r = subprocess.run(["sh", kopie_pfad], capture_output=True, text=True, timeout=180, env=u)
+    # Eine Zeile = ein Aufruf, die Argumente bleiben zusammen.
+    return r.returncode, r.stdout, [z.strip() for z in open(aktionen, encoding="utf-8") if z.strip()]
+
+
+BILD = os.path.join(GRUND, "ud.sparse.img")
+open(BILD, "wb").write(b"\0\1\2\3")
+open(BILD + ".sha256", "w").write("%s  %s\n" % (summe(BILD), os.path.basename(BILD)))
+BOOT = os.path.join(GRUND, "boot.img")
+open(BOOT, "wb").write(b"A" * 4)
+BACKUP = os.path.join(GRUND, "backup")
+os.makedirs(BACKUP, exist_ok=True)
+SICH = os.path.join(BACKUP, "kalibrier-boot_a.bin")
+open(SICH, "wb").write(b"S" * 8)
+
+
+def summenliste(wert):
+    offen = open(os.path.join(BACKUP, "sha256-lokal.txt"), "w")
+    offen.write("%s  kalibrier-boot_a.bin\n" % wert)
+    offen.close()
+
+
+summenliste(summe(SICH))
+UMG = {"UDATEI": BILD, "BOOTIMG": BOOT, "BACKUP": BACKUP, "FRIST": "20"}
+HAUPT, grund = kopie(os.path.join(GRUND, "haupt"))
+if not HAUPT:
+    pruef(False, "", "Kopie nicht gebaut: " + grund)
+    bilanz()
+    raise SystemExit(1)
+
+if PRUEFBAR:
+    rc, aus, akt = lauf(HAUPT, "erfolg", dict(UMG, FAILRAUS="nirgends"))
+    pruef(rc == 0, "gelungener Lauf: Ausgang 0, Slot gesetzt, Neustart angeordnet",
+          "gelungener Lauf endete mit %d, Ausgabe %r" % (rc, aus[-200:]))
+    pruef(any(z.startswith("flash userdata") for z in akt), "userdata geschrieben",
+          "Write auf userdata fehlt: %s" % akt)
+    pruef(any(z.startswith("flash boot_a") for z in akt), "boot_a geschrieben",
+          "Write auf boot_a fehlt: %s" % akt)
+    pruef("--set-active=a" in akt and "reboot" in akt, "Slot a aktiviert und gestartet",
+          "Slot und Start blieben aus: %s" % akt)
+
+    rc2, aus2, akt2 = lauf(HAUPT, "write-fehlt", dict(UMG, FAILRAUS="userdata", FEHLERAUSGANG="1"))
+    pruef(rc2 != 0, "fehlgeschlagener Write endet mit nicht-null Ausgang",
+          "fehlgeschlagener Write meldet Erfolg mit Ausgang 0 - die Rohrleitungsfalle")
+    pruef("FEHLER" in aus2, "der Fehlschlag steht als FEHLER in der Ausgabe",
+          "kein FEHLER-Wort: %r" % aus2[-200:])
+    pruef(not any(z.startswith("flash boot_a") for z in akt2),
+          "nach dem Fehlschlag folgt kein zweiter Write",
+          "nach dem Fehlschlag ging es weiter: %s" % akt2)
+    pruef("--set-active=a" not in akt2 and "reboot" not in akt2,
+          "nach dem Fehlschlag kein Slot, kein Neustart",
+          "Slot/Start trotz Fehlschlags: %s" % akt2)
+
+    rc3, aus3, akt3 = lauf(HAUPT, "ohne-okay", dict(UMG, FAILRAUS="userdata", FEHLERAUSGANG="null"))
+    pruef(rc3 != 0, "Ausgang 0 ohne OKAY gilt nicht als Erfolg",
+          "Ausgang 0 ohne OKAY gilt als Erfolg - der vom Waechter abgeschossene Write")
+    pruef("kein OKAY" in aus3, "der OKAY-Mangel wird benannt",
+          "OKAY-Mangel nicht gemeldet: %r" % aus3[-200:])
+
+    summenliste("0" * 64)
+    rc4, aus4, akt4 = lauf(HAUPT, "sicherung", dict(UMG, FAILRAUS="nirgends"))
+    pruef(rc4 != 0 and "ABBRUCH" in aus4, "verstellte Sicherungssumme bricht vor dem Write ab",
+          "verstellte Sicherungssumme bricht nicht ab: %r" % aus4[-200:])
+    pruef(not any(z.startswith("flash boot_a") for z in akt4),
+          "bei Sicherungsabbruch wird nicht geschrieben",
+          "trotz Sicherungsabbruch geschrieben: %s" % akt4)
+    summenliste(summe(SICH))
+
+ALT, grund = kopie(os.path.join(GRUND, "gegentest"), TAUSCH_ALTFASSUNG)
+if not ALT:
+    pruef(False, "", "Gegentest-Anker nicht gefunden, der Zyklus hat sich geaendert: " + grund)
+else:
+    rcg, ausg, aktg = lauf(ALT, "gegentest", dict(UMG, FAILRAUS="userdata", FEHLERAUSGANG="1"))
+    pruef(rcg == 0, "Gegentest: mit der alten Rohrleitung gilt der Fehlschlag als Erfolg",
+          "Gegentest meldet den Fehlschlag, die Sonde unterscheidet alt und nicht: Ausgang %d" % rcg)
+    pruef(any(z.startswith("flash boot_a") for z in aktg),
+          "Gegentest: nach dem uebersehenen Fehlschlag geht es weiter",
+          "Gegentest bricht ab, die alte Fassung ist nicht nachgebaut: %s" % aktg)
+
+shutil.rmtree(GRUND, ignore_errors=True)
+bilanz()
+raise SystemExit(1 if FEHLER else 0)

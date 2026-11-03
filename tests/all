@@ -14,6 +14,11 @@
 # two more: tests/leser-harness runs the telnet-reader harness (18 checks
 # against a rebuilt phone shell, no phone needed) and tests/gpt-audit runs the
 # GPT header/backup audit over the captured UFS-LUN excerpts.
+# tests/write-zyklus drives the blueline write cycle against a fake fastboot and
+# judges the ACTION LIST, not the output: a failed flash must stop the cycle
+# before boot_a, the slot and the reboot (the old `flash ... | tail -3` branch
+# reported tail's status and ran on), and its own counter-state rebuilds that
+# branch to prove the check can say not ok.
 # (tests/flash-block: every hash, size, path, expectation line and collect-file
 # name in the block is checked against the disk and the runner, because that
 # block is what survives a context compaction and a stale number in it would
@@ -37,7 +42,7 @@ sh -n device/flame/initramfs/init
 sh -n device/flame/initramfs/build
 bash -n tools/build-flame-probe
 echo "ok - scripts parse"
-for t in tests/pr-check tests/kernel-pr-check tests/install-phone tests/phone-provision tests/initramfs-grow tests/images-layout tests/device-overlays tests/simplefb-trigger tests/storage-guard tests/usb-product tests/boot-method tests/bootimg-v0 tests/gadget-reference tests/gadget-modules tests/ref-enumeration tests/bisection tests/flash-block tests/flame-probe tests/leser-harness tests/gpt-audit packages/omamobile-firstboot/test/all packages/omamobile-device-felix/test/all; do
+for t in tests/pr-check tests/kernel-pr-check tests/install-phone tests/phone-provision tests/initramfs-grow tests/images-layout tests/device-overlays tests/simplefb-trigger tests/storage-guard tests/usb-product tests/boot-method tests/bootimg-v0 tests/gadget-reference tests/gadget-modules tests/ref-enumeration tests/bisection tests/flash-block tests/flame-probe tests/leser-harness tests/gpt-audit tests/write-zyklus packages/omamobile-firstboot/test/all packages/omamobile-device-felix/test/all; do
   echo "# $t"
   "$t"
 done
