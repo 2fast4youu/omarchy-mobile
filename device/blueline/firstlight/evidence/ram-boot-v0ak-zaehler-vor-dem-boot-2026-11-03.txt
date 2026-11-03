@@ -1,0 +1,22 @@
+Beleg: letzte Fastboot-Lesung VOR dem Userdata-Schreibvorgang um 15:34:58 (15:15:03),
+und der RAM-Boot von v0ak daneben - `fastboot boot`, kein einziger Partitions-Write.
+
+Was daran haengt: `slot-unbootable:b: yes`. Der Rueckweg ueber Slot b ist damit
+zu, nicht nur ungeprueft - ein Boot muss ueber Slot a (v0ak auf boot_a) oder ueber
+`fastboot boot images/fl-v0ak/firstlight.img` aus dem RAM laufen. Der
+Wiederholungs-Zaehler stand vor diesem Boot auf 2, nach dem Write von 15:34 und
+`--set-active=a` wieder auf 3 (Auffuellen auf 3, nicht auf 7, gemessen 15:29).
+
+=== Lesungen vor dem RAM-Boot 2026-11-03 15:15:03
+current-slot               current-slot: a
+version:slot-retry-count:a getvar:version:slot-retry-count:a                  FAILED (remote: 'variable not found')
+slot-retry-count:a         slot-retry-count:a: 2
+slot-retry-count:b         slot-retry-count:b: 0
+slot-unbootable:a          slot-unbootable:a: no
+slot-unbootable:b          slot-unbootable:b: yes
+=== RAM-Boot von v0ak (ohne Partitions-Write) 15:15:05
+PIXEL3-SERIAL	 fastboot
+Sending 'boot.img' (20648 KB)                      OKAY [  0.643s]
+Booting                                            OKAY [  9.746s]
+Finished. Total time: 10.396s
+RAM-Boot Ausgang 0 um 15:15:15
