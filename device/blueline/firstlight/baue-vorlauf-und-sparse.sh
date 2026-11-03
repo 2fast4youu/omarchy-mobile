@@ -56,13 +56,13 @@ dd if="$ROH" of="$VOR" bs=1048576 seek=1 conv=notrunc status=none
 korper=$(dd if="$VOR" bs=1048576 skip=1 status=none | sha256sum | cut -d' ' -f1)
 [ "$korper" = "$summe_roh" ] || { echo "nicht ok - Korper des Vorlaufbilds ist $korper, Rohbild ist $summe_roh"; exit 1; }
 summe_vor=$(sha256sum "$VOR" | cut -d' ' -f1)
-sha256sum "$VOR" > "$VOR.sha256"
+( cd "$BILD" && sha256sum "${VOR##*/}" > "${VOR##*/}.sha256" )
 echo "ok - Vorlaufbild $VOR $(stat -c %s "$VOR") B sha $summe_vor (Kopf 1 MiB, Korper bytegleich)"
 
 # --- 3) Sparse, mit der Ruecklese-Probe des Bauers selbst
 python3 "$OM/baue-sparse.py" "$VOR" "$SPARSE" || { echo "nicht ok - baue-sparse.py bricht ab"; exit 1; }
 summe_sparse=$(sha256sum "$SPARSE" | cut -d' ' -f1)
-sha256sum "$SPARSE" > "$SPARSE.sha256"
+( cd "$BILD" && sha256sum "${SPARSE##*/}" > "${SPARSE##*/}.sha256" )
 echo "ok - Sparse $SPARSE $(stat -c %s "$SPARSE") B sha $summe_sparse"
 
 # --- 4) der mitgeschriebene /init ist die Quelle
