@@ -3946,5 +3946,20 @@ ganze Lesung ist taub — die Lesung von 17:42 war deshalb wertlos. Und:
 `sende-befehl.py` liefert den *Schwanz* der Antwort, kurze Fragen also separat
 stellen, sonst verschwindet der Kopf (Upetime, Mount-Zeile) hinter dem Rand.
 
-Beweis ueber drei kalte Neustarts laeuft (`halte-drei-neustart.sh`, ohne ein
-einziges Neuschreiben).
+Beweis ueber drei kalte Neustarts: siehe direkt darunter.
+Nachgemessen, drei kalte Neustarts ohne ein einziges Neuschreiben (17:48, 17:50,
+18:00 Uhr), alle drei gehalten:
+
+    /dev/loop0 / ext4 rw,relatime 0 0        wurzel=/dev/loop0 ext4 rw,relatime
+    nach3s-uptime=36.59 / 36.56 / 36.63      schreib=0 geles=probe
+    fehlerzeilen=0                           stichproben=00000000000000000000
+    platte=0 partition=0
+
+Runde 3 sass zuerst im Bootloader — nicht die Halteschleife, sondern ABOOT: nach
+drei Starts ohne Erfolgsmeldung ist `retry-count` leer und der Schalter faellt
+auf Slot b zurueck. Vor jedem Neustart ein `--set-active=a` (fuellt den Zaehler
+auf 3, kein Tastendruck) — in `halte-beweis-drei-boot.sh` jetzt eingearbeitet.
+Kanonische Suite auf diesem Stand: **ok=198 (skip=5), not-ok=0,Exit 0, GRUEN**.
+Damit ist M1.5.4 erfuetllt: die Wurzel haelt eine echte Schreibaktion aus,
+wiederholt und ohne menschlichen Handgriff.
+
