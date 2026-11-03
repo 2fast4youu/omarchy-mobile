@@ -1,6 +1,71 @@
 <!-- SPDX-License-Identifier: MIT -->
 # Pixel 3 (blueline): first light
 
+## AUSSTEHENDER WRITE (2026-11-03, gemessen um 08:0x) - dieser Block ersetzt fuer den naechsten Write alles darunter
+
+Was aussteht und warum: v0ak haelt die Userdata-Wurzel read-write und haltbar, und
+die Uebergabe laeuft (auf der seriellen Konsole als leere alte Wurzel gelesen,
+Nachtrag 27). Es fehlt nur das neue Userdata-Bild: traegt als Wurzel-`/init` den
+Gadget-Aufbau (configfs, `ncm.usb0` + `acm.GS0`, `172.16.42.1`, `telnetd -l /bin/sh`)
+und schreibt `/omamobile/LEBEN` auf die echte Partition. Beides fehlt in der Wurzel,
+die jetzt laeuft - deshalb ist das Telefon fuer den Mac taub, obwohl es lebt.
+
+Anruf (wartet auf das Telefon im Fastboot, dann der Zyklus von selbst; Frist hier
+1440 Runden a 10 s = 4 h, sonst Standard 40 min):
+
+```sh
+cd /Users/gregor/hermes-workspace/omarchy-mobile/device/blueline/firstlight
+FRIST_RUNDEN=1440 sh warte-und-schreibe.sh
+```
+
+Der Laeufer ruebergibt an `schreibe-v0ai.sh` mit `BOOTIMG` auf v0ak und `FRIST=420`.
+Beide Skripte sind ungeaendert im Einsatz seit den Commits `e19c509` (Write-Meldung)
+und `cca2331` (Pruefung dazu); kanonische Suite auf diesem Stand: 164 ok, 4 skip,
+0 not-ok, Ausgang 0.
+
+Inhalte, alle soeben von der Platte gemessen (nicht aus der Erinnerung):
+
+| Partition | Datei | Groesse | sha256 |
+| --- | | --- | --- | --- |
+| userdata | `/Users/gregor/hermes-workspace/images/userdata-alpine/rootfs-vorlauf.sparse.img` | 117441332 B | `7d9f217928cf3866d2fa02f166502cbef2ddd7bb8e93c03adb6bac8ce6e52b03` |
+| boot_a | `/Users/gregor/hermes-workspace/images/fl-v0ak/firstlight.img` | 21143552 B | `f5ac4efda70345d864ea9bf431c4fb6d930b686e6dc97b4b00da37f4f25a426a` |
+| Rueckweg STUFE 1 | `/Users/gregor/hermes-workspace/images/fl-v0af/firstlight.img` (mit Power+Leiser starten) | 21143552 B | `f097ef0f9a1a858a15d72aad023be27f9a02e419116d25c580d99fe86d1a2c9d` |
+| Sicherung boot_a | `/Users/gregor/hermes-workspace/backups/blueline-2026-11-01/kalibrier-boot_a.bin` | 67108864 B | `0478f8dbe456a5877976f2514aa105619acf6c91056afb14eabe824d5c6929a0` |
+
+Zu den beiden Bildern liegen `.sha256`-Begleitdateien mit denselben Summen; der
+Zyklus prueft sie vor dem ersten Write und prueft vor dem boot_a-Write die
+Sicherung gegen `sha256-lokal.txt` - bei Abweichung bricht er ab, ohne geschrieben
+zu haben. Rueckweg STUFE 2 bleibt das Factory-Image (loescht userdata).
+
+Vor dem Write, in diesem Fastboot-Moment, als Erstes die Slot-Lesungen (seit
+2026-11-03 00:3x nicht mehr gelesen, der Wiederholungs-Zaehler ist unbkannt):
+`getvar current-slot`, `getvar slot-retry-count:a`, `getvar slot-unbootable:a`.
+Steht `retry-count:a` auf 0, zuerst `--set-active=a` und die Lesung danach
+dokumentieren - ohne Fuellung macht der erste Start des Slots den Slot unbootbar.
+
+ERWARTUNG, jetzt vor dem Flash festgelegt (jede Zeile ist im ausgelieferten
+Userdata-Bild nachzulesen, nicht im Kopf): spaetestens vier Minuten nach dem
+Neustart antwortet `ping 172.16.42.1`, Port 23 ist offen, und auf dem Telefon
+steht `cat /omamobile/LEBEN` mit Zeitstempel, Wurzelgeraet und Kernel; in
+`grep " / " /proc/mounts` steht das Userdata-Geraet mit `rw`; der Gadget-Schalter
+`state` steht auf `configured`. Die Gegenseiten: kein Eintrag am Bus = der
+Gadget-Block in der neuen Wurzel lief nicht (dann die Marke in
+`/omamobile/LEBEN` auf der Partition suchen, sie liegt trotzdem da); Port offen
+ohne Stempel = Uebergabe vor dem Stempel gescheitert; Stempel da ohne Netz =
+Gadget-Aufbau in der neuen Wurzel fehlgeschlagen, die `/ud`-Lesung aus dem
+Initramfs bleibt als Beweis erhalten.
+
+Der Handgriff bleibt der einzige Weg ins Fastboot: Power + Leiser 10-20 s, bis
+FASTBOOT MODE im Display steht. Von der seriellen Shell aus ist kein Neustart
+moeglich, der dort ankommt - die ueberlebende Shell hat eine geleerte Wurzel,
+kein Programm und kein `/proc` (Nachtrag 27), und ein Panic-Neustart wuerde
+Slot a normal starten und wieder in dieselbe stumme Wurzel fallen.
+
+Hinweis auf die Falle darunter: der folgende Block `FLASH-BEREIT v0z` beschreibt
+den Stand vom 31.10. (v0z, Panelablesung, Runner `run-flash-observe.sh`) und ist
+geschichte - er wird weiterhin vom Blockwart gegen Bild und Runner geprueft, aber
+fueralles, was jetzt ansteht, gilt der Block oben.
+
 ## FLASH-BEREIT v0z — der echte Knopf, am Panel abgelesen und am Quelltext gemessen (2026-10-31, 13:3x; Flash-Freigabe von Gregor liegt vor, Working Directive: weiterarbeiten und melden wenn etwas gebraucht wird)
 
 WARUM v0z: Gregors Panel-Ablesung von v0y (13:0x, Uptime 1482-1494 s) hat zwei Befunde, beide in Dateien festgehalten (`evidence/weicher-knopf-panel-und-quelltext-2026-10-31.txt`). ERSTENS: das Feld `udcdateien=` listet `soft_connect` — der weiche Verbindungsknopf IST da, aber in der UDC-Klasse unter `/sys/class/udc/<udc>/`, nicht im debugfs. Die Suche von v0w (`find /sys/kernel/debug -name soft_connect`) konnte ihn dort nie finden, und meine ROOT CAUSE #6 ('der Knoten existiert nicht') war ein Befehl an die falsche Stelle: der Knoten existiert, mein Pfad war falsch. Am Quelltext gemessen (`drivers/usb/gadget/udc/core.c`): Zeile 1784 `DEVICE_ATTR_WO(soft_connect)`, die Worte des Handlers sind `connect` und `disconnect` (Zeile 1763, 1768, `sysfs_streq`), alles andere gibt `-EINVAL` (Zeile 1774), und ohne gebundenes Gadget gibt es `-EOPNOTSUPP` mit der Kernelmeldung `soft-connect without a gadget driver` (Zeile 1753ff). v0vs Fallback hätte `1` geschrieben, also `-EINVAL`. ZWEITENS: `gadgetordner=` ist leer, `gebunden=` ist leer, `controller-state=not attached` — es gab in diesen Bootes gar kein Gadget. Die Anlage wartet höchstens 30 s auf den UDC (Zeile 172, von der Referenz übernommen, die bei 1.734 s bindet) und überspringt sonst alles; die Nachbind-Runde von v0s beginnt mit einer Platzhalter-Schleife, die ohne Gadget am nicht erweiterten Muster durchläuft, ohne je eine Beweiszeile zu drucken. DRITTENS, und das ist der Grund, warum vier Bootes lang keine Antwort zu sehen war: die Marks der Anlage stehen in `/run/steps.log`, die Herzschlagzeile `letzter Schritt:` zeigt aber nur `tail -1`, und die letzte Zeile schreibt der dmesg-Block bei 42 s. Deshalb stand in zwei Bootes dasselbe `steps:[43s]` — kein Stehenbleiben, sondern die letzte von mehreren Zeilen.
