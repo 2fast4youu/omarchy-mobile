@@ -78,6 +78,65 @@ ein Geraet `/dev/keins`, und eine Wurzel auf einer ganzen Platte erfindet keinen
 Elternordner `/dev/block` mehr) - der Unterschied sitzt im naechsten Bild, der
 Gegentest im Test haelt die alte Fassung weiter daran.
 
+## ROOT CAUSE #22 (2026-11-03, 16:2x): die Halteschleife der neuen Wurzel haelt nichts - `backing_dev` fehlt auf diesem Kernel
+
+Die Halteschleife in `/init` der neuen Wurzel ist die Antwort auf Wurzel #21. Am
+2026-11-03, gegen 16:1x, ist an demselben Boot gemessen, dass sie **nichts haelt**.
+
+Gemessen am laufenden Telefon (Uptime 1718 s, kein Neustart seit dem Write um
+15:34:58):
+
+- `grep ' / ' /proc/mounts` -> `/dev/loop0 / ext4 rw,relatime,emergency_ro 0 0`
+- `blockdev --getro` -> **1** auf `/dev/sda` und **1** auf `/dev/sda21`
+- `dmesg` -> `Trying to write to read-only block-device sda21`, vier
+  `I/O error, dev loop0`, `JBD2: I/O error when updating journal superblock`,
+  `EXT4-fs (loop0): I/O error while writing superblock`,
+  `EXT4-fs (loop0): Remounting filesystem read-only` - alle bei **169.2 s**
+- `/omamobile/LEBEN` existiert **nicht** (nur `HERKUNFT`, 54 B): der Stempel schrieb
+  erst nach dem Umschalten auf ro, der Schreibvorgang ging verloren
+- manuell `blockdev --getro /dev/sda` ueber 8 s, 16 Messungen: **durchgehend 1**
+- manuell befreit (`blockdev --setrw` auf Platte und Partition): beide **0**, und
+  drei Spaeter immer noch 0 - **nichts dreht das Flag spaeter wieder um**
+- `mount -o remount,rw /` -> `mount: mounting /dev/loop0 on / failed: Invalid
+  argument` - ein einmal abgestuerztes ext4 geht in diesem Boot nicht mehr auf rw
+- an den PID-1-Kindern gemessen: drei `/bin/sh /init`-Unterheiten forken 34 bis 74
+  Kinder pro Sekunde, eine hat nach 1718 s Laufzeit 888 s CPU-Zeit. **Welche davon
+  die Halteschleife ist, ist nicht festgestellt** - der Init enthaelt neben ihr
+  (Zeile 55) noch zwei weitere Endlosschleifen (Zeile 120, Zeile 143), und zwei der
+  beobachteten Unterheiten haben ueberhaupt keine Kinderzeit angesammelt. Was
+  feststeht, ist die Blindheit der Aufloesung (Zeilen unten) und dass `--getro`
+  ueber acht Sekunden sechzehn Mal hintereinander 1 meldete.
+
+Der Grund ist die Aufloesung selbst, vor Ort gemessen:
+
+- `cat /sys/class/block/loop0/loop/loop0/backing_dev` -> **leer**, die Datei
+  existiert auf 7.1.0-rc1-sdm845 nicht
+- damit faellt die Aufloesung auf `KNOTEN=${WURZEL##*/}` = `loop0` zurueck, und
+  `/sys/dev/block/loop0` existiert nicht - dieser Zweig schluesselt nach
+  `major:minor`, nie nach Namen
+- `blockdev --setrw /dev/keins` -> **Ausgang 1**: die Schleife laeuft Sekunde fuer
+  Sekunde gegen ein Geraet, das es nicht gibt
+- `readlink -f /sys/dev/block/8:17` -> `.../block/sdb/sdb1`: die **Minorzahl ist
+  der einzige bestaendige Schluessel**, die Namen wandern zwischen Bootes
+
+Zwei eigene Beweise haben das durchgelassen, und beide Gruende sind notierenswert:
+
+1. Die Dauerprobe von 11:3x war **116 s** lang - sie lag damit komplett vor der
+   Marke bei 169 s. Eine Halteprobe, die kuerzer laeuft als der bekannte
+   Fehlerzeitpunkt, beweist nichts.
+2. Die Nachweisung `tests/halte-aufloesung` baut die Sysfs-Form **selbst**; ihr
+   `backing_dev` war eine Annahme des Pruefers, keine Messung am Telefon. Und der
+   Stempel von 15:4x (`halte=sda sda21 ro=0/0`) stammt aus der ersten,
+   hartcodierten Fassung - `ro=0/0` unterscheidet nicht zwischen 'ich haelt offen'
+   und 'war gerade schon offen'.
+
+Fix-Ansatz (noch nicht gebaut): den Traeger nicht aus Sysfs-Raten, sondern aus
+`losetup <Wurzel>` ablesen, die Minorzahl als Schluessel nehmen, nach jedem
+Setzen mit `--getro` **gegenmessen**, und alle 30 s eine Herzschlagzeile nach
+`/dev/kmsg` schreiben - damit eine Schleife, die ins Leere laeuft, sich selbst
+verraet. Der Lauf-Ohne-Schlaf-Zweig (`while :; do nc -l -p 23 ...`) ist ein
+zweiter, eigener CPU-Fresser und bekommt denselben Schlaf.
+
 Hinweis auf die Falle darunter: der Block `FLASH-BEREIT v0z` beschreibt den Stand
 vom 31.10. und ist geschichte; er wird weiterhin vom Blockwart gegen Bild und
 Runner geprueft (12 Pruefpunkte, 0 Fehler), gilt aber fuer nichts, was jetzt

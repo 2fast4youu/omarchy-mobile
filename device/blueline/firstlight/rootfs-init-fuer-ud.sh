@@ -33,27 +33,84 @@ mkdir -p /omamobile
 # blockdev --getro = 1 auf Platte UND Partition, waehrend loop0 selbst rw meldet.
 # Getragen wird, was in der Mount-Zeile der Wurzel steht - bei einem Loop-Geraet
 # der Datentraeger dahinter, denn die Partition folgt dem Schalter der Platte.
+#
+# Wo der Traeger steht, ist auf diesem Kernel anders als angenommen (gemessen
+# 2026-11-03 an dem Boot, der bei 169 s auf ro fiel): der Sysfs-Zweig des
+# Loop-Geraets heisst `/sys/class/block/loop0/loop/` mit den Attributen
+# autoclear, backing_file, dio, offset, partscan, sizelimit - es gibt dort
+# weder ein Untergeordnetes `loop0/`-Ordnerchen noch eine Datei `backing_dev`.
+# Die erste Fassung suchte `loop/<name>/backing_dev`, fand nichts und hielt damit
+# ein Geraet namens `keins`. Gesucht wird jetzt in allen drei bekannten Formen,
+# und wenn keine davon etwas hergibt, fragt das Skript das Werkzeug selbst:
+# busybox antwortet auf `losetup /dev/loop0` mit '/dev/loop0: 1048576 /dev/sda21',
+# util-linux mit '/dev/loop0: [65025]:1234 (/dev/sda21)' - in beiden steht der
+# Geraetepfad am Zeilenende. Namen sind dabei nur die halbe Wahrheit: die
+# Minorzahl ist der bestaendige Schluessel, die Namen wandern zwischen Bootes.
 # ---------------------------------------------------------------------------
 WURZEL=$(awk '$2=="/" {print $1; exit}' /proc/mounts 2>/dev/null)
-KNOTEN=""
+HALTETRN=""   # leer = nichts zu halten; die Schleife sagt das im Herzschlag
+TRAGER=""
 case "${WURZEL:-}" in
-    /dev/loop*) KNOTEN=$(cat "/sys/class/block/${WURZEL##*/}/loop/${WURZEL##*/}/backing_dev" 2>/dev/null) ;;
-    /dev/*)     KNOTEN="${WURZEL##*/}" ;;
+    /dev/loop*)
+        GRUND=${WURZEL##*/}
+        for pfad in "/sys/class/block/$GRUND/loop/backing_file" \
+                    "/sys/block/$GRUND/loop/backing_file" \
+                    "/sys/class/block/$GRUND/loop/$GRUND/backing_dev" \
+                    "/sys/block/$GRUND/loop/$GRUND/backing_dev"; do
+            if [ -f "$pfad" ]; then
+                TRAGER=$(cat "$pfad" 2>/dev/null)
+                [ -n "${TRAGER:-}" ] && break
+            fi
+        done
+        if [ -z "${TRAGER:-}" ]; then
+            TRAGER=$(losetup "$WURZEL" 2>/dev/null | tail -1 | sed -e 's/.*[ (]//' -e 's/)$//')
+        fi
+        ;;
 esac
-HALTETRN=""   # leer = nichts zu halten; die Schleife geht dann ins Leere statt ein Geraet "keins" zu suchen
-for grund in "/sys/dev/block/$KNOTEN" "/sys/class/block/$KNOTEN"; do
-    if [ -n "${KNOTEN:-}" ] && [ -e "$grund" ]; then
-        PFAD=$(readlink -f "$grund")
-        PART=$(basename "$PFAD")
-        PLATTE=$(basename "$(dirname "$PFAD")")
-        # Haengt die Wurzel direkt auf einer ganzen Platte, ist der Elternordner
-        # 'block' selbst - dann gibt es nur die Platte zu halten, kein Elternpaar.
-        if [ "$PLATTE" = block ]; then HALTETRN="$PART"; else HALTETRN="$PLATTE $PART"; fi
-        break
+# Traeger (und jede andere haengende Partition) in die Halteliste: der Name wird
+# ueber /sys/class/block/<name> aufgeloest - dieser Zweig schluesselt nach Namen,
+# /sys/dev/block nach major:minor, und genau diese Verwechslung war Wurzel #22.
+for knotenpfad in "${TRAGER:-}" $(awk '$3!="rootfs" && $1 ~ /^\/dev\/sd/ {print $1}' /proc/mounts 2>/dev/null); do
+    [ -n "$knotenpfad" ] || continue
+    case "$knotenpfad" in
+        /dev/*) BASIS=${knotenpfad##*/} ;;
+        *)      # aeltere Kernel nennen in backing_dev eine minor:minor-Nummer statt
+                # eines Pfades; die steht nur in /sys/dev/block, nie unter dem Namen
+                BASIS=$(basename "$(readlink -f "/sys/dev/block/$knotenpfad")" 2>/dev/null) ;;
+    esac
+    [ -n "${BASIS:-}" ] || continue
+    case " $HALTETRN " in *" $BASIS "*) continue ;; esac
+    if [ -e "/sys/class/block/$BASIS" ]; then
+        ELTERN=$(basename "$(dirname "$(readlink -f "/sys/class/block/$BASIS")")" 2>/dev/null)
+        if [ "$ELTERN" = block ]; then
+            HALTETRN="$HALTETRN $BASIS"           # Wurzel auf einer ganzen Platte
+        else
+            HALTETRN="$HALTETRN $ELTERN $BASIS"   # Platte zuerst, dann die Partition
+        fi
     fi
 done
-( while :; do
-    for knoten in $HALTETRN; do blockdev --setrw "/dev/$knoten" 2>/dev/null; done
+HALTETRN=$(printf '%s' "$HALTETRN" | sed -e 's/^ //')
+
+# Halten, gegenmessen, melden. Die Gegenmessung ist der eigentliche Grund, diese
+# Fassung zu bauen: eine Schleife, die gegen ein nicht existentes Geraet laeuft,
+# sah bisher von aussen lebendig aus. Alle 30 Runden geht eine Zeile nach
+# /dev/kmsg, die Traeger und gemessene ro-Schalter zusammen nennt - damit steht
+# kinftig in dmesg, ob gehalten wird, statt dass eine Lesung das raten muss.
+(
+  runden=0
+  while :; do
+    for knoten in $HALTETRN; do
+      blockdev --setrw "/dev/$knoten" 2>/dev/null
+    done
+    runden=$((runden + 1))
+    if [ $((runden % 30)) -eq 1 ]; then
+      schalter=""
+      for knoten in $HALTETRN; do
+        schalter="$schalter $knoten=$(blockdev --getro "/dev/$knoten" 2>/dev/null)"
+      done
+      echo "omamobile: halte=${HALTETRN:-keins} ro=${schalter:-keins} zeit=$(cut -d. -f1 /proc/uptime)" \
+        > /dev/kmsg 2>/dev/null
+    fi
     sleep 1
   done ) &
 
@@ -105,6 +162,17 @@ while [ "$z" -lt 30 ]; do
     z=$((z + 1)); sleep 1
 done
 
+# Frueher Stempel, VOR dem Gadget-Kram: der Boot von 15:34 ist bei 169 s auf ro
+# gefallen, und der spaete Stempel hat deshalb nie die Partition erreicht -
+# /omamobile/LEBEN existierte in diesem Boot ueberhaupt nicht. Der fruehe Stempel
+# liegt auf der Platte, solange sie noch offen ist, und sagt zumindest, dass
+# diese Wurzel uebernommen hat und was sie vorhat offen zu halten.
+{
+    echo "frueh-zeit=$(date -u +%FT%TZ) uptime=$(cut -d' ' -f1 /proc/uptime)"
+    echo "halte=${HALTETRN:-keins} ro_vorher=$(for k in ${HALTETRN:-}; do printf '%s=%s ' \"$k\" \"$(blockdev --getro \"/dev/$k\" 2>/dev/null)\"; done)"
+} > /omamobile/LEBEN-frueh 2>/dev/null
+sync
+
 # Stempel auf der echten Partition: wann hat diese Wurzel uebernommen, von wo
 # und mit welchem Kernel. Das ist der Beleg fuer M1.5, nicht das Fehlen einer
 # Fehlermeldung. Datei bleibt, ein Neustart mit switch_root schreibt sie um.
@@ -140,7 +208,8 @@ if ! grep -q ':0017 ' /proc/net/tcp 2>/dev/null; then
     if [ -x /usr/sbin/telnetd ]; then
         /usr/sbin/telnetd -l /bin/sh -b 172.16.42.1:23 2>/dev/null
     elif [ -x /usr/bin/nc ]; then
-        ( while :; do nc -l -p 23 -e /bin/sh; done ) &
+        # ohne Schlaf dreht dieser Zweier durch, wenn Port 23 schon belegt ist
+        ( while :; do nc -l -p 23 -e /bin/sh; sleep 2; done ) &
     else
         echo "OMAMOBILE: kein telnetd und kein nc in der neuen Wurzel" > /dev/console
     fi

@@ -90,6 +90,7 @@ def sandbox(ordner):
     os.makedirs(os.path.join(ordner, "zustand"), exist_ok=True)
     open(os.path.join(ordner, "zustand/sda"), "w").write("1\n")
     open(os.path.join(ordner, "zustand/sda21"), "w").write("1\n")
+    open(os.path.join(ordner, "uptime"), "w").write("41.72 100.00\n")
     return ordner
 
 
@@ -119,8 +120,17 @@ def loop(ordner, name="loop0", knoten="8:17"):
 
 
 def laufe(schnipsel, ordner):
-    """Den Block laufen lassen; returns (Haltespur, blockdev-Aktionen, stderr)."""
+    """Den Block laufen lassen; returns (Haltespur, blockdev-Aktionen, stderr).
+
+    Der Herzschlag geht in der Sandkiste in eine Datei statt nach /dev/kmsg,
+    sonst laeuft die wichtigste neue Aussage des Blocks ungelesen vorbei.
+    """
     schnipsel = schnipsel.replace(" /proc/mounts", ' "$SYS/mounts"').replace('"/sys/', '"$SYS/sys/')
+    schnipsel = schnipsel.replace("/dev/kmsg", '"$SYS/kmsg"').replace("/proc/uptime", '"$SYS/uptime"')
+    off = open(os.path.join(ordner, "losetup"), "w")
+    off.write('#!/bin/sh\ncase "$*" in *loop0*) echo "/dev/loop0: 1048576 /dev/sda21" ;; esac\n')
+    off.close()
+    os.chmod(os.path.join(ordner, "losetup"), 0o755)
     off = open(os.path.join(ordner, "schnipsel.sh"), "w")
     off.write(schnipsel + '\nsleep 2; ER="leer"; [ -n "${HALTETRN+x}" ] && ER="$HALTETRN";'
                           ' kill $! 2>/dev/null; echo "ERGEBNIS|${ER}|"\n')
@@ -135,7 +145,51 @@ def laufe(schnipsel, ordner):
     pfad = os.path.join(ordner, "aktionen.log")
     if os.path.isfile(pfad):
         aktien = open(pfad).read()
-    return spur, aktien, (r.stderr or "").strip()
+    herzschlag = ""
+    pfad_kmsg = os.path.join(ordner, "kmsg")
+    if os.path.isfile(pfad_kmsg):
+        herzschlag = open(pfad_kmsg).read()
+    return spur, aktien, (r.stderr or "").strip(), herzschlag
+
+
+def loop_telefonform(ordner, name="loop0", ziel="/dev/sda21"):
+    """Die Form, die der Kernel auf dem Telefon wirklich zeigt (gemessen
+    2026-11-03): Attribute direkt unter loop/, heisst backing_file, kein
+    untergeordnetes Ordnerchen, kein backing_dev."""
+    zweig = os.path.join(ordner, "sys/class/block", name, "loop")
+    os.makedirs(zweig, exist_ok=True)
+    for atribut, inhalt in (("backing_file", ziel), ("offset", "1048576"), ("sizelimit", "0"),
+                            ("autoclear", "0"), ("dio", "0"), ("partscan", "0")):
+        open(os.path.join(zweig, atribut), "w").write(inhalt + "\n")
+
+
+def vor_zweiundzwanzig(schnipsel):
+    """Wortgetreue Nachbildung der Fassung vor Wurzel #22: suchte
+    loop/<name>/backing_dev und stellte den Rest ueber /sys/dev/block/<NAME> fest.
+    Gegen diese Form ist die Messung am Telefon gelaufen, nicht gegen eine
+    Einbildung des Pruefers."""
+    a = schnipsel.index("WURZEL=$(awk")
+    b = schnipsel.index("done ) &", a) + len("done ) &")
+    alt = """WURZEL=$(awk '$2=="/" {print $1; exit}' /proc/mounts 2>/dev/null)
+HALTETRN="keins"
+case "${WURZEL:-}" in
+    /dev/loop*)
+        KNOTEN=$(cat "/sys/class/block/${WURZEL##*/}/loop/${WURZEL##*/}/backing_dev" 2>/dev/null) ;;
+    /dev/*)
+        KNOTEN=$(basename "$(readlink -f "$WURZEL")" 2>/dev/null) ;;
+    *)
+        KNOTEN="" ;;
+esac
+if [ -n "${KNOTEN:-}" ] && [ -e "/sys/dev/block/$KNOTEN" ]; then
+    PART=$(basename "$(readlink -f "/sys/dev/block/$KNOTEN")" 2>/dev/null)
+    PLATTE=$(basename "$(dirname "$(readlink -f "/sys/dev/block/$KNOTEN")")" 2>/dev/null)
+    HALTETRN="$PLATTE $PART"
+fi
+( while :; do
+    for knoten in $HALTETRN; do blockdev --setrw "/dev/$knoten" 2>/dev/null; done
+    sleep 1
+  done ) &"""
+    return schnipsel[:a] + alt + schnipsel[b:]
 
 
 def frische_sandkiste(mount_zeile):
@@ -158,14 +212,14 @@ def main():
         print("not ok - der Aufloesungsblock ist im Init nicht zu finden")
         return 1
     ok("Aufloesungsblock gefunden (%d Zeilen)" % schnipsel.count("\n"),
-       10 < schnipsel.count("\n") < 45)
+       10 < schnipsel.count("\n") < 90)
     ok("Halteschleife steht vor dem ersten Schreibvorgang",
        text.index("blockdev --setrw") < text.index("> /omamobile/LEBEN"))
 
     # Fall 1: Uebergabe ueber ein Loop-Geraet - der Stand der Dinge auf dem Telefon
     o = frische_sandkiste("/dev/loop0 / ext4 rw,relatime 0 0\n")
     partition(o); loop(o)
-    spur, aktien, fehlerausgabe = laufe(schnipsel, o)
+    spur, aktien, fehlerausgabe, herz = laufe(schnipsel, o)
     ok("Loop-Wurzel haelt Platte und Partition ('sda sda21', war %r)" % spur, spur == "sda sda21")
     ok("Platte wird rw gesetzt", "--setrw /dev/sda" in aktien)
     ok("Partition wird rw gesetzt", "--setrw /dev/sda21" in aktien)
@@ -173,17 +227,42 @@ def main():
     ok("keine Fehlerausgabe", fehlerausgabe == "")
     shutil.rmtree(o, ignore_errors=True)
 
+    # Fall 1b: die Form, die das Telefon wirklich zeigt - nur backing_file
+    o = frische_sandkiste("/dev/loop0 / ext4 rw,relatime 0 0\n")
+    partition(o); loop_telefonform(o)
+    spur, aktien, fehlerausgabe, herz = laufe(schnipsel, o)
+    ok("Telefonform (nur backing_file) haelt ebenso ('sda sda21', war %r)" % spur, spur == "sda sda21")
+    if fehlerausgabe:
+        print("#   Fehlerausgabe der Telefonform: %r" % fehlerausgabe[:300])
+    ok("Herzschlag nennt Traeger und gemessene Schalter",
+       "halte=sda sda21" in herz and "sda21=" in herz and "zeit=" in herz)
+    ok("keine Fehlerausgabe in der Telefonform", fehlerausgabe == "")
+    o2 = frische_sandkiste("/dev/loop0 / ext4 rw,relatime 0 0\n")
+    partition(o2); loop_telefonform(o2)
+    spur22, aktien22, _, herz22 = laufe(vor_zweiundzwanzig(schnipsel), o2)
+    ok("Gegentest #22: die Fassung vor dem Umbau haelt in dieser Form nichts (%r)" % spur22,
+       spur22 in ("", "keins") and "--setrw /dev/sda21" not in aktien22)
+    shutil.rmtree(o, ignore_errors=True); shutil.rmtree(o2, ignore_errors=True)
+
+    # Fall 1c: gar kein Sysfs-Attribut, nur die Auskunft des Werkzeugs
+    o = frische_sandkiste("/dev/loop0 / ext4 rw 0 0\n")
+    partition(o)
+    spur, aktien, _, herz = laufe(schnipsel, o)
+    ok("Nur die losetup-Auskunft reicht fuer die Aufloesung ('sda sda21', war %r)" % spur,
+       spur == "sda sda21")
+    shutil.rmtree(o, ignore_errors=True)
+
     # Fall 2: Wurzel direkt auf der Partition - hier glitt die alte Fassung durch
     o = frische_sandkiste("/dev/sda21 / ext4 rw 0 0\n")
     partition(o)
-    spur, aktien, _ = laufe(schnipsel, o)
+    spur, aktien, _, herz = laufe(schnipsel, o)
     ok("Partition ohne Loop haelt ebenso ('sda sda21', war %r)" % spur, spur == "sda sda21")
-    alt = altfassung(schnipsel)
-    ok("Gegentest: die alte Fassung ist aufbaubar (beide Merkmale stecken drin)",
-       alt is not None and all(anker in alt for anker, _ in ALTFASSUNG_ANKER))
+    alt = vor_zweiundzwanzig(schnipsel)
+    ok("Gegentest: die Fassung vor Wurzel #22 ist aufbaubar",
+       "/sys/dev/block/$KNOTEN" in alt and alt != schnipsel)
     o2 = frische_sandkiste("/dev/sda21 / ext4 rw 0 0\n")
     partition(o2)
-    spur_alt, aktien_alt, _ = laufe(alt, o2)
+    spur_alt, aktien_alt, _, herz_alt = laufe(alt, o2)
     ok("Gegentest: die alte Fassung haelt hier nichts (spur %r, aktionen %d)" % (spur_alt, len(aktien_alt.splitlines())),
        spur_alt not in ("sda sda21", "sda21") and "--setrw /dev/sda21" not in aktien_alt)
     shutil.rmtree(o, ignore_errors=True); shutil.rmtree(o2, ignore_errors=True)
@@ -191,7 +270,7 @@ def main():
     # Fall 3: Wurzel auf einer ganzen Platte - kein Elternpaar, nur die Platte
     o = frische_sandkiste("/dev/sdb / ext4 rw 0 0\n")
     ganzes_platte(o)
-    spur, aktien, _ = laufe(schnipsel, o)
+    spur, aktien, _, herz = laufe(schnipsel, o)
     ok("Ganze Platte haelt nur die Platte ('sdb', war %r)" % spur, spur == "sdb")
     ok("kein Geraet '/dev/block' erfunden", "/dev/block" not in aktien)
     shutil.rmtree(o, ignore_errors=True)
@@ -199,7 +278,7 @@ def main():
     # Fall 4: Initramfs-Wurzel - nichts zu halten, und doch kein Aufruf ins Leere
     o = frische_sandkiste("rootfs / rootfs rw,size=1673248k 0 0\n")
     partition(o)
-    spur, aktien, fehlerausgabe = laufe(schnipsel, o)
+    spur, aktien, fehlerausgabe, herz = laufe(schnipsel, o)
     ok("rootfs-Wurzel laesst die Schleife leer laufen (war %r)" % spur, spur == "")
     ok("kein einziger blockdev-Aufruf in diesem Fall", aktien.strip() == "")
     ok("keine Fehlerausgabe", fehlerausgabe == "")
@@ -207,8 +286,10 @@ def main():
 
     # Stempelzeile: wortlich aus dem Init, damit ein nachgebauter Text keinen
     # echten Fehler durchlaesst
-    zeile = [z for z in text.splitlines() if z.strip().startswith('echo "halte=')]
-    ok("Stempelzeile mit der Haltespur steht im Init", len(zeile) == 1)
+    zeilen = [z for z in text.splitlines() if z.strip().startswith('echo "halte=')]
+    zeile = [z for z in zeilen if "ro=$(blockdev" in z]
+    ok("Spaeter Stempel mit Gegenmessung steht im Init (%d Halte-Zeilen, %d davon gemessen)"
+       % (len(zeilen), len(zeile)), len(zeile) == 1 and len(zeilen) >= 2)
     if zeile:
         for spur, erwartet in (("sda sda21", "halte=sda sda21 ro=1/0"), ("", "halte=keins ro=/")):
             o = sandbox(tempfile.mkdtemp(prefix="hermes-halte-"))
