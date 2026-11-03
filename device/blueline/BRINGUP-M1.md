@@ -67,6 +67,17 @@ traegt `/bin/restart2` (162336 B, 0755, aus dem Bild zurueckgelesen) und kann
 damit von selbst ins Fastboot. Telegram meldet sich nur noch, wenn es wirklich
 klemmt (Weg: lokale Bot-API, Chat 1335604113).
 
+Kanonischer Suite-Lauf auf diesem Stand (`tools/ci-arm64.sh`, alpine:edge,
+arm64/v8): **ok=184 (davon skip=9), not-ok=0, exit=0** - Suite gruener als zuvor,
+nicht schlechter. Gegen 164/4 sind das die 20 Punkte des neuen
+`tests/halte-aufloesung` plus fuenf Skip-Meldungen, die mit den Bilder-Einhaengungen
+mitzaehlen; nicht-pruefend bleiben hauptsachlich die Flamen- und Erzaehler-Punkte.
+Die Aufloesung der Haltespur im neuen `/init` ist nach dem Flash noch einmal
+umgebaut worden (im leeren Fall ruft die Schleife jetzt gar nichts mehr auf statt
+ein Geraet `/dev/keins`, und eine Wurzel auf einer ganzen Platte erfindet keinen
+Elternordner `/dev/block` mehr) - der Unterschied sitzt im naechsten Bild, der
+Gegentest im Test haelt die alte Fassung weiter daran.
+
 Hinweis auf die Falle darunter: der Block `FLASH-BEREIT v0z` beschreibt den Stand
 vom 31.10. und ist geschichte; er wird weiterhin vom Blockwart gegen Bild und
 Runner geprueft (12 Pruefpunkte, 0 Fehler), gilt aber fuer nichts, was jetzt
