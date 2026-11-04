@@ -1,0 +1,31 @@
+Arch-Root interaktiv belegt + Standalone-ROM, 2026-11-04 12:55-13:05
+=====================================================================
+
+Zugang: ACM-Konsole /dev/cu.usbmodem103303, Login root/root (ALARM-Default
+im Tarball; fuer die ROM noch zu aendern). Danach:
+  /usr/sbin/sshd gestartet, usb0 = 172.16.42.1/16
+  ssh -i ~/.ssh/omamobile_blueline root@172.16.42.1  ->  "SSH_DRIN"
+  uname -r = 7.1.0-rc1-sdm845
+Damit ist die Arch-Wurzel (ALARM + openssh) auf dem Telefon nutzbar.
+
+Kein Software-Fastboot: /usr/bin/restart2 bootloader|fastboot endet mit
+"reboot RESTART2: Invalid argument" (Exit 1) - der Kernel nimmt RESTART2
+nicht an. Nach Fastboot kommt man auf diesem Stand nur mit Power+Leiser
+oder ueber den Slot-Fallback nach drei Fehlstarts.
+
+Standalone-ROM (ohne systemd), flashbereit gebaut:
+  rootfs.ext4        4294967296 B  sha256 877ad43caad8763b9b591f52918414d2
+                                  39c9d7c4552bf45f958a933143688804
+  vorlauf.sparse.img 2113932340 B  sha256 0cf63f63f7c4919708dfcdc76f0fc1a2
+                                  a7754163e042647f7975bbd207381db2
+  /init              arch-init-standalone.sh (35697bb9...)
+  Inhalt: mounts, sshd, Root-Shell auf ttyGS0, PID 1 parkt (kein Panic).
+
+Flash-Rezept (sobald Fastboot da ist):
+  fastboot flash userdata images/arch-userdata/rootfs-vorlauf.sparse.img
+  fastboot --set-active=a
+  fastboot reboot
+  -> nach ~30 s: ssh -i ~/.ssh/omamobile_blueline root@172.16.42.1
+  boot_a bleibt images/fl-v0an/firstlight.img (v0an).
+
+Offen: systemd-Uebergabe (PID 1 Exit 127) - danach Omarchy-Pakete.
