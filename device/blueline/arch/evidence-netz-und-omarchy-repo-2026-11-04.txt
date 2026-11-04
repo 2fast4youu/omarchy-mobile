@@ -1,0 +1,24 @@
+Netz auf dem Telefon und Omarchy-aarch64-Repo, 2026-11-04 14:40-14:45
+=======================================================================
+
+Der Mac hat en12 = 172.16.42.2/24 (USB-NCM). IP-Forwarding ist aus und ohne
+root nicht einschaltbar; stattdessen laeuft ein kleiner HTTP/CONNECT-Proxy
+auf 172.16.42.2:3128 (/tmp/proxy.py, Job bash-45ca70540b464910).
+
+Auf dem Telefon:
+  export http_proxy=http://172.16.42.2:3128
+  export https_proxy=http://172.16.42.2:3128
+  pacman -Sy   -> core/extra/alarm/aur werden geladen (funktioniert)
+
+Damit ist das Telefon online (ueber den Mac). Wichtig fuer die Mobile-Shell:
+
+  https://pkgs.omarchy.org/stable/aarch64/omarchy.db  -> HTTP 200
+
+Omarchy veroeffentlicht also aarch64-Pakete; [omarchy] ist mit
+Server = https://pkgs.omarchy.org/stable/$arch eintragbar. Die Keyring-Frage
+ist offen (omarchy-keyring); fuer den Bring-up ist SigLevel = Optional
+TrustAll im Test denkbar, muss aber dokumentiert bleiben.
+
+Platz: / ist 3,9G, 2,5G belegt, 1,2G frei - eine volle Omarchy-Installation
+(Hyprland, Quickshell, ...) passt nicht. Naechster Schritt ist ein groesseres
+Rootfs (6-8 GiB) im ROM-Bau.
