@@ -1,0 +1,21 @@
+WLAN auf blueline: Treiber und Firmware fehlen, 2026-11-04 22:24
+=================================================================
+
+Befund:
+  - /sys/class/net: nur lo und usb0; 18800000.wifi ist als Plattform-
+    Geraet gebunden, aber es entsteht kein wlan0.
+  - Weder unser Kernel-Config noch die pmOS-6.11-Config hat
+    CONFIG_BRCMFMAC (beide "# CONFIG_BRCMFMAC is not set").
+  - Im pmOS-Chroot liegen keine BCM4375-Firmwaredateien
+    (brcmfmac4375*); auch ~/hermes-workspace/firmware/brcm ist leer.
+  - NetworkManager 1.58.1 und wpa_supplicant 2.12 sind im Image, brauchen
+    aber ein Interface und laufende Dienste.
+
+Damit ist WLAN kein Init-Problem, sondern ein Treiber-/Firmware-Projekt:
+CONFIG_BRCMFMAC (+ PCIE) bauen, BCM4375-Firmware aus der Vendor-Partition
+beschaffen und nach /usr/lib/firmware/brcm legen, Modul beim Boot laden,
+NetworkManager starten.
+
+Diese Runde stattdessen: omamobile-setup-user laeuft jetzt VOR Hyprland in
+der Sitzung (Plugins/Profil, Omarchy-Marker; "Learn Keybindings" sollte
+verschwinden).
