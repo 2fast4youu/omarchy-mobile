@@ -1,0 +1,16 @@
+Slot-Erfolgsmarke: im Repo noch nicht umgesetzt, 2026-11-05
+===========================================================
+
+device.conf nennt als Teil von omamobile-device-blueline einen
+"boot-success marker"; das Paket-install stellt aber ausdruecklich nichts
+bereit, "that would mark a slot successful". Die Erfolgsmarke ist also
+geplant, nicht vorhanden.
+
+Konsequenz: ABOOT verbraucht bei jedem Start ohne Marke einen von drei
+Versuchen (ein boot_a-Flash fuellt auf 3 auf). Nach drei Starts bleibt
+ABOOT im Fastboot - und in diesem Zustand erscheint das Geraet hier nicht
+zuverlaessig am USB. Genau das ist die Ursache der wiederkehrenden
+Blockaden (Runden 6-9).
+
+Vorbereitet: Image 746f5ee6 (Locale en_US.UTF-8, Foot-Theme, Launcher-OSK)
+liegt zum Flashen bereit. Rollback bleibt 50a11a59.

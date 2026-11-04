@@ -71,7 +71,7 @@ chroot /tmp/arch /bin/bash -euc '
   pacman -Sy --noconfirm --needed openssh
   pacman -S --noconfirm --needed omarchy
   pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim
-  sed -i 's/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
+  sed -i "s/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" /etc/locale.gen
   locale-gen >/dev/null 2>&1
   groupadd -f video; groupadd -f input; groupadd -f seat
   id omarchy >/dev/null 2>&1 || useradd -m -G video,input,seat -s /bin/bash omarchy
