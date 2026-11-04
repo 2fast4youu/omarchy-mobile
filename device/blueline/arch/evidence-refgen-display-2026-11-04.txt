@@ -1,0 +1,26 @@
+Display-Blocker geloest: refgen-Regler, 2026-11-04 17:24-17:29
+================================================================
+
+Der DSI-Host probte nie durch:
+  platform ae94000.dsi: deferred probe pending: msm_dsi: Failed to get
+  supply 'refgen'
+
+Ursache: CONFIG_REGULATOR_QCOM_REFGEN war im pmOS-Config nicht gesetzt
+(# CONFIG_REGULATOR_QCOM_REFGEN is not set). Das blueline-DT haengt
+refgen-supply = <&regulator@ff1000> an den DSI-Knoten; ohne den Treiber
+bleibt die Supply unaufloesbar und msm_dsi wartet ewig.
+
+v0ay (d6661aac12d56e23666cd190d9de792893a929864cf5a3e8f29807c416e5d5bc)
+mit CONFIG_REGULATOR_QCOM_REFGEN=y, gebaut, geflasht, gebootet:
+
+  /sys/class/drm/card0-DSI-1/status   connected
+  /sys/class/drm/card0-DSI-1/enabled  enabled
+  /sys/class/drm/card0-DSI-1/modes    1080x2160
+  /proc/fb                            0 msmdrmfb
+  dmesg: PLL-Prepare mit vco=1371059912, parent=19200000 (Panel-Rate),
+         danach KEIN "lock failed" mehr; die zwei Fehlschlaege bei 4,2/4,5 s
+         sind die Probe-Versuche vor der PHY-Aktivierung.
+  Test: 9.331.200 B 0xff nach /dev/fb0 geschrieben, rc=0.
+
+Offen: Panel-Inhalt am Geraet bestaetigen; Touch (888000.i2c: geni_i2c
+deferred - tx DMA ch) und ein Compositor-Start (Hyprland/Quickshell) fehlen.
