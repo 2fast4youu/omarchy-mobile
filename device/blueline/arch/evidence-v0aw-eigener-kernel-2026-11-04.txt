@@ -1,0 +1,19 @@
+v0aw: selbstgebauter pmOS-7.1-Kernel bootet, 2026-11-04 17:12
+===============================================================
+
+Geflasht: boot_a v0aw (27bea42aee015f6a5af3666366aed6fc6bd870dc38c3fe2636659b3685ecbcb3,
+20.783.104 B) = Image.gz (15.644.388 B) + DTB (111.641 B) + v0aq-Ramdisk.
+Quelle: sdm845-mainline/linux, Tag sdm845-7.1-rc1-r0; Config aus pmaports,
+olddefconfig, TCPMSS deaktiviert; gebaut mit clang 23/lld im Container.
+
+Nach dem Boot:
+  uname -r   7.1.0-rc1-sdm845   (Release passt zur Ramdisk)
+  SSH        root@172.16.42.1
+  Wurzel     /dev/loop0 ext4 rw
+  omarchy    4.0.6-1
+  DSI        dsi_pll_10nm_vco_prepare *ERROR* lock failed, status=0x00000000
+             (bei 4.2 s und 5.2 s - zweimal, wie im pmOS-Kernel)
+
+Damit ist der Kernel-Bauweg vom Quellbaum zum bootenden Gerät geschlossen:
+Wir koennen den PLL jetzt instrumentieren und patchen (Debug-Prints, Register-
+Dumps, andere Raten) und jeden Versuch in Minuten aufs Geraet bringen.
