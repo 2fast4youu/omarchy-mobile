@@ -69,7 +69,7 @@ cat > /run/omamobile-session.sh <<'SITZUNG'
 export XDG_RUNTIME_DIR=/run/user/1000 LIBSEAT_BACKEND=seatd LANG=en_US.UTF-8
 # Benutzer-Setup VOR dem Compositor: Plugins verlinken, Profil setzen,
 # Omarchy-Marker (z. B. "Learn Keybindings" nicht mehr zeigen).
-omamobile-setup-user >/tmp/setup-user.log 2>&1
+( timeout 20 omamobile-setup-user >/tmp/setup-user.log 2>&1 ) &
 Hyprland >/tmp/hyprland.log 2>&1 &
 i=0
 while [ $i -lt 30 ]; do
