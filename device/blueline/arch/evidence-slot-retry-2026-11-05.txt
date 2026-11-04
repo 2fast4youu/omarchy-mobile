@@ -1,0 +1,17 @@
+Slot-Retry: Ursache des wiederkehrenden Fastboot-Fallbacks, 2026-11-05
+======================================================================
+
+Belegt im BRINGUP-M1 und device.conf:
+- blueline haelt seine Slot-Flags in den GPT-Partitionsattributen
+  (kein vendor_boot/init_boot).
+- Ein Write auf boot_a fuellt slot-retry-count auf 3 auf; jeder Start
+  ohne Erfolgsmarke verbraucht einen Versuch; nach drei Starts wird der
+  Slot unbootbar und ABOOT bleibt im Fastboot.
+- Die Erfolgsmarke ist ein GPT-Attribut-Write (dokumentierter
+  "narrow exception": vor dem ersten Write alle LUN-GPTs, Header und CRCs
+  erfassen, nach dem Write erneut).
+
+Ohne Geraet ist dieser Write nicht verantwortbar. Praktische Regel bis
+dahin: Fastboot-Sitzungen buendeln (boot+userdata in einem Lauf), keine
+ueberzaehligen Reboots, und nach jedem boot_a-Flash mit
+"fastboot getvar slot-retry-count:a" den Stand lesen (3 = frisch).
