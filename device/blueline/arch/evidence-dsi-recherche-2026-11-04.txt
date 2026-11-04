@@ -1,0 +1,28 @@
+DSI/Panel-Recherche, 2026-11-04 14:38-14:45
+===========================================
+
+Upstream gibt es seit Dezember 2025 die Serie "Add support for Pixel 3 and
+Pixel 3 XL" (v7, David Heidelberg), gemerged im Januar 2026:
+  - dt-bindings: google,blueline / google,crosshatch
+  - drm/panel: sw43408 mit Compatible lg,sw43408-lh546wf1-ed01
+  - arm64: dts: sdm845-google-common.dtsi + blueline/crosshatch
+Der laufende Kernel (7.1.0-rc1-sdm845) hat den Panel-Treiber bereits
+(sw43408_probe in /proc/kallsyms), und der DT-Knoten traegt das Compatible
+lg,sw43408-lh546wf1-ed01.
+
+Versorgungen geprueft (Hypothese "PLL ohne 1,2 V"):
+  DSI-Knoten: vdda-supply + refgen-supply vorhanden
+  PHY-Knoten: vdds-supply vorhanden
+  Panel: vddi-supply + vpnl-supply
+Die Versorgungen sind also beschrieben; die Hypothese traegt nicht.
+
+Der Fehler bleibt:
+  msm_dsi_phy ae94400.phy: dsi_pll_10nm_vco_prepare *ERROR* DSI PLL(0)
+  lock failed, status=0x00000000
+  dsi0_phy_pll_out_dsiclk already unprepared
+und der Panel-Treiber bindet nicht (nur ae94000.dsi.0 unter /sys/bus/mipi-dsi).
+
+Damit ist die naechste Arbeit klar kernel-seitig: PLL-Raten/Eltern-Takt des
+10nm-DSI-PLL gegen das Panel-Timing (DSC, Command-Mode) pruefen. Der
+Kernelbaum liegt jetzt unter ~/hermes-workspace/linux-omarchy-mobile (2,0 GB,
+depth 1); der DT-Zweig dort hat mdss_dsi0 mit vdda-supply und den Panel-Knoten.
