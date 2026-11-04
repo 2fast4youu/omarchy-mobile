@@ -41,10 +41,15 @@ mkdir -p /tmp/arch/root/.ssh
 printf '%s\n' "$PUB" > /tmp/arch/root/.ssh/authorized_keys
 chmod 700 /tmp/arch/root/.ssh
 chmod 600 /tmp/arch/root/.ssh/authorized_keys
-cp /om/arch-init.sh /tmp/arch/init
+if [ -d /pkgs ]; then
+    cp -r /pkgs /tmp/arch/root/pkgs
+    echo "== Paketquellen: $(ls /tmp/arch/root/pkgs | tr '\n' ' ')"
+fi
+cp /om/arch-init-standalone.sh /tmp/arch/init
 chmod 755 /tmp/arch/init
 : > /tmp/arch/etc/machine-id
 printf '/dev/loop0 / ext4 defaults 0 1\n' > /tmp/arch/etc/fstab
+date -u +%Y-%m-%dT%H:%M:%SZ > /tmp/arch/etc/omamobile-buildtime
 
 echo "== pacman: Schluessel und openssh"
 ln -sf /proc/self/mounts /tmp/arch/etc/mtab
@@ -57,6 +62,19 @@ chroot /tmp/arch /bin/bash -euc '
   pacman-key --populate archlinuxarm >/dev/null 2>&1
   pacman -Sy --noconfirm --needed openssh
   pacman -S --noconfirm --needed omarchy
+  ln -sfn /proc/self/fd /dev/fd
+  for p in omamobile-apps omamobile-omarchy omamobile-shell; do
+    [ -d /root/pkgs/$p ] || continue
+    ( cd /root/pkgs/$p
+      rm -rf /tmp/stage-$p; mkdir -p /tmp/stage-$p
+      if startdir=$PWD pkgdir=/tmp/stage-$p bash -c "source ./PKGBUILD; package" >/tmp/pkg-$p.log 2>&1; then
+        cp -a /tmp/stage-$p/. /
+        echo "paket $p installiert"
+      else
+        echo "paket $p FEHLER:"; tail -3 /tmp/pkg-$p.log
+      fi )
+  done
+  rm -rf /tmp/stage-* /tmp/pkg-*.log /root/pkgs
   ssh-keygen -A
   systemctl enable sshd 2>/dev/null || ln -sf /usr/lib/systemd/system/sshd.service \
     /etc/systemd/system/multi-user.target.wants/sshd.service

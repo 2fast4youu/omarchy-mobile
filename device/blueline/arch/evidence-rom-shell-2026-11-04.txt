@@ -1,0 +1,24 @@
+ROM mit Omarchy + Mobile-Shell bootet, 2026-11-04 15:37-15:38
+==============================================================
+
+Gebaut in einem Lauf (baue-arch-rootfs.sh):
+  - ALARM + Omarchy 4.0.6 aus pkgs.omarchy.org/stable/aarch64
+  - omamobile-apps, omamobile-omarchy, omamobile-shell ueber ihre
+    package()-Funktionen (makepkg scheitert an fakeroot)
+  - /etc/omamobile-buildtime (Boot-Zeit ohne RTC)
+  - /init = arch-init-standalone.sh (sshd -o UsePAM=no, /dev/fd, Uhr)
+
+Geflasht: userdata 9977a58e6900d68fb0ef904b02c987a1b51b724981fea8396c46ec83aab70970
+(5.016.393.780 B sparse, 8-GiB-ext4), boot_a v0aq 29539d23..., Neustart 15:37:44.
+
+Nach 36 s per SSH:
+  date -u           Wed Nov  4 14:27:13 UTC 2026  (Bauzeit + Uptime)
+  /init             0f1677f0967abf643cd5853ca44fd193d35c282c91b1d1d85a15c52252b5b334
+  /dev/loop0 /      ext4 rw,relatime
+  omarchy           4.0.6-1
+  /usr/share/omamobile/shell   OWL.md, WIDGETS.md, branding, hypr, plugins, profile
+  /usr/bin/omamobile-*         bt-agent, call-watch, cell-watch, ...
+
+Damit enthaelt die bootbare ROM Omarchy und die Mobile-Shell-Dateien, und die
+Uhr steht ab dem ersten Boot richtig. Zum Anzeigen fehlt weiterhin der
+DSI/KMS-Pfad (Hyprland braucht ihn), Touch ist unangetastet.
