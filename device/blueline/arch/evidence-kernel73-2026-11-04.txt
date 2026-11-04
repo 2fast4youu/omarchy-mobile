@@ -1,0 +1,27 @@
+Kernel 7.3 fuer blueline bauen, 2026-11-04 15:40-16:0x
+=======================================================
+
+Der Mac taugt nicht als Kernel-Host: macOS-make ist 3.81 (Kernel braucht
+>= 4.0), readlink -m fehlt, und Homebrew-llvm bringt kein ld.lld mit.
+Deshalb baut ein arm64-Alpine-Container nativ:
+
+  docker run --rm -v linux-omarchy-mobile:/k -v kernel-out:/out \
+    -v omarchy-mobile:/repo:ro alpine:edge
+  apk add clang lld llvm make bc flex bison dtc pahole openssl-dev
+          elfutils-dev perl python3 bash gzip xz zstd tar coreutils gcc
+  make ARCH=arm64 LLVM=1 O=/out defconfig
+  scripts/kconfig/merge_config.sh -m -O /out /out/.config \
+        /repo/kernel/configs/omamobile.config
+  make ARCH=arm64 LLVM=1 O=/out olddefconfig
+  make ARCH=arm64 LLVM=1 O=/out -j8 Image.gz dtbs modules
+
+Zwei Fallen:
+- Ohne gcc im Container scheitert schon fixdep: ld.lld findet -lgcc_s nicht.
+- Der erste merge lief ohne flex/bison in ein defektes olddefconfig; die
+  .config hatte danach "# CONFIG_ARCH_QCOM is not set". Mit vollstaendigen
+  Kconfig-Werkzeugen steht ARCH_QCOM=y und CONFIG_MODULES=y.
+
+Stand: sdm845-google-blueline.dtb (105.798 B) ist gebaut; Image.gz/Module
+laufen (Container bei ~800% CPU). Die Initramfs braucht danach die
+7.3-Module (usb_f_ncm, u_ether, libcomposite, usb_f_acm, u_serial), sonst
+gibt es nach switch_root kein Netz.
