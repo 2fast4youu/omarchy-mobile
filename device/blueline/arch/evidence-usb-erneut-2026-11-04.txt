@@ -1,0 +1,13 @@
+Geraet nach drei Reboots wieder nicht am USB, 2026-11-04 23:05-23:07
+=====================================================================
+
+Der Reboot-Zyklus (3x sysrq b) sollte in den Fastboot fuehren; danach:
+kein Fastboot-Geraet, kein SSH, 0 Google-USB-Geraete.
+
+Das ist der bekannte Slot-Retry-Effekt: nach drei Starts ohne
+Erfolgsmarke faellt ABOOT auf Fastboot, und in diesem Zustand erscheint
+das Geraet hier nicht immer am USB. Abhilfe langfristig: die
+Slot-Erfolgsmarke setzen (GPT-Attribut, in device.conf dokumentiert).
+
+Vorbereitet: Image fbab627b (Launcher-OSK-Patch) liegt zum Flashen bereit;
+das bewaehrte 50a11a59 ist weiterhin im ROM-Paket.
