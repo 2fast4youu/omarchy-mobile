@@ -1,0 +1,25 @@
+Omarchy-Mobile-Shell auf dem Telefon installiert, 2026-11-04 15:20-15:25
+=========================================================================
+
+makepkg scheitert auf dem Telefon an "fakeroot: nested operation", obwohl
+fakeroot allein laeuft. Die Pakete sind arch=any und installieren nur
+Dateien, deshalb wurden ihre package()-Funktionen direkt als root
+ausgefuehrt:
+
+  cd /root/pkgs/<pkg>; startdir=$PWD pkgdir=/tmp/stage-<pkg> \
+    bash -c 'source ./PKGBUILD; package'
+  cp -a /tmp/stage-<pkg>/. /
+
+Ergebnis:
+  omamobile-apps        2 Dateien  (Hook + snapshot-name)
+  omamobile-omarchy    31 Dateien  (/usr/bin/omamobile-*)
+  omamobile-shell     146 Dateien  (/usr/share/omamobile-shell/{bin,config,applications})
+  omamobile-owl-widgets scheitert: "the store has no simonschubert/earthquakes"
+                        (Widget-Store-Zugriff aus dem Install-Skript)
+
+Zwei Funde fuer die ROM:
+1) /dev/fd fehlt im statischen /dev; das Shell-Install-Skript nutzt
+   Prozess-Substitution und bricht sonst mit "/dev/fd/63: No such file".
+   Die Init legt jetzt ln -sfn /proc/self/fd /dev/fd an.
+2) Die Installation ist bisher nur zur Laufzeit erfolgt; fuer die ROM muss
+   derselbe package()-Lauf in den Rootfs-Bau (baue-arch-rootfs.sh).

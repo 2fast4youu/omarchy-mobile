@@ -13,6 +13,7 @@
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 mkdir -p /run /run/sshd /dev/pts /dev/shm /tmp
+ln -sfn /proc/self/fd /dev/fd 2>/dev/null
 chmod 1777 /tmp /dev/shm 2>/dev/null
 grep -q ' /dev/pts ' /proc/mounts 2>/dev/null || mount -t devpts devpts /dev/pts 2>/dev/null
 grep -q ' /dev/shm ' /proc/mounts 2>/dev/null || mount -t tmpfs -o mode=1777 tmpfs /dev/shm 2>/dev/null
