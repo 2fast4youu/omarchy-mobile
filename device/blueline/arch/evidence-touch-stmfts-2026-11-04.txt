@@ -1,0 +1,26 @@
+Touch (ST FTS5) laeuft im Compositor, 2026-11-04 21:03-21:09
+============================================================
+
+v0ba (e90117bc, GPI_DMA als Modul) geflasht, gebootet; danach:
+
+1) /tmp/gpi.ko (aus demselben Bau, e10e60c9) per insmod geladen.
+   dmesg: "input: stmfts as /devices/platform/soc@0/8c0000.geniqup/
+   888000.i2c/i2c-2/2-0049/input/input3"
+   -> der ST-FTS5-Touch probt, nachdem geni_i2c seine DMA-Kanaele hat.
+
+2) udev: /usr/lib/systemd/systemd-udevd --daemon (udevadm trigger
+   verweigert wegen Chroot-Erkennung), stattdessen uevents direkt:
+   for d in /sys/class/input/event*/uevent; do echo add > "$d"; done
+   -> /run/udev/data/c13:64..67, Event-Knoten getaggt.
+
+3) Hyprland mit udev-Daten neu gestartet:
+   hyprctl devices zeigt "Touch: Touch Device at ...: stmfts"
+   sowie Keyboards volume-keys, pm8941_pwrkey, pm8941_resin.
+
+4) quickshell -p /usr/share/omarchy/shell, grim-Screenshot
+   device/blueline/arch/omarchy-shell-touch-2026-11-04.png (1080x2160).
+
+Fuer die ROM muss das in die Init: gpi.ko ins Image und beim Boot laden,
+udevd starten + uevents ausloesen, /run/user/1000, seatd, /dev/dri-Rechte,
+dann Hyprland + quickshell als Benutzer omarchy (den es im Image noch nicht
+gibt - der Bau muss ihn anlegen und omamobile-setup-user ausfuehren).
