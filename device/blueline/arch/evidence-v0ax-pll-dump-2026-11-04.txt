@@ -1,0 +1,27 @@
+v0ax: PLL-Register-Dump, 2026-11-04 17:14-17:20
+================================================
+
+Instrumentierung in drivers/gpu/drm/msm/dsi/phy/dsi_phy_10nm.c:
+- dev_info im vco_prepare mit Rate und Elterntakt
+- bei Lock-Fehler: Dump pll_base 0x00..0x6c und phy->base 0x00..0x20
+
+Geflasht: boot_a v0ax
+69d3f0bd5ddb3602057b57e0302421fd0e75d4d3931f0e5e0ae8fa42ef0b1605,
+Image.gz 15.645.220 B + DTB + v0aq-Ramdisk; Boot ok (uname 7.1.0-rc1-sdm845).
+
+dmesg:
+  OMADBG PLL0 prepare: vco=1000000000 parent=19200000
+  DSI PLL(0) lock failed, status=0x00000000
+  OMADBG PLL0 reg 00..6c = 00000000   (alle 28 Register)
+  OMADBG CMN0 reg 00 = 00000003, 10 = 000000f1, 20 = 00000019
+
+Deutung: Der PLL-Registerblock antwortet ueberhaupt nicht (alles Null),
+waehrend die CMN-Register der PHY leben. Die PLL-Basis (reg "dsi_pll",
+0xae94a00, 0x1e0 B) ist also entweder nicht getaktet/versorgt oder der
+Zugriff erfolgt vor dem Einschalten von iface/ref-Takt und vdds.
+DT des PHY: clocks = iface, ref; vdds-supply vorhanden.
+
+Naechster Schritt: Einschaltreihenfolge von Takt/Regler vor dem PLL-Zugriff
+pruefen (bzw. iface-Takt explizit vor dem PLL-Zugriff einschalten) und den
+Dump wiederholen. Der Kernel-Bauweg bis zum Geraet ist geschlossen, jede
+Iteration dauert nur Minuten.
