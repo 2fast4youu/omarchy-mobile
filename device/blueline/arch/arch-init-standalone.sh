@@ -19,6 +19,19 @@ grep -q ' /dev/shm ' /proc/mounts 2>/dev/null || mount -t tmpfs -o mode=1777 tmp
 grep -q ' /run ' /proc/mounts 2>/dev/null || mount -t tmpfs -o mode=755 tmpfs /run 2>/dev/null
 hostname omamobile 2>/dev/null
 
+# Initramfs-Reste toeten: der Getty-Loop haelt ttyGS0 (zwei Leser zerlegen
+# jede Eingabe), Dropbear haelt Port 22 und stirbt nach switch_root an
+# fehlendem /dev/urandom. Beides muss weg, bevor sshd und unsere Shell starten.
+for p in /proc/[0-9]*; do
+    [ "${p##*/}" = 1 ] && continue
+    cmd=$(tr '\0' ' ' < "$p/cmdline" 2>/dev/null)
+    case "$cmd" in
+        "/bin/sh /init "*) kill -9 "${p##*/}" 2>/dev/null ;;
+        dropbear*) kill -9 "${p##*/}" 2>/dev/null ;;
+    esac
+done
+sleep 1
+
 /usr/bin/ssh-keygen -A 2>/dev/null
 /usr/sbin/sshd 2>/dev/null
 echo "omamobile: Arch-Wurzel bereit, sshd auf 172.16.42.1:22" > /dev/kmsg 2>/dev/null

@@ -29,3 +29,16 @@ Flash-Rezept (sobald Fastboot da ist):
   boot_a bleibt images/fl-v0an/firstlight.img (v0an).
 
 Offen: systemd-Uebergabe (PID 1 Exit 127) - danach Omarchy-Pakete.
+
+Nachtrag 13:20 - ROM v2 (Initramfs-Reste werden getoetet)
+==========================================================
+Im geflashten Stand teilen sich der Initramfs-Getty (ttyGS0) und die neue
+Shell die Konsole; Eingaben werden zeichenweise auf beide Leser verteilt
+("etrui", "sinrebot"), und Dropbear haelt Port 22, sodass das Arch-sshd nicht
+bindet. Deshalb toetet arch-init-standalone.sh jetzt vor sshd/Shell alle
+Prozesse mit Kommandozeile "/bin/sh /init" (ausser PID 1) und dropbear*.
+
+ROM v2: vorlauf.sparse.img 2113932340 B
+        sha256 4794496925e6333b3da3450210fd88fbce36d46613584ddb25a8e8b780758781
+        /init 79ce35d3753d38c46481cb8d3e8a60c3b5212829631ccf47497580b20a4645f4
+Flash: device/blueline/arch/flash-rom.sh <sparse>  (Fastboot noetig)
