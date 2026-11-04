@@ -1,0 +1,28 @@
+Display-Stand auf der bootenden ROM, 2026-11-04 14:25
+======================================================
+
+Am laufenden System (SSH, v4) gemessen:
+
+  /sys/class/drm/card0-DSI-1/status  -> connected
+  /sys/class/drm/card0-DSI-1/modes   -> 1080x2160
+  /sys/class/graphics/fb0/name       -> msmdrmfb
+  virtual_size 1080,2160, 32 bpp
+  dmesg: "simple-framebuffer chosen:framebuffer-0: fb0: simplefb registered!"
+         "[drm] Initialized msm 1.13.0 for ae01000.display-controller"
+         "fb0: msmdrmfb frame buffer device"
+
+Aber die Anzeige kommt nicht hoch:
+  msm_dsi_phy ae94400.phy: [drm:dsi_pll_10nm_vco_prepare] *ERROR* DSI PLL(0) lock failed
+  msm_dpu ... adreno_request_fw: *ERROR* failed to load a630_sqe.fw
+  /lib/firmware/qcom fehlt im Image (ALARM-Basis ohne linux-firmware)
+
+Ausserdem im Bootloader-Cmdline: msm_drm.dsi_display0=dsi_sw43408_cmd_display::timing0
+- die Panel-Definition kommt von ABOOT, nicht von einem Mainline-Panel-Treiber.
+
+Folge: Ohne DSI-PLL-Lock und ohne GPU-Firmware gibt es kein Bild und keinen
+Omarchy-Desktop ueber diese Wurzel. Der naechste Schritt ist Kernel-/DT-Arbeit
+am sdm845-DSI (Panel sw43408, PLL-Raten) plus linux-firmware im Rootfs.
+
+Auf dieser Maschine liegt kein Kernelbaum (nur ci/linux-omarchy-mobile als
+Snippet); ein Kernel-Build mit Android-clang im Container ist der erste
+Schritt dorthin.
