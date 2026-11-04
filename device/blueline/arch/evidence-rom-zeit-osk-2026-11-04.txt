@@ -1,0 +1,20 @@
+ROM: Zeit und Tastatur automatisch, 2026-11-04 22:14-22:23
+=========================================================
+
+Geflasht: boot_a v0ba, userdata 50a11a5947b70da530ca1c8e8c5e0fc08895fcd3229614c9a4a6b711a8496c58
+(Init mit dbus-Sitzung, time-sync, grim).
+
+Nach dem Boot (42 s):
+  date -u        Wed Nov  4 21:22:31 UTC 2026   (vom Mac-Proxy via
+                 HTTP-Date-Header, ohne NTP; die Bauzeit war 20:10)
+  Hyprland 4946, quickshell 16986, squeekboard 16983 (ein Bus)
+  grim /usr/bin/grim vorhanden
+
+  Tastatur: gdbus SetVisible true -> Layer "osk" 540x315; Screenshot zeigt
+  Top-Bar mit Uhr 21:22, Benachrichtigungen und QWERTY-Tastatur.
+
+Offen: Auto-Einblenden der Tastatur bei Textfokus (Hyprland aktiviert das
+Input-Method-Protokoll nicht selbst; die QuickSettings-Kachel ruft sie
+zuverlaessig). WLAN fehlt weiter (kein CONFIG_BRCMFMAC im Kernel).
+
+Beleg: device/blueline/arch/omarchy-rom-zeit-osk-2026-11-04.png
