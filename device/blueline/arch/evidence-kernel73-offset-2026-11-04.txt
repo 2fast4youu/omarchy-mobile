@@ -1,0 +1,18 @@
+Kernel 7.3: gz-Format und text_offset geprueft, 2026-11-04 16:30-16:44
+======================================================================
+
+Der pmOS-Kernel im laufenden Boot-Image ist NICHT roh: der Kernel-Blob
+beginnt mit 1f 8b 08 (gzip). Nach dem Entpacken:
+  Image 44.498.944 B, code0=fa405a4d ("MZ"), text_offset=0x80000,
+  image_size=0x2a70000, flags=0xa
+
+Unser mainline 7.3-Image hat text_offset=0x0. Zwei Gegenproben:
+  v0au (61efa61f): Image.gz + DTB, 22,1 MB  -> kein Boot, Fastboot
+  v0av (04907dab): Image.gz mit gepatchtem text_offset=0x80000 -> kein Boot
+
+Der Offset muss also im Kernel selbst verankert sein (KIMAGE_TEXT_OFFSET,
+partial revert von 120dc60d), nicht nur im Header. Ohne diesen Patch bootet
+der 7.3-Kernel auf dem alten blueline-ABOOT nicht.
+
+Danach war das Telefon nicht mehr am USB sichtbar; der Rollback auf v0aq
+muss ueber physischen Fastboot (Power+Leiser) laufen.
