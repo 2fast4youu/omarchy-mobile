@@ -1,0 +1,20 @@
+Boot-Zeit in der ROM, 2026-11-04 15:18-15:19
+=============================================
+
+Die Init setzt beim Boot eine plausible Zeit aus /etc/omamobile-buildtime,
+weil der Pixel 3 keine RTC hat und sonst auf 1970 startet (gpg haelt dann
+alle Paketsignaturen fuer Zukunftsdaten, pacman verweigert Pakete).
+
+Geflasht: userdata a56e3733e41d941144702b1dff2d8d5006e709cfbbdf4b50f1ae6f5992d17470
+(5.016.393.780 B sparse, 8-GiB-ext4), boot_a v0aq 29539d23... .
+Nach 36 s:
+
+  date -u                  Wed Nov  4 14:08:33 UTC 2026
+  /etc/omamobile-buildtime 2026-11-04T14:08:25Z
+  /init                    147ed56ed555ac3d569e7c951cb3a9cf70552c1811094fb89fe87bff6d28dd09
+  /dev/loop0 / ext4        rw,relatime
+  pacman -Q omarchy        4.0.6-1
+
+Damit ist die Uhr-Falle fuer die ROM geschlossen: pacman und gpg arbeiten mit
+einer plausiblen Zeit, ohne dass ein Mensch `date -s` tippt. NTP kann spaeter
+nachziehen.

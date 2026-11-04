@@ -19,6 +19,16 @@ grep -q ' /dev/shm ' /proc/mounts 2>/dev/null || mount -t tmpfs -o mode=1777 tmp
 grep -q ' /run ' /proc/mounts 2>/dev/null || mount -t tmpfs -o mode=755 tmpfs /run 2>/dev/null
 hostname omamobile 2>/dev/null
 
+# Keine RTC: der Kernel startet auf 1970, und gpg haelt dann die
+# Paketsignaturen fuer Zukunftsdaten (pacman: "invalid or corrupted package
+# (PGP signature)"). Beim Boot die eingebackene Bauzeit setzen; sobald Netz da
+# ist, kann NTP nachziehen.
+if [ "$(date +%Y 2>/dev/null)" -lt 2020 ] 2>/dev/null; then
+    if [ -s /etc/omamobile-buildtime ]; then
+        date -u -s "$(cat /etc/omamobile-buildtime)" >/dev/null 2>&1
+    fi
+fi
+
 # Nur den Initramfs-Dropbear toeten: er haelt Port 22, und sein KEX scheitert
 # nach switch_root (sein /dev ist mit dem alten Root verschwunden). Die
 # Halteschleife des Boot-Images und der Getty bleiben unangetastet - ein
