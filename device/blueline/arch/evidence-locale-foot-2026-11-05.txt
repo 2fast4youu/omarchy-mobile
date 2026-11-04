@@ -1,0 +1,18 @@
+Locale und Foot-Theme in den Bau, 2026-11-05 23:12-23:15
+========================================================
+
+Beim Start von foot im Image fbab627b:
+  error: foot: ~/.config/foot/foot.ini:2: .include:
+         ~/.local/state/omarchy/current/theme/foot.ini: failed to open
+  warning: foot: 'C' is not a UTF-8 locale, falling back to 'C.UTF-8'
+
+Live behoben und geprueft:
+- Theme-Datei angelegt (leer): ~/.local/state/omarchy/current/theme/foot.ini
+  -> der Include-Fehler ist weg.
+- setlocale() scheitert weiter, weil en_US.UTF-8 im Image nicht generiert
+  war (locale -a zeigte nur C/C.utf8/POSIX).
+
+Fuer den Bau:
+- baue-arch-rootfs.sh: en_US.UTF-8 in /etc/locale.gen aktivieren und
+  locale-gen ausfuehren.
+- Init-Sitzung: Theme-Verzeichnis + foot.ini vor Hyprland anlegen.
