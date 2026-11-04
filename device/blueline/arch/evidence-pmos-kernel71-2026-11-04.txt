@@ -1,0 +1,25 @@
+pmOS-sdm845-Kernel 7.1 gebaut, 2026-11-04 16:45-17:02
+======================================================
+
+Quelle: gitlab.com/sdm845-mainline/linux, Tag sdm845-7.1-rc1-r0
+(shallow, 1,9 GB) - derselbe Kernelstand wie der laufende Kernel
+7.1.0-rc1-sdm845.
+
+Config: config-postmarketos-qcom-sdm845.aarch64 aus pmaports (6.11), mit
+olddefconfig auf 7.1 gezogen. Kernpunkte: ARCH_QCOM=y, MODULES=y,
+DRM_MSM=y, SCSI_UFS_QCOM=y, USB_GADGET=y mit LIBCOMPOSITE/F_NCM/F_ACM/
+U_SERIAL/U_ETHER/CONFIGFS alle =y (Gadget also eingebaut).
+
+Build-Falle: mit NETFILTER_XT_TARGET_TCPMSS=m bricht der Bau an
+"net/netfilter/xt_TCPMSS.o: No rule to make target" ab (Artefakt-/
+Kconfig-Konflikt); mit scripts/config -d (Symbol =n) laeuft er durch.
+
+Ergebnis:
+  Image.gz      15.644.388 B
+  DTB           sdm845-google-blueline.dtb 111.641 B
+  Release       7.1.0-rc1-sdm845  (passt zur bestehenden Initramfs)
+  Module        752
+
+Boot-Image v0aw (27bea42aee015f6a5af3666366aed6fc6bd870dc38c3fe2636659b3685ecbcb3,
+20.783.104 B): Image.gz + DTB, Ramdisk aus v0aq. Noch nicht geflasht, weil das
+Telefon seit dem 7.3-Versuch nicht mehr am USB auftaucht.
