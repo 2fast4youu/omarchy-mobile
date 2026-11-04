@@ -43,5 +43,37 @@ sleep 1
 /usr/sbin/sshd -o UsePAM=no 2>/dev/null
 echo "omamobile: Arch-Wurzel bereit, sshd auf 172.16.42.1:22" > /dev/kmsg 2>/dev/null
 
+
+# --- Sitzung: Display, Eingabe, Mobile-Shell ------------------------------
+# Gemessen am 2026-11-04: ohne diese Schritte bleibt das Panel schwarz bzw.
+# der Compositor sieht keine Eingabe. Die Reihenfolge traegt: gpi.ko vor dem
+# udev-Trigger (sonst bekommt geni_i2c keinen DMA-Kanal), udevd vor Hyprland
+# (libinput braucht die udev-Daten), seatd vor dem DRM-Zugriff.
+mkdir -p /run/user/1000 /dev/input
+chown omarchy:omarchy /run/user/1000 2>/dev/null
+chmod 700 /run/user/1000 2>/dev/null
+chown root:video /dev/dri/card0 /dev/dri/renderD128 2>/dev/null
+chmod 660 /dev/dri/card0 /dev/dri/renderD128 2>/dev/null
+[ -e /opt/omamobile/gpi.ko ] && insmod /opt/omamobile/gpi.ko 2>/dev/null
+/usr/lib/systemd/systemd-udevd --daemon 2>/dev/null
+for d in /sys/class/input/event*/uevent; do echo add > "$d" 2>/dev/null; done
+chown root:input /dev/input/event* 2>/dev/null
+chmod 660 /dev/input/event* 2>/dev/null
+setsid seatd -g seat >/dev/null 2>&1 &
+sleep 1
+su - omarchy -c 'export XDG_RUNTIME_DIR=/run/user/1000 LIBSEAT_BACKEND=seatd; omamobile-setup-user >/dev/null 2>&1; setsid Hyprland >/tmp/hyprland.log 2>&1 &' 2>/dev/null
+(
+    i=0
+    while [ $i -lt 30 ]; do
+        sig=$(ls /run/user/1000/hypr/ 2>/dev/null | head -1)
+        [ -n "$sig" ] && break
+        sleep 1; i=$((i + 1))
+    done
+    sleep 2
+    [ -n "$sig" ] || exit 0
+    su - omarchy -c "export XDG_RUNTIME_DIR=/run/user/1000 WAYLAND_DISPLAY=wayland-1 HYPRLAND_INSTANCE_SIGNATURE=$sig; setsid quickshell -p /usr/share/omarchy/shell >/tmp/quickshell.log 2>&1 &" 2>/dev/null
+) &
+echo "omamobile: Sitzung gestartet (Hyprland/Quickshell)" > /dev/kmsg 2>/dev/null
+
 # PID 1 bleibt am Leben. Kein exec systemd, solange der 127 nicht erklaert ist.
 while :; do sleep 3600; done

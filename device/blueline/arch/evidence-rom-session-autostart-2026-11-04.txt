@@ -1,0 +1,23 @@
+ROM bootet in die Sitzung - ohne Handgriffe, 2026-11-04 21:22-21:24
+===================================================================
+
+Geflasht: boot_a v0ba (e90117bc), userdata a566ff39aa5e473d3c4031d976d3c2d5ea7c56fe4a10888ca63db2b5997815f2
+(8-GiB-ext4 mit Sitzungs-Init, Benutzer omarchy, /opt/omamobile/gpi.ko).
+
+Nach dem Boot (40 s) ohne jedes Zutun:
+  Hyprland      pid 5371
+  quickshell    pid 21701 (-p /usr/share/omarchy/shell)
+  seatd         pid 4378
+  /run/user/1000: hypr, quickshell, wayland-1
+  hyprctl devices: Touch Device "stmfts"
+
+Die Init macht jetzt: gpi.ko insmod, systemd-udevd + uevents ueber
+/sys/class/input/event*/uevent, seatd, /dev/dri-Rechte, /run/user/1000,
+omamobile-setup-user, Hyprland und danach Quickshell.
+
+Screenshot: device/blueline/arch/omarchy-rom-boot-2026-11-04.png
+(1080x2160, Uhr 20:11 UTC, Datum, Dock "Foot", App-Suche).
+
+Offen bleibt Feinschliff: das sichtbare Layout ist Omarchys Standard-Shell;
+das Telefon-Profil (phone.lua/shell.json aus omamobile-shell) ist installiert,
+aber noch nicht sichtbar aktiv. Touch ist im Compositor vorhanden.

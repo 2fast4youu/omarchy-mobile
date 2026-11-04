@@ -24,6 +24,7 @@ docker run --rm --platform linux/arm64 --privileged \
   -v "$CACHE":/in:ro \
   -v "$HOME/hermes-workspace/firmware":/fw:ro \
   -v "$HIER/../../../packages":/pkgs:ro \
+  -v "$HOME/hermes-workspace/images/fl-v0ba/gpi.ko":/gpi.ko:ro \
   -v "$HIER":/om:ro \
   -v "$ZIEL":/out \
   -e PUB="$PUB" -e SIZE_GB="$SIZE_GB" \

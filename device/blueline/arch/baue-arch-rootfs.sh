@@ -49,6 +49,11 @@ cp /om/arch-init-standalone.sh /tmp/arch/init
 chmod 755 /tmp/arch/init
 : > /tmp/arch/etc/machine-id
 printf '/dev/loop0 / ext4 defaults 0 1\n' > /tmp/arch/etc/fstab
+if [ -f /gpi.ko ]; then
+    mkdir -p /tmp/arch/opt/omamobile
+    cp /gpi.ko /tmp/arch/opt/omamobile/gpi.ko
+    echo "== gpi.ko ins Image"
+fi
 date -u +%Y-%m-%dT%H:%M:%SZ > /tmp/arch/etc/omamobile-buildtime
 
 echo "== pacman: Schluessel und openssh"
@@ -62,6 +67,8 @@ chroot /tmp/arch /bin/bash -euc '
   pacman-key --populate archlinuxarm >/dev/null 2>&1
   pacman -Sy --noconfirm --needed openssh
   pacman -S --noconfirm --needed omarchy
+  groupadd -f video; groupadd -f input; groupadd -f seat
+  id omarchy >/dev/null 2>&1 || useradd -m -G video,input,seat -s /bin/bash omarchy
   ln -sfn /proc/self/fd /dev/fd
   for p in omamobile-apps omamobile-omarchy omamobile-shell; do
     [ -d /root/pkgs/$p ] || continue
