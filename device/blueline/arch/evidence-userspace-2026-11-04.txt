@@ -1,0 +1,24 @@
+Userspace-Stand und zwei echte ROM-Funde, 2026-11-04 15:05-15:10
+==================================================================
+
+1) Netz: Mac-Proxy 172.16.42.2:3128 (HTTP/CONNECT). pacman -Sy laeuft;
+   Downloads mit -L sind bytegleich zum Mac (base-devel sha
+   b6c4d21b8fbea0d5c31d4aceefa7e9593f433b702c3e419678065a4856ea0b38).
+   HTTPS-Mirror scheitert an Zertifikatsnamen, HTTP funktioniert.
+
+2) UHR: Das Telefon hat keine RTC und startet auf 1970-01-01. gpg meldet
+   "key ... was created 16088 days in the future", und pacman lehnt jedes
+   Paket mit "invalid or corrupted package (PGP signature)" ab. Nach
+   `date -u -s "2026-11-04 14:08:00"` installiert pacman normal
+   (base-devel, gcc, sudo, qt6-declarative sind installiert).
+   Fuer die ROM heisst das: beim Boot eine Zeit setzen (NTP ueber usb0
+   oder ein eingebackener Zeitstempel), sonst ist pacman unbrauchbar.
+
+3) Shell-Pakete: Quellen (omamobile-apps, -omarchy, -owl-widgets, -shell)
+   liegen unter /root/pkgs auf dem Telefon (3,2 MB). makepkg als builder
+   scheitert an "fakeroot: nested operation not yet supported" - ein
+   fakeroot-Problem auf aarch64, nicht die Pakete. Naechster Weg: im
+   ALARM-Container bauen (tools/build-packages) oder fakeroot ersetzen.
+
+4) Abhaengigkeiten: qt6-declarative installiert; squeekboard & Co. laufen
+   noch (Job), / hat 2,7G frei.
