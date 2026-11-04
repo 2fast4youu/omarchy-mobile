@@ -1,0 +1,27 @@
+On-Screen-Keyboard auf dem Telefon, 2026-11-04 21:27-21:45
+===========================================================
+
+Die Session-ROM bootet mit Hyprland + Quickshell + Touch (stmfts).
+Fuer die Tastatur:
+
+1) squeekboard war im Image nicht installiert (nur die Shell-Dateien).
+   Jetzt im Bau: pacman -S squeekboard foot libbsd inotify-tools
+   python-dbus python-gobject wf-recorder.
+   Das ALARM-Paket enthaelt KEINE Keyboard-Layouts (nur Binaries,
+   GSchema, Locales) - deshalb "No system layout present".
+
+2) 126 Upstream-Layouts aus dem squeekboard-Quellbaum
+   (gitlab.gnome.org/World/Phosh/squeekboard, data/keyboards/*.yaml)
+   nach /usr/share/squeekboard/keyboards kopiert (110 Eintraege).
+
+3) Locale en_US.UTF-8 generiert (vorher nur C/C.utf8) und
+   /etc/machine-id per dbus-uuidgen angelegt (dbus/dconf-Warnungen weg).
+
+4) squeekboard laeuft (mit dbus-run-session, LANG=en_US.UTF-8),
+   meldet aber weiter "No system layout present". Die Layout-Wahl laeuft
+   nicht ueber die Locale allein; die GSchema-Datei hat nur scale/shape-
+   Schluessel.
+
+Naechster Schritt: Layout-Wahl erzwingen (User-Datenlayout
+~/.local/share/squeekboard/keyboards/terminal/us.yaml ist vorhanden) oder
+eine andere OSK testen; parallel Layouts/Locale/machine-id in den Bau.

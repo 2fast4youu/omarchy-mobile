@@ -67,6 +67,7 @@ chroot /tmp/arch /bin/bash -euc '
   pacman-key --populate archlinuxarm >/dev/null 2>&1
   pacman -Sy --noconfirm --needed openssh
   pacman -S --noconfirm --needed omarchy
+  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder
   groupadd -f video; groupadd -f input; groupadd -f seat
   id omarchy >/dev/null 2>&1 || useradd -m -G video,input,seat -s /bin/bash omarchy
   ln -sfn /proc/self/fd /dev/fd
