@@ -1,0 +1,14 @@
+setup-user-Version: Geraet nach dem Flash nicht am USB, 2026-11-04 22:36-22:44
+================================================================================
+
+Geflasht: boot_a v0ba, userdata 86b2e9c898a05748027431cbbe8aa6595cf35edd3f4fc13ffb27c556420cca1f
+(Init mit omamobile-setup-user vor Hyprland).
+
+Danach: kein SSH, kein Fastboot-Geraet, 0 Google-USB-Geraete ueber
+~2 Minuten. Das Geraet ist damit nicht erreichbar; die Ursache ist ohne
+Fastboot/Zugriff nicht zu klaeren (moeglich: setup-user blockiert die
+Sitzung oder der Boot scheitert frueher).
+
+Plan: per physischem Fastboot das bewaehrte Image 50a11a59 (Zeit+OSK,
+ohne setup-user) zurueckflashen, dann setup-user isoliert testen
+(z. B. per SSH von Hand starten, bevor es in die Init kommt).
