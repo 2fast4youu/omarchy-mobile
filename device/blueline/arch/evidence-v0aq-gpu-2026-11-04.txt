@@ -1,0 +1,17 @@
+v0aq: blueline-ZAP im Initramfs, GPU initialisiert, 2026-11-04 14:33-14:37
+=========================================================================
+
+v0aq (29539d23..., 21180416 B, 753 cpio-Eintraege, 6 Module) legt den
+gerätespezifischen ZAP unter lib/firmware/qcom/sdm845/Google/blueline/
+a630_zap.mbn ab; die Datei stammt aus dem pmOS-Chroot (Googles Firmware),
+sha256 b5e73cff5e70c5cff5abbf41017039855a8aa0fef75ff583f40499a1bca866de.
+
+Geflasht auf boot_a, Slot a, Neustart 14:36:5x. dmesg:
+  [5.071] bound 5000000.gpu (ops a3xx_ops)
+  [5.155] loaded qcom/a630_sqe.fw from new location
+  [5.166] loaded qcom/a630_gmu.bin from new location
+  - kein "gpu hw init failed", kein zap-Fehler mehr
+
+Damit ist die GPU (Adreno 630) auf der ROM initialisiert. Offen bleibt die
+Anzeige: card0-DSI-1 ist connected, aber der DSI-PLL-Lock und ein
+Panel-Treiber fuer sw43408 fehlen weiterhin.
