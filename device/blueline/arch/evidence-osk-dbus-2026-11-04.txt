@@ -1,0 +1,24 @@
+OSK sichtbar: gemeinsamer Session-Bus, 2026-11-04 21:50-21:55
+=============================================================
+
+Squeekboard 1.43 nutzt input-method-v2 (Hyprland bietet das an) und
+sm.puri.OSK0 auf dem Session-Bus. Die Shell (QuickSettings.qml, Zeile
+1085-1091) ruft:
+  busctl --user call sm.puri.OSK0 /sm/puri/OSK0 sm.puri.OSK0 SetVisible b true
+Deshalb muss die GANZE Sitzung unter EINEM dbus-run-session laufen.
+
+Test: Hyprland + squeekboard (WAYLAND_DISPLAY=wayland-1) in einem
+dbus-run-session, Bus-Adresse in /run/user/1000/busaddr, dann
+gdbus call ... SetVisible true:
+  hyprctl layers: "Layer ... xywh: 0 510 360 210, namespace: osk"
+  grim-Screenshot zeigt die QWERTY-Tastatur (qwertyuiop, shift,
+  123, globe, space, enter) am unteren Rand.
+
+Layout: gsettings set org.gnome.desktop.input-sources sources "[('xkb','us')]"
+(vorher leer -> "No system layout present").
+
+Init jetzt: seatd, udevd + uevents, machine-id, /dev/dri-Rechte, gpi.ko,
+dann su - omarchy -c 'dbus-run-session -- /run/omamobile-session.sh'
+(Hyprland, squeekboard, quickshell teilen den Bus).
+
+Beleg: device/blueline/arch/osk-squeekboard-2026-11-04.png
