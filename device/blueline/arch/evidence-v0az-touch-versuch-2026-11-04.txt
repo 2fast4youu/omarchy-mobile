@@ -1,0 +1,16 @@
+v0az (Touch-Kernel) gebaut, Geraet danach nicht mehr am USB, 2026-11-04
+=======================================================================
+
+Config: CONFIG_QCOM_GPI_DMA=y, CONFIG_I2C_GENI=y, CONFIG_TOUCHSCREEN_STMFTS=y
+(Der Touch ist ein ST FTS5: DT-Knoten st,stmfts5 auf i2c@888000.)
+
+v0az (6485c424adef56c9438f66decc3b331fd15a0068311d4c502ed4b763258d13e7,
+20,7 MB) geflasht auf boot_a, Neustart. Danach:
+  kein SSH, kein Fastboot-Geraet, 0 Google-USB-Geraete (mehrfach geprueft,
+  ueber ~2 Minuten).
+
+Der Kernel mit eingebautem GPI-DMA hat also sehr wahrscheinlich frueh
+versagt; ohne USB ist keine Diagnose moeglich. Naechster Schritt nach dem
+physischen Fastboot: v0aq zurueckflashen (bewaehrt), dann GPI_DMA/Panel
+vorsichtiger angehen (z. B. GPI_DMA=m und Modul aus dem Rootfs laden statt
+= y).
