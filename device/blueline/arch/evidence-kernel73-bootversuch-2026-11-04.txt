@@ -1,0 +1,29 @@
+Kernel 7.3: gebaut, geflasht, nicht gebootet, 2026-11-04 16:20-16:29
+=====================================================================
+
+Gebaut (arm64-Alpine-Container, clang 23/lld):
+  Image        43.780.608 B
+  Image.gz     15.770.831 B
+  DTB          sdm845-google-blueline.dtb 105.798 B
+  Release      7.3.0-rc6
+  Module       1701, darunter die sechs Gadget-Module
+Config nach der Kconfig-Kette:
+  DRM_MSM=y, DRM_KMS_HELPER=y, DRM_PANEL_LG_SW43408=y,
+  SCSI_UFS_QCOM=y, PHY_QCOM_QMP=y, PHY_QCOM_QMP_UFS=y, QCOM_OCMEM=y
+  (QCOM_OCMEM=m war der Blocker: DRM_MSM depends on QCOM_OCMEM || =n.)
+
+Boot-Image v0at (d7696ccfaefa9dadd56b54d8be5663f4c78a492eb0d119ff8575723274fae74e,
+50.081.792 B): gzip-Initramfs mit den 7.3-Gadget-Modulen (6 Module, 753
+Eintraege, Init-Release auf 7.3.0-rc6 umgestellt), Kernel-Blob = Image + DTB.
+
+Geflasht auf boot_a (16:25:32), kein SSH nach 3 Minuten, ABOOT faellt auf
+Fastboot zurueck. Kein pstore-Eintrag, also keine Panik-Spur. Rollback auf
+v0aq (7.1.0-rc1-sdm845) sofort danach: SSH, Omarchy 4.0.6, Uhr 14:27 UTC,
+Wurzel rw - die ROM ist unversehrt.
+
+Naechste Hypothesen fuer den 7.3-Fehler:
+1) Bildgroesse/Ladeadresse: 43,8 MB Image + DTB in einem 64-MB-boot-Slot.
+2) DTB-Platzierung: ABOOT findet den angehaengten DTB nicht (qcom erwartet
+   ihn evtl. an einer anderen Stelle/Alignment).
+3) TEXT_OFFSET: die Pixel-3-Serie nennt fuer aeltere Bootloader ein
+   angepasstes TEXT_OFFSET (partial revert von 120dc60d).
