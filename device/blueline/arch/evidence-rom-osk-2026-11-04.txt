@@ -1,0 +1,21 @@
+ROM bootet mit Shell + Tastatur, 2026-11-04 22:02-22:06
+=======================================================
+
+Geflasht: boot_a v0ba (e90117bc), userdata 9ef43e4da68549f15103e4375159ca74ef96664fa1de50009a9cc79a3b08dc72
+(8 GiB, Init startet die Sitzung unter EINEM dbus-run-session).
+
+Nach dem Boot (48 s): Hyprland 4816, quickshell 20925, squeekboard 20921 —
+alle auf demselben Bus (Adresse aus /proc/20925/environ gelesen:
+unix:path=/tmp/dbus-vRvCSsR7fG).
+
+Tastatur gerufen mit
+  gdbus call --session --dest sm.puri.OSK0 --object-path /sm/puri/OSK0 \
+    --method sm.puri.OSK0.SetVisible true
+-> hyprctl layers: "Layer ... xywh: 0 765 540 315, namespace: osk"
+-> Screenshot: Top-Bar mit Uhr/Datum/Status, Benachrichtigungen
+   ("Setup Wi-Fi", "Learn Keybindings"), QWERTY-Tastatur unten.
+
+Damit ist die Tastatur im ROM nutzbar: die Shell schaltet sie ueber
+busctl --user (QuickSettings-Kachel "keyboard") ein und aus.
+
+Beleg: device/blueline/arch/omarchy-rom-osk-2026-11-04.png
