@@ -1,0 +1,21 @@
+Firmware-Stand, 2026-11-04 14:25-14:30
+=======================================
+
+linux-firmware-qcom (ALARM, 20261019, 174 MB Paket) extrahiert: 562 MB unter
+~/hermes-workspace/firmware/qcom, darunter a630_sqe.fw, a630_gmu.bin,
+a630_zap.mbn und sdm845/*.
+
+Aufs Telefon kopiert (/usr/lib/firmware/qcom, 626 MB) und ins Rootfs gebaut
+(ROM-Image f88392ee..., 2,63 GB sparse, /init unveraendert 8df833f6).
+
+Aber: nach dem Neustart laedt der Kernel die GPU-Firmware weiterhin nicht:
+
+  [    5.113288] msm_dpu ...: Direct firmware load for qcom/a630_sqe.fw
+                 failed with error -2
+
+Zeitpunkt 5,1 s = vor switch_root. msm/adreno sind built-in und proben im
+Initramfs; dort gibt es /lib/firmware/qcom nicht. Die Firmware muss also in
+das cpio des Boot-Images (v0an-Nachfolger), nicht nur ins Rootfs.
+
+Der DSI-PLL-Fehler (PLL(0) lock failed) bleibt davon unberuehrt und ist der
+eigentliche Blocker fuer jede Anzeige und damit fuer die Mobile-Shell.

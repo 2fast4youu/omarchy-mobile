@@ -22,6 +22,7 @@ fi
 mkdir -p "$ZIEL"
 docker run --rm --platform linux/arm64 --privileged \
   -v "$CACHE":/in:ro \
+  -v "$HOME/hermes-workspace/firmware":/fw:ro \
   -v "$HIER":/om:ro \
   -v "$ZIEL":/out \
   -e PUB="$PUB" -e SIZE_GB="$SIZE_GB" \

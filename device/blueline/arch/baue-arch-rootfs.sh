@@ -29,6 +29,13 @@ sed -i -e 's/^#DisableSandboxFilesystem/DisableSandboxFilesystem/' \
        -e 's/^#DisableSandboxSyscalls/DisableSandboxSyscalls/' /tmp/arch/etc/pacman.conf
 sed -i 's/^CheckSpace/#CheckSpace/' /tmp/arch/etc/pacman.conf
 
+# qcom-Firmware (a630_sqe.fw, a630_gmu.bin, a630_zap.mbn) fuer GPU/DSI.
+if [ -d /fw/qcom ]; then
+    mkdir -p /tmp/arch/usr/lib/firmware
+    cp -a /fw/qcom /tmp/arch/usr/lib/firmware/
+    echo "== Firmware: $(du -sh /tmp/arch/usr/lib/firmware/qcom | cut -f1)"
+fi
+
 echo "== SSH-Zugang und /init"
 mkdir -p /tmp/arch/root/.ssh
 printf '%s\n' "$PUB" > /tmp/arch/root/.ssh/authorized_keys
