@@ -1,0 +1,22 @@
+Hyprland/Quickshell auf dem Display: EGL blockiert, 2026-11-04 17:35-17:45
+==========================================================================
+
+Quickshell laeuft (pid 30771, -p /usr/share/omarchy/shell), die Shell-QML
+laedt; Warnungen nur wegen fehlendem DBus und inotifywait.
+Hyprland 0.57.1 laeuft (pid 16769) und erreicht den DRM-Connector DSI-1,
+aber der Renderer scheitert:
+
+  ERR from aquamarine: [EGL] eglInitialize errored out with
+      EGL_NOT_INITIALIZED (0x12289): DRI2: failed to load driver
+  ERR from aquamarine: CDRMRenderer: fail, eglInitialize failed
+  ERR from aquamarine: drm: onReady: no renderer for gl formats
+
+Mesa 26.2.6 ist installiert, /usr/lib/dri/msm_dri.so vorhanden, ldd ohne
+fehlende Abhaengigkeiten, libgbm da, /dev/dri/{card0,renderD128} 660
+root:video. Die GPU ist gebunden (adreno a3xx_ops, a630_sqe/gmu geladen,
+msmdrmfb). Die PLL-Prepares bei 91 s und 102 s (Hyprland-DRM-Init) laufen
+mit vco=1371059912 ohne Lock-Fehler.
+
+Deutung: Der PLL/Display-Pfad ist in Ordnung; blockiert ist der
+GL-Renderer (Mesa-DRI-Lader vs. Kernel-7.1-msm). Offen: Mesa/EGL-Pfad
+(z.B. aeltere Mesa-Version oder passender Treiber) bzw. Software-Renderer.
