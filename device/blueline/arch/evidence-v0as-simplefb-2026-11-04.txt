@@ -1,0 +1,18 @@
+v0as: mdss aus, simplefb an, 2026-11-04 15:00-15:04
+===================================================
+
+Der DTB aus dem Kernelbaum (v0ar, 92e5c5c8) bootet, aber der DSI-PLL lockt
+weiterhin nicht - es ist also kein DT-Versorgungsproblem.
+
+v0as (b55adad8) deaktiviert &mdss im DTB (wie crosshatch es macht), damit der
+Bootloader-Framebuffer stehen bleibt:
+  [0.202] simple-framebuffer chosen:framebuffer-0: fb0: simplefb registered!
+  /proc/fb: 0 simple
+  fb0: stride 4320, virtual 1080,2160
+  fbcon: (S) dummy device, (M) frame buffer device
+  kein msm-DRM, kein PLL-Fehler
+
+Test: 9.331.200 Bytes 0xff nach /dev/fb0 geschrieben (rc=0), also ein weisses
+Bild in den Bootloader-Framebuffer. Ob das Panel es zeigt, muss am Geraet
+gesehen werden - ohne KMS gibt es weiterhin kein Hyprland, aber einen
+Textkonsolen-Pfad.
