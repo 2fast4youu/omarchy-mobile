@@ -1,0 +1,18 @@
+OSK beim Launcher-Oeffnen, 2026-11-04 22:50-22:56
+=================================================
+
+1) Das bewaehrte Image 50a11a59 (Zeit+OSK) wurde nach dem physischen
+   Fastboot zurueckgeflasht und bootet: date 21:52 UTC (echte Zeit),
+   Hyprland 4787, quickshell 21115, squeekboard 21114.
+
+2) omamobile-setup-user laeuft isoliert sauber (rc=0, nur dconf-Warnung
+   ohne Session-Bus); Plugins verlinkt, shell.json mit omamobile.bar.
+   Es war also nicht die Ursache des USB-Abbruchs.
+
+3) Auto-OSK: Der Launcher (packages/omamobile-shell/plugins/
+   omamobile.launcher/Launcher.qml) ruft in open() jetzt
+   busctl --user call sm.puri.OSK0 ... SetVisible b true - wie
+   QuickSettings. Damit erscheint die Tastatur beim Aufziehen des
+   App-Drawers, ohne dass der Nutzer die Kachel suchen muss.
+
+Build mit dem Patch laeuft; Flash und Test folgen.

@@ -172,6 +172,11 @@ Item {
     if (appLibrary) appLibrary.refreshIcons()
     refreshApps()
     opened = true
+    // Telefon: beim Aufziehen des App-Drawers die Bildschirmtastatur zeigen.
+    // Hyprland aktiviert das Input-Method-Protokoll nicht selbst, deshalb
+    // rufen wir Squeekboard direkt (gleiche Methode wie QuickSettings).
+    Quickshell.execDetached(["busctl", "--user", "call", "sm.puri.OSK0",
+                             "/sm/puri/OSK0", "sm.puri.OSK0", "SetVisible", "b", "true"])
   }
 
   // Host-initiated close (`shell hide`).
