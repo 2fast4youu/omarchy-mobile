@@ -1,0 +1,21 @@
+Zeit-Sync und Netzstand, 2026-11-04 22:06-22:10
+================================================
+
+Zeit: Das Telefon hat keine RTC; die Bauzeit allein driftet. Ein HTTP-
+Date-Header ueber den Mac-Proxy (usb0) setzt die Uhr exakt:
+  vorher  Wed Nov  4 20:53:50 UTC 2026
+  Header  Wed, 04 Nov 2026 21:06:47 GMT
+  nachher Wed Nov  4 21:06:47 UTC 2026
+Als /usr/local/bin/omamobile-time-sync eingebacken; die Init ruft es nach
+der Bauzeit im Hintergrund (20 Versuche, 3 s Abstand).
+
+Netz: usb0 + Mac-Proxy funktionieren (pacman/curl). WLAN fehlt:
+  - /sys/class/net: nur lo, usb0; 18800000.wifi ist gebunden, aber ohne
+    Treiber/Interface.
+  - Kernel-Config hat kein CONFIG_BRCMFMAC (Pixel 3: BCM4375).
+  - NetworkManager 1.58.1 und wpa_supplicant 2.12 sind installiert,
+    brauchen aber ein wlan0 und laufende Dienste.
+
+Naechster Netz-Schritt: BRCMFMAC (+ PCIE) als Modul bauen, Firmware
+brcmfmac4375 nach /usr/lib/firmware/brcm, Modul beim Boot laden,
+NetworkManager starten.

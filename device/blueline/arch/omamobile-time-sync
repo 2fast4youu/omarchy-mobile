@@ -1,0 +1,17 @@
+#!/bin/sh
+# Setzt die Uhr aus dem HTTP-Date-Header. Das Pixel 3 hat keine RTC; die
+# eingebackene Bauzeit (/etc/omamobile-buildtime) ist nur die Untergrenze.
+# Der Mac-Proxy auf usb0 liefert die aktuelle Zeit, ohne NTP.
+set -u
+proxy=${OMAMOBILE_PROXY:-172.16.42.2:3128}
+i=0
+while [ $i -lt 20 ]; do
+    d=$(curl -sI --max-time 3 --proxy "http://$proxy" http://example.com 2>/dev/null |
+        sed -n 's/^[Dd]ate: //p' | head -1)
+    if [ -n "$d" ]; then
+        date -u -s "$d" >/dev/null 2>&1 && exit 0
+    fi
+    i=$((i + 1))
+    sleep 3
+done
+exit 1

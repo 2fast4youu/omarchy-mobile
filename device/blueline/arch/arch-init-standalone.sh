@@ -29,6 +29,8 @@ if [ "$(date +%Y 2>/dev/null)" -lt 2020 ] 2>/dev/null; then
         date -u -s "$(cat /etc/omamobile-buildtime)" >/dev/null 2>&1
     fi
 fi
+# Danach die echte Zeit holen, sobald usb0 steht (HTTP-Date-Header, kein NTP).
+[ -x /usr/local/bin/omamobile-time-sync ] && ( /usr/local/bin/omamobile-time-sync >/dev/null 2>&1 & )
 
 # Nur den Initramfs-Dropbear toeten: er haelt Port 22, und sein KEX scheitert
 # nach switch_root (sein /dev ist mit dem alten Root verschwunden). Die
