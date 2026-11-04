@@ -1,0 +1,22 @@
+Hyprland laeuft auf dem Display, 2026-11-04 17:29-17:35
+======================================================
+
+Nach dem Refgen-Fix (v0ay) und zwei Eingriffen im laufenden System:
+
+1) /dev/dri/card0 und renderD128 standen auf root:root 0600 (statisches dev).
+   chown root:video + chmod 660 -> Mesa/Hyprland duerfen zugreifen.
+2) /etc/machine-id fehlte (dbus-uuidgen erzeugt jetzt eine).
+
+seatd 0.9.3 laeuft (/run/seatd.sock), Benutzer omarchy in video/input/seat,
+XDG_RUNTIME_DIR=/run/user/1000.
+
+Hyprland 0.57.1 startet mit dem User-Config (/home/omarchy/.config/hypr,
+von omamobile-setup-user erzeugt, dofile auf Omarchy bootstrap.lua) und
+bleibt stabil (12-s-Timeout, kein Crash; vorher Absturz an den
+DRM-Rechten). Quickshell 0.3.2 ist installiert, startet aber nicht
+automatisch; die Autostart.lua startet nur squeekboard. Die Shell-QML
+liegt als Plugin-Satz (/usr/share/omamobile/shell/plugins: omamobile.bar,
+.access, .call, ...) plus profile/shell.json.
+
+Offen: Quickshell-Aufruf mit der Omarchy-Shell-QML finden/starten, dann
+Bildinhalt und Touch (geni_i2c deferred) pruefen.
