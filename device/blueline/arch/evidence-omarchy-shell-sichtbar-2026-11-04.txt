@@ -1,0 +1,28 @@
+Omarchy-Shell sichtbar auf dem Pixel 3, 2026-11-04 17:29-17:36
+=============================================================
+
+Nach dem Refgen-Fix (v0ay) und der DSI-Pipeline:
+  card0-DSI-1 connected/enabled, Mode 1080x2160, msmdrmfb, PLL-Prepares
+  mit vco=1371059912 ohne Lock-Fehler.
+
+Schritte zum sichtbaren Shell-Bild (alles live auf dem laufenden v0ay):
+1) /dev/dri/{card0,renderD128} auf root:video 660 (statisches /dev).
+2) /etc/machine-id per dbus-uuidgen.
+3) seatd -g seat (persistent, setsid); /run/seatd.sock frisch.
+4) /dev/input/event* aus /sys/class/input angelegt (kein udev im Init).
+5) Hyprland 0.57.1 mit /home/omarchy/.config/hypr/hyprland.lua
+   (omamobile-setup-user), LIBSEAT_BACKEND=seatd.
+6) quickshell -p /usr/share/omarchy/shell mit WAYLAND_DISPLAY=wayland-1
+   und HYPRLAND_INSTANCE_SIGNATURE.
+7) grim-Screenshot /tmp/shot.png bzw. shot2.png (1080x2160).
+
+Der erste Screenshot zeigte noch das Emergency-Mode-Banner, weil die
+Minimalkonfig /tmp/hypr/min.conf als Hyprland-Lua-Config ungueltig war
+("malformed number near '1080x'"). Mit der Benutzerkonfiguration ist das
+Bild sauber: Top-Bar mit Uhr und Glocke, grosse Uhr, Datum, Dock "Foot",
+App-Suche, Workspace-Punkte.
+
+Beleg: device/blueline/arch/omarchy-shell-2026-11-04.png
+
+Offen: Eingabe (kein udev, Touch-Controller 888000.i2c deferred:
+geni_i2c tx DMA ch), damit die Shell bedienbar wird.
