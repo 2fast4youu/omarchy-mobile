@@ -1,0 +1,40 @@
+Arch-Rootfs fuer blueline, Stand 2026-11-04 12:20-12:55
+======================================================
+
+Gebaut aus ArchLinuxARM-aarch64-latest.tar.gz (829367415 B, MD5
+23eec86365b24f7913c403e8f4e8719b) mit device/blueline/arch/baue-arch.sh:
+
+  rootfs.ext4        4294967296 B  sha256 2b56225d42dfe66b4aec572a77e62d05
+                                  77ba905dc85608987c2eaa540d60ad18
+  vorlauf.sparse.img 2113932340 B  sha256 5b60fbd262b7905dc91a979bdeba8ce9
+                                  7c3d1409d189872f2f796c501607aed9
+  /init              arch-init.sh (1003 B), im Bild wortgleich
+  Inhalt: ALARM-Basis, openssh, root-SSH-Schluessel, sshd aktiviert,
+          /etc/fstab /dev/loop0, leere machine-id.
+
+Geflasht auf userdata (9 Sparse-Sessions, 54.8 s), boot_a bleibt v0an.
+
+BOOT 12:26 (Konsole, /sys/fs/pstore):
+  [28.057969] EXT4-fs (loop0): mounted filesystem ... r/w with ordered data
+  [28.085480] v0ak userdata rw: /dev/sda21 on /ud type ext4 (rw,relatime)
+  [29.217232] v0ak uebergabe: switch_root /ud /init
+  [33.151563] Kernel panic - not syncing: Attempted to kill init!
+             exitcode=0x00007f00        <- 127 = "command not found"
+             PID 1 Comm: init
+
+Das Root selbst ist geprueft (Container, gleiches Bild):
+  chroot: /bin/sh -> bash laeuft
+  /sbin/init -> ../lib/systemd/systemd, /usr/lib/systemd/systemd 0755
+  /sbin/init --version: systemd 261 (261.2-1-arch)
+  /init: sh -n sauber
+
+Zwischenstufe arch-init-debug3.sh (kein systemd, Getty auf ttyGS0):
+  Konsole zeigt "Arch Linux ARM 7.1.0-rc1-sdm845 (ttyGS0)" und einen
+  Login-Prompt. Damit ist belegt: userdata-Mount, switch_root und die
+  Ausfuehrung des neuen /init funktionieren; offen ist allein die
+  Uebergabe an systemd (127).
+
+Naechster Schritt: Debug-Init mit Autologin-Shell auf ttyGS0, dort
+/sbin/init und die Unit-Kette pruefen; danach systemd-Fix und neues
+Sparse-Bild. Das Telefon haengt aktuell in der Debug-Wurzel (PID 1 parkt,
+kein Fastboot): Power+Leiser ~10 s bringt es nach Fastboot.
