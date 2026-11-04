@@ -51,10 +51,12 @@ ln -sf /proc/self/mounts /tmp/arch/etc/mtab
 mkdir -p /tmp/arch/proc /tmp/arch/dev
 mount -t proc proc /tmp/arch/proc
 mount --bind /dev /tmp/arch/dev
+printf '\n[omarchy]\nServer = https://pkgs.omarchy.org/stable/$arch\nSigLevel = Optional TrustAll\n' >> /tmp/arch/etc/pacman.conf
 chroot /tmp/arch /bin/bash -euc '
   pacman-key --init >/dev/null 2>&1
   pacman-key --populate archlinuxarm >/dev/null 2>&1
   pacman -Sy --noconfirm --needed openssh
+  pacman -S --noconfirm --needed omarchy
   ssh-keygen -A
   systemctl enable sshd 2>/dev/null || ln -sf /usr/lib/systemd/system/sshd.service \
     /etc/systemd/system/multi-user.target.wants/sshd.service

@@ -1,0 +1,20 @@
+Omarchy-ROM bootet auf dem Pixel 3, 2026-11-04 14:54-14:55
+============================================================
+
+Geflasht: userdata 51720b053e086281596ee8ae7cca1d56f7acc1a7518d558391bdbe43f0f69829
+(8-GiB-ext4, 1 MiB Vorlauf, sparse 5.016.393.780 B), boot_a v0aq
+29539d23..., Slot a, Flashtime 2m12s, Neustart 14:54:16.
+
+Nach 36 s per SSH:
+  /init                 8df833f6... (Standalone-Init, sshd -o UsePAM=no)
+  /dev/loop0 / ext4     rw,relatime
+  df /                  7,8G, 4,6G belegt, 2,9G frei
+  pacman -Q             omarchy 4.0.6-1, hyprland 0.57.1-1, quickshell 0.3.2-1
+  /usr/bin/omarchy      27908 B, 0755
+
+Damit bootet das Telefon in eine vollstaendige Omarchy-Userspace (Arch
+Linux ARM + Omarchy + Hyprland + Quickshell) und ist per SSH nutzbar.
+
+Offen: Anzeige (DSI-PLL lock), Touch und die Mobile-Shell (omamobile-shell,
+das Projektpaket fuer den Telefon-Desktop) - ohne Display noch nicht
+startbar.

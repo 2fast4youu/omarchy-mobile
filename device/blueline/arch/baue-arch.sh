@@ -11,7 +11,7 @@ HIER=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 CACHE=${CACHE:-$HOME/.cache/omamobile-rootfs}
 ZIEL=${ZIEL:-$HOME/hermes-workspace/images/arch-userdata}
 KEY=${KEY:-$HOME/.ssh/omamobile_blueline}
-SIZE_GB=${SIZE_GB:-4}
+SIZE_GB=${SIZE_GB:-8}
 
 [ -f "$CACHE/ArchLinuxARM-aarch64-latest.tar.gz" ] || {
     echo "nicht ok - ALARM-Tarball fehlt in $CACHE"; exit 1; }
