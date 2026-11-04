@@ -19,25 +19,18 @@ grep -q ' /dev/shm ' /proc/mounts 2>/dev/null || mount -t tmpfs -o mode=1777 tmp
 grep -q ' /run ' /proc/mounts 2>/dev/null || mount -t tmpfs -o mode=755 tmpfs /run 2>/dev/null
 hostname omamobile 2>/dev/null
 
-# Initramfs-Reste toeten: der Getty-Loop haelt ttyGS0 (zwei Leser zerlegen
-# jede Eingabe), Dropbear haelt Port 22 und stirbt nach switch_root an
-# fehlendem /dev/urandom. Beides muss weg, bevor sshd und unsere Shell starten.
-for p in /proc/[0-9]*; do
-    [ "${p##*/}" = 1 ] && continue
-    cmd=$(tr '\0' ' ' < "$p/cmdline" 2>/dev/null)
-    case "$cmd" in
-        "/bin/sh /init "*) kill -9 "${p##*/}" 2>/dev/null ;;
-        dropbear*) kill -9 "${p##*/}" 2>/dev/null ;;
-    esac
-done
+# Nur den Initramfs-Dropbear toeten: er haelt Port 22, und sein KEX scheitert
+# nach switch_root (sein /dev ist mit dem alten Root verschwunden). Die
+# Halteschleife des Boot-Images und der Getty bleiben unangetastet - ein
+# pauschales Aufraeumen aller "/bin/sh /init" riss die Halteschleife mit und
+# liess das Telefon in einen Reboot-Zyklus fallen (13:28-13:32).
+pkill -x dropbear 2>/dev/null
+pkill -f '^dropbear' 2>/dev/null
 sleep 1
 
 /usr/bin/ssh-keygen -A 2>/dev/null
-/usr/sbin/sshd 2>/dev/null
+/usr/sbin/sshd -o UsePAM=no 2>/dev/null
 echo "omamobile: Arch-Wurzel bereit, sshd auf 172.16.42.1:22" > /dev/kmsg 2>/dev/null
-
-# Serielle Root-Shell auf der ACM-Konsole (kein Login, nur am Kabel).
-( while :; do setsid /bin/sh -i </dev/ttyGS0 >/dev/ttyGS0 2>&1; sleep 2; done ) &
 
 # PID 1 bleibt am Leben. Kein exec systemd, solange der 127 nicht erklaert ist.
 while :; do sleep 3600; done

@@ -42,3 +42,16 @@ ROM v2: vorlauf.sparse.img 2113932340 B
         sha256 4794496925e6333b3da3450210fd88fbce36d46613584ddb25a8e8b780758781
         /init 79ce35d3753d38c46481cb8d3e8a60c3b5212829631ccf47497580b20a4645f4
 Flash: device/blueline/arch/flash-rom.sh <sparse>  (Fastboot noetig)
+
+Nachtrag 13:50 - der SSH-Schluessel war richtig, PAM war es nicht
+=================================================================
+Der AuthorizedKeys-Eintrag im Bild ist bytegleich mit
+~/.ssh/omamobile_blueline.pub; sshd (Port 22, Angebot "publickey,password")
+weist ihn trotzdem ab. Verdacht, aus dem Arch-Drop-in
+/etc/ssh/sshd_config.d/99-archlinux.conf: "UsePAM yes". Ohne systemd als PID 1
+kann die PAM-Kontenpruefung scheitern und sshd lehnt auch gueltige Schluessel ab.
+
+ROM v4: sshd startet mit -o UsePAM=no.
+  userdata.img  d52a4a71a014bb4020616f2b4b0dd20bcbc4da95100e72502b545cfe98281889
+  /init         8df833f6e9571bbe2ede0fc4470e4973eef41fb8314f3d832d8ad7ed94d47f79
+Flash weiterhin nur ueber Fastboot (Power+Leiser), restart2 bleibt EINVAL.
