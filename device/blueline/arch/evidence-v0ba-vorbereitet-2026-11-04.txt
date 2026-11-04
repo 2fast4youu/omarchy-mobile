@@ -1,0 +1,24 @@
+v0ba: sichere Touch-Variante vorbereitet, 2026-11-04 17:46-17:53
+=================================================================
+
+v0az (GPI_DMA=y) hat den Boot gekillt (Geraet danach nicht am USB).
+Deshalb v0ba: gleicher Kernel wie v0ay, aber
+  CONFIG_QCOM_GPI_DMA=m   (Modul statt eingebaut)
+  CONFIG_I2C_GENI=y
+  CONFIG_TOUCHSCREEN_STMFTS=y   (Touch ist ST FTS5, st,stmfts5 auf i2c@888000)
+
+Gebaut: Image.gz 15.649.948 B (17:49), Modul drivers/dma/qcom/gpi.ko
+(425.320 B, sha e10e60c92ef9225ce1ed67ea3e5e6f0c93e8b75c38c23c294830b7ac63fe9ed8).
+
+Boot-Image v0ba (e90117bc11659642665aaf8093613a44acf70985c5a9b072b41a5cb0d09f1b6c,
+20.791.296 B) = Image.gz + DTB + v0aq-Ramdisk, gpi.ko liegt daneben.
+
+Plan beim naechsten Boot:
+1. v0ba flashen (sollte wie v0ay booten).
+2. gpi.ko per scp nach /tmp, insmod -> geni_i2c bekommt seine DMA-Kanaele,
+   der STMFTS-Touch sollte proben (dmesg: stmfts, /dev/input/event*).
+3. Wenn das traegt: gpi.ko in die Initramfs (Init laedt es vor dem
+   Deferred-Retry) und in den ROM-Bau aufnehmen.
+
+Das Geraet ist weiterhin nicht am USB (0 Google-Geraete); ohne physischen
+Fastboot (Power+Leiser) kein Flashen.
