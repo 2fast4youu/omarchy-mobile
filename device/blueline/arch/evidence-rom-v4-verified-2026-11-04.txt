@@ -1,0 +1,28 @@
+ROM v4 am Telefon verifiziert, 2026-11-04 14:20-14:23
+=====================================================
+
+Geflasht (Fastboot): userdata d52a4a71..., boot_a efdc60cf... (v0an),
+Slot a, retry 3, Neustart 14:20:48.
+
+Nach 31 s Port 22 offen; erster Verbindungsversuch wurde noch abgewiesen,
+der zweite authentifizierte (OpenSSH 10.6, sshd -o UsePAM=no):
+
+  SSH_OK
+  7.1.0-rc1-sdm845
+  /init  8df833f6e9571bbe2ede0fc4470e4973eef41fb8314f3d832d8ad7ed94d47f79
+  /dev/loop0 / ext4 rw,relatime 0 0
+  PID 1: init
+  sshd: /usr/sbin/sshd -o UsePAM=no [listener]
+
+Wiederholungstest: Neustart per SysRq (echo b), nach 45 s wieder per SSH
+erreichbar (Uptime 50 s), Wurzel rw, sshd laeuft. Kein emergency_ro, kein
+I/O-Fehler.
+
+Bildsaetze:
+  boot.img     efdc60cf0f8d6f7e714846b8052807557f0e91596422bcc5c822c5a63708b6c9
+  userdata.img d52a4a71a014bb4020616f2b4b0dd20bcbc4da95100e72502b545cfe98281889
+  flash.sh     34d7024456588b12c08c1d286140620b80b3c9cc2d39095b668121a3209b1d5f
+  Paket: ~/hermes-workspace/rom-blueline-2026-11-04/
+
+Offen: systemd-Uebergabe (PID 1 Exit 127), Display/Touch/GPU fuer einen
+Omarchy-Desktop, Erfolgsmarke gegen den Slot-Fallback nach drei Starts.
