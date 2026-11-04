@@ -1,0 +1,20 @@
+OSK-Fortschritt, 2026-11-04 21:44-21:47
+=======================================
+
+1) Squeekboard-Layout: Die Warnung "No system layout present" kam aus
+   eekboard-context-service.c: GSettings-Schema org.gnome.desktop.input-sources,
+   Schluessel "sources". Ohne GNOME/dconf ist die Liste leer.
+   Gesetzt: gsettings set org.gnome.desktop.input-sources sources
+   "[('xkb','us')]" (unter dbus-run-session als omarchy) -> Warnung weg.
+
+2) Squeekboard (3924) laeuft, legt aber keine Layer-Flaeche an:
+   hyprctl layers zeigt nur omarchy-background, omamobile-home,
+   omarchy-bar, omamobile-back (2x), omamobile-home-indicator - keinen
+   Keyboard-Layer. Hyprland-Log ohne input-method-Meldungen.
+
+3) Ersatztest fingerterm 1.5.0 (ALARM): startet, zeigt Splash mit OK;
+   eingebaute Touch-Tastatur erscheint nach dem Dialog.
+
+Der Telefon-Shell ist sichtbar aktiv (omamobile-home/back/bar/indicator).
+Offen: OSK-Flaeche fuer alle Apps (Squeekboard/Input-Method) bzw.
+fingerterm als Terminal-Loesung.
