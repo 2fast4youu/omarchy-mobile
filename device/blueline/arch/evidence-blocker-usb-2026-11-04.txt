@@ -1,0 +1,15 @@
+Geraet seit dem 22:36-Flash nicht am USB, 2026-11-04 22:44-22:46
+=================================================================
+
+Zustand: boot_a v0ba (unveraendert, bootet sonst), userdata 86b2e9c8
+(Init mit setup-user). Seit diesem Flash: kein SSH, kein Fastboot,
+0 Google-USB-Geraete in drei Pruefungen ueber ~2 Minuten.
+
+Offline vorbereitet:
+- setup-user laeuft jetzt mit "timeout 20" im Hintergrund, kann den
+  Compositor also nicht blockieren (Commit cc17c55).
+- Rollback-Plan: physischer Fastboot -> userdata 50a11a59 zurueckflashen
+  (letzter belegter Stand: Zeit-Sync + OSK + Shell).
+
+Ohne physischen Fastboot (Power+Leiser ~10-15 s) ist kein Flashen und
+keine Diagnose moeglich.
