@@ -1,0 +1,17 @@
+Image fbab627b (Launcher-OSK) bootet, 2026-11-04 23:10-23:12
+=============================================================
+
+Gebuendelt geflasht (flash-buendel.sh): boot_a v0ba + userdata
+fbab627b775067d476ca31c7facb223730d29bbb2994f0fade542db98d3f75b9
+(Launcher ruft beim Oeffnen sm.puri.OSK0 SetVisible).
+
+Nach dem Boot (42 s): date 22:11 UTC (echt), Hyprland 4877,
+quickshell 20430, squeekboard 20425.
+
+Screenshot: Shell mit Uhr 22:11, Benachrichtigungen (Setup Wi-Fi,
+Learn Keybindings), Foot-Dock und "Search apps..."-Pille.
+
+Der IPC-Test "omarchy-shell omamobile.launcher open {}" meldet
+"Target not found" - der Launcher ist so nicht aufrufbar; der echte Test
+ist der Tap auf die Suchpille. Die Tastatur kommt dann (hoffentlich)
+durch den Patch in open().
