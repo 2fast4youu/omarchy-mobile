@@ -1,0 +1,23 @@
+v0ap: qcom-Firmware im Initramfs, 2026-11-04 14:30-14:32
+=========================================================
+
+v0ap (b82f11ed..., 21176320 B, 749 cpio-Eintraege, 6 Module) traegt
+lib/firmware/qcom/a630_sqe.fw, a630_gmu.bin und a630_zap.mbn im cpio.
+Geflasht auf boot_a, Slot a, Neustart 14:31:29.
+
+dmesg nach dem Boot:
+  [5.140] adreno_request_fw: loaded qcom/a630_sqe.fw from new location
+  [5.158] adreno_request_fw: loaded qcom/a630_gmu.bin from new location
+  [5.181] adreno_zap_shader_load: *ERROR* Unable to load
+          qcom/sdm845/Google/blueline/a630_zap.mbn
+  [5.196] adreno_load_gpu: *ERROR* gpu hw init failed: -2
+
+Damit ist belegt: der Ladezeitpunkt war das Problem (vor switch_root), und
+das cpio ist der richtige Ort. Offen ist nur der ZAP-Shader: der Treiber
+sucht ihn unter dem geraetespezifischen Pfad
+qcom/sdm845/Google/blueline/a630_zap.mbn; im ALARM-Paket liegt er unter
+qcom/sdm845/a630_zap.mbn (und SHIFT/axolotl). Der ZAP ist signiert und wird
+von TrustZone geprueft - ein fremder Shader hilft nicht, der richtige muss
+aus Googles Firmware fuer blueline kommen.
+
+Der DSI-PLL-Fehler (PLL(0) lock failed) bleibt der Blocker fuer die Anzeige.
