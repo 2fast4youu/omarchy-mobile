@@ -1,0 +1,29 @@
+pstore-Auswertung: kein Kernel-Panic, ABOOT-Fallback, 2026-11-06 00:58
+=======================================================================
+
+Nach dem Flaschen von v0bc + ed116421 lag /sys/fs/pstore/console-ramoops-0
+(82.466 B) vom Boot davor (17:26-17:43, v0bb).
+
+Inhalt:
+  - Kopf: ramoops@9f700000 registriert, "pstore: Registered ramoops as
+    persistent store backend".
+  - Ueber weite Strecken: Initramfs-Meldungen im 3-s-Takt
+    "omamobile-blueline: ABLESUNG udc... zyklus=1..59" und
+    "weicher-bind N: write rc=1 ... Resource busy".
+  - Ende:
+      [506.588632] arm-smmu 5040000.iommu: disabling translation
+      [506.602507] arm-smmu 15000000.iommu: disabling translation
+      [506.614733] reboot: Restarting system with command 'bootloader'
+
+KEINE "Kernel panic", kein Oops, kein BUG: (die 7 Treffer im Log sind
+ramoops-Knoten, Cmdline-Woerter und pstore-Registrierung).
+
+Deutung: Das Telefon friert nicht ein. Nach drei Starts ohne
+Erfolgsmarke verbraucht ABOOT den Slot-Retry-Zaehler und startet in den
+Bootloader/Fastboot; in diesem Zustand enumeriert der USB hier nicht
+immer, und das Geraet wirkt "haengt". Genau das ist die Ursache der
+drei "Haenger" heute.
+
+Konsequenz: Die Slot-Erfolgsmarke (GPT-Attribut, "narrow exception") ist
+der eigentliche Stabilitaets-Fix. v0bc hat zusaetzlich hung_task_panic=1
+scharf, falls doch einmal ein echter Haenger auftritt.
