@@ -70,7 +70,7 @@ chroot /tmp/arch /bin/bash -euc '
   pacman-key --populate archlinuxarm >/dev/null 2>&1
   pacman -Sy --noconfirm --needed openssh
   pacman -S --noconfirm --needed omarchy
-  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim
+  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim patch
   sed -i "s/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" /etc/locale.gen
   locale-gen >/dev/null 2>&1
   groupadd -f video; groupadd -f input; groupadd -f seat
@@ -87,6 +87,7 @@ chroot /tmp/arch /bin/bash -euc '
         echo "paket $p FEHLER:"; tail -3 /tmp/pkg-$p.log
       fi )
   done
+  omamobile-omarchy-patches apply >/tmp/omarchy-patches.log 2>&1 || echo "WARN: Omarchy-Patches nicht angewendet"
   rm -rf /tmp/stage-* /tmp/pkg-*.log /root/pkgs
   ssh-keygen -A
   systemctl enable sshd 2>/dev/null || ln -sf /usr/lib/systemd/system/sshd.service \

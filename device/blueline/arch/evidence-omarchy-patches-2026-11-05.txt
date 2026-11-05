@@ -1,0 +1,22 @@
+Omarchy-Patches angewendet, 2026-11-05 07:15-07:17
+==================================================
+
+Befund: Unser Datei-Install der omamobile-Pakete ueberspringt die
+.install-Skripte, deshalb waren die 17 Omarchy-Patches nie angewendet -
+und `patch` fehlte im Image ganz (Fehler: FileNotFoundError 'patch').
+
+Live nachgeholt:
+  pacman -S patch
+  omamobile-omarchy-patches apply
+  -> "17 applied, 0 already in Omarchy; 17 files changed"
+
+Enthalten u. a.: 0001 Erststart-Willkommen ueberspringbar, 0003
+Zahlenblock im Lock, 0005 Touch-Swipe, 0006/0010/0011/0014 Lock/Tastatur,
+0015 Inline-Antwort, 0016 Pacman-Sperre, 0017 Benachrichtigungen mit
+Swipe/Close, 0018 Menue mit Zurueck, bridge-4.0.4-menu-first-frame.
+
+Screenshot: Benachrichtigungen zeigen jetzt ein X zum Schliessen, die
+Tastatur ist sichtbar (device/blueline/arch/omarchy-patches-2026-11-05.png).
+
+Bau: pacman + patch; im chroot nach den Paketen laeuft
+"omamobile-omarchy-patches apply" (Ergebnis in /tmp/omarchy-patches.log).
