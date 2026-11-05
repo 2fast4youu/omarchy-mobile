@@ -15,3 +15,18 @@ folgenlos (kein Systembus).
 Fuer den Bau: chromium in die Paketliste; die Sitzung exportiert
 http_proxy/https_proxy auf den Mac-Proxy (172.16.42.2:3128), damit der
 Browser ueber usb0 ins Netz kommt.
+
+Nachtrag Surfen (13:15):
+  chromium --ozone-platform=wayland http://example.com mit
+  http_proxy/https_proxy=172.16.42.2:3128
+  -> Fenster "Example Domain - Chromium", Seite geladen (mehrsprachiger
+     Beispieltext im Screenshot). Damit geht HTTP ueber usb0/Proxy.
+
+Auffaellig: Das Chromium-Fenster ist breiter als das Display (Inhalt
+rechts abgeschnitten) - die Fensterregeln (phone.lua) greifen fuer die
+Klasse chromium nicht; als Naechstes Fensterbreite/Regeln pruefen.
+
+Belege: chromium-osk-2026-11-05.png (Startseite mit Tastatur),
+chromium-example-2026-11-05.png (geladene Seite).
+Pitfall notiert: "pkill -f <muster>" traf die eigene SSH-Shell, weil das
+Muster in ihrer Kommandozeile stand - kuenftig pkill -x.
