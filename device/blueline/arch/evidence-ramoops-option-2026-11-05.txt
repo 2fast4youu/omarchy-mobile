@@ -1,0 +1,21 @@
+Ramoops-Option fuer Haenger-Logs, 2026-11-05
+============================================
+
+Das blueline-DTS (sdm845-google-common.dtsi, Zeile 58ff) hat reserved-memory:
+  splash@9d400000   36 MB (cont_splash, Bootloader-Framebuffer)
+  mpss@8e000000    152 MB, venus@97800000 5 MB, cdsp@97D00000 8 MB,
+  mba@98500000 2 MB, slpi@98700000 20 MB, spss@99B00000 1 MB,
+  rmtfs@f2700000 2 MB (qcom,rmtfs-mem)
+Kein ramoops-Knoten. CONFIG_PSTORE_RAM=y ist da, aber ohne reg-Region
+schreibt der Kernel keine Crash-/Haenger-Logs.
+
+Option: einen ramoops-Knoten in eine reservierte, nicht mehr genutzte
+Region legen (Kandidat: Ende des splash-Bereichs, z. B. 0x9e300000,
+1 MB) - das ist ein DTB-Eingriff und muss am Geraet verifiziert werden
+(simplefb/msm nutzt den Bereich beim Boot). Ohne Geraet kein Test.
+
+Alternativ: pmOS-/Stock-DTB auf einen vorhandenen ramoops-Bereich
+pruefen (das Stock-Android-DTB hat oft einen).
+
+Bis dahin: Haenger bleiben ohne Spur; Health-Check und Beobachtung sind
+die einzigen Mittel.
