@@ -1,0 +1,18 @@
+Chromium-Image bootet sauber, 2026-11-05 17:20-17:25
+=====================================================
+
+Gebuendelt geflasht: boot_a v0ba + userdata 5b10c7e50dfcea20c3950d72c4d8e9fb5bd0dd07e046ca5429e78b69bece8089
+(Omarchy 4.0.6 gepinnt + 17 Patches, chromium, start-hyprland, Proxy).
+
+Nach dem Boot (42 s):
+  date -u    Thu Nov  5 16:24:14 UTC 2026 (echt)
+  Hyprland 5431 mit "--watchdog-fd 4"  -> start-hyprland (kein roter Banner)
+  quickshell 25486, squeekboard 25484
+  /usr/bin/chromium im Image
+  Screenshot: Uhr 16:24, "Setup Wi-Fi" mit X, Dock mit CHROMIUM und Foot,
+  Suchpille - kein Warnbanner mehr.
+
+Naechster Test: Chromium-Icon im Dock antippen (Launcher-Start -> die
+phone.lua-Fensterregeln greifen; der manuelle Start umging sie).
+
+Beleg: device/blueline/arch/omarchy-rom-chromium-2026-11-05.png
