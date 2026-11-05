@@ -1,0 +1,18 @@
+GPT-Backup aller LUNs (read-only), 2026-11-06 00:59
+====================================================
+
+Voraussetzung fuer den dokumentierten "narrow exception"-Fall (GPT-Write):
+alle LUN-Koepfe und -Enden sichern. Gelesen per dd, nichts geschrieben.
+
+Dateien: ~/hermes-workspace/gpt-backup-2026-11-06/
+  sda-head.bin  1048576 B  sha256 d6df3c66a6dbb0882448a893f054c103223a925c4981d955ee599a51f4ec88e9
+  sda-tail.bin  1048576 B  sha256 93f54acdafe83a2caa210f1191cf6c82048a7fbf2550ec19c24941563dca7d29
+  sdc-head.bin  1048576 B  sha256 88cd46fff6130845990a5807ccb31f825ffe08f2bd4fcbcd4d73dd1222eab582
+  sdc-tail.bin  1048576 B  sha256 d9b08967bab3b186eb15f4b4b959a90f06cbe33a1c7561c96525b07c1986b808
+  sdd-head.bin  1048576 B  sha256 6bf409d81ab2d05b329545f247d5bd4eab0c769d20b69b48ddb5e8f6f4c559df
+  sdd-tail.bin  1048576 B  sha256 99de44022a2fa5f5b7baed2982619752d4b4848e22dd3f50f3837b06c1eae1be
+  sde-head.bin  1048576 B  sha256 2909ca0acaeffdeac8f0b912d9d2fce4718bbd3e20df11abf8c84b14db14f3c9
+  sde-tail.bin  1048576 B  sha256 bf94b82045a1ab1d057f7c59833962ee06a1a0fdb2dc22c757f7081a00861fd7
+
+Der Write selbst (Erfolgsmarke) wartet auf die Freigabe und auf eine
+belegte Bit-Deutung; ohne beides kein Schreibzugriff.
