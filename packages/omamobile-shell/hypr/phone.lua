@@ -8,6 +8,10 @@
 -- Omarchy floats them through its floating-window tag, so drop the tag.
 hl.window_rule({ match = { class = ".*" }, tag = "-floating-window" })
 hl.window_rule({ match = { class = ".*" }, maximize = true })
+-- Chromium (unser Browser): es setzt seine Flaeche nach dem Mapping neu und
+-- unterlaeuft damit die allgemeine maximize-Regel; fullscreen gibt der Seite
+-- den ganzen Schirm.
+hl.window_rule({ match = { class = "^chromium$" }, fullscreen = true })
 -- ...except the screensaver, which Omarchy shows fullscreen over the bars.
 hl.window_rule({ match = { class = "^org.omarchy.screensaver$" }, maximize = false })
 hl.window_rule({ match = { class = "^org.omarchy.screensaver$" }, fullscreen = true })

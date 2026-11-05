@@ -1,0 +1,21 @@
+Chromium-Fensterregel und Test, 2026-11-05 17:28-17:31
+=======================================================
+
+phone.lua bekam eine eigene Regel:
+  hl.window_rule({ match = { class = "^chromium$" }, fullscreen = true })
+Grund: Chromium setzt seine Flaeche nach dem Mapping neu und unterlaeuft
+die allgemeine maximize-Regel.
+
+Live (phone.lua kopiert, hyprctl reload, chromium --ozone-platform=wayland):
+  hyprctl clients: class chromium, fullscreen: 1
+  Screenshot: Seite im Vollbild, Adressleiste sichtbar.
+
+Rest-Artefakt: Der Seiteninhalt ist rechts um wenige Prozent abgeschnitten
+(Skala-Mismatch: Monitor scale 3 bei 1080x2160; --force-device-scale-factor=1
+aenderte das nicht). Kein Blocker - Text ist lesbar.
+
+Nebenbefund: Mehrere "Setup Wi-Fi"-Karten stapeln sich, weil die Shell in
+dieser Sitzung mehrfach neu gestartet wurde; ein Neustart raeumt das.
+
+Der phone.lua-Stand ist im Repo; das naechste Image (Bau) enthaelt ihn.
+Beleg: device/blueline/arch/chromium-fullscreen-2026-11-05.png
