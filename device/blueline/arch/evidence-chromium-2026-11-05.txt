@@ -1,0 +1,17 @@
+Chromium mit Tastatur auf dem Pixel 3, 2026-11-05 13:13-13:15
+==============================================================
+
+Das Image hatte keinen Browser (17 .desktop-Dateien, kein chromium/firefox).
+chromium 156.0.8078.79 aus ALARM installiert (2,6 GB frei, passt) und
+als omarchy gestartet:
+  chromium --ozone-platform=wayland
+-> Fenster "New Tab - Chromium" (hyprctl clients: class chromium)
+
+Screenshot: Chromium mit Google-Startseite; die Bildschirmtastatur ist
+unten sichtbar (das URL-/Suchfeld fokussiert -> Squeekboard erscheint
+ueber den gemeinsamen Session-Bus). Die DBus-Fehler im Chromium-Log sind
+folgenlos (kein Systembus).
+
+Fuer den Bau: chromium in die Paketliste; die Sitzung exportiert
+http_proxy/https_proxy auf den Mac-Proxy (172.16.42.2:3128), damit der
+Browser ueber usb0 ins Netz kommt.

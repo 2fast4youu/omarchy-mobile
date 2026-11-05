@@ -72,7 +72,7 @@ chroot /tmp/arch /bin/bash -euc '
   pacman-key --populate archlinuxarm >/dev/null 2>&1
   pacman -Sy --noconfirm --needed openssh
   pacman -S --noconfirm --needed omarchy
-  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim patch
+  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim patch chromium
   sed -i "s/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" /etc/locale.gen
   locale-gen >/dev/null 2>&1
   groupadd -f video; groupadd -f input; groupadd -f seat
