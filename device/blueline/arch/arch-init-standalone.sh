@@ -75,7 +75,7 @@ export XDG_RUNTIME_DIR=/run/user/1000 LIBSEAT_BACKEND=seatd LANG=en_US.UTF-8
 mkdir -p /home/omarchy/.local/state/omarchy/current/theme
 [ -f /home/omarchy/.local/state/omarchy/current/theme/foot.ini ] || : > /home/omarchy/.local/state/omarchy/current/theme/foot.ini
 chown -R omarchy:omarchy /home/omarchy/.local/state/omarchy 2>/dev/null
-Hyprland >/tmp/hyprland.log 2>&1 &
+start-hyprland >/tmp/hyprland.log 2>&1 &
 i=0
 while [ $i -lt 30 ]; do
     sig=$(ls /run/user/1000/hypr/ 2>/dev/null | head -1)

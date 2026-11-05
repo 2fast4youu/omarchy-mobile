@@ -1,0 +1,25 @@
+Sauberes gepatchtes Image 33227f66 auf dem Geraet, 2026-11-05 13:09-13:15
+=========================================================================
+
+Gebuendelt geflasht (flash-buendel.sh): boot_a v0ba + userdata
+33227f660a102b596ba9a5517fe8360d78fbda540adb7f2bc68fb8d5e8330c76
+(Omarchy 4.0.6 gepinnt, 17 Patches im Bau angewendet).
+
+Nach dem Boot (42 s):
+  date -u    Thu Nov  5 12:13:03 UTC 2026 (echt)
+  Hyprland 4824, quickshell 20047, squeekboard 20041
+  Screenshot: "Setup Wi-Fi" mit X-Schliessen (Patch 0017), KEIN
+  "Learn Keybindings" mehr (Patch 0001 + Marker), Uhr/Datum, Foot-Dock,
+  Suchpille.
+
+Health-Check (omamobile-health.sh):
+  - DSI: PLL-Fehler nur bei 4.2 s (Probe), danach OMADBG-Prepares mit
+    vco=1371059912 ohne Lock-Fehler; msmdrmfb.
+  - pstore leer (keine Panik-Spur).
+  - Speicher/Thermik unauffaellig; Top-Prozesse quickshell/Hyprland.
+  - Storage-Guard meldet erwartungsgemaess schreib_rc=1 auf /dev/sda11.
+
+Bleibt kosmetisch: roter Banner "started without start-hyprland" -
+die Init startet jetzt start-hyprland statt Hyprland (naechster Bau).
+
+Beleg: device/blueline/arch/omarchy-rom-clean-patched-2026-11-05.png
