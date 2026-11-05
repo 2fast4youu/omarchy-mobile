@@ -1,0 +1,23 @@
+GPT-Slot-Attribute gelesen (nur lesend), 2026-11-05 07:15
+=========================================================
+
+Werkzeug: gpt-slot-lesen.py auf /dev/sda (erste UFS-LUN).
+  Sektorgroesse 4096, 21 Eintraege a 128 B, Eintraege bei LBA 2
+
+  misc      LBA      8..263      Attribute 0x0000000000000000
+  boot_a    LBA 1989128..2005511 Attribute 0x0017000000000000
+  boot_b    LBA 2005512..2021895 Attribute 0x0082000000000000
+  metadata  LBA 2064136..2068231 Attribute 0x0000000000000000
+
+Damit ist der Ist-Zustand ohne jeden Schreibzugriff erfasst: Sektorgroesse,
+Lage und Rohattribute. Die Bits liegen in den oberen 16 Bit (0x0017 bzw.
+0x0082). Welches Bit "successful"/"retry" ist, ist damit noch nicht
+belegt - das braucht kontrollierte Vorher/Nachher-Lesungen.
+
+Referenz cheetah: omamobile-bootctl mark-successful schreibt EIN Byte in
+der devinfo-Partition (0x35: 04 -> 06), nicht in GPT. Fuer blueline gilt
+die GPT-Variante; ein Write dort ist der "narrow exception"-Fall und erst
+nach diesen Lesungen und einer belegten Bit-Deutung zu wagen.
+
+Praktisch bis dahin: Fastboot-Laeufe buendeln (boot_a-Flash fuellt den
+Zaehler auf 3), Reboots sparsam.
