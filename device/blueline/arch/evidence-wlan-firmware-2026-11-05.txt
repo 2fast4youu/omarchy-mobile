@@ -1,0 +1,21 @@
+WLAN-Firmware: Vendor-Image geprueft, 2026-11-05 07:14-07:18
+=============================================================
+
+Das Stock-Factory-Image (sp1a) enthaelt vendor.img (Android-Sparse,
+464 MB). Ausgepackt (465.838.080 B, ext2/ext4, Label "vendor") und mit
+debugfs gelesen:
+
+  /firmware enthaelt: a630_gmu.bin, a630_sqe.fw, a630_zap.*, adsp.*,
+    CAMERA_ICP.elf, Data.msc, bdwlan-blueline.bin, bdwlan-crosshatch*.bin,
+    wlan/ (nur qca_cld), wlanmdsp.mbn
+  /firmware/wlan: nur qca_cld (Qualcomm-WLAN, nicht Broadcom)
+  KEIN brcmfmac4375-pcie.bin, kein brcmfmac-NVRAM.
+
+linux-firmware 20260622 im Image hat 118 brcm-Dateien, aber keine 4375.
+
+Damit fehlt fuer mainline-brcmfmac die BCM4375-Firmware (Google-spezifisch);
+bdwlan-blueline.bin ist die Android-BDF (bcmdhd), kein brcmfmac-Firmware-
+Format. Der Kernel hat zudem kein CONFIG_BRCMFMAC.
+
+Naechster moeglicher Weg: Firmware aus dem persist-/anderen LUN oder aus
+einem neueren linux-firmware/pmOS-Paket; sonst bleibt WLAN offen.
