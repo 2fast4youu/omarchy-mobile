@@ -1,0 +1,20 @@
+Chromium-Fensterbreite: Regeln geladen, manueller Start umgeht sie, 2026-11-05
+==============================================================================
+
+phone.lua IST geladen: ~/.config/hypr/looknfeel.lua:61 dofile
+"/usr/share/omamobile/shell/hypr/phone.lua"; hyprland.lua require
+"hypr.looknfeel".
+
+Regeln in phone.lua: alle Fenster maximize=true, gaps 0, Screensaver
+fullscreen, Dialoge max_size=(monitor_w)/(monitor_h).
+
+Beim manuellen Start (chromium --ozone-platform=wayland) ist das Fenster
+nicht maximiert (fullscreen: 0) und breiter als das Display; Monitor
+DSI-1 hat scale 3 (logisch 360x720 bei 1080x2160 physikalisch).
+
+"hyprctl dispatch fullscreen 1" greift in der Lua-Config nicht (Hinweis:
+dispatch ist in Lua ein Shorthand fuer hl.dispatch).
+
+Der Launcher startet Apps ueber den Omarchy-Weg (uwsm-app/gtk-launch);
+dort sollten die maximize-Regeln greifen. Test offen: App aus dem Drawer
+starten.
