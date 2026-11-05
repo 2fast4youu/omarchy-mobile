@@ -1,0 +1,16 @@
+Geraet waehrend App-Check nicht mehr erreichbar, 2026-11-05 07:44-07:47
+========================================================================
+
+Ablauf: pacman -Q (langsam) abgebrochen; danach ein einfacher
+"command -v foot fingerterm ..."-Aufruf per SSH haengt; kurze Zeit
+spaeter: kein SSH, kein Fastboot-Geraet, 0 Google-USB-Geraete.
+
+Das laufende System traegt die live angewendeten 17 Omarchy-Patches
+(4.0.6) und die Tastatur/Session; das ROM-Paket enthaelt inzwischen das
+saubere, gepatchte Image 33227f66 (omarchy 4.0.6 gepinnt, Patches im Bau
+belegt).
+
+Naechster Schritt nach dem physischen Fastboot: das saubere Image
+33227f66 flashen (statt der Live-Mischung) und die Stabilitaet pruefen
+(pstore/ramoops, dmesg der letzten Minuten), bevor Apps installiert
+werden.
