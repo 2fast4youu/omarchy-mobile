@@ -1,0 +1,17 @@
+Image 746f5ee6: Locale, Theme, Tastatur, 2026-11-05 07:09-07:14
+================================================================
+
+Gebuendelt geflasht: boot_a v0ba + userdata
+746f5ee607f78cd582a341b80e342a0c9b37c4ed7f12f6cf8900278517498266
+(Locale en_US.UTF-8, Foot-Theme, Launcher-OSK, Time-Sync, setup-user-Timeout).
+
+Nach dem Boot (42 s):
+  date -u        Thu Nov  5 06:12:48 UTC 2026  (echt, 07:12 lokal)
+  locale -a      en_US.utf8 vorhanden
+  Hyprland 4764, quickshell 19359, squeekboard 19357
+  foot           startet ohne Locale-/Theme-Fehler (nur xdg-toplevel-icon-
+                 Warnung und Hangup durch den 3-s-Test)
+  SetVisible     -> Layer "osk" 360x210
+  Screenshot     QWERTY-Tastatur ueber der "Search apps..."-Pille
+
+Beleg: device/blueline/arch/omarchy-rom-locale-osk-2026-11-05.png
