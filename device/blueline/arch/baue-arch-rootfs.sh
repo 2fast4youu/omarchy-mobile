@@ -87,7 +87,10 @@ chroot /tmp/arch /bin/bash -euc '
         echo "paket $p FEHLER:"; tail -3 /tmp/pkg-$p.log
       fi )
   done
-  omamobile-omarchy-patches apply >/tmp/omarchy-patches.log 2>&1 || echo "WARN: Omarchy-Patches nicht angewendet"
+  if ! omamobile-omarchy-patches apply >/tmp/omarchy-patches.log 2>&1; then
+      echo "WARN: Omarchy-Patches nicht angewendet:"
+      tail -20 /var/log/omamobile/omarchy-patches.log 2>/dev/null || tail -20 /tmp/omarchy-patches.log
+  fi
   rm -rf /tmp/stage-* /tmp/pkg-*.log /root/pkgs
   ssh-keygen -A
   systemctl enable sshd 2>/dev/null || ln -sf /usr/lib/systemd/system/sshd.service \
