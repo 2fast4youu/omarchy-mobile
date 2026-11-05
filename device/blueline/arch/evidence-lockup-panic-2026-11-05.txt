@@ -1,0 +1,22 @@
+Lockup-Erkennung fuer die Haenger-Diagnose, 2026-11-05 17:46-17:52
+==================================================================
+
+Befund: Der pmOS-Config hatte SOFTLOCKUP_DETECTOR und DETECT_HUNG_TASK
+AUS ("# ... is not set"). Ein Haenger konnte also weder auffallen noch
+eine Panik ausloesen - ramoops blieb leer.
+
+Kernel neu gebaut mit:
+  CONFIG_SOFTLOCKUP_DETECTOR=y
+  CONFIG_DETECT_HUNG_TASK=y
+  CONFIG_BOOTPARAM_HUNG_TASK_PANIC=0 (per cmdline umschaltbar)
+
+Boot-Image v0bc (789eb023281dc62c015d8c1d138fc49377bc6a0db23eca10c32d67e8d976e6fe,
+20.791.296 B): Image.gz (15.663.048 B) + ramoops-DTB + v0aq-Ramdisk,
+Cmdline zusaetzlich:
+  hung_task_panic=1 softlockup_panic=1
+
+Damit soll der naechste Haenger in eine Panik laufen und den Kontext
+(Task, Stack) in ramoops ablegen; nach dem naechsten Boot steht er in
+/sys/fs/pstore.
+
+Noch nicht geflasht: Geraet ist seit dem dritten Haenger nicht am USB.
