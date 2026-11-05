@@ -1,0 +1,16 @@
+Zweiter Haenger, 2026-11-05 13:28-13:31
+=======================================
+
+Der Reboot-Zyklus fuer den Chromium-Flash (4x sysrq b) erreichte keinen
+Fastboot; danach: kein SSH, kein Fastboot, 0 Google-USB-Geraete.
+
+Muster: Das Geraet friert nach einiger Nutzung ein (zweiter Fall heute;
+der erste war beim pacman -Q). Der Health-Check nach dem ersten Boot war
+unauffaellig; pstore war leer.
+
+Diagnose-Luecke: CONFIG_PSTORE_RAM=y ist gesetzt, aber das DTB hat keinen
+ramoops-Knoten -> keine Crash-/Haenger-Logs. Fuer den naechsten Haenger
+waere ein reserved-memory + ramoops-Knoten im DTB noetig (eigener Schritt).
+
+Bereit: Chromium-Image 0a7f974f (gepinntes 4.0.6 + 17 Patches + chromium
++ start-hyprland + Proxy), Sparse dicht.
