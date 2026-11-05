@@ -19,3 +19,13 @@ Format. Der Kernel hat zudem kein CONFIG_BRCMFMAC.
 
 Naechster moeglicher Weg: Firmware aus dem persist-/anderen LUN oder aus
 einem neueren linux-firmware/pmOS-Paket; sonst bleibt WLAN offen.
+
+Nachtrag LUNs (GPT lesend):
+  sda: ssd misc keystore frp system product vendor boot modem apdp msadp
+       klog metadata userdata
+  sdc: xbl_b xbl_config_b
+  sdd: ALIGN_TO_128K_1 cdt ddr modemcal uefivar sec
+  sde: aop tz hyp abl keymaster cmnlib cmnlib64 devcfg qupfw vbmeta dtbo
+       storsec (je Slot a/b)
+Keine persist-Partition; die WLAN-Kalibrierung liegt als
+bdwlan-blueline.bin im vendor-Image, nicht als brcmfmac-Firmware.
