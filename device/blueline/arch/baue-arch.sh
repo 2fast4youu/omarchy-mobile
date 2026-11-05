@@ -25,6 +25,8 @@ docker run --rm --platform linux/arm64 --privileged \
   -v "$HOME/hermes-workspace/firmware":/fw:ro \
   -v "$HIER/../../../packages":/pkgs:ro \
   -v "$HOME/hermes-workspace/images/fl-v0ba/gpi.ko":/gpi.ko:ro \
+  -v "$HOME/hermes-workspace/omarchy-pkg/omarchy-4.0.6-1-aarch64.pkg.tar.zst":/omarchy-4.0.6.pkg.tar.zst:ro \
+  -v "$HOME/hermes-workspace/omarchy-pkg/omarchy-settings-4.0.6-1-aarch64.pkg.tar.zst":/omarchy-settings-4.0.6.pkg.tar.zst:ro \
   -v "$HIER":/om:ro \
   -v "$ZIEL":/out \
   -e PUB="$PUB" -e SIZE_GB="$SIZE_GB" \

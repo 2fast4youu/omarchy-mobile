@@ -1,0 +1,21 @@
+Omarchy auf 4.0.6 gepinnt, Patches im Image, 2026-11-05 07:25-07:44
+===================================================================
+
+Ursache des WARN im Bau: Der [omarchy]-Repo liefert inzwischen omarchy
+4.5.0-3, unsere 17 Patches sind gegen 4.0.x geschrieben. Dazu fehlte
+`patch` im Image.
+
+Loesung:
+- omarchy-4.0.6-1-aarch64.pkg.tar.zst und
+  omarchy-settings-4.0.6-1-aarch64.pkg.tar.zst aus
+  pkgs.omarchy.org/stable/aarch64 geladen (beide noch verfuegbar),
+  in den Bau gemountet und im chroot per pacman -U installiert.
+- `patch` in die Paketliste.
+- Danach omamobile-omarchy-patches apply.
+
+Belegt im gebauten Image (debugfs, /var/log/omamobile/omarchy-patches.log):
+  omarchy 4.0.6-1: 17 applied, 0 already in Omarchy; 17 files changed
+
+Das laufende Telefon wurde NICHT neu geflasht (es traegt die live
+angewendeten Patches bereits); das neue Sparse (dicht verifiziert) liegt
+im ROM-Paket fuer den naechsten Flash.

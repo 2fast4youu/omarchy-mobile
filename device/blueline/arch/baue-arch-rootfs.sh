@@ -46,6 +46,8 @@ if [ -d /pkgs ]; then
     echo "== Paketquellen: $(ls /tmp/arch/root/pkgs | tr '\n' ' ')"
 fi
 cp /om/arch-init-standalone.sh /tmp/arch/init
+cp /omarchy-4.0.6.pkg.tar.zst /tmp/arch/tmp/omarchy-4.0.6.pkg.tar.zst 2>/dev/null || true
+cp /omarchy-settings-4.0.6.pkg.tar.zst /tmp/arch/tmp/omarchy-settings-4.0.6.pkg.tar.zst 2>/dev/null || true
 chmod 755 /tmp/arch/init
 : > /tmp/arch/etc/machine-id
 printf '/dev/loop0 / ext4 defaults 0 1\n' > /tmp/arch/etc/fstab
@@ -87,6 +89,7 @@ chroot /tmp/arch /bin/bash -euc '
         echo "paket $p FEHLER:"; tail -3 /tmp/pkg-$p.log
       fi )
   done
+  pacman -U --noconfirm /tmp/omarchy-settings-4.0.6.pkg.tar.zst /tmp/omarchy-4.0.6.pkg.tar.zst >/tmp/omarchy-pin.log 2>&1 || { echo "WARN: Omarchy 4.0.6 nicht installiert"; tail -8 /tmp/omarchy-pin.log; }
   if ! omamobile-omarchy-patches apply >/tmp/omarchy-patches.log 2>&1; then
       echo "WARN: Omarchy-Patches nicht angewendet:"
       tail -20 /var/log/omamobile/omarchy-patches.log 2>/dev/null || tail -20 /tmp/omarchy-patches.log
