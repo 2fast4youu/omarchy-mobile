@@ -1,0 +1,22 @@
+ramoops aktiv: der naechste Haenger hinterlaesst eine Spur, 2026-11-05 17:26-17:29
+=================================================================================
+
+DTB-Aenderung: ramoops-Knoten in sdm845-google-common.dtsi, reserviert am
+Ende des Splash-Bereichs:
+  reg = <0 0x9f700000 0 0x100000>
+  record 128 KiB, console 256 KiB, pmsg 128 KiB, no-map
+
+Boot-Image v0bb (1a54963cc1cc037011a924291f2861eb9c2da98c9b926d6b0121f735bfcc9df9,
+20.791.296 B) = Image.gz + ramoops-DTB + v0aq-Ramdisk; boot_a geflasht,
+userdata bleibt 5b10c7e5.
+
+dmesg nach dem Boot:
+  OF: reserved mem: 0x9f700000..0x9f7fffff (1024 KiB) nomap non-reusable
+      ramoops@9f700000
+  WARNING: splash@9d400000 (0x9d400000--0x9f800000) overlaps with
+      ramoops@9f700000   (beide reserviert; Splash nutzt die ersten ~10 MB)
+  pstore: Using crash dump compression: deflate
+  printk: legacy console [ramoops-1] enabled
+
+Damit ist der pstore-RAM-Pfad aktiv; nach dem naechsten Haenger/Panic
+steht der Log unter /sys/fs/pstore zur Auswertung.
