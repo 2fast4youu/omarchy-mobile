@@ -1,0 +1,19 @@
+Dritter Haenger heute, 2026-11-05 17:40-17:43
+=============================================
+
+Ausgangspunkt: laufendes 5b10c7e5-System; Reboot-Zyklus fuer den Flash des
+neuen Images (ed116421, phone.lua-Chromium-Regel). Nach vier Reboots kein
+Fastboot; danach kein SSH, kein Fastboot, 0 Google-USB-Geraete.
+
+Muster der drei Haenger heute:
+  1) pacman -Q (lastig, viele Pakete)
+  2) Reboot-Zyklus (4x sysrq b) fuer den Chromium-Flash
+  3) Reboot-Zyklus (4x sysrq b) fuer das Regel-Image
+Alle unter Last/Mehrfach-Reboots; der Health-Check nach dem ersten Boot
+war unauffaellig.
+
+Boot v0bb (ramoops) ist geflasht; falls der Haenger eine Panic/Console-
+Spur hinterlaesst, steht sie nach dem naechsten Boot in /sys/fs/pstore.
+
+Bereit: Image ed116421523291c5883ba91263049d3e964c074cd8d1b110c2604248604ae710
+(phone.lua mit Chromium-Regel, Patches "series already applied", chromium).
