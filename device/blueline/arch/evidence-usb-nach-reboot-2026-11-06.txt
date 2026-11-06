@@ -1,0 +1,17 @@
+USB nach SysRq-Reboot weg, 2026-11-06 01:15-01:20
+==================================================
+
+Ablauf: Slot _a war als successful markiert (qbootctl-Dump: Active 1,
+Successful 1, Bootable 1). Dann "sync; echo b > /proc/sysrq-trigger"
+(weil "reboot -f" als Chroot ignoriert wurde).
+
+Danach: kein SSH, kein Fastboot, 0 Google-USB-Geraete (01:19).
+
+Einordnung: Die Slot-Marke verhindert den 3-Start-Fallback; der Reboot
+selbst fuehrt hier aber zu einem Zustand, in dem der Mac das Geraet nicht
+mehr sieht. Zwei Kandidaten:
+  1) USB-Enumeration nach schnellem Reboot (NCM-Gadget/Mac-USB-Stack
+     behaelt das alte Geraet) -> Kabel ab/an reicht.
+  2) Die naechste Boot-Stufe kommt nicht hoch.
+
+Naechster Test: Kabel ab/an; wenn das Geraet dann erscheint, ist es (1).
