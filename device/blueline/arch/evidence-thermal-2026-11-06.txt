@@ -1,0 +1,25 @@
+Waerme im Leerlauf: Ursache und Fix, 2026-11-06 10:39-10:50
+============================================================
+
+Meldung: "das Handy ist ziemlich warm geworden".
+
+Messung nach dem Boot (uptime 42 s) und nach 4 min:
+  cpu0-thermal 70.2 -> 78.7 Grad C
+  cpu7-thermal 70.5 -> 84.4 Grad C
+  gpu-top 54.7 -> 63.3 Grad C, aoss 63.6 -> 71.2 Grad C
+  Load: 2.81 -> 5.89; top: 52 % Sys-Zeit
+
+Live-top zeigte fuenf /init-Prozesse (PID 185/264/288/554/556) mit je
+~28-33 % CPU: die Diagnose-Schleifen der Initramfs aus der Bring-up-Zeit
+(ABLESUNG, weicher-bind, raw-log, telnetd, v0z). Zusammen ~150 % CPU im
+Leerlauf; die Helligkeit stand zusaetzlich auf 255/255.
+
+Fix live: die fuenf Schleifen beendet (PID 1 blieb), Helligkeit 100/255.
+Ergebnis nach 3 min:
+  cpu0/cpu7 78.7/84.4 -> 45.8/45.8 Grad C
+  gpu-top 63.3 -> 44.1 Grad C, aoss 71.2 -> 45.1 Grad C
+  Load 5.89 -> 0.52; quickshell ~5 % als einziger nennenswerter Verbraucher
+
+Dauerhaft: die Root-Init beendet nach dem switch_root alle
+"/bin/sh /init"-Kinder ausser PID 1 (Commit 215fcfa); naechster Bau
+enthaelt das.
