@@ -76,6 +76,7 @@ export http_proxy=http://172.16.42.2:3128 https_proxy=http://172.16.42.2:3128
 mkdir -p /home/omarchy/.local/state/omarchy/current/theme
 [ -f /home/omarchy/.local/state/omarchy/current/theme/foot.ini ] || : > /home/omarchy/.local/state/omarchy/current/theme/foot.ini
 chown -R omarchy:omarchy /home/omarchy/.local/state/omarchy 2>/dev/null
+su - omarchy -c 'omarchy-done mark first-run-user' >/dev/null 2>&1 || true
 start-hyprland >/tmp/hyprland.log 2>&1 &
 i=0
 while [ $i -lt 30 ]; do
