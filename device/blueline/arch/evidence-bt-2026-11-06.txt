@@ -1,0 +1,25 @@
+Bluetooth (WCN3990) - Befund, 2026-11-06 12:42-13:00
+====================================================
+
+Der BT-Chip ist ein Qualcomm WCN3990 (DTS: uart6, "qcom,wcn3990-bt"),
+NICHT der Broadcom der WiFi-Karte.
+
+Vorhanden:
+- Firmware im Image: /lib/firmware/qca/crbtfw21.tlv + crnv21.bin
+  (linux-firmware; im Stock-vendor.img liegt crnv21.bin ebenso).
+- Kernel: CONFIG_BT=m, BT_HCIUART=m, BT_HCIUART_SERDEV=y, HCIUART_QCA=y,
+  HCIUART_BCM=y.
+
+Live geladen (aus pmos-kernel-out, Kernel 7.1.0-rc1-sdm845):
+  rfkill, ecc (crypto), ecdh_generic, bluetooth, rfcomm -> OK
+  bluetooth-Meldung: "RFCOMM TTY layer initialized" (BT-Kern laeuft)
+  hci_uart: "Unknown symbol qca_uart_setup / btbcm_read_pcm_int_params"
+  -> die Sub-Treiber hci_qca.ko/btbcm.ko fehlen im Gebauten (nur btbcm.ko
+     existiert; hci_qca.ko wurde nicht gebaut, obwohl HCIUART_QCA=y).
+
+Naechster Schritt: Kernel mit konsistenter BT-Config neu bauen
+(HCIUART_QCA/BCM als Built-ins oder die Sub-Module mitbauen), dann
+bluetooth, hci_uart, btbcm/hci_qca in der richtigen Reihenfolge laden
+und bluetoothd starten -> hci0.
+
+WiFi (BCM4375) bleibt davon getrennt und blockiert (Firmware fehlt).
