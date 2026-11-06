@@ -1,0 +1,18 @@
+Hintergrundbild gesetzt, 2026-11-06 08:54
+==========================================
+
+Beim Shell-Start warnte QML: "Cannot open .../current/background" - die
+Sitzung hatte nie ein Hintergrundbild gesetzt (nur foot.ini und die
+Theme-Vorlage).
+
+Fix live:
+  cp /usr/share/omarchy/themes/catppuccin/backgrounds/2-waves.png \
+     /home/omarchy/.local/state/omarchy/current/background
+  chown omarchy:omarchy ...
+  Shell neu gestartet.
+
+Screenshot: Homescreen mit Waves-Hintergrund, Uhr 07:54, Chromium/Foot.
+Beleg: device/blueline/arch/omarchy-rom-wallpaper-2026-11-06.png
+
+In die Init eingebacken: falls current/background fehlt, wird das
+Catppuccin-Waves-Bild kopiert (vor start-hyprland).

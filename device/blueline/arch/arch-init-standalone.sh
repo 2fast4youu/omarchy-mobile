@@ -75,6 +75,7 @@ export http_proxy=http://172.16.42.2:3128 https_proxy=http://172.16.42.2:3128
 # eine Theme-Datei, die ohne Theme-Anwendung fehlt.
 mkdir -p /home/omarchy/.local/state/omarchy/current/theme
 [ -f /home/omarchy/.local/state/omarchy/current/theme/foot.ini ] || : > /home/omarchy/.local/state/omarchy/current/theme/foot.ini
+[ -f /home/omarchy/.local/state/omarchy/current/background ] || cp /usr/share/omarchy/themes/catppuccin/backgrounds/2-waves.png /home/omarchy/.local/state/omarchy/current/background 2>/dev/null || true
 chown -R omarchy:omarchy /home/omarchy/.local/state/omarchy 2>/dev/null
 su - omarchy -c 'omarchy-done mark first-run-user' >/dev/null 2>&1 || true
 start-hyprland >/tmp/hyprland.log 2>&1 &
