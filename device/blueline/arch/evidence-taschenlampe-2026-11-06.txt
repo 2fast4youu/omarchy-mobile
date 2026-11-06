@@ -1,0 +1,19 @@
+Taschenlampe (Flash-LED), 2026-11-06 12:40-12:42
+================================================
+
+Befund:
+  - Kernel-Config: CONFIG_LEDS_QCOM_FLASH=m (Modul, nicht geladen)
+  - DT: pmi8998_flash mit led-1 (LED_FUNCTION_FLASH, weiss,
+    led-sources=2, 500 mA Torch / 750 mA Flash)
+  - Im Image fehlte leds-qcom-flash.ko
+
+Live:
+  scp leds-qcom-flash.ko /opt/omamobile/; insmod
+  -> /sys/class/leds/white:flash (max_brightness 255)
+  echo 100 > brightness -> LED an; echo 0 -> aus (Rueckgelesen 100/0)
+
+Eingebacken: Modul per Mount in den Bau, nach /opt/omamobile/ kopiert,
+in der Init per insmod geladen (vor der Sitzung).
+
+Damit ist die Taschenlampe als sysfs-LED verfuegbar; ein
+Quick-Settings-Schalter kann spaeter darauf zeigen.

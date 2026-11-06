@@ -58,6 +58,7 @@ chmod 700 /run/user/1000 2>/dev/null
 chown root:video /dev/dri/card0 /dev/dri/renderD128 2>/dev/null
 chmod 660 /dev/dri/card0 /dev/dri/renderD128 2>/dev/null
 [ -e /opt/omamobile/gpi.ko ] && insmod /opt/omamobile/gpi.ko 2>/dev/null
+[ -e /opt/omamobile/leds-qcom-flash.ko ] && insmod /opt/omamobile/leds-qcom-flash.ko 2>/dev/null
 /usr/lib/systemd/systemd-udevd --daemon 2>/dev/null
 for d in /sys/class/input/event*/uevent; do echo add > "$d" 2>/dev/null; done
 chown root:input /dev/input/event* 2>/dev/null
