@@ -1,0 +1,18 @@
+Nautilus als Dateimanager, 2026-11-06 09:08-09:10
+==================================================
+
+Installiert (Proxy): nautilus; dabei kam gtk4 mit, das glib2 >= 2.90
+braucht. Die Wurzel hatte glib2 2.88.3 -> Startfehler:
+  libgtk-4.so.1: undefined symbol: g_timeout_source_new_ns
+
+Fix: Update-Guard-Hook kurz beiseite, "pacman -S glib2" (2.90.1-1),
+Hook zurueck. Danach laeuft nautilus:
+  nautilus --new-window /home/omarchy
+  Fenster "Home" mit Downloads/Pictures/Videos, telefongerecht geteilt
+  (phone.lua-Regel fuer org.gnome.Nautilus).
+
+Nebeneffekt: Nautilus liefert den Datei-Dialog-Ruecken (xdg-desktop-
+portal -> Nautilus) fuer Apps wie Chromium.
+
+Beleg: device/blueline/arch/nautilus-2026-11-06.png
+Bau: nautilus in die Paketliste (der Bau macht -Syu, glib2 passt dann).
