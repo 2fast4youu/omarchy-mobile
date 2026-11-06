@@ -105,6 +105,19 @@ for bl in /sys/class/backlight/*/brightness; do
     [ -n "$max" ] && echo $((max * 40 / 100)) > "$bl" 2>/dev/null
 done
 
+# Die Initramfs-Schleifen kosten ~150 % CPU (78-84 Grad C). Die NIEDRIGSTE
+# /init-PID haelt den fruehen dropbear/USB-Dienst; die uebrigen sind reine
+# Diagnose und werden verzoegert beendet (erst nach dem Gadget-Aufbau).
+(
+    sleep 150
+    _first=
+    for _p in $(pgrep -f '^/bin/sh /init$' 2>/dev/null | sort -n); do
+        [ "$_p" = "1" ] && continue
+        if [ -z "$_first" ]; then _first=$_p; continue; fi
+        kill "$_p" 2>/dev/null
+    done
+) &
+
 mkdir -p /dev/disk/by-partlabel
 i=0
 for n in ssd misc keystore frp system_a system_b product_a product_b vendor_a vendor_b boot_a boot_b modem_a modem_b apdp_a apdp_b msadp_a msadp_b klog metadata userdata; do
