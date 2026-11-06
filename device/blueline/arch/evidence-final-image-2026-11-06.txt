@@ -1,0 +1,12 @@
+Finales Image (First-Run + Hintergrund), 2026-11-06 09:03-09:06
+================================================================
+
+Rootfs 960bc2c6...; Sparse dicht (sha im ROM-Paket).
+Im Image per debugfs geprueft:
+  /init: first-run-user 1x, current/background 1x, qbootctl 3x
+  omarchy-patches.log: "17 applied ... series already applied"
+Boot v0bc (789eb023, ramoops + hung_task_panic=1).
+
+Damit enthaelt der naechste Flash: Slot-Erfolgsmarke in der Init,
+First-Run-Marke vor start-hyprland, Hintergrundbild, qbootctl, Chromium,
+17 Patches.
