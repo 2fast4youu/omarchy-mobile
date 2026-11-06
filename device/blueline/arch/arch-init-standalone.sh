@@ -105,6 +105,14 @@ for bl in /sys/class/backlight/*/brightness; do
     [ -n "$max" ] && echo $((max * 40 / 100)) > "$bl" 2>/dev/null
 done
 
+# Die Initramfs-Schleifen drehen die CPU im Leerlauf hoch; ohne Drossel
+# wird das Geraet 78-84 Grad C warm. 1,2 GHz (naechste OPP) und 40 %
+# Helligkeit halten es bei ~62 Grad C (gemessen).
+for cf in /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq; do
+    [ -e "$cf" ] || continue
+    echo 1200000 > "$cf" 2>/dev/null
+done
+
 # Die Initramfs-Schleifen kosten ~150 % CPU (78-84 Grad C). Die NIEDRIGSTE
 # /init-PID haelt den fruehen dropbear/USB-Dienst; die uebrigen sind reine
 # Diagnose und werden verzoegert beendet (erst nach dem Gadget-Aufbau).
