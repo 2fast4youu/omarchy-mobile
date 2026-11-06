@@ -1,0 +1,18 @@
+Lehre aus den Kill-Versuchen, 2026-11-06 11:34-11:39
+====================================================
+
+Nach dem Flash von 78c809f4 (revertiert) bootete das Geraet mit USB/SSH
+(11:34). Um 11:38 wurde der Kill erneut getestet - diesmal alle
+"/bin/sh /init" ausser PID 1. Danach: usb0 weg, SSH "Permission denied".
+
+Vergleich mit dem frueheren, sicheren Kill (10:45):
+  - sicher: gekillt wurden 264, 288, 554, 556 - PID 185 blieb
+  - unsicher: gekillt wurden alle inkl. des ersten (185-Aequivalent)
+
+Der erste gestartete /init-Loop (niedrigste PID) haelt den fruehen
+dropbear-/USB-Dienst am Leben; ohne ihn faellt der USB weg und der
+Root-sshd uebernimmt (und lehnt den Key ab, obwohl /root/.ssh/authorized_keys
+im Image korrekt ist: 0750/0700/0600, Key vorhanden - geprueft).
+
+Plan: selektiver Kill - alle Initramfs-Schleifen AUSSER der niedrigsten
+PID (PID 1 sowieso ausgenommen), verzoegert nach dem Sitzungsstart.
