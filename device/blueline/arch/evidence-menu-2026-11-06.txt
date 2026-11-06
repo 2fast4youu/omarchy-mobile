@@ -1,0 +1,11 @@
+Omarchy-Menue (Telefon-Profil) per IPC geoeffnet, 2026-11-06 09:06
+===================================================================
+
+  omarchy-shell shell toggle omarchy.menu
+
+Screenshot: Menue mit "Go...", Apps, Learn, Trigger, Style, Setup,
+Install, Remove, Update, About; dahinter der Waves-Hintergrund.
+Damit ist der Menue-/Launcher-Weg der Shell auf dem Geraet sichtbar und
+(per Touch) bedienbar; das Menue wurde danach wieder geschlossen.
+
+Beleg: device/blueline/arch/omarchy-menu-2026-11-06.png
