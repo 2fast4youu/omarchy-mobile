@@ -1,0 +1,22 @@
+WLAN-Verdikt: BCM4375-Firmware nicht verfuegbar, 2026-11-06 13:40
+==================================================================
+
+Belege:
+- linux-firmware main (git.kernel.org) hat brcmfmac4371/4373/4358/4366...
+  aber KEIN brcmfmac4375-pcie.bin: GET .../plain/brcm/brcmfmac4375-pcie.bin
+  -> HTTP 404.
+- Das Image (linux-firmware 20260622) hat 118 brcm-Dateien, keine 4375.
+- Das Stock-vendor.img hat nur bdwlan-blueline.bin (Android-BDF fuer
+  bcmdhd) und wlan/ mit qca_cld - keine brcmfmac-Firmware.
+- Das DTS-&wifi ist der Qualcomm-WCN3990-Referenzknoten; die Pixel-3-
+  BCM4375 sitzt auf PCIe und braucht Googles brcmfmac-Firmware + NVRAM.
+
+Damit ist WLAN mit den vorhandenen Quellen nicht initialisierbar. Der
+einzige Weg waere die Google-Firmware (brcmfmac4375-pcie.bin + NVRAM)
+aus einer Pixel-3-Firmware-/Kalibrierungsquelle; bdwlan ist dafuer das
+falsche Format.
+
+Lag: Die CPU-Drossel (1.2 GHz) war zu hart; live und in der Init auf
+1.8 GHz angehoben (Waerme/Lag-Kompromiss). Der eigentliche Lag-Verursacher
+sind die Initramfs-Diagnoseschleifen (~150 % CPU) - deren Entfernen aus
+der Ramdisk (nicht killen!) ist der naechste saubere Schritt.

@@ -111,7 +111,7 @@ done
 # Helligkeit halten es bei ~62 Grad C (gemessen).
 for cf in /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq; do
     [ -e "$cf" ] || continue
-    echo 1200000 > "$cf" 2>/dev/null
+    echo 1800000 > "$cf" 2>/dev/null
 done
 
 # Die Initramfs-Schleifen kosten ~150 % CPU (78-84 Grad C). Die NIEDRIGSTE
