@@ -1,0 +1,24 @@
+Slot-Marke ueberlebt Reboots - Fallback behoben, 2026-11-06 08:32-08:41
+=======================================================================
+
+Geflasht: boot v0bc (hung_task_panic=1, ramoops) + userdata
+b18b7cc2 (qbootctl + Init-Marke).
+
+Ablauf:
+1) Flash-Boot (fastboot --set-active=a setzt Successful zurueck):
+   Dump direkt nach dem Boot: Successful 0.
+2) Init-Marke 15 s nach Sitzungsstart:
+   /tmp/qbootctl-mark.log: "SLOT _a: Marked boot successful"
+   Dump: Active 1, Successful 1, Bootable 1.
+3) Reboot 1 (sysrq b, 08:37): Geraet zurueck (SSH), uptime ~60 s,
+   Marke: "already marked successful" + "Marked", Successful 1.
+4) Reboot 2 (08:38): OK, Successful 1.
+5) Reboot 3 (08:40): OK, Successful 1.
+
+Damit ist der ABOOT-3-Start-Fallback behoben und belegt: Nach drei
+Reboots bootet das Geraet weiter (vorher fiel es nach drei Starts in den
+Fastboot, wo der USB unzuverlaessig enumerierte).
+
+Nebenbefund: usb0 kam bei allen drei Reboots zurueck; die frueheren
+"toten" Reboots lagen am Fallback/Flash-Zustand, nicht an einem
+generellen Gadget-Defekt.
