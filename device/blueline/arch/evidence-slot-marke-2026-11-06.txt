@@ -26,3 +26,9 @@ In die ROM eingebacken:
 - Bau kopiert qbootctl + musl-Loader nach /usr/local/{bin,lib/qbootctl}.
 - Init legt /dev/disk/by-partlabel an und ruft 15 s nach dem Sitzungsstart
   qbootctl -m (Log /tmp/qbootctl-mark.log).
+
+Nachtrag 01:13: Image b18b7cc2 gebaut (qbootctl + Init-Marke, Sparse dicht).
+Der automatische Fastboot-Fallback ist mit Successful=1 absichtlich weg;
+"reboot bootloader" scheitert (keine systemd-Reboot-Param-Datei),
+restart2 ist auf diesem Kernel EINVAL. Flashen braucht daher die
+Hardware-Kombination (Power+Leiser).
