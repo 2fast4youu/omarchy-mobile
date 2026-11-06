@@ -1,0 +1,10 @@
+Finales Image mit Nautilus, 2026-11-06 09:11-09:22
+==================================================
+
+Rootfs 1f02c7b1... (Sparse dicht, sha im ROM-Paket).
+Im Image: /usr/bin/nautilus vorhanden, Patches "series already applied";
+Boot v0bc (789eb023, ramoops + hung_task_panic=1).
+
+Damit enthaelt der naechste Flash: Slot-Marke (qbootctl in der Init),
+First-Run-Marke, Waves-Hintergrund, Chromium, Nautilus, 17 Patches,
+korrekte Uhr.
