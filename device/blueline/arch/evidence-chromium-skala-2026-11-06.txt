@@ -1,0 +1,20 @@
+Chromium-Skalierung: drei Varianten gemessen, 2026-11-06 09:07-09:08
+=====================================================================
+
+Monitor DSI-1: 1080x2160 physikalisch, scale 3 (Hyprland), also 360x720
+logisch.
+
+Variante A - Vorgabe (nur --ozone-platform=wayland):
+  Tab-Leiste ("Example Domain" mit X und +), Adressleiste (example.com),
+  Seite lesbar; rechts ca. 5 % des Seiteninhalts abgeschnitten.
+  -> beste Variante, so gestartet das Dock/der Drawer es tun.
+
+Variante B - --force-device-scale-factor=1:
+  UI kleiner, Seite weiterhin rechts abgeschnitten, Schrift unscharf.
+
+Variante C - --force-device-scale-factor=3:
+  UI 3x zu gross (Toolbar-Icons riesig), Seite stark abgeschnitten.
+
+Fazit: Vorgabe beibehalten. Der Rest-Schnitt ist ein Skala-Rundungs-
+artefakt (1080/3 = 360 CSS); kein Blocker.
+Beleg: device/blueline/arch/chromium-final-2026-11-06.png
