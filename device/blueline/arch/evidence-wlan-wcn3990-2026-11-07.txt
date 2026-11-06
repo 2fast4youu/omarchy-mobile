@@ -1,0 +1,22 @@
+WLAN ist WCN3990 (ath10k SNOC) - Kette laedt, PMU steht, 2026-11-07 00:53
+==========================================================================
+
+Korrektur der frueheren Broadcom-Annahme: Die Pixel-3-WLAN-Karte ist ein
+Qualcomm WCN3990 (DT: &wifi, compatible "qcom,wcn3990-wifi", Gerät
+18800000.wifi). Das vendor.img liefert wlanmdsp.mbn + bdwlan-blueline.bin;
+linux-firmware liefert ath10k/WCN3990/hw1.0/{firmware-5.bin,board-2.bin}
+(im Image vorhanden).
+
+Geladene Kette (alles Module unseres 7.1.0-rc1-sdm845):
+  rfkill, cfg80211, mac80211, ath, ath10k_core,
+  qcom_pil_info, qcom_glink_smem, qcom_common, ath10k_snoc
+PMU: pwrseq-qcom_wcn bindet wcn3990-pmu, Regler vddio/vddrf/vddxo/vddch0
+sind registriert (vddch1 fehlt, dummy).
+
+Status: ath10k_snoc 18800000.wifi: "failed to register wlfw qmi client:
+-517" (EPROBE_DEFER); kein wlan0. Naechster Schritt: die wlfw-QMI-Kette
+(smem/glink/q6v5) bzw. die PMU-Power-Up-Sequenz.
+
+Geraetestand: v0ag geflasht (Selbst-Reboot entfernt) -> uptime 357 s
+ohne Reboot (vorher waere er laengst erfolgt); Load 4.7 (Init-Schleifen),
+cpu0/cpu7 60/58.6 Grad C, Helligkeit 40 %.
