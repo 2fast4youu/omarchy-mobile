@@ -1,0 +1,19 @@
+Abschluss-Check des laufenden Systems, 2026-11-06 09:22
+=======================================================
+
+  Zeit:     Fri Nov  6 08:22:26 UTC 2026 (echt)
+  Sitzung:  Hyprland (watchdog-fd = start-hyprland), quickshell, squeekboard
+  Slot:     Active 1, Successful 1, Bootable 1
+  Marke:    "already marked successful" + "Marked boot successful"
+  Apps:     /usr/bin/chromium, /usr/bin/nautilus, /usr/bin/foot
+  Health:   uptime/load, Speicher, Temperatur, pstore-Pfad vorhanden,
+            keine Kernel-Panik (die "7 Treffer" sind Cmdline/ramoops-
+            Zeilen, kein Oops)
+
+Alle Stufen des Ziels sind damit am Geraet belegt und im Repo committed:
+Shell/Menue/Drawer (Screenshots), OSK, Chromium+Nautilus, Zeit, Netz
+(usb0), Stabilitaet (Slot-Marke, drei Reboots), Homescreen.
+
+Offen bleibt nur das WLAN (BCM4375-Firmware fehlt, dokumentiert) und der
+kleine Browser-Rand. Der finale Flash (03756168 + v0bc) wartet auf den
+physischen Fastboot.
