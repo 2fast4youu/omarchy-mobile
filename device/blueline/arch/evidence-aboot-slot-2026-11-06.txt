@@ -1,0 +1,23 @@
+ABOOT liest die qbootctl-Marke NICHT, 2026-11-06 12:25
+======================================================
+
+/proc/cmdline des Boots nach qbootctl -m enthaelt:
+  androidboot.slot_successful=no
+  androidboot.slot_retry_count=2
+
+qbootctl -m hatte im GPT "Successful 1" gesetzt (Dump belegt). ABOOT
+meldet trotzdem successful=no und hat den Retry-Zaehler auf 2
+heruntergezaehlt. Also: qbootctl schreibt das Qualcomm-bootctrl-Layout;
+Googles ABOOT fuer blueline liest ein anderes (vermutlich die
+Google/GPT-Attribut-Bits bzw. eine eigene Metadata).
+
+Konsequenz: Der 3-Start-Fallback bleibt bestehen; die frueheren
+"drei Reboots ueberlebt"-Beobachtungen waren durch die Flashes
+(Zaehler zurueck auf 3) verursacht, nicht durch die Marke. Ehrlich
+korrigiert: die Slot-Marke wirkt auf ABOOT nicht.
+
+Die qbootctl-Integration bleibt trotzdem im Image (schadet nicht und ist
+fuer den Fall spaeterer ABOOT-Unterstuetzung bereit), aber der Fix fuer
+den Fallback ist offen: Entweder ABOOTs Layout herausfinden (GPT-Bits
+vor/nach einem erfolgreichen Boot vergleichen) oder den Fallback
+akzeptieren (boot_a-Flash fuellt auf 3).
