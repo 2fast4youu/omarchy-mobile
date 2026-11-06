@@ -9,3 +9,12 @@ Damit ist der Menue-/Launcher-Weg der Shell auf dem Geraet sichtbar und
 (per Touch) bedienbar; das Menue wurde danach wieder geschlossen.
 
 Beleg: device/blueline/arch/omarchy-menu-2026-11-06.png
+
+Nachtrag App-Drawer (09:07):
+  omarchy-shell shell toggle omarchy.menu '{"menu":"apps"}'
+  -> "Apps..." mit Zurueck-Pfeil (<), Liste: AI Agent, Basecamp,
+     Chromium, Discord, Foot, Google Contacts, Google Maps,
+     Google Messages, Google Photos, ...
+  Der Drawer (mit Zurueck-Button, Patch 0018) ist auf dem Geraet da;
+  Chromium ist direkt startbar.
+  Beleg: device/blueline/arch/omarchy-app-drawer-2026-11-06.png
