@@ -1,0 +1,22 @@
+First-Run-Marke und sauberer Homescreen, 2026-11-06 08:41-08:43
+================================================================
+
+Befund: Der Marker "first-run-user" fehlte (omarchy-done check). Weil das
+Provisioning im 20-s-Setup nie durchlief, feuerte der WLAN-Tipp
+(install/user/first-run/wifi.sh, notify_wifi) bei jeder Sitzung erneut
+und stapelte sich (4 Karten).
+
+Fix:
+- Live: "omarchy-done mark first-run-user"; Check danach
+  "First-run already complete (rerun with --force to refresh)."
+- Init: die Marke wird jetzt VOR start-hyprland gesetzt
+  (device/blueline/arch/arch-init-standalone.sh).
+- Persistierten Benachrichtigungs-Zustand
+  (~/.local/state/omarchy/notifications) geleert, Shell neu gestartet.
+
+Screenshot: sauberer Homescreen (Uhr 07:42, Freitag 6. November,
+Chromium+Foot, keine Karten).
+Beleg: device/blueline/arch/omarchy-rom-clean-home-2026-11-06.png
+
+Hinweis: Die geflashte userdata (b18b7cc2) enthaelt diesen Init-Fix
+noch nicht; er kommt mit dem naechsten Bau ins Image.
