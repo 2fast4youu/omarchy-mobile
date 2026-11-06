@@ -23,3 +23,7 @@ Ergebnis nach 3 min:
 Dauerhaft: die Root-Init beendet nach dem switch_root alle
 "/bin/sh /init"-Kinder ausser PID 1 (Commit 215fcfa); naechster Bau
 enthaelt das.
+
+Nachtrag 11:01: Image mit dem Fix gebaut (rootfs f7f53d7b, Sparse dicht);
+per debugfs belegt: /init enthaelt den Schleifen-Kill (1x) und qbootctl
+(3x), Patches "series already applied". ROM-Paket aktualisiert.
