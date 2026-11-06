@@ -1,0 +1,23 @@
+Ramdisk-Analyse: die 1-s-Schleifen sind die Hitze, 2026-11-06 12:02
+=====================================================================
+
+Der Init-Weg (Kill aus der Root-Init) ist eine Sackgasse: jeder Kill
+(auch selektiv) riss usb0/SSH ab. Die Initramfs-/init (718 Zeilen,
+/Users/gregor/.../images/fl-v0aq/ramdisk.gz) enthaelt am Ende drei
+Schleifen mit 1-s-Takt:
+
+  1) Storage-Guard (Zeile ~556): geht jede Sekunde ueber
+     /sys/class/block/sd* (rund 25 Geraete) und ruft je Geraet
+     cat + blockdev --setro -> ~25 Forks/Sekunde, Sys-Zeit.
+  2) getty auf ttyMSM0 (Zeile ~586): setsid getty ...; sleep 1 -
+     getty endet sofort, wird jede Sekunde neu gestartet.
+  3) getty auf ttyGS0 (Zeile ~592): dasselbe.
+
+Das erklaert die 150 % CPU und die 52 % Sys-Zeit im Leerlauf; die
+uebrigen Schleifen (ABLESUNG 3 s, weicher-bind 20 s, telnetd 2 s) sind
+billig.
+
+Fix-Plan (Ramdisk v0ad): Guard auf 10 s, die beiden getty-Schleifen auf
+5 s (oder nur starten, wenn das tty existiert), Rest unveraendert; dann
+Boot-Image v0bd (Image.gz + ramoops-DTB + neue Ramdisk) und flashen.
+Bis dahin gilt das bekannte Image 78c809f4 (revertiert, Helligkeit 40 %).
