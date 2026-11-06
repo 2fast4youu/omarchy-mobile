@@ -1,0 +1,18 @@
+Fruehen Schleifen-Kill zurueckgenommen, 2026-11-06 11:11-11:26
+=============================================================
+
+Nach dem Flash von 5d84a1e6 (frueher Kill in der Init) starb der
+USB-Zugang: erst "Permission denied (publickey)" (der Root-sshd uebernahm,
+weil der fruehe dropbear verstummt war), dann Timeout; kein Fastboot.
+
+Der Live-Kill am laufenden System (5 min nach Boot, PIDs 264/288/554/556)
+war zuvor 10+ Minuten stabil - der Unterschied ist der Zeitpunkt: In den
+ersten Minuten brauchen die Schleifen den Gadget-Aufbau (soft-bind).
+
+Deshalb: fruehen Kill entfernt; stattdessen drosselt die Init die
+Helligkeit auf 40 % (sicher). Image 409e8fc4 gebaut, per debugfs belegt:
+pgrep-Kill 0x, backlight 1x, qbootctl 3x. Sparse dicht (sha im ROM-Paket).
+
+Die Schleifen selbst werden als Naechstes in der Ramdisk entschaerft
+(soft-bind behalten, aber ohne das teure find; ABLESUNG/telnetd/v0z
+reduzieren) - das braucht Geraetetests.
