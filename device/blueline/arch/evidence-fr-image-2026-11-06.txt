@@ -1,0 +1,10 @@
+Image mit First-Run-Fix gebaut, 2026-11-06 08:51-08:54
+=======================================================
+
+Rootfs 0ee20bbe... (Sparse dicht, sha siehe ROM-Paket).
+Im Image per debugfs geprueft:
+  /init enthaelt "first-run-user" (1x) und qbootctl (3x)
+  omarchy-patches.log: "17 applied ... series already applied"
+
+Damit bringt der naechste Flash die First-Run-Marke vor start-hyprland
+mit; der WLAN-Tipp bleibt nach einem Reflash aus.
