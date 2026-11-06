@@ -1,0 +1,23 @@
+USB-Analyse: Mac sieht kein Geraet mehr, 2026-11-06 01:20-01:35
+================================================================
+
+Initramfs-/init (v0aq, 718 Zeilen) geprueft:
+- Das Gadget wird einmal angelegt; die "weicher-bind"-Runde bindet alle
+  20 s neu (30 Runden) und protokolliert "Resource busy".
+- Der Erst-Bind gelingt (die SSH-Boots beweisen usb0); die Wiederholungen
+  scheitern am bereits gebundenen Controller -> harmlos, kein Defekt.
+
+Host-Seite jetzt:
+  ifconfig usb0 -> "interface usb0 does not exist"
+  Route 172.16.*  -> keine
+  system_profiler -> 0 Google-Geraete
+Damit ist es NICHT nur eine fehlende IP am Mac: Das Telefon erscheint
+ueberhaupt nicht am USB (kein Fastboot-PID, kein NCM).
+
+Deutung: Entweder das Geraet ist aus/haengt vor dem Gadget-Aufbau, oder
+der USB-Gadget-Aufbau dieser Boot-Stufe scheitert. Der vorige Boot (v0bc
+geflasht) hatte usb0; der SysRq-Reboot danach nicht mehr.
+
+Naechster Schritt bleibt physisch: Power+Leiser (Fastboot) oder
+Power lang (Neustart), dann bootet das Geraet frisch und der Gadget-
+Aufbau hat den sauberen Ausgangszustand.
