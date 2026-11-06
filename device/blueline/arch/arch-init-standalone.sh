@@ -95,13 +95,14 @@ chmod 755 /run/omamobile-session.sh
 # Slot-Erfolgsmarke: ohne sie verbraucht ABOOT bei jedem Start einen von
 # drei Versuchen und faellt nach drei Starts in den Fastboot. qbootctl ist
 # der pmOS-Bootctrl-Port; er braucht /dev/disk/by-partlabel.
-# Die Initramfs bringt fuenf Diagnose-Schleifen aus der Bring-up-Phase mit
-# (ABLESUNG, weicher-bind, raw-log, telnetd, v0z). Sie kosten zusammen rund
-# 150 % CPU (gemessen: cpu0/cpu7 78/84 Grad C, Load 5.9) und heizen das
-# Geraet im Leerlauf auf. Nach dem switch_root sind sie Kinder von PID 1;
-# hier beenden, PID 1 selbst bleibt.
-for p in $(pgrep -f '^/bin/sh /init$' 2>/dev/null); do
-    [ "$p" = "1" ] || kill "$p" 2>/dev/null
+# Die Initramfs-Schleifen (ABLESUNG, weicher-bind, raw-log, telnetd,
+# v0z) kosten rund 150 % CPU und heizen das Geraet auf 78-84 Grad C.
+# Sie werden NICHT mehr frueh beendet (das riss nach einem Flash den
+# USB-Zugang ab); die Helligkeit wird stattdessen sicher gedrosselt.
+for bl in /sys/class/backlight/*/brightness; do
+    [ -e "$bl" ] || continue
+    max=$(cat "$(dirname "$bl")/max_brightness" 2>/dev/null)
+    [ -n "$max" ] && echo $((max * 40 / 100)) > "$bl" 2>/dev/null
 done
 
 mkdir -p /dev/disk/by-partlabel
