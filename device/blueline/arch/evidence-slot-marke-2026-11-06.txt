@@ -1,0 +1,28 @@
+Slot-Erfolgsmarke gesetzt mit qbootctl, 2026-11-06 01:02
+=========================================================
+
+Werkzeug: qbootctl aus dem pmOS-Chroot (bootctrl-HAL-Port fuer Linux,
+"das sanktionierte Werkzeug"), laeuft auf der Arch-Wurzel ueber den
+musl-Loader:
+  /usr/local/lib/qbootctl/ld-musl-aarch64.so.1 --library-path ... qbootctl
+
+Voraussetzung: /dev/disk/by-partlabel/{boot_a,boot_b,...} -> /dev/sda11/12/...
+(GPT-Backup aller LUNs liegt vor: ~/hermes-workspace/gpt-backup-2026-11-06)
+
+Vorher:
+  Current slot: _a
+  SLOT _a: Active 1, Successful 0, Bootable 1
+  SLOT _b: Active 0, Successful 0, Bootable 0
+
+  qbootctl -m  ->  "SLOT _a: Marked boot successful"
+
+Nachher:
+  SLOT _a: Active 1, Successful 1, Bootable 1
+
+Damit ist die Ursache des 3-Start-Fallbacks behoben (ABOOT zaehlt keinen
+Versuch mehr herunter, wenn der Slot erfolgreich ist).
+
+In die ROM eingebacken:
+- Bau kopiert qbootctl + musl-Loader nach /usr/local/{bin,lib/qbootctl}.
+- Init legt /dev/disk/by-partlabel an und ruft 15 s nach dem Sitzungsstart
+  qbootctl -m (Log /tmp/qbootctl-mark.log).

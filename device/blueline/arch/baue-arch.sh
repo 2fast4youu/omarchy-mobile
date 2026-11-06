@@ -25,6 +25,8 @@ docker run --rm --platform linux/arm64 --privileged \
   -v "$HOME/hermes-workspace/firmware":/fw:ro \
   -v "$HIER/../../../packages":/pkgs:ro \
   -v "$HOME/hermes-workspace/images/fl-v0ba/gpi.ko":/gpi.ko:ro \
+  -v "/Users/gregor/hermes-workspace/pmos-ref-build/pmbootstrap-work/chroot_rootfs_google-blueline/usr/bin/qbootctl":/qbootctl:ro \
+  -v "/Users/gregor/hermes-workspace/pmos-ref-build/pmbootstrap-work/chroot_rootfs_google-blueline/lib/ld-musl-aarch64.so.1":/ld-musl-aarch64.so.1:ro \
   -v "$HOME/hermes-workspace/omarchy-pkg/omarchy-4.0.6-1-aarch64.pkg.tar.zst":/omarchy-4.0.6.pkg.tar.zst:ro \
   -v "$HOME/hermes-workspace/omarchy-pkg/omarchy-settings-4.0.6-1-aarch64.pkg.tar.zst":/omarchy-settings-4.0.6.pkg.tar.zst:ro \
   -v "$HIER":/om:ro \

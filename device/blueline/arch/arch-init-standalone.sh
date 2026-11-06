@@ -90,7 +90,21 @@ quickshell -p /usr/share/omarchy/shell >/tmp/quickshell.log 2>&1 &
 wait
 SITZUNG
 chmod 755 /run/omamobile-session.sh
+# Slot-Erfolgsmarke: ohne sie verbraucht ABOOT bei jedem Start einen von
+# drei Versuchen und faellt nach drei Starts in den Fastboot. qbootctl ist
+# der pmOS-Bootctrl-Port; er braucht /dev/disk/by-partlabel.
+mkdir -p /dev/disk/by-partlabel
+i=0
+for n in ssd misc keystore frp system_a system_b product_a product_b vendor_a vendor_b boot_a boot_b modem_a modem_b apdp_a apdp_b msadp_a msadp_b klog metadata userdata; do
+    i=$((i + 1))
+    ln -sfn /dev/sda$i /dev/disk/by-partlabel/$n
+done
 su - omarchy -c 'dbus-run-session -- /run/omamobile-session.sh' >/dev/null 2>&1 &
+(
+    sleep 15
+    QB=/usr/local/lib/qbootctl
+    /usr/local/lib/qbootctl/ld-musl-aarch64.so.1 --library-path "$QB" /usr/local/bin/qbootctl -m >/tmp/qbootctl-mark.log 2>&1
+) &
 echo "omamobile: Sitzung gestartet (dbus-run-session, Hyprland/Quickshell/Squeekboard)" > /dev/kmsg 2>/dev/null
 
 # PID 1 bleibt am Leben. Kein exec systemd, solange der 127 nicht erklaert ist.

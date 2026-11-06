@@ -54,6 +54,10 @@ printf '/dev/loop0 / ext4 defaults 0 1\n' > /tmp/arch/etc/fstab
 mkdir -p /tmp/arch/usr/local/bin
 cp /om/omamobile-time-sync /tmp/arch/usr/local/bin/omamobile-time-sync
 chmod 755 /tmp/arch/usr/local/bin/omamobile-time-sync
+mkdir -p /tmp/arch/usr/local/bin /tmp/arch/usr/local/lib/qbootctl
+cp /qbootctl /tmp/arch/usr/local/bin/qbootctl
+cp /ld-musl-aarch64.so.1 /tmp/arch/usr/local/lib/qbootctl/ld-musl-aarch64.so.1
+chmod 755 /tmp/arch/usr/local/bin/qbootctl /tmp/arch/usr/local/lib/qbootctl/ld-musl-aarch64.so.1
 if [ -f /gpi.ko ]; then
     mkdir -p /tmp/arch/opt/omamobile
     cp /gpi.ko /tmp/arch/opt/omamobile/gpi.ko
