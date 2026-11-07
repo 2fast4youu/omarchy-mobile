@@ -73,3 +73,15 @@ keine Puffer allozieren ("dma-heap allocation failure").
 Naechster Schritt: Kernel-Image mit aktueller dma-heap-Validierung neu
 bauen (oder libcamera ohne O_CLOEXEC / memfd-Fallback). v4l2-ctl
 funktioniert (video0..3 = qcom-camss, "Qualcomm Camera Subsystem").
+
+NACHTRAG Kamera (17:31): Media-Graph komplett
+---------------------------------------------
+media-ctl -d /dev/media0 -p zeigt:
+  imx355 17-001a -> msm_csiphy1 [ENABLED,IMMUTABLE]
+  msm_csiphy0/1/2 -> msm_csid0/1/2 -> VFE -> video0..3
+  csiphy2-Format SRGGB10_1X10/3280x2464 (Frontkamera)
+Damit ist die Pipeline vollstaendig; libcamera scheitert nur noch an der
+dma-heap-Pufferallokation (O_CLOEXEC -> EINVAL beim laufenden Kernel,
+obwohl der Quellcode es erlaubt).
+Alternativer Weg: media-ctl-Links + v4l2-ctl --stream-mmap (Kernel-
+eigene Puffer, ohne dma-heap).
