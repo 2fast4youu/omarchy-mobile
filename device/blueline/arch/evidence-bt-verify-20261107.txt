@@ -332,3 +332,19 @@ Was fehlt / naechste Schritte:
      Adapter-Powered/Pairable-Defaults und die Agent-Registrierung
      (KeyboardDisplay) pruefen; DBus-Policy erlaubt dem Nutzer omarchy bereits
      send_destination org.bluez.
+
+NACHTRAG Lead (Kernel-Ursache des MGMT-Index 0):
+read_index_list() in net/bluetooth/mgmt.c:445 zaehlt nur hci_devs OHNE
+HCI_UNCONFIGURED. Dieses Flag setzt der Kernel (hci_sync.c:5071), wenn
+HCI_QUIRK_EXTERNAL_CONFIG gesetzt ist ODER die BD-Adresse ungueltig ist
+(00:00:00:00:00:00 bzw. Default). Der WCN3990 startet mit ungueltiger
+BD-Adresse (Android setzt sie aus der Persist-Region/vendor command), also
+ist hci0 nach dem Start "unconfigured" und wird von der normalen
+Indexliste ausgeschlossen - exakt das beobachtete "Controllers: 0".
+
+Loesungswege (naechster Schritt):
+ a) gueltige BD-Adresse bereitstellen: qca-Treiber/DT (z.B. lokal
+    administrierte Adresse) oder NVRAM crnv21.bin mit Adresse,
+ b) Mgmt "Set Public Address" auf dem unconfigured Controller
+    (bluez btmgmt), dann Konfiguration abschliessen,
+ c) Android-Persist-BD-Adresse auslesen und setzen.
