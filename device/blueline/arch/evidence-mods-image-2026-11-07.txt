@@ -1,0 +1,13 @@
+Image mit Hardware-Modulen, 2026-11-07 13:24-13:33
+==================================================
+
+Bau kopiert alle Module aus /tmp/mods (20 .ko) nach
+/opt/omamobile/mods; die Init laedt sie in Abhaengigkeitsreihenfolge:
+  BT:   rfkill ecc ecdh_generic bluetooth btqca btbcm hci_uart rfcomm
+  WLAN: cfg80211 mac80211 ath ath10k_core qcom_pil_info qcom_glink_smem
+        qcom_common qrtr qrtr-smd pwrseq-qcom-wcn ath10k_snoc
+  LED:  leds-qcom-flash
+Per debugfs im Image belegt: 20 .ko, Init-Loop 1x, First-Run-Marke 1x.
+
+Sparse dicht (sha im ROM-Paket). Boot dazu v0ai (9c3682b7, Kernel mit
+eingebetteter BT-Firmware) oder v0ag (ohne Firmware).
