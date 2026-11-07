@@ -66,6 +66,10 @@ if [ -f /gpi.ko ]; then
     cp /gpi.ko /tmp/arch/opt/omamobile/gpi.ko
     echo "== gpi.ko ins Image"
 fi
+mkdir -p /tmp/arch/usr/lib/firmware/qcom/sdm845/Google/blueline
+for f in mba.mbn modem.mbn modemr.jsn modemuw.jsn; do
+    [ -f "/qcomfw/$f" ] && cp "/qcomfw/$f" /tmp/arch/usr/lib/firmware/qcom/sdm845/Google/blueline/
+done
 date -u +%Y-%m-%dT%H:%M:%SZ > /tmp/arch/etc/omamobile-buildtime
 
 echo "== pacman: Schluessel und openssh"

@@ -1,0 +1,19 @@
+Modem-Bring-up vorbereitet, 2026-11-07 13:33-13:48
+===================================================
+
+Recherche (Subagent) ergab: WLAN-WCN3990 braucht das laufende MSS
+(Modem); der QRTR/IPCRTR-Kanal entsteht dynamisch auf der MSS-Glink-Edge.
+
+Umgesetzt:
+- DTS: &mss_pil firmware-name = qcom/sdm845/Google/blueline/mba.mbn,
+  modem.mbn (der q6v5-mss-Treiber verlangt sie; vorher fehlten sie im
+  blueline-DTS). DTB neu gebaut (enthaelt modem.mbn).
+- Boot v0aj (neues DTB + Kernel mit eingebetteter BT-Firmware + Lag-
+  Ramdisk v0af).
+- Image: Modem-Firmware eingebacken
+  (/usr/lib/firmware/qcom/sdm845/Google/blueline/mba.mbn 238304 B,
+  modem.mbn 67145936 B); 20 Hardware-Module; Init-Fixes.
+
+Offen: rmtfs/pd-mapper/tqftpserv (Userspace fuer das Modem) - im
+pmOS-Chroot nur tqftpserv gefunden; die omamobile-modem-Pakete/ALARM
+muessen pruefen. Dann qcom_q6v5_mss laden, MSS starten, QMI/wlan0.
