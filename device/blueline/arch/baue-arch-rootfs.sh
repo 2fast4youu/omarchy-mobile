@@ -66,7 +66,7 @@ if [ -f /gpi.ko ]; then
     cp /gpi.ko /tmp/arch/opt/omamobile/gpi.ko
     echo "== gpi.ko ins Image"
 fi
-for b in rmtfs tqftpserv; do
+for b in rmtfs tqftpserv pd-mapper; do
     [ -f "/modembin/$b" ] && cp "/modembin/$b" /tmp/arch/usr/bin/ && chmod 755 /tmp/arch/usr/bin/$b
 done
 # libqrtr.so.1 aus dem Debian-qrtr-Paket (ALARM hat kein libqrtr-Paket)

@@ -96,6 +96,7 @@ for m in qcom_sysmon reset-qcom-pdc qcom_q6v5 qcom_q6v5_mss; do
 done
 [ -x /usr/bin/rmtfs ] && /usr/bin/rmtfs >/tmp/rmtfs.log 2>&1 &
 [ -x /usr/bin/tqftpserv ] && /usr/bin/tqftpserv >/tmp/tqftpserv.log 2>&1 &
+[ -x /usr/bin/pd-mapper ] && /usr/bin/pd-mapper >/tmp/pd-mapper.log 2>&1 &
 sleep 2
 for r in /sys/class/remoteproc/remoteproc*; do
     [ -e "$r/state" ] && echo start > "$r/state" 2>/dev/null
