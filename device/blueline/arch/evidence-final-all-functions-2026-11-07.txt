@@ -1,0 +1,29 @@
+ENDSTAND: alle Funktionen laufen, 2026-11-07 16:48
+==================================================
+
+Geflasht: boot_a = v0am (f91d37a54f69dfba9d4c472ed670a75425699e8eff0c99dbcd67c81b2374c62d,
+korrigierte local-bd-address LSB-first) + userdata = 5403bfbd
+(90246d0caf40dbd80490b22388d72f36719e0021365f03e7a30242e9).
+Flash mit sichtbarer Ausgabe: boot_a "Finished", userdata 26/26 "Finished".
+
+BLUETOOTH (geloest):
+  btmgmt info: "Index list with 1 item"
+  hci0: Primary controller addr 02:00:00:5A:1B:3C version 9 manufacturer 29
+  current settings: powered ssp br/edr le secure-conn ll-privacy
+  bluetoothctl list: "Controller 02:00:00:5A:1B:3C BlueZ 5.87 [default]"
+  Ursache war doppelt: (a) verwaiste fastboot-Prozesse verhinderten den
+  boot_a-Flash (boot_a war noch v0aj), (b) local-bd-address ist LSB-first
+  ([3c 1b 5a 00 00 02] = 02:00:00:5a:1b:3c).
+
+WLAN (geloest): wlan0 + phy0 + NetworkManager (wlan0:disconnected,
+p2p-dev-wlan0); ath10k-Handshake komplett (chip_id 0x30214, fw
+WLAN.HL.2.2.3-00526, board-2.bin); Modem/MSS running, pd-mapper/rmtfs/
+tqftpserv aktiv.
+
+WAERME (geloest): nach dem Init-Kill-Block (60 s) nur noch PID 1 als
+Init-Prozess; Load 0,55; cpu0 44,1 / cpu7 43,5 / aoss0 42,5 / gpu 41,8
+Grad C (vorher 78-84 in der Startphase, 58-63 mit Spinnern).
+
+TASCHENLAMPE: white:flash vorhanden (Modul + Torch-Tile im Image).
+STABILITAET: kein Selbst-Reboot, slot_successful=yes.
+SHELL/OSK/APPS/ZEIT: aus den Vorrunden belegt.

@@ -1,0 +1,98 @@
+Abschluss-Beleg: Flash v0am (f91d37a5) + Userdata 5403bfbd - Bluetooth/WLAN/Modem gruen
+=========================================================================================
+Datum: 2026-11-07, Geraet: Pixel 3 (blueline), Kernel 7.1.0-rc1-sdm845.
+Rolle: Teammate "modem-wlan", nur lesende Verifikation nach dem Flash des Leads.
+
+Artefakte (vom Lead geflasht, lokal vorab geprueft):
+  boot v0am    : images/fl-v0am/firstlight.img
+                 sha256 f91d37a54f69dfba9d4c472ed670a75425699e8eff0c99dbcd67c81b2374c62d
+                 kernel_size 15902920, ramdisk 5020584, DTB 111849 B
+  userdata     : 5403bfbd90246d0caf40dbd80490b22388d72f36719e0021365f03e7a30242e9
+Flash-Ausgabe des Leads: boot_a "Finished", userdata 26/26 Chunks "Finished".
+
+1. Verifikation boot_a (/dev/sda11) gegen v0am
+----------------------------------------------
+  # dd if=/dev/sda11 bs=4096 count=5110 ... ; vergleiche mit dem Image
+  Vergleich boot_a-Inhalt vs. images/fl-v0am/firstlight.img:
+    nur 3 Bytes Unterschied (Kopf-Offsets 44..47, os_version-Feld; wird vom
+    Bootloader/Flash gesetzt) - kernel-, ramdisk- und DTB-Sektion bytegleich.
+  # od -An -tu4 -j 8 -N 12 /dev/sda11
+    15902920  32768  5020584        <- kernel_size/ramdisk wie v0am
+  local-bd-address im angehaengten DTB der boot_a-Partition: vorhanden
+  (sha256 boot_a 42e4cd36... = v0am mit bootloader-gesetztem os_version-Feld)
+
+2. Devicetree-Property (laufender Kernel)
+-----------------------------------------
+  # ls /proc/device-tree/soc@0/geniqup@8c0000/serial@898000/bluetooth/
+  compatible  local-bd-address  max-speed  name  vddch0-supply  vddio-supply
+  vddrf-supply  vddxo-supply
+  # od -An -tx1 .../bluetooth/local-bd-address
+    3c 1b 5a 00 00 02        (LSB-first -> Adresse 02:00:00:5A:1B:3C)
+
+3. Bluetooth laeuft
+-------------------
+  # btmgmt info
+  Index list with 1 item
+  hci0: Primary controller
+        addr 02:00:00:5A:1B:3C version 9 manufacturer 29 class 0x000000
+        supported settings: powered connectable fast-connectable discoverable
+          bondable link-security ssp br/edr le advertising secure-conn
+          debug-keys privacy configuration static-addr phy-configuration ll-privacy
+        current settings: powered ssp br/edr le secure-conn ll-privacy
+        name BlueZ 5.87
+  # bluetoothctl list
+  Controller 02:00:00:5A:1B:3C BlueZ 5.87 [default]
+  # bluetoothctl show
+  Controller 02:00:00:5A:1B:3C (public) Powered: yes ...
+  # dmesg | grep -i hci0
+  Bluetooth: hci0: setting up wcn399x  (2x: erst Setup, dann nach
+      qca_set_bdaddr mit HCI_QUIRK_NON_PERSISTENT_SETUP erneut)
+  Bluetooth: hci0: QCA Downloading qca/crbtfw21.tlv / qca/crnv21.bin
+  Bluetooth: hci0: QCA setup on UART is completed
+  KEINE Fehler ("QCA Change address command failed" o.ae. nicht vorhanden).
+
+  Hinweis: /sys/class/bluetooth/hci0/address gibt es in diesem Kernel NICHT
+  (net/bluetooth/hci_sysfs.c legt nur ein "reset"-Attribut an; Adresse ueber
+  mgmt/btmgmt/bluetoothctl abfragen). Ein fehlendes address-File ist daher
+  kein Fehler - entscheidend ist "Index list with 1 item" + addr wie oben.
+
+4. Regression Modem/WLAN (alles gruen)
+--------------------------------------
+  rmtfs 4171, tqftpserv 4173, pd-mapper 4175, bluetoothd 7707,
+  NetworkManager 7702 laufen.
+  /sys/class/remoteproc/remoteproc0: running
+  ip -br link: wlan0 (NO-CARRIER, unassoziiert), usb0 UP
+  /sys/class/ieee80211/: phy0
+  nmcli: wlan0 wifi disconnected, p2p-dev-wlan0 wifi-p2p disconnected
+  Firmware-Spiegel im Init-Root vorhanden:
+    /proc/1/root/lib/firmware/qcom/sdm845/Google/blueline/{mba,modem,wlanmdsp}.mbn
+    /proc/1/root/lib/firmware/ath10k/WCN3990/hw1.0/{firmware-5.bin,board-2.bin}
+    /proc/1/root/lib/firmware/qca/{crbtfw21.tlv,crnv21.bin}
+  /boot/modem_fs1..fsc: 4 Dateien vorhanden.
+  LED: /sys/class/leds/white:flash vorhanden.
+
+5. Kill-Block + Thermik (Messung ~4 min nach Boot)
+--------------------------------------------------
+  # uptime
+    15:47:54 up 4 min, load average: 0.77, 0.77, 0.37
+  (Boot-Phase @52 s: Load 2,18, cpu0 64,6 / cpu7 64,2 - Lead-Messung)
+  # thermal_zone*
+    aoss0 42,5  cpu0 43,8  cpu7 42,8  gpu-top 42,2  gpu-bottom 41,8
+    aoss1 43,0  q6-modem 42,0  mem 42,0  wlan 42,3  q6-hvx 42,3
+    camera 43,0  video 41,7  cpu1 43,1  modem 41,7   (Grad Celsius)
+  # scaling_cur_freq: cpu0 1.766.400, cpu7 1.689.600 (Init-Drossel 1,8 GHz)
+  # ps -ef | grep "/bin/sh /init"
+    root 1 /bin/sh /init          <- nur noch PID 1, Kill-Block hat die
+                                      Ramdisk-Schleifen beendet (60 s nach Start)
+  sshd laeuft (PID 3607), usb0 UP.
+
+6. Fazit
+--------
+Keine Abweichungen. Bluetooth ist konfiguriert (02:00:00:5A:1B:3C, BlueZ
+default controller), WLAN-Stack (wlan0/phy0/NM) und Modem-Kette (remoteproc
+running, rmtfs/pd-mapper/tqftpserv) laufen, Thermik nach dem Kill-Block
+~42-44 Grad C bei Load 0,77. Die Korrekturkette dieses Abends:
+  - fehlende Module qcom_sysmon/reset-qcom-pdc + rmtfs-Dateien + Firmware-
+    initns-Spiegel (Modem),
+  - OEM-wlanmdsp.mbn + pd-mapper (WLAN),
+  - local-bd-address LSB-first + korrekt geflashtes boot_a (Bluetooth).
