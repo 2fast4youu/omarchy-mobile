@@ -134,3 +134,10 @@ Im Arch-chroot (glibc) erfolgreich:
   - pacman: gcc make patch meson ninja cmake git pkgconf gperf libconfig
     gtk4 libcamera zbar libepoxy libpulse libraw libjpeg-turbo feedbackd
 Image-Sparse: 10cb452bda046e465e50ae279d40cf605acea70c75576c9ca89f2e81433e677b
+
+NACHTRAG Image-Cleanup (19:47)
+------------------------------
+Build-Werkzeuge (gcc/make/meson/ninja/cmake/pkgconf/gperf) aus dem Image
+entfernt (git bleibt - omarchy-Dependency); /tmp-Quellen geloescht.
+megapixels, cam, mpv, imv, gnome-text-editor weiterhin vorhanden.
+Neues Sparse: 63d8d497d116f616e9c8350b982a551a448106bc87f940d267c2eeef0865908a
