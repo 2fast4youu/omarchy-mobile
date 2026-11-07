@@ -1,0 +1,255 @@
+Beleg: Modem-/WLAN-Kette LIVE am Pixel 3 (blueline), 2026-11-07
+=================================================================
+Kernel: 7.1.0-rc1-sdm845 #7 SMP PREEMPT Sat Nov 7 12:03:12 UTC 2026
+Boot:   v0aj + Image edbaee52 (am Geraet belegt via uname -r)
+Geraet: ssh -i ~/.ssh/omamobile_blueline root@172.16.42.1
+Rolle:  Teammate "modem-wlan" - NUR Lesen/Testen, keine Flashes,
+        keine Aenderung an device/blueline/arch/arch-init-standalone.sh.
+
+Kurzfassung
+-----------
+1. Die MSS-Kette probt erst mit ZWEI weiteren Modulen: qcom_sysmon.ko und
+   reset-qcom-pdc.ko. Beide lagen nicht in /tmp/mods. Jetzt dort abgelegt
+   (zusammen mit qcom_q6v5.ko und qcom_q6v5_mss.ko).
+2. Mit allen vier Modulen: /sys/class/remoteproc/remoteproc0 (4080000.remoteproc)
+   entsteht, MSS startet und bleibt "running"; rpmsg-GLINK-Kanaele inkl.
+   IPCRTR erscheinen, qrtr-lookup zeigt die Modem-Dienste.
+3. Damit der MSS-Start nicht crasht, muss rmtfs die Modem-Partitionen als
+   DATEIEN unter /boot/modem_fs1, modem_fs2, modem_fsg, modem_fsc vorfinden.
+   Ohne sie: "fatal error without message" + Crash/Recovery des Modems.
+4. KERN-BEFUND: Der Kernel-Firmware-Loader liest ueber
+   kernel_read_file_from_path_initns() aus dem Root von init_task (= PID 1 =
+   Initramfs-Halteschleife). Dieses Root ist nach dem Chroot des Arch-Init-
+   Kindes LEER. Deshalb schlaegt JEDER Kernel-Firmware-Load fehl (-2/ENOENT),
+   obwohl die Dateien in /lib/firmware liegen - auch mba.mbn/modem.mbn.
+   Workaround live belegt: Dateien unter /proc/1/root/lib/firmware/... ablegen.
+5. ath10k_snoc bindet, bekommt aber kein FW_READY: der wlfw-QMI-Dienst
+   (QRTR-Service 0x45 = 69) fehlt auch bei laufendem MSS. Damit gibt es
+   keinen ath10k-Probe-Output, kein wlan0, kein /sys/class/ieee80211/*.
+
+1. Module: was fehlte und in welcher Reihenfolge es laedt
+---------------------------------------------------------
+Ausgangslage am Geraet: /opt/omamobile/mods enthielt u.a. qcom_pil_info,
+qcom_glink_smem, qcom_common, qrtr, qrtr-smd, pwrseq-qcom-wcn, ath10k_snoc -
+aber NICHT qcom_q6v5/qcom_q6v5_mss. /sys/class/remoteproc war leer,
+/sys/kernel/debug/devices_deferred war leer (der mss-Knoten war mangels
+Treiber gar nicht erst "deferred").
+
+Versuch 1 (nur q6v5 + q6v5_mss, wie beauftragt) - Abhaengigkeit fehlt:
+  # modinfo /opt/omamobile/qcom_q6v5.ko | grep depends
+  depends:        qcom_sysmon
+  # modinfo /opt/omamobile/qcom_q6v5_mss.ko | grep depends
+  depends:        qcom_q6v5,qcom_common,qcom_sysmon,qcom_pil_info
+  # insmod /opt/omamobile/qcom_q6v5.ko        -> rc=1
+  dmesg: qcom_q6v5: Unknown symbol qcom_sysmon_shutdown_acked (err -2)
+  # insmod /opt/omamobile/qcom_q6v5_mss.ko    -> rc=1
+  dmesg: qcom_q6v5_mss: Unknown symbol qcom_q6v5_init (err -2) ... usw.
+
+Versuch 2 (qcom_sysmon.ko davor):
+  # insmod /opt/omamobile/qcom_sysmon.ko       -> rc=0
+  # insmod /opt/omamobile/qcom_q6v5.ko         -> rc=0
+  # insmod /opt/omamobile/qcom_q6v5_mss.ko     -> rc=0
+  Probe schlaegt fehl, Modul aber geladen, Geraet deferred:
+  dmesg: qcom-q6v5-mss 4080000.remoteproc: failed to acquire pdc reset
+  dmesg: remoteproc remoteproc0: releasing 4080000.remoteproc
+  # cat /sys/kernel/debug/devices_deferred
+  4080000.remoteproc
+
+  Ursache: reset-names = "mss_restart", "pdc_reset"; der zweite Reset-
+  provider ist reset-controller@b2e0000 (compatible qcom,sdm845-pdc-global,
+  phandle 0x94), dessen Treiber reset-qcom-pdc.ko als Modul fehlte
+  (/sys/bus/platform/drivers/qcom_pdc_reset existierte nicht).
+
+Versuch 3 (reset-qcom-pdc.ko zusaetzlich):
+  # insmod /opt/omamobile/reset-qcom-pdc.ko    -> rc=0
+  # readlink /sys/bus/platform/devices/b2e0000.reset-controller/driver
+  ../../../../bus/platform/drivers/qcom_pdc_reset
+  # cat /sys/kernel/debug/devices_deferred          (leer)
+  # ls /sys/class/remoteproc/
+  remoteproc0
+  dmesg: remoteproc remoteproc0: 4080000.remoteproc is available
+
+  (Die Probe-Reihenfolge ist dabei egal: das deferred-Probing zieht den
+  mss-Knoten nach, sobald der PDC-Reset-Provider gebunden ist.)
+
+Ergebnis in /tmp/mods (wird beim naechsten Bau ins Image kopiert):
+  qcom_q6v5.ko        294536 B
+  qcom_q6v5_mss.ko    494272 B
+  qcom_sysmon.ko      330872 B
+  reset-qcom-pdc.ko   276552 B
+Beide letzten Dateien stammen aus
+~/hermes-workspace/pmos-kernel-out/drivers/{remoteproc,reset}/.
+
+2. rmtfs: ohne Dateien kein stabiler MSS-Start
+----------------------------------------------
+Gestartet wurde mit vorhandenem rmtfs (pid 4821) und tqftpserv (pid 4823),
+aber ohne /boot/modem_fs*:
+  # tail /tmp/rmtfs.log
+  [storage] failed to open '/boot/modem_fs1' (requested '/boot/modem_fs1'): No such file or directory
+  # echo start > /sys/class/remoteproc/remoteproc0/state
+  dmesg: remoteproc remoteproc0: remote processor 4080000.remoteproc is now up
+  dmesg: qcom-q6v5-mss 4080000.remoteproc: fatal error without message
+  dmesg: remoteproc remoteproc0: crash detected in 4080000.remoteproc: type fatal error
+  --> Modem bootet und stirbt ~2,6 s spaeter (rmtfs kann keinen Storage liefern).
+
+Abhilfe (live getestet): die vier Modem-Partitionen liegen auf LUN 5
+(sdf3=modemst1, sdf4=modemst2, sdf5=fsg, sdf6=fsc), sind aber wegen des
+UFS-Guards read-only. Daher NICHT auf die echten Partitionen schreiben,
+sondern einmalig lesend als Dateien bereitstellen (2 MiB/2 MiB/2 MiB/128 KiB):
+  # dd if=/dev/sdf3 of=/boot/modem_fs1 bs=1M
+  # dd if=/dev/sdf4 of=/boot/modem_fs2 bs=1M
+  # dd if=/dev/sdf5 of=/boot/modem_fsg bs=1M
+  # dd if=/dev/sdf6 of=/boot/modem_fsc bs=1M
+  # kill $(pidof rmtfs); /usr/bin/rmtfs > /tmp/rmtfs2.log 2>&1 &
+Danach:
+  # echo start > /sys/class/remoteproc/remoteproc0/state
+  # cat /sys/class/remoteproc/remoteproc0/state
+  running
+  dmesg: remoteproc remoteproc0: remote processor 4080000.remoteproc is now up
+  (kein "fatal error" mehr; Modem blieb ueber mehrere Minuten running)
+rmtfs loggt weiterhin unbekannte Partitionen, die der Modem anfragt:
+  [RMTFS storage] request for unknown partition '/boot/modem_fsg_oem_1', rejecting
+  [RMTFS storage] request for unknown partition '/boot/modem_fsg_oem_2', rejecting
+Das ist tolerierbar (Modem bleibt oben), sollte aber mit den echten
+Partitionsinhalten (fsg_oem_1/2) noch geprueft werden.
+
+3. KERN-BEFUND: Kernel-Firmware-Load liest aus dem LEEREN Initramfs-Root
+-----------------------------------------------------------------------
+Symptom (MSS-Start, obwohl /lib/firmware/qcom/sdm845/Google/blueline/mba.mbn
+existiert, Lesetest mit od erfolgreich):
+  dmesg: remoteproc remoteproc0: Direct firmware load for
+         qcom/sdm845/Google/blueline/mba.mbn failed with error -2
+Dynamic-Debug der Firmware-Loader (module firmware_class +p) zeigt die
+Suchpfade:
+  loading /lib/firmware/updates/7.1.0-rc1-sdm845/qcom/sdm845/Google/blueline/mba.mbn failed for no such file or directory.
+  loading /lib/firmware/updates/qcom/.../mba.mbn failed ...
+  loading /lib/firmware/7.1.0-rc1-sdm845/qcom/.../mba.mbn failed ...
+  loading /lib/firmware/qcom/sdm845/Google/blueline/mba.mbn failed ...
+  loading ....zst / ....xz failed ...
+  -> Direct firmware load ... failed with error -2
+
+Ursache (im Quellbaum verifiziert):
+- fs/kernel_read_file.c: kernel_read_file_from_path_initns() oeffnet die Datei
+  relativ zu init_task.fs (PID 0 / init_fs), NICHT relativ zum aufrufenden
+  Prozess.
+- init/main.c:727: pid = user_mode_thread(kernel_init, NULL, CLONE_FS);
+  PID 1 teilt also das fs_struct mit init_task; nur ein chroot/switch_root
+  IM PID-1-Prozess aktualisiert init_fs.
+- Am Geraet ist PID 1 weiterhin die Initramfs-"Halteschleife"
+  (/proc/1/exe -> /bin/busybox (deleted)); das Arch-Init laeuft als Kind
+  (PID 183, /bin/sh /init). Das Chroot geschah also im KIND.
+  # ls -la /proc/1/root/
+  total 4
+  drwxr-xr-x 2 root root 40 Jan  1  1970 .       <- leeres altes Initramfs-Root
+  # ls /proc/1/root/lib/firmware/qcom/sdm845/Google/blueline/
+  No such file or directory
+- Der userspace-/lib-Pfad (der SSH-Sitzung) ist davon nicht betroffen:
+  /lib -> usr/lib, Datei vorhanden und lesbar (7f 45 4c 46 ...).
+
+Workaround (live belegt, geht bei Reboot verloren): Firmware zusaetzlich
+unter den Init-Root legen:
+  # mkdir -p /proc/1/root/lib/firmware/qcom/sdm845/Google/blueline
+  # cp /usr/lib/firmware/qcom/sdm845/Google/blueline/{mba.mbn,modem.mbn} \
+        /proc/1/root/lib/firmware/qcom/sdm845/Google/blueline/
+  # echo start > /sys/class/remoteproc/remoteproc0/state
+  dmesg: Loading firmware from /lib/firmware/qcom/sdm845/Google/blueline/mba.mbn
+  dmesg: Loaded FW: .../mba.mbn, sha256: 6cf3cf33...  (238304 B)
+  dmesg: direct-loading qcom/sdm845/Google/blueline/modem.mbn
+  dmesg: Loaded FW: .../modem.mbn, sha256: 203486be... (67145936 B)
+  dmesg: remoteproc remoteproc0: remote processor 4080000.remoteproc is now up
+Damit ist bewiesen: die Dateien sind korrekt, der Pfad/das Root ist das Problem.
+
+Konsequenz fuer den naechsten Bau: der Firmware-Fix im Boot-Init ist
+zwingend, sonst scheitern mba/modem UND spaeter ath10k (firmware-5.bin/
+board-2.bin) wieder. Moegliche Wege:
+ (a) PID 1 uebernimmt die Arch-Wurzel selbst (switch_root/exec statt
+     Kind-Chroot), dann folgt init_fs der neuen Wurzel;
+ (b) Firmware zusaetzlich ins Initramfs legen (mba+modem ~67,7 MB, ath10k
+     ~4,5 MB) - passt das in die boot-Partition?
+ (c) Init kopiert die Firmware beim Boot nach /proc/1/root/lib/firmware/...
+     (belegt, aber ~72 MB Ramfs-Verbrauch).
+
+4. QRTR nach MSS-Start (Belege)
+-------------------------------
+  # ls /sys/bus/rpmsg/devices/ | wc -l
+  13
+  # ls /sys/bus/rpmsg/devices/ | grep -i ipcrtr
+  4080000.remoteproc:glink-edge.IPCRTR.-1.-1
+  # qrtr-lookup        (Debian qrtr-tools 1.0 arm64, libqrtr1, nach /tmp)
+    Service Version Instance Node  Port
+         66       1      180    0     1 Service registry notification service
+         43       2       18    0     4 Subsystem control service
+         ...
+         21       1        0    0    21 Modem embedded file system service
+         ...
+         14       1        0    1    14 Remote file system service
+       4096       1        0    1 16385 TFTP
+         64       1        1    1 16388 Service registry locator service
+  Node 0 = MSS (Modem), Node 1 = AP. rmtfs (14) und tqftpserv (TFTP 4096)
+  sind sichtbar -> der QRTR/IPCRTR-Transport funktioniert.
+  pd-mapper (Debian protection-domain-mapper 1.1-1, arm64, aus /tmp
+  gestartet) publiziert SERVREG (64) auf Node 1.
+  ABER: kein WLFW-Dienst:
+  # qrtr-lookup 69            (0x45 = WLFW_SERVICE_ID_V01)
+    Service Version Instance Node  Port      (nur Kopfzeile)
+
+5. ath10k_snoc: warum kein Probe/wlan0?
+---------------------------------------
+- Modul geladen und GERAET GEBUNDEN:
+  # readlink /sys/bus/platform/devices/18800000.wifi/driver
+  ../../../../bus/platform/drivers/ath10k_snoc
+- dmesg enthaelt KEINE ath10k-Zeile (ath10k_dbg/ath10k_info erst ab
+  FW_READY; Probe selbst ist still).
+- Kein wlan0, kein /sys/class/ieee80211:
+  # ip link | grep -c wlan   -> 0
+  # ls /sys/class/ieee80211/ -> (leer)
+- PMU/pwrseq ist gebunden:
+  # readlink /sys/bus/platform/devices/wcn3990-pmu/driver
+  ../../../bus/platform/drivers/pwrseq-qcom_wcn
+  dmesg: pwrseq-qcom_wcn wcn3990-pmu: supply vddch1 not found, using dummy regulator
+- Bindet man ath10k_snoc neu (unbind/bind), aendert sich nichts: kein
+  ath10k-Output, kein FW_READY.
+- Der Treiber wartet auf die QMI-WLFW-Indication (ATH10K_QMI_EVENT_FW_READY_IND,
+  snoc.c:ath10k_snoc_fw_indication -> ath10k_core_register). Die kommt vom
+  wlfw-Dienst (QRTR 0x45), der bei laufendem MSS NICHT in qrtr-lookup steht.
+  Das ist der aktuelle Blocker fuer WLAN.
+- Firmware-Dateien am Geraet vorhanden (aber wegen Punkt 3 via Kernel-Loader
+  derzeit nicht ladbar):
+  /lib/firmware/ath10k/WCN3990/hw1.0/firmware-5.bin   (60 B, QCA-ATH10K-Magic)
+  /lib/firmware/ath10k/WCN3990/hw1.0/board-2.bin      (867116 B)
+  /lib/firmware/ath10k/WCN3990/hw1.0/wlanmdsp.mbn     (3725044 B)
+- wlanmdsp.mbn lag NICHT neben modem.mbn (nur unter ath10k/ und
+  qcom/sdm845/). Testweise nach
+  /usr/lib/firmware/qcom/sdm845/Google/blueline/wlanmdsp.mbn UND in den
+  Init-Root kopiert, MSS neu gestartet -> WLFW 0x45 blieb aus.
+- tqftpserv fragt der Modem-DSP einige Dateien ab, alle abgelehnt:
+  /readwrite/modem_efs, ota_firewall/ruleset, mcfg.tmp,
+  /readonly/vendor/mbn/mcfg_hw/mbn_hw.dig (invalid path).
+
+6. Was der Lead bauen/flashen muss (Aenderungen ausserhalb meines Scopes)
+------------------------------------------------------------------------
+A) /tmp/mods: qcom_q6v5.ko, qcom_q6v5_mss.ko, qcom_sysmon.ko,
+   reset-qcom-pdc.ko liegen bereit (Ordner wird beim Bau ins Image kopiert).
+B) arch-init-standalone.sh: Modulliste der Modem-Kette erweitern
+   (reset-qcom-pdc, qcom_sysmon vor qcom_q6v5/qcom_q6v5_mss), und vor dem
+   rmtfs-Start /boot/modem_fs1, modem_fs2, modem_fsg, modem_fsc aus
+   /dev/sdf3..6 lesend bereitstellen (siehe Abschnitt 2), sonst crasht die
+   MSS beim Start.
+C) Firmware-in-initns-Problem loesen (Abschnitt 3) - sonst schlaegt jeder
+   Kernel-Firmware-Load fehl, auch nach A+B.
+D) WLAN offen: wlfw-Dienst (QRTR 0x45) fehlt trotz laufendem MSS;
+   Kandidaten: pd-mapper/SERVREG (laeuft, SERVREG auf Node 1 sichtbar),
+   tqftpserv-Pfade, wlanmdsp.mbn neben modem.mbn. Kein wlan0 bis dahin.
+
+Offene Punkte / naechste Tests
+------------------------------
+- rmtfs: echte Inhalte von fsg_oem_1/fsg_oem_2 bereitstellen (nur lesend).
+- WLAN: wlfw-Lookup mit qrtr-lookup periodisch pruefen; tqftpserv-
+  Pfadkonfiguration (readwrite/readonly) klaeren; dtbo/DTS unveraendert
+  lassen (qrtr-Transport existiert nachweislich).
+- Pruefen, ob nach dem Firmware-in-initns-Fix ath10k ueberhaupt bis
+  firmware-5.bin/board-2.bin kommt (dann initns-Dateien dafuer mitliefern).
+
+Werkzeuge, die nur zum Testen nach /tmp kamen (nicht im Image):
+  /tmp/qrtr-pkg/{qrtr-lookup,qrtr-cfg,qrtr-ns,libqrtr.so.1,pd-mapper}
+  /tmp/rmtfs2.log, /tmp/pd-mapper.log
