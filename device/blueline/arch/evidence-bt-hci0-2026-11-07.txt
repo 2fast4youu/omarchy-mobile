@@ -1,0 +1,25 @@
+Bluetooth: hci0 steht, WCN3990 erkannt, 2026-11-07 13:01
+=========================================================
+
+Kette (alle Module aus unserem Kernel 7.1.0-rc1-sdm845):
+  rfkill, ecc, ecdh_generic, bluetooth, rfcomm, btqca, btbcm, hci_uart
+
+Ergebnis:
+  /sys/class/bluetooth/hci0 existiert.
+  dmesg:
+    Bluetooth: hci0: QCA Product ID   :0x0000000a
+    Bluetooth: hci0: QCA SOC Version  :0x40010214
+    Bluetooth: hci0: QCA ROM Version  :0x00000201
+    Bluetooth: hci0: QCA controller version 0x02140201
+    Bluetooth: hci0: QCA Downloading qca/crbtfw21.tlv
+    bluetooth hci0: Direct firmware load for qca/crbtfw21.tlv failed with error -2
+    Bluetooth: hci0: QCA Failed to request file: qca/crbtfw21.tlv (-2)
+
+Die Datei liegt nachweislich unter /lib/firmware/qca/crbtfw21.tlv und
+/usr/lib/firmware/qca/crbtfw21.tlv (177060 B, 0644, lesbar).
+Der firmware_class-Parameter "path" ist leer (Default /lib/firmware).
+Offen: warum request_firmware -2 liefert (evtl. Firmware-Cache nach dem
+ersten Fehlversuch oder Root-/Mount-Besonderheit des Loop-Rootfs).
+
+Naechster Schritt: hci_uart entladen/neu laden (frischer Request) und den
+Firmware-Pfad per Symlink/Test verifizieren; danach crnv21.bin (NVRAM).
