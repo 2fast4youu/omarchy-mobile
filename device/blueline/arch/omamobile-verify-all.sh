@@ -16,7 +16,10 @@ echo "== modem"; ls /sys/class/remoteproc 2>/dev/null; for r in /sys/class/remot
 done
 echo "== qrtr"; ls /sys/bus/rpmsg/devices/ 2>/dev/null | head -6; cat /sys/class/net/*/uevent 2>/dev/null | grep -c INTERFACE
 echo "== netz"; ls /sys/class/net; ip -4 addr show 2>/dev/null | grep -E 'inet ' | head -4
-echo "== wlan"; dmesg | grep -i -e 'ath10k' -e 'wlfw' -e 'wlan' | tail -8
+echo "== wlan"; dmesg | grep -i -e 'ath10k' -e 'wlfw' -e 'wlan' | tail -10
+echo "== wlan0"; ip link show wlan0 2>/dev/null | head -2; ls /sys/class/ieee80211 2>/dev/null; nmcli -t -f DEVICE,TYPE,STATE device 2>/dev/null | grep -i wlan
+echo "== bt-adresse"; cat /sys/class/bluetooth/hci0/address 2>/dev/null; btmgmt info 2>&1 | head -4; bluetoothctl show 2>&1 | head -4
+echo "== modem-dienste"; qrtr-lookup 69 2>/dev/null | grep -i -e wlfw -e rmtfs -e 0x45 | head -4
 echo "== taschenlampe"; ls /sys/class/leds/ 2>/dev/null
 echo "== rmtfs/tqftpserv"; pgrep -a rmtfs; pgrep -a tqftpserv; tail -3 /tmp/rmtfs.log 2>/dev/null; tail -3 /tmp/tqftpserv.log 2>/dev/null
 echo "== fehler"; dmesg | grep -i -e 'panic' -e 'Oops' -e 'failed' | tail -8
