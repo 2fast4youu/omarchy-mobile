@@ -25,3 +25,18 @@ APPS:
 
 WI-FI-PANEL: das Netz "HOME-WLAN" wird gelistet (Passwort + Connect) -
 Verbindung kann der Nutzer jetzt direkt ueber die Tastatur herstellen.
+
+NACHTRAG Kamera (17:00): camss laeuft, Sensor-I2C blockiert
+---------------------------------------------------------------
+Ursache der -110 gefunden: Der Kamera-Clock-Controller camcc ist ein
+Modul (CONFIG_SDM_CAMCC_845=m) und war nicht geladen; ohne seine GDSCs
+fehlten dem camss die Power-Domains. Nach "modprobe camcc-sdm845":
+  - qcom_camss probt, /dev/media0 + video0..video11 entstehen
+    (z.B. msm_vfe1_video0)
+  - libcamera 0.7.2 + cam/qcam installiert; "cam -l" findet aber
+    "No sensor found for /dev/media0"
+  - Grund: der Kamera-I2C (geni_i2c, 888000.i2c-12) haengt an
+    "Failed to get tx DMA ch" -> die imx363/imx355-Sensoren (12-0040/41)
+    proben nicht -> kein Sensor im Media-Graph.
+Naechster Schritt: GENI-DMA fuer den Kamera-I2C (i2c-12) bzw. die
+Sensoren (gpi-Kanaele/DT) ansehen.
