@@ -309,6 +309,65 @@ Empfehlung fuer den Bau:
   (im aktuellen Image vorhanden; die Init spiegelt sie in den Init-Root).
 - Nach dem Flash: frischer Boot -> erwartet wlan0 / /sys/class/ieee80211.
 
+5c. WLAN LAEUFT LIVE: wlan0 da - entscheidend ist pd-mapper
+-------------------------------------------------------------
+Der wlfw-Dienst (und damit die WLAN-PD) startet NUR, wenn pd-mapper laeuft.
+Gegenprobe (identischer MSS-Neustart, pd-mapper gestoppt):
+  # kill $(pidof pd-mapper); MSS stop/start
+  # qrtr-lookup 69        -> nur Kopfzeile (kein wlfw)
+  # qrtr-lookup 64        -> nur Kopfzeile (kein SERVREG)
+Mit pd-mapper (Debian protection-domain-mapper 1.1-1 arm64, aus /tmp):
+  # /tmp/qrtr-pkg/pd-mapper &     (scannt /lib/firmware ueber
+                                  /sys/class/remoteproc/*/firmware und die
+                                  .jsn-Dateien im Firmware-Verzeichnis)
+  # qrtr-lookup 64
+    64 1 1 1 16409 Service registry locator service      (SERVREG, AP Node 1)
+Danach MSS-Neustart (wirklich offline: der power-Refcount muss auf 0!):
+  Vorher mehrfach "echo stop" wiederholen, bis
+  /sys/class/remoteproc/remoteproc0/state == "offline"; ein einzelnes stop
+  kann bei power>1 wirkungslos sein (rproc_shutdown: atomic_dec_and_test).
+
+Erfolgreicher Lauf (ath10k_snoc VOR dem MSS-Start geladen, board-2.bin und
+mba/modem/wlanmdsp im Init-Root):
+  ath10k_snoc 18800000.wifi: wifi fw qmi service found
+  ath10k_snoc 18800000.wifi: qmi wifi fw qmi service connected
+  ath10k_snoc 18800000.wifi: qmi indication register request completed
+  ath10k_snoc 18800000.wifi: qmi host capability request completed
+  ath10k_snoc 18800000.wifi: qmi msa mem region 0 addr 0x8df00000 size 0x4000
+  ath10k_snoc 18800000.wifi: qmi msa mem info request completed
+  ath10k_snoc 18800000.wifi: qmi msa mem ready request completed
+  ath10k_snoc 18800000.wifi: qmi chip_id 0x30214 chip_family 0x4001 board_id 0xff soc_id 0x40030001
+  ath10k_snoc 18800000.wifi: qmi fw_version 0x2233020e fw_build_timestamp 2021-07-06 17:44
+      fw_build_id QC_IMAGE_VERSION_STRING=WLAN.HL.2.2.3-00526-QCAHLSWMTPLZ-1
+  ath10k_snoc 18800000.wifi: boot using board name '...variant=Google_blueline'
+  ath10k_snoc 18800000.wifi: Loading firmware from /lib/firmware/ath10k/WCN3990/hw1.0/board-2.bin
+  ath10k_snoc 18800000.wifi: Loaded FW: ath10k/WCN3990/hw1.0/board-2.bin, sha256: 867e1010...
+  ath10k_snoc 18800000.wifi: boot fw request 'ath10k/WCN3990/hw1.0/board-2.bin': 0
+Netz danach:
+  # ip -br link
+  wlan0            DOWN           1a:8a:e4:5a:15:d0 <NO-CARRIER,BROADCAST,MULTICAST,UP>
+  # ls /sys/class/ieee80211/
+  phy11
+  # nmcli device status
+  wlan0          wifi      disconnected  --
+  p2p-dev-wlan0  wifi-p2p  disconnected  --
+  # dmesg: scan event started/completed, bss channel freq 2462 (Kanal 11) -
+  Scans laufen (NetworkManager scannt automatisch); in Reichweite war kein
+  AP, daher nmcli keine SSIDs.
+=> WLAN-Kette vollstaendig: MSS -> wlfw-QMI -> MSA -> board-2.bin -> wlan0.
+
+Einmalige Beobachtung beim allerersten Verbinden (FW-Zustand aus alten
+Testzyklen): "qcom_scm firmware:scm: Assign memory protection call failed -22"
+-> ath10k "failed to assign msa map permissions: -22"; nach echtem MSS-Reset
+und frischem Verbinden trat der Fehler nicht mehr auf. Beobachten, ob er auf
+einem frischen Boot nochmal kommt.
+
+PD-MAPPER IST DAMIT PFLICHT FUER WLAN und muss ins Image + vor dem MSS-Start
+laufen. Das aktuelle Image/Init startet ihn NICHT (nur /tmp-Test).
+Deinstallations-Quelle: Debian-Paket protection-domain-mapper_1.1-1_arm64.deb
+(Datei usr/bin/pd-mapper, benoetigt libqrtr.so.1 + liblzma5; libqrtr.so.1
+wird vom Rootfs-Bau bereits nach /usr/lib/libqrtr.so.1 kopiert).
+
 6. Was der Lead bauen/flashen muss (Aenderungen ausserhalb meines Scopes)
 ------------------------------------------------------------------------
 A) /tmp/mods: qcom_q6v5.ko, qcom_q6v5_mss.ko, qcom_sysmon.ko,
@@ -320,23 +379,24 @@ B) arch-init-standalone.sh: Modulliste der Modem-Kette erweitern
    MSS beim Start.
 C) Firmware-in-initns-Problem loesen (Abschnitt 3) - sonst schlaegt jeder
    Kernel-Firmware-Load fehl, auch nach A+B.
-D) WLAN: Loesung gefunden (Abschnitt 5b) - es braucht die OEM-wlanmdsp.mbn im
-   Verzeichnis der Modem-Firmware, dann erscheint der wlfw-Dienst (QRTR 0x45)
-   und ath10k laeuft bis zum board-2.bin-Load. board-2.bin/firmware-5.bin
-   muessen wie die Modem-Firmware in den Init-Root gespiegelt werden (in der
-   neuen Init bereits enthalten). Auf einem frischen Boot ist wlan0 zu erwarten;
-   der aktuelle Boot ist durch die Testzyklen im "incompatible state" (host
-   cap QMI-Fehler 90) und laesst sich nur per Power-Cycle zuruecksetzen.
+D) WLAN: Loesung live belegt (Abschnitte 5b/5c): OEM-wlanmdsp.mbn neben
+   modem.mbn + pd-mapper laufend + board-2.bin im Init-Root -> wlan0 entsteht,
+   NetworkManager sieht es, Scans laufen. pd-mapper FEHLT noch im Image und in
+   der Init; ohne ihn spawnt der Modem die WLAN-PD nicht (kein wlfw 0x45).
 E) BUILD-LUECKE (kritisch fuer WLAN): baue-arch-rootfs.sh kopiert aus /qcomfw
    nur mba.mbn, modem.mbn, modemr.jsn, modemuw.jsn - wlanmdsp.mbn FEHLT.
    Quelle /qcomfw (= pmbootstraps blueline-Firmware) enthaelt die benoetigte
    OEM-Datei wlanmdsp.mbn (3.035.952 B, md5 a16b01de48859f733acb2f38d227a560),
    die laut pmOS-Doku neben modem.mbn gehoert (und nach Abschnitt 5b zwingend
    die OEM- und nicht die Linux-Firmware-Variante ist).
-   Live auf dem Geraet liegt die OEM-Version bereits in
-   /usr/lib/firmware/qcom/sdm845/Google/blueline/ und im Init-Root.
-   -> Loop in baue-arch-rootfs.sh um wlanmdsp.mbn ergaenzen (und die
-      Lead-Init-Mirrorliste findet die Datei dann auch).
+   -> Loop in baue-arch-rootfs.sh um wlanmdsp.mbn ergaenzen (bereits im
+      Commit 22772bf umgesetzt) - die Lead-Init-Mirrorliste findet die Datei
+      dann auch.
+F) pd-mapper ins Image aufnehmen (usr/bin/pd-mapper aus
+   protection-domain-mapper_1.1-1_arm64.deb) und in der Init VOR dem
+   MSS-Start starten (nach/bzw. neben rmtfs und tqftpserv). Ohne pd-mapper
+   kein wlfw-Dienst, kein wlan0. Der Test auf diesem Boot lief mit
+   /tmp/qrtr-pkg/pd-mapper; .jsn-Dateien liegen bereits im Image.
 
 Offene Punkte / naechste Tests
 ------------------------------
