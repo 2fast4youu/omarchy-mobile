@@ -47,3 +47,18 @@ Image, PMU und QRTR stehen.
 
 Geraet stabil mit v0ag (kein Selbst-Reboot); die Module muessen nach
 jedem Flash neu kopiert werden (noch nicht im Image).
+
+Nachtrag 12:35 - die Transport-Luecke ist belegt:
+Der ath10k-QMI (wlfw) braucht einen QRTR-Dienst am WCN3990. Im mainline
+sdm845 gibt es dafuer KEINEN Knoten:
+  - sdm845.dtsi: nur glink-edges (apr_audio_svc, fastrpcglink-apps-dsp);
+    kein qcom,smd-edge, kein IPCRTR-Label.
+  - ipq6018.dtsi hat das Muster: qcom,glink-channels = "IPCRTR".
+  - Die sdm845-lg/oneplus/blueline &wifi-Knoten enthalten ebenfalls keine
+    Transport-Edge.
+Damit fehlt die Plattform-Seite des QRTR (smd/glink-Edge fuer den
+WCN3990) - ein Upstream-/DT-Vervollstaendigungsprojekt, kein
+Firmware-/Konfigurationsproblem.
+
+Der Treiber selbst kommt bis "snoc probe" und weist die MSA-Adresse zu;
+die Firmware (firmware-5.bin/board-2.bin) liegt bereit.
