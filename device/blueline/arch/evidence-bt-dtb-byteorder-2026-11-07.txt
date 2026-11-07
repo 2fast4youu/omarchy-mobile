@@ -1,0 +1,18 @@
+BT-DTB: Byte-Reihenfolge + verwaister v0al-Flash, 2026-11-07 16:29
+=================================================================
+
+Der Teammate (8bd10fc) hat zwei Ursachen belegt:
+1) boot_a enthielt noch v0aj (der v0al-Flash hing an zwei verwaisten
+   fastboot-Prozessen auf dem Mac; die PIDs 2545/2618 wurden beendet).
+   Das v0al-Bild selbst war korrekt.
+2) local-bd-address ist LSB-first (bluetooth-controller.yaml-Binding):
+   fuer 02:00:00:5a:1b:3c muss die Property [3c 1b 5a 00 00 02] heissen -
+   vorher stand [02 00 00 5a 1b 3c] = 3C:1B:5A:00:00:02 (global admin).
+   Die fwnode-Kette ist sonst in Ordnung (hci_serdev SET_HCIDEV_DEV auf
+   serdev-Device mit of_node; btqca setzt HCI_QUIRK_USE_BDADDR_PROPERTY;
+   hci_sync liest local-bd-address; qca_set_bdaddr programmiert den Chip).
+
+Fix: DTS korrigiert ([3c 1b 5a 00 00 02]), DTB neu gebaut, Boot v0am
+(f91d37a54f69dfba9d4c472ed670a75425699e8eff0c99dbcd67c81b2374c62d) neu
+gepackt; zusaetzlich die Userdata mit dem sicheren Kill-Block
+(5403bfbd90246d0caf40dbd80490b22388d72f36719e0021365f03e7a30242e9).
