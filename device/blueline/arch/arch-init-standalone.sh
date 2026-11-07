@@ -68,6 +68,16 @@ for m in rfkill ecc ecdh_generic bluetooth btqca btbcm hci_uart rfcomm \
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
 
+# Kamera: videodev/videobuf2 -> CCI-Controller -> camcc (GDSCs) -> camss
+# -> Sensoren. Reihenfolge ist Pflicht; sonst fehlen die Power-Domains.
+for m in videodev v4l2-async v4l2-fwnode v4l2-common mc videobuf2-common \
+         videobuf2-v4l2 videobuf2-memops videobuf2-dma-contig \
+         videobuf2-vmalloc i2c-qcom-cci camcc-sdm845 qcom-camss imx355 imx363; do
+    [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
+done
+chmod 666 /dev/dma_heap/* 2>/dev/null
+chmod 666 /dev/media* 2>/dev/null
+
 # Modem (MSS) + Firmware-Sichtbarkeit (am Geraet belegt):
 # Der Kernel liest Firmware ueber init_task.fs (PID 1 = Initramfs-Root),
 # nicht ueber unsere ext4-Wurzel. Die Dateien deshalb zusaetzlich nach
@@ -144,6 +154,9 @@ mkdir -p /home/omarchy/.local/state/omarchy/current/theme
 [ -f /home/omarchy/.local/state/omarchy/current/background ] || cp /usr/share/omarchy/themes/catppuccin/backgrounds/2-waves.png /home/omarchy/.local/state/omarchy/current/background 2>/dev/null || true
 chown -R omarchy:omarchy /home/omarchy/.local/state/omarchy 2>/dev/null
 su - omarchy -c 'omarchy-done mark first-run-user' >/dev/null 2>&1 || true
+# Deutsches Tastatur-Layout fuer die Bildschirmtastatur (Squeekboard liest
+# die GNOME-xkb-Einstellung; ohne sie bleibt die OSK leer).
+su - omarchy -c 'gsettings set org.gnome.desktop.input-sources sources "[('"'"'xkb'"'"','"'"'de'"'"')]"' >/dev/null 2>&1 || true
 start-hyprland >/tmp/hyprland.log 2>&1 &
 i=0
 while [ $i -lt 30 ]; do
