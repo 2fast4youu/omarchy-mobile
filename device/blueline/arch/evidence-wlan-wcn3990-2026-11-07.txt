@@ -20,3 +20,15 @@ Status: ath10k_snoc 18800000.wifi: "failed to register wlfw qmi client:
 Geraetestand: v0ag geflasht (Selbst-Reboot entfernt) -> uptime 357 s
 ohne Reboot (vorher waere er laengst erfolgt); Load 4.7 (Init-Schleifen),
 cpu0/cpu7 60/58.6 Grad C, Helligkeit 40 %.
+
+Nachtrag 00:06 - QRTR loest den QMI-Defer:
+  CONFIG_QRTR=m + QRTR_SMD=m; qrtr.ko geladen -> "NET: Registered
+  PF_QIPCRTR protocol family". Danach bindet 18800000.wifi an
+  ath10k_snoc (Treiber-Symlink, Deferred-Liste leer).
+  qrtr-mhi.ko scheitert (mhi fehlt) - fuer den smem/smd-Weg irrelevant.
+  regdb: "failed to load regulatory.db" (nur Regulierungsdaten, kein
+  Blocker fuer den Probe).
+
+Offen: Firmware-Init/QMI wlan_enable und der netdev wlan0; naechster
+Schritt ist der Firmware-Download (firmware-5.bin/board-2.bin liegen,
+wlanmdsp.mbn im vendor.img) und die QMI-Sequenz.
