@@ -1,0 +1,19 @@
+Modem-Userspace: Debian-Pakete als Quelle, 2026-11-07 13:51
+============================================================
+
+Die pmOS-Quellen sind nicht mehr oeffentlich erreichbar (gitlab.postmarketos
+.org leitet auf gitlab.nura.eco mit Auth um; github-Mirror fehlt; Alpine-
+Repos haben kein rmtfs). 
+
+Ersatz gefunden: Debian pool/main hat die Pakete:
+  rmtfs_1.3-1_arm64.deb        -> /usr/bin/rmtfs
+  tqftpserv_1.3-1_arm64.deb    -> /usr/bin/tqftpserv
+  (pd-mapper: im Debian-Pool unter p/q nicht vorhanden)
+
+Die Binaries sind arm64/glibc (passend zur Arch-Wurzel):
+  rmtfs:      NEEDED libqrtr.so.1, libudev.so.1, libc
+  tqftpserv:  NEEDED libqrtr.so.1, libzstd.so.1, libc
+
+Naechster Schritt: libqrtr.so.1 (ALARM-Paket oder aus qrtr gebaut) ins
+Image, rmtfs/tqftpserv dazulegen, dann MSS starten (q6v5_mss) und den
+IPCRTR-Kanal pruefen. pd-mapper ggf. selbst bauen (klein) oder spaeter.
