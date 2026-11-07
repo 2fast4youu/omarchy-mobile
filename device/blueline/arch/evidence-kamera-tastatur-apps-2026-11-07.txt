@@ -85,3 +85,16 @@ dma-heap-Pufferallokation (O_CLOEXEC -> EINVAL beim laufenden Kernel,
 obwohl der Quellcode es erlaubt).
 Alternativer Weg: media-ctl-Links + v4l2-ctl --stream-mmap (Kernel-
 eigene Puffer, ohne dma-heap).
+
+NACHTRAG Kamera (17:52): dma-heap-Kernel-Fix
+--------------------------------------------
+Ursache des EINVAL: dma_buf_fd() -> get_unused_fd_flags(flags) prueft
+  if ((flags & ~O_CLOEXEC) != 0) return -EINVAL;
+und lehnt damit O_RDWR ab, obwohl die dma-heap-API O_ACCMODE als gueltig
+deklariert (DMA_HEAP_VALID_FD_FLAGS = O_CLOEXEC | O_ACCMODE). libcamera
+nutzt O_RDWR|O_CLOEXEC -> EINVAL -> keine Puffer.
+Fix: fs/file.c:1431 erlaubt jetzt O_ACCMODE:
+  if ((flags & ~(O_CLOEXEC | O_ACCMODE)) != 0)
+Kernel-Image neu gebaut; Boot v0an =
+4db2b0a5a1686b5a7c90e781fd8a3ed09a64c6c226c5d7e9ab80f10f4e6f9473.
+Nach dem Flash: libcamera-Aufnahme (cam -c 1 --capture) sollte laufen.
