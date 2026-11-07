@@ -1,0 +1,18 @@
+System-DBus in der Init, 2026-11-07 14:50-15:01
+================================================
+
+Befund am laufenden Geraet: /run/dbus/system_bus_socket fehlte; es lief
+nur der Session-Bus (dbus-run-session) und der at-spi-Bus. Ohne
+System-Bus starten bluetoothd und NetworkManager nicht - der ganze
+BT-/WLAN-Pfad waere an der fehlenden IPC gescheitert.
+
+Ergaenzt in /init (vor bluetoothd/NM):
+  mkdir -p /run/dbus
+  /usr/bin/dbus-daemon --system &
+  warten auf /run/dbus/system_bus_socket (bis 5 s)
+
+Im Image per debugfs: dbus-daemon --system 1x, bluetoothd 3x.
+Sparse dicht (sha im ROM-Paket).
+
+Kette jetzt: Kernel-Module -> System-Bus -> bluetoothd/NM -> BlueZ/NM
+ueber DBus -> Shell-Tiles.
