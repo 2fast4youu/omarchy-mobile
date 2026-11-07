@@ -1,0 +1,334 @@
+Bluetooth-Verifikation blueline (Pixel 3), mainline sdm845
+=========================================================
+Datum:   2026-11-07, 15:20 CET (USB-SSH) / 14:20 UTC (Geraetezeit)
+Kernel:  7.1.0-rc1-sdm845 #7 SMP PREEMPT Sat Nov 7 12:03:12 UTC 2026
+         (root@710629f7c9fc, Alpine clang 23.1.5 / LLD 23.1.5)
+Boot:    v0aj, Image edbaee52 (Stand laut Lead; per SSH verifiziert: uname siehe oben)
+Zugang:  ssh -i ~/.ssh/omamobile_blueline root@172.16.42.1
+Art:     reine Verifikation. Keine Flashes, keine Aenderung an arch-init-standalone.sh.
+         Einziger Eingriff in den Laufzeitzustand: ein Neustart von bluetoothd
+         (Abschnitt 6), um einen Startzeit-Race auszuschliessen.
+
+Kurzfassung: Die Kernel-Treiberkette (hci_uart/btqca, Firmware-Download) und der
+bluetoothd laufen, aber **BlueZ sieht keinen Adapter**. bluetoothctl/btmgmt
+melden "No default controller available" bzw. "Index list with 0 items", obwohl
+hci0 in sysfs/debugfs registriert ist und der Kernel ein MGMT_EV_INDEX_ADDED fuer
+hci0 sendet. Ein bluetoothd-Neustart aendert nichts. Damit ist Bluetooth auf
+diesem Boot **nicht benutzbar**: kein Power-on, kein Scan, kein Pairing.
+Zusaetzlich ist der Pairing-Helfer omamobile-bt-agent im Image defekt
+(python-dbus scheitert an einem pyexpat/libexpat-Symbolkonflikt).
+
+1. Kernel-/Treiberkette
+-----------------------
+$ lsmod | grep -Ei "bluetooth|hci|btqca|btbcm|rfcomm|hci_uart"
+rfcomm                 90112  0
+hci_uart              118784  0
+btbcm                  24576  1 hci_uart
+btqca                  24576  1 hci_uart
+bluetooth             888832  13 btqca,hci_uart,btbcm,rfcomm
+ecdh_generic           16384  1 bluetooth
+rfkill                 32768  3 bluetooth,cfg80211
+
+$ dmesg | grep -iE "bluetooth|hci|qca" | tail -40
+[   31.493116] Bluetooth: Core ver 2.22
+[   31.493183] NET: Registered PF_BLUETOOTH protocol family
+[   31.493186] Bluetooth: HCI device and connection manager initialized
+[   31.493199] Bluetooth: HCI socket layer initialized
+[   31.493206] Bluetooth: L2CAP socket layer initialized
+[   31.493216] Bluetooth: SCO socket layer initialized
+[   31.541102] Bluetooth: HCI UART driver ver 2.3
+[   31.541118] Bluetooth: HCI UART protocol H4 registered
+[   31.541181] Bluetooth: HCI UART protocol LL registered
+[   31.541550] Bluetooth: HCI UART protocol Broadcom registered
+[   31.541596] Bluetooth: HCI UART protocol QCA registered
+[   31.541619] Bluetooth: HCI UART protocol Marvell registered
+[   31.564649] Bluetooth: RFCOMM TTY layer initialized
+[   31.588288] Bluetooth: RFCOMM socket layer initialized
+[   31.588302] Bluetooth: RFCOMM ver 1.11
+[   31.873076] Bluetooth: hci0: setting up wcn399x
+[   32.014594] Bluetooth: hci0: QCA Product ID   :0x0000000a
+[   32.014609] Bluetooth: hci0: QCA SOC Version  :0x40010214
+[   32.014613] Bluetooth: hci0: QCA ROM Version  :0x00000201
+[   32.014617] Bluetooth: hci0: QCA Patch Version:0x00000001
+[   32.025173] Bluetooth: hci0: QCA controller version 0x02140201
+[   32.051510] Bluetooth: hci0: QCA Downloading qca/crbtfw21.tlv
+[   32.861767] Bluetooth: hci0: QCA Downloading qca/crnv21.bin
+[   33.019799] Bluetooth: hci0: QCA setup on UART is completed
+
+Der Firmware-Download und die QCA-Initialisierung sind also erfolgreich
+durchgelaufen. Es folgt **keine** Fehlerzeile mehr zu hci0 (kein Command-Timeout,
+kein Reset, kein Abmelden).
+
+2. hci0-Geraet in sysfs/debugfs
+-------------------------------
+$ readlink -f /sys/class/bluetooth/hci0
+/sys/devices/platform/soc@0/8c0000.geniqup/898000.serial/898000.serial:0/898000.serial:0.0/serial0/serial0-0/bluetooth/hci0
+
+$ ls -l /sys/class/bluetooth/hci0/
+total 0
+lrwxrwxrwx ... device -> ../../../serial0-0
+drwxr-xr-x ... power
+--w------- ... reset
+drwxr-xr-x ... rfkill0
+lrwxrwxrwx ... subsystem -> ../../../../../../../../../../../class/bluetooth
+-rw-r--r-- ... uevent
+
+$ cat /sys/class/bluetooth/hci0/uevent
+DEVTYPE=host
+
+$ ls -la /sys/kernel/debug/bluetooth/hci0/
+drwxr-xr-x ... .
+drwxr-xr-x ... ..
+drwxr-xr-x ... ibs
+$ ls /sys/kernel/debug/bluetooth/hci0/ibs/
+ibs_recv_sleeps  ibs_recv_wake_acks  ibs_recv_wakes
+ibs_sent_sleeps  ibs_sent_wake_acks  ibs_sent_wakes  rx_ibs_state
+
+Befund: Der Mainline-Kernel 7.1 legt unter /sys/class/bluetooth/hci0 nur
+uevent/reset/power/rfkill0 an. Es gibt **keine** Dateien address, name, state
+oder "Discovering" mehr (die frueher uebliche hciconfig-Alternative ueber sysfs
+faellt damit aus). Ein /sys-Zustand "Discovering=yes" ist auf diesem Kernel
+nicht pruefbar; hciconfig ist im Image nicht installiert
+(command -v hciconfig -> leer; vorhanden: bluetoothctl, btmgmt, btmon, busctl).
+
+3. rfkill
+---------
+$ rfkill list
+0: hci0: Bluetooth
+	Soft blocked: no
+	Hard blocked: no
+
+$ cat /sys/class/rfkill/rfkill0/name  -> hci0
+$ cat /sys/class/rfkill/rfkill0/type  -> bluetooth
+$ cat /sys/class/rfkill/rfkill0/soft  -> 0
+$ cat /sys/class/rfkill/rfkill0/hard  -> 0
+
+Kein Soft-/Hardblock. (Hinweis: in diesem Image gibt es kein systemd, das den
+Block ueber /var/lib/systemd/rfkill persistieren wuerde; /proc/1/cmdline ist
+"/bin/sh /init".)
+
+4. System-D-Bus und bluetoothd
+------------------------------
+$ cat /proc/1/cmdline          -> /bin/sh /init   (kein systemd, kein journald)
+$ ls -l /run/dbus/
+-rw-r--r-- ... pid
+srwxrwxrwx ... system_bus_socket
+$ ps aux | grep dbus-daemon
+dbus      5833 /usr/bin/dbus-daemon --system
+$ ps aux | grep bluetoothd
+root      6082 /usr/lib/bluetooth/bluetoothd -n      (vor dem Neustart, Abschnitt 6)
+
+$ cat /tmp/bluetoothd.log
+bluetoothd[6082]: Bluetooth daemon 5.87
+bluetoothd[6082]: Starting SDP server
+bluetoothd[6082]: profiles/network/bnep.c:bnep_init() kernel lacks bnep-protocol support
+bluetoothd[6082]: Bluetooth management interface 1.23 initialized
+
+$ busctl --system list | grep -i bluez
+org.bluez   - -   -   -   -   -   -
+$ busctl --system tree org.bluez
+└─ /org
+  └─ /org/bluez
+$ busctl --system introspect org.bluez /org/bluez
+org.bluez.AgentManager1             .RegisterAgent/.RequestDefaultAgent/.UnregisterAgent
+org.bluez.ProfileManager1           .RegisterProfile/.UnregisterProfile
+org.freedesktop.DBus.Introspectable .Introspect
+
+Befund: Der System-Bus laeuft, bluetoothd laeuft (5.87) und exportiert
+/org/bluez mit AgentManager1/ProfileManager1. Es gibt aber **kein**
+/org/bluez/hci0 und keine Adapter-Schnittstelle (org.bluez.Adapter1). Dasselbe
+Ergebnis liefert der ObjectManager:
+
+$ dbus-send --system --print-reply --dest=org.bluez / org.freedesktop.DBus.ObjectManager.GetManagedObjects
+   array [ dict entry( object path "/org/bluez"  array [
+      "org.freedesktop.DBus.Introspectable",
+      "org.bluez.AgentManager1",
+      "org.bluez.ProfileManager1" ] ) ]
+
+5. BlueZ-Sicht auf den Controller (bluetoothctl/btmgmt/btmon)
+------------------------------------------------------------
+$ bluetoothctl --version            -> bluetoothctl: 5.87
+$ bluetoothctl -n -i hci0 list      -> bluetoothctl: invalid option -- 'n'
+   (die Option -n gibt es in 5.87 nicht; Aufruf ohne -n:)
+$ bluetoothctl list                 -> (leere Ausgabe, exit 0)
+$ bluetoothctl show                 -> No default controller available (exit 1)
+$ btmgmt info                       -> Index list with 0 items
+$ btmgmt revision                   -> MGMT Version 1, revision 23
+$ btmgmt --index 0 info             -> Reading hci0 info failed with status 0x11 (Invalid Index)
+$ btmgmt --index 0 power on         -> Set Powered for hci0 failed with status 0x11 (Invalid Index)
+$ bluetoothctl --timeout 5 power on -> No default controller available
+
+btmon (MGMT-Monitor) waehrend einer btmgmt-Abfrage, echt:
+$ timeout 6 btmon > /tmp/btmon-probe.log & ; btmgmt info ; btmgmt --index 0 info
+Bluetooth monitor ver 5.87
+= Note: Linux version 7.1.0-rc1-sdm845 (aarch64)
+= Note: Bluetooth subsystem version 2.22
+= New Index: <BD_ADDR> (Primary,UART,hci0)                      [hci0]
+bluetoothd[6082]: @ MGMT Open: b.. (privileged) version 1.23  {0x0001}
+btmgmt[20313]: @ MGMT Open: btmgmt (privileged) version 1.23  {0x0002}
+btmgmt[20313]: @ MGMT Command: Read Contro.. (0x0003) plen 0  {0x0002}
+@ MGMT Event: Command Complete (0x0001) plen 5                {0x0002}
+      Read Controller Index List (0x0003) plen 2
+        Status: Success (0x00)
+        Controllers: 0
+btmgmt[20334]: @ MGMT Command: Read.. (0x0004) plen 0         {0x0002} [hci0]
+@ MGMT Event: Command Status (0x0002) plen 3                  {0x0002} [hci0]
+      Read Controller Information (0x0004)
+        Status: Invalid Index (0x11)
+
+Befund: Der Kernel schickt fuer hci0 das MGMT_EV_INDEX_ADDED ("New Index",
+Primary/UART/hci0), aber MGMT_OP_READ_INDEX_LIST antwortet mit Status Success
+und **0 Controllern**; jeder controller-adressierte Befehl endet mit
+Invalid Index. bluetoothd (5.87) und btmgmt (5.87) sehen dieselbe leere Liste.
+Das ist keine bluetoothd-Einstellung und kein fehlendes Modul, sondern eine
+inkonsistente Kernel-MGMT-Sicht bei sonst registriertem hci0 (Kernel
+7.1.0-rc1-sdm845, MGMT 1.23).
+
+6. Neustart-Test bluetoothd (Race ausschliessen)
+-------------------------------------------------
+$ kill 6082 ; /usr/lib/bluetooth/bluetoothd -n >/tmp/bluetoothd-neustart.log 2>&1 &
+$ cat /tmp/bluetoothd-neustart.log
+bluetoothd[5841]: Bluetooth daemon 5.87
+bluetoothd[5841]: Starting SDP server
+bluetoothd[5841]: profiles/network/bnep.c:bnep_init() kernel lacks bnep-protocol support
+bluetoothd[5841]: Bluetooth management interface 1.23 initialized
+
+$ bluetoothctl list            -> (leer)
+$ bluetoothctl show            -> No default controller available
+$ busctl --system tree org.bluez
+└─ /org
+  └─ /org/bluez
+$ btmgmt info                  -> Index list with 0 items
+
+Befund: Ein Neustart hilft nicht. Der Adapter fehlt auch dem frisch gestarteten
+Daemon; die Ursache liegt unter BlueZ (Kernel-MGMT/HCI-Registrierung), nicht in
+einer Startreihenfolge des Daemons.
+
+7. Scan-Test
+------------
+$ bluetoothctl --timeout 15 scan on
+No default controller available
+[exit=0]
+
+$ bluetoothctl --timeout 15 show
+No default controller available
+[exit=0]
+
+Befund: Ein Scan ist gar nicht erst moeglich, weil bluetoothctl den Controller
+schon nicht findet ("No default controller available"). Es gibt daher auch
+keine "Discovering=yes"-Beobachtung: /sys/class/bluetooth/hci0 bietet auf
+diesem Kernel kein state-Attribut (Abschnitt 2), und mgmt-seitig ist der
+Controller nicht ansprechbar (Abschnitt 5). rfkill ist offen (Abschnitt 3),
+es ist also kein Block, sondern die fehlende mgmt-Sicht.
+
+8. Shell-Anbindung (Quickshell/Hyprland)
+----------------------------------------
+$ pgrep -a hyprland / pgrep -a quickshell
+8865 start-hyprland
+24306 quickshell -p /usr/share/omarchy/shell
+
+Quickshell laeuft also; der Quickshell.Bluetooth-Modul ist im Binary enthalten
+(kein separates Plugin noetig):
+$ cat /usr/lib/qt6/qml/Quickshell/Bluetooth/qmldir
+module Quickshell.Bluetooth
+linktarget quickshell-bluetoothplugin
+optional plugin quickshell-bluetoothplugin
+...
+$ strings /usr/bin/quickshell | grep -c org.bluez      -> 4
+$ strings /usr/bin/quickshell | grep -m3 BluetoothAdapter
+BluetoothAdapter(
+BluetoothAdapter(nullptr)
+QQmlListProperty<qs::bluetooth::BluetoothAdapter>
+
+Die Shell-QML-Seite erwartet BlueZ ueber den **System-Bus** (Quickshell.Bluetooth
+= BlueZ-D-Bus; kein Session-Bus):
+  packages/omamobile-shell/plugins/omamobile.quicksettings/QuickSettings.qml
+    import Quickshell.Bluetooth
+    readonly property var adapter: Bluetooth.defaultAdapter
+    readonly property bool available: !!adapter
+    readonly property bool enabled: available && adapter.enabled
+    if (!available) return "No adapter"
+  BluetoothPanel.qml: "Quickshell.Bluetooth (BlueZ over D-Bus) is the device list ..."
+  bin/omamobile-bt-agent: BlueZ-Agent (KeyboardDisplay) auf org.bluez/System-Bus
+
+System-Bus ist auch fuer den Sitzungsnutzer erreichbar (DBus-Policy erlaubt
+send_destination org.bluez fuer alle):
+$ su - omarchy -c "busctl --system list | grep -i bluez"
+org.bluez   - -   -   -   -   -   -
+$ su - omarchy -c "dbus-send --system --print-reply --dest=org.bluez /org/bluez org.freedesktop.DBus.Introspectable.Introspect"
+-> method return mit AgentManager1/ProfileManager1 (kein Adapter)
+
+Aktueller Shell-Zustand per IPC (omarchy-shell, als Nutzer omarchy):
+$ omarchy-shell shell call omamobile.quicksettings state ''
+{"opened":false,...,"wifi":false,"bluetooth":false,...,"bluetoothPanel":false,...}
+$ omarchy-shell shell call omamobile.quicksettings bluetoothPanel ''
+{"opened":false,"adapter":null,"enabled":false,"discovering":false,"visible":false,
+ "helper":"stopped","paired":[],"available":[],"unnamed":0,"showUnnamed":false,
+ "action":null,"failure":null,"sheet":"","pairing":{"phase":"idle","address":"","request":null}}
+$ omarchy-shell shell call omamobile.quicksettings openBluetooth ''
+unavailable
+
+Befund: Die Shell-Anbindung ist korrekt verdrahtet (Quickshell.Bluetooth,
+System-Bus, Panel/Tile lesen defaultAdapter). Sie findet aber adapter=null und
+meldet "unavailable" / "No adapter", weil BlueZ keinen Adapter exportiert.
+Die Quick-Settings-Kachel bleibt damit aus; das Panel ist nicht zu oeffnen.
+Im quickshell-Log (/tmp/quickshell.log, 30 Zeilen) steht kein Bluetooth-Fehler
+(einziger ERROR: pipewire context errno 112) - der Ausfall kommt von der
+fehlenden Adapter-Objektsicht, nicht von einem QML-/Modulfehler.
+
+9. Pairing-Helfer omamobile-bt-agent (zweiter Befund)
+-----------------------------------------------------
+Der Helfer ist installiert (/usr/bin/omamobile-bt-agent, python3-Skript), aber
+im Image nicht lauffaehig:
+$ su - omarchy -c "timeout 5 omamobile-bt-agent < /dev/null"
+{"event": "error", "message": "Pairing helper needs python-dbus and python-gobject: /usr/lib/python3.14/lib-dynload/pyexpat.cpython-314-aarch64-linux-gnu.so: undefined symbol: XML_GetCurrentByteIndex64"}
+
+Ursache, direkt nachgestellt:
+$ python3 --version                 -> Python 3.14.9
+$ python3 -c "import xml.parsers.expat"
+ImportError: /usr/lib/python3.14/lib-dynload/pyexpat.cpython-314-aarch64-linux-gnu.so:
+             undefined symbol: XML_GetCurrentByteIndex64
+$ python3 -c "import dbus"
+ImportError: ... undefined symbol: XML_GetCurrentByteIndex64   (dbus -> _expat_introspect_parser -> xml.parsers.expat)
+$ python3 -c "import gi"            -> ok
+$ pacman -Q python expat python-dbus python-gobject
+python 3.14.9-1 / expat 2.8.2-1 / python-dbus 1.5.1-1 / python-gobject 3.58.1-1
+$ nm -D /usr/lib/libexpat.so.1 | grep ByteIndex
+0000000000008e60 T XML_GetCurrentByteIndex
+(nur der alte Symbolname; XML_GetCurrentByteIndex64 fehlt in der installierten
+ libexpat.so.1.12.2 -> pyexpat/dbus brechen ab)
+
+Befund: Selbst wenn der Adapter sichtbar waere, koennte der Panel-Helfer keinen
+BlueZ-Agent registrieren, keine Discovery halten und RSSI/Appearance/Class
+nicht lesen. Das ist ein Paket-/ABI-Problem im Image (python 3.14 vs.
+libexpat), unabhaengig vom Kernel-Befund.
+
+10. Bewertung und was fehlt
+---------------------------
+Ist Bluetooth benutzbar? Nein.
+  - Adapter: aus Sicht von BlueZ/Shell nicht vorhanden (adapter=null, kein
+    /org/bluez/hci0), obwohl hci0 in sysfs/debugfs existiert und die
+    QCA-Firmware geladen wurde.
+  - Power on: nicht moeglich (bluetoothctl "No default controller", btmgmt
+    "Invalid Index").
+  - Scan/Discovery: nicht moeglich.
+  - System-Bus/BlueZ-Daemon: laufen (bluez 5.87, D-Bus erreichbar, auch fuer
+    den Sitzungsnutzer omarchy); die Shell-Anbindung (Quickshell.Bluetooth) ist
+    vorhanden und wartet nur auf einen Adapter.
+
+Was fehlt / naechste Schritte:
+  1. Kernel-MGMT-Sicht auf hci0 klaeren: MGMT meldet fuer hci0 "New Index",
+     READ_INDEX_LIST aber 0 Controller. Das ist die eigentliche Blockade und
+     liegt ausserhalb von BlueZ (Daemon-Neustart hilft nicht). Kandidaten:
+     Kernel-7.1.0-rc1-sdm845-Build (Bluetooth-MGMT/HCI-Registrierung) pruefen
+     und ggf. mit einer anderen BlueZ-Version (aeltere mgmt-Erwartung) oder
+     einem angepassten bluetoothd/btmgmt gegentesten.
+  2. Danach: Pairing braucht einen Agenten. Der vorgesehene Helfer
+     omamobile-bt-agent ist wegen python-dbus/pyexpat defekt; entweder
+     python/expat im Image reparieren (XML_GetCurrentByteIndex64 in
+     libexpat.so.1) oder den Helfer auf ein anderes Backend (dbus-send/
+     bluetoothctl) umstellen.
+  3. BlueZ-Default-Agent/Policy: sobald ein Adapter existiert, Bluetooth-
+     Adapter-Powered/Pairable-Defaults und die Agent-Registrierung
+     (KeyboardDisplay) pruefen; DBus-Policy erlaubt dem Nutzer omarchy bereits
+     send_destination org.bluez.
