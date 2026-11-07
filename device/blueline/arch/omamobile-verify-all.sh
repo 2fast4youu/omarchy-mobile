@@ -8,7 +8,9 @@ echo "== temperaturen"; for z in /sys/class/thermal/thermal_zone*; do
     case "$t" in cpu0*|cpu7*|gpu-top*|aoss0*) echo "$t=$v";; esac
 done
 echo "== module"; lsmod 2>/dev/null | grep -E 'ath10k|qrtr|bluetooth|hci|rmtfs|leds' | head -12
-echo "== bluetooth"; ls /sys/class/bluetooth 2>/dev/null; dmesg | grep -i -e 'hci0' -e 'QCA' | tail -6
+echo "== system-dbus"; ls -l /run/dbus/system_bus_socket 2>/dev/null; pgrep -a dbus-daemon | head -2
+echo "== bluetooth"; ls /sys/class/bluetooth 2>/dev/null; pgrep -a bluetoothd; dmesg | grep -i -e 'hci0' -e 'QCA' | tail -6
+echo "== networkmanager"; pgrep -a NetworkManager; nmcli -t -f DEVICE,TYPE,STATE device 2>/dev/null | head -6
 echo "== modem"; ls /sys/class/remoteproc 2>/dev/null; for r in /sys/class/remoteproc/remoteproc*; do
     [ -e "$r/state" ] && echo "$r: $(cat "$r/state")"
 done
