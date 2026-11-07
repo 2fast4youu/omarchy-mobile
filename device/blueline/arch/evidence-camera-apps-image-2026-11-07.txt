@@ -1,0 +1,12 @@
+Image mit Kamera/Apps/Tastatur-Persistenz, 2026-11-07 17:55-18:05
+===================================================================
+
+Bau: 38 Module in /opt/omamobile/mods (inkl. videodev/videobuf2/v4l2-*,
+i2c-qcom-cci, camcc-sdm845, qcom-camss, imx355, imx363), Pakete mpv,
+imv, gnome-text-editor, v4l-utils, libcamera-tools; Init laedt die
+Kamera-Kette in Abhaengigkeitsreihenfolge, chmoddet /dev/dma_heap/* und
+/dev/media*, setzt gsettings xkb de in der Sitzung.
+Per debugfs belegt: 38 .ko, qcom-camss/i2c-qcom-cci/camcc-sdm845/imx355
+vorhanden, Init-Kamera-Block 1x, xkb 2x, mpv 3.284.872 B.
+Sparse dicht: 4a4c993190ed00d3f23b115a4fb3404edcff73bda6f04d8f2c72770607fff50c
+Boot v0an (dma-heap-Fix) = 4db2b0a5a1686b5a7c90e781fd8a3ed09a64c6c226c5d7e9ab80f10f4e6f9473.
