@@ -66,6 +66,19 @@ for m in rfkill ecc ecdh_generic bluetooth btqca btbcm hci_uart rfcomm \
          qcom_common qrtr qrtr-smd pwrseq-qcom-wcn ath10k_snoc; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
+
+# Modem (MSS): Module laden, rmtfs/tqftpserv starten, MSS starten. Der
+# IPCRTR-Kanal entsteht erst mit laufendem Modem - und der ist der Weg
+# fuer WLAN (ath10k wlfw-QMI ueber QRTR).
+for m in qcom_q6v5 qcom_q6v5_mss; do
+    [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
+done
+[ -x /usr/bin/rmtfs ] && /usr/bin/rmtfs >/tmp/rmtfs.log 2>&1 &
+[ -x /usr/bin/tqftpserv ] && /usr/bin/tqftpserv >/tmp/tqftpserv.log 2>&1 &
+sleep 2
+for r in /sys/class/remoteproc/remoteproc*; do
+    [ -e "$r/state" ] && echo start > "$r/state" 2>/dev/null
+done
 /usr/lib/systemd/systemd-udevd --daemon 2>/dev/null
 for d in /sys/class/input/event*/uevent; do echo add > "$d" 2>/dev/null; done
 chown root:input /dev/input/event* 2>/dev/null

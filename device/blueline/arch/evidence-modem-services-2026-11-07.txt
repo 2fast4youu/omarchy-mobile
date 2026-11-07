@@ -1,0 +1,16 @@
+Modem-Dienste im Image, 2026-11-07 14:01-14:14
+================================================
+
+Hindernis: pmOS-Quellen nicht mehr oeffentlich; ALARM hat kein
+libqrtr-Paket. Loesung: Debian pool/main:
+  rmtfs_1.3-1_arm64.deb        -> /usr/bin/rmtfs (69432 B)
+  tqftpserv_1.3-1_arm64.deb    -> /usr/bin/tqftpserv (67744 B)
+  libqrtr1_1.2-1_arm64.deb     -> /usr/lib/libqrtr.so.1 (67576 B)
+
+Im Image per debugfs belegt: rmtfs, tqftpserv, libqrtr.so.1,
+modem.mbn (67 MB) und die Init-Schleife fuer qcom_q6v5_mss.
+Die Init (Modem-Block): Module qcom_q6v5/qcom_q6v5_mss laden,
+rmtfs + tqftpserv starten, dann MSS per remoteproc-start.
+
+Boot v0aj (9c3682b7, DTB mit &mss_pil firmware-name + BT-Firmware im
+Kernel) + dieses Userdata = der komplette Modem-/WLAN-Anlauf.

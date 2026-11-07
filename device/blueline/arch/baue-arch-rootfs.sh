@@ -66,6 +66,12 @@ if [ -f /gpi.ko ]; then
     cp /gpi.ko /tmp/arch/opt/omamobile/gpi.ko
     echo "== gpi.ko ins Image"
 fi
+for b in rmtfs tqftpserv; do
+    [ -f "/modembin/$b" ] && cp "/modembin/$b" /tmp/arch/usr/bin/ && chmod 755 /tmp/arch/usr/bin/$b
+done
+# libqrtr.so.1 aus dem Debian-qrtr-Paket (ALARM hat kein libqrtr-Paket)
+l=/modembin-lib/aarch64-linux-gnu/libqrtr.so.1
+[ -f "$l" ] && cp "$l" /tmp/arch/usr/lib/libqrtr.so.1 && chmod 755 /tmp/arch/usr/lib/libqrtr.so.1
 mkdir -p /tmp/arch/usr/lib/firmware/qcom/sdm845/Google/blueline
 for f in mba.mbn modem.mbn modemr.jsn modemuw.jsn; do
     [ -f "/qcomfw/$f" ] && cp "/qcomfw/$f" /tmp/arch/usr/lib/firmware/qcom/sdm845/Google/blueline/
