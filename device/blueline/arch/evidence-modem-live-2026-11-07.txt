@@ -259,6 +259,17 @@ C) Firmware-in-initns-Problem loesen (Abschnitt 3) - sonst schlaegt jeder
 D) WLAN offen: wlfw-Dienst (QRTR 0x45) fehlt trotz laufendem MSS;
    Kandidaten: pd-mapper/SERVREG (laeuft, SERVREG auf Node 1 sichtbar),
    tqftpserv-Pfade, wlanmdsp.mbn neben modem.mbn. Kein wlan0 bis dahin.
+E) BUILD-LUECKE gefunden: baue-arch-rootfs.sh kopiert aus /qcomfw nur
+   mba.mbn, modem.mbn, modemr.jsn, modemuw.jsn - wlanmdsp.mbn FEHLT.
+   Quelle /qcomfw (= pmbootstraps blueline-Firmware) enthaelt aber eine
+   OEM-Datei wlanmdsp.mbn (3.035.952 B, md5 a16b01de48859f733acb2f38d227a560),
+   die laut pmOS-Doku neben modem.mbn gehoert. Die Linux-Firmware-Variante
+   (/lib/firmware/ath10k/WCN3990/hw1.0/wlanmdsp.mbn, 3.725.044 B) ist eine
+   andere Datei. Live auf dem Geraet habe ich die OEM-Version nach
+   /usr/lib/firmware/qcom/sdm845/Google/blueline/ und in den Init-Root
+   gelegt (noch ohne Wirkung auf wlfw, der Dienst fehlt weiterhin).
+   -> Loop in baue-arch-rootfs.sh um wlanmdsp.mbn ergaenzen (und die
+      Lead-Init-Mirrorliste findet die Datei dann auch).
 
 Offene Punkte / naechste Tests
 ------------------------------
