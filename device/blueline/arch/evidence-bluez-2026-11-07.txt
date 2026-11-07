@@ -1,0 +1,17 @@
+BlueZ + Daemon-Starts im Image, 2026-11-07 14:35-14:48
+=======================================================
+
+Befund: Das Image hatte bluetoothd/bluetoothctl nicht (BlueZ fehlte),
+obwohl der Kernel hci0 liefert - der BT-Weg waere an der Software
+gescheitert.
+
+Ergaenzt:
+- pacman: bluez bluez-utils
+- Init: startet /usr/lib/bluetooth/bluetoothd -n und
+  /usr/bin/NetworkManager --no-daemon (diese Wurzel laeuft ohne systemd).
+
+Im Image per debugfs: bluetoothd (2.195.568 B) vorhanden, Init enthaelt
+die Daemon-Starts. Sparse dicht (sha im ROM-Paket).
+
+Damit ist der BT-Pfad komplett: hci0 (Kernel/Firmware in v0aj) ->
+bluetoothd -> BlueZ-DBus -> Shell-Tile.

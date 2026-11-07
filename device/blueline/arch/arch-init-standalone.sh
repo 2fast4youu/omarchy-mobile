@@ -80,6 +80,12 @@ sleep 2
 for r in /sys/class/remoteproc/remoteproc*; do
     [ -e "$r/state" ] && echo start > "$r/state" 2>/dev/null
 done
+
+# BlueZ und NetworkManager: eigene Daemons, weil diese Wurzel ohne
+# systemd laeuft. bluetoothd braucht hci0 (kommt mit der Firmware), NM
+# nimmt wlan0, sobald der WLAN-Stack steht.
+[ -x /usr/lib/bluetooth/bluetoothd ] && /usr/lib/bluetooth/bluetoothd -n >/tmp/bluetoothd.log 2>&1 &
+[ -x /usr/bin/NetworkManager ] && /usr/bin/NetworkManager --no-daemon >/tmp/nm.log 2>&1 &
 /usr/lib/systemd/systemd-udevd --daemon 2>/dev/null
 for d in /sys/class/input/event*/uevent; do echo add > "$d" 2>/dev/null; done
 chown root:input /dev/input/event* 2>/dev/null
