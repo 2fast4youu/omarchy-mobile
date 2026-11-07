@@ -73,7 +73,7 @@ done
 l=/modembin-lib/aarch64-linux-gnu/libqrtr.so.1
 [ -f "$l" ] && cp "$l" /tmp/arch/usr/lib/libqrtr.so.1 && chmod 755 /tmp/arch/usr/lib/libqrtr.so.1
 mkdir -p /tmp/arch/usr/lib/firmware/qcom/sdm845/Google/blueline
-for f in mba.mbn modem.mbn modemr.jsn modemuw.jsn; do
+for f in mba.mbn modem.mbn modemr.jsn modemuw.jsn wlanmdsp.mbn; do
     [ -f "/qcomfw/$f" ] && cp "/qcomfw/$f" /tmp/arch/usr/lib/firmware/qcom/sdm845/Google/blueline/
 done
 date -u +%Y-%m-%dT%H:%M:%SZ > /tmp/arch/etc/omamobile-buildtime
