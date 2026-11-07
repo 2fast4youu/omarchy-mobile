@@ -40,3 +40,22 @@ fehlten dem camss die Power-Domains. Nach "modprobe camcc-sdm845":
     proben nicht -> kein Sensor im Media-Graph.
 Naechster Schritt: GENI-DMA fuer den Kamera-I2C (i2c-12) bzw. die
 Sensoren (gpi-Kanaele/DT) ansehen.
+
+NACHTRAG Kamera (17:15): Sensoren + libcamera laufen
+----------------------------------------------------
+Kette: camcc-sdm845 -> camss (video0..11, media0) -> i2c-qcom-cci
+(CONFIG_I2C_QCOM_CCI war nicht gesetzt, Treiber neu gebaut) -> CCI-Busse
+i2c-16/17 -> imx355 (CONFIG_VIDEO_IMX355 war nicht gesetzt, neu gebaut)
+-> "17-001a imx355" auf dem CCI-Bus.
+libcamera 0.7.2 "cam -l":
+  1: Internal front camera (.../cci@ac4a000/i2c-bus@1/camera@10)
+  2: Internal front camera (.../cci@ac4a000/i2c-bus@1/camera@1a)
+Warnung: IPASoft "Failed to create camera sensor helper for imx355"
+(Software-ISP ohne Tuning-Daten; Aufnahme trotzdem moeglich).
+
+Aufnahme-Test "cam -c 1 --capture=3": scheitert an
+  DmaBufAllocator: dma-heap allocation failure for frame-0
+  Unable to create buffer
+/dev/dma_heap/system existiert (250:0, Rechte 666 gesetzt), /dev/video*
+660 root:video. Naechster Schritt: dma-heap-Allokation (ioctl) bzw.
+memfd-Fallback der libcamera; ggf. v4l2-ctl-Direkttest.
