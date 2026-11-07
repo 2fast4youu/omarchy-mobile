@@ -1,0 +1,15 @@
+Torch-Tile im Image, 2026-11-07 14:24-14:35
+===========================================
+
+Der torch-Tile war im CATALOG/DEFAULT_LAYOUT der Quick Settings, hatte
+aber kein Backend (blass). Ergaenzt:
+- tile-action.sh: torch on -> echo 120 > /sys/class/leds/white:flash/
+  brightness, off -> 0.
+- tile-state.sh: torch=on/off/none aus dem LED-Zustand.
+- Init: chmod 666 auf die brightness (Sitzungsnutzer darf schalten).
+
+Live belegt (als omarchy): state torch=off -> action on -> brightness
+120 -> state torch=on. Im Image per debugfs: tile-action/state enthalten
+den torch-Code, /init den chmod.
+
+Sparse dicht (sha im ROM-Paket).
