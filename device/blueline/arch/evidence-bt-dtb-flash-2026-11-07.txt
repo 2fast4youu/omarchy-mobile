@@ -1,0 +1,144 @@
+Bluetooth: BD-Adresse aus DT - warum sie am 2026-11-07 NICHT ankommt
+=====================================================================
+Geraet: Pixel 3 (blueline), Kernel 7.1.0-rc1-sdm845, Boot "v0al" laut Lead,
+Userdata a4607fa9. Nur lesend geprueft (kein Flash, keine Aenderung).
+
+Kurzfassung
+-----------
+1. Der laufende Devicetree enthaelt die Property `local-bd-address` NICHT.
+   hci0 ist deshalb HCI_UNCONFIGURED (kein /sys/class/bluetooth/hci0/address,
+   btmgmt "Index list with 0 items").
+2. Grund: Auf boot_a liegt gar nicht das v0al-Bild, sondern weiterhin das
+   v0aj-Bild. Das v0al-Bild (images/fl-v0al/firstlight.img, sha256 d6861a9a...)
+   ist inhaltlich korrekt (neuer DTB mit Property), wurde aber nicht
+   geschrieben: zwei fastboot-Prozesse haengen seit 16:14
+   (PID 2545 und 2618, `fastboot flash boot_a .../fl-v0al/firstlight.img`).
+3. Zweiter Fehler: Die Byte-Reihenfolge des DT-Werts ist laut Binding falsch.
+   `local-bd-address` ist LSB-first. `[02 00 00 5a 1b 3c]` ergibt die Adresse
+   3C:1B:5A:00:00:02. Fuer 02:00:00:5a:1b:3c muss dort
+   `local-bd-address = [3c 1b 5a 00 00 02];` stehen.
+4. Ein Kernel-Patch ist NICHT noetig; der Mechanismus greift, sobald die
+   Property im gebooteten DTB steht (Pfad unten belegt).
+
+1. Zustand am Geraet (laufender Boot)
+-------------------------------------
+  # ls /sys/class/bluetooth/hci0/
+  device  power  reset  rfkill0  subsystem  uevent
+  -> address/name fehlen (nur bei konfigurierter hci_dev vorhanden)
+
+  # cat /sys/class/bluetooth/hci0/address
+  No such file or directory
+
+  # ls /sys/kernel/debug/bluetooth/hci0/
+  ibs
+  -> debugfs legt dev_info/features erst fuer konfigurierte Geraete an.
+
+  # btmgmt info
+  Index list with 0 items
+
+  # dmesg | grep -i hci0
+  ... Bluetooth: hci0: setting up wcn399x
+  ... QCA Downloading qca/crbtfw21.tlv
+  ... QCA Downloading qca/crnv21.bin
+  ... QCA setup on UART is completed
+  -> keine BD_ADDR-/unconfigured-Meldung; HCI_UNCONFIGURED wird still gesetzt.
+
+  # ls /proc/device-tree/soc@0/geniqup@8c0000/serial@898000/bluetooth/
+  compatible  max-speed  name  vddch0-supply  vddio-supply  vddrf-supply
+  vddxo-supply
+  -> local-bd-address FEHLT im laufenden DTB.
+
+  # od -An -tx1 .../bluetooth/local-bd-address
+  No such file or directory
+
+2. Warum fehlt sie? boot_a enthaelt noch das v0aj-Bild
+------------------------------------------------------
+boot_a ist /dev/sda11 (GPT-PARTNAME via uevent geprueft). Kopie der ersten
+20.930.560 B von /dev/sda11 nach /tmp/boota.img, sha256:
+  a8350ba06fd12a5bbfbed0a3c1b4ac0959a6c4f2fffb9e8950854c74c745b70c
+
+Vergleich mit den Build-Artefakten (cmp -l):
+  gegen images/fl-v0aj/firstlight.img : 3 Bytes Unterschied
+      (nur Kopf-Offsets 44..47, os_version-Feld; Inhalt sonst identisch)
+  gegen images/fl-v0ak/firstlight.img : 4.988.006 Bytes Unterschied
+  gegen images/fl-v0al/firstlight.img : 5.039.028 Bytes Unterschied
+
+Kopf-Groessen (kernel_size, ramdisk_size):
+  fl-v0aj: (15902883, 5020564)
+  fl-v0ak: (15902883, 5020584)
+  fl-v0al: (15902920, 5020584)   <- korrektes v0al (neuer DTB 37 B groesser)
+  boot_a : (15902883, 5020564)   <- exakt v0aj
+
+Kernel-Sektion von boot_a ist bytegleich mit der v0aj-Kernel-Sektion
+(gzip-Kernel + angehaengter DTB). Der angehaengte DTB ist 111.812 B und
+enthaelt keine local-bd-address. Im v0al-Bild dagegen:
+  # python3 ... (Analyse von images/fl-v0al/firstlight.img)
+  gzip-Kernel 15.791.071 B == v0aj-Kernel (sha256 e76db3d0...)
+  angehaengter DTB 111.849 B == pmos-kernel-out/arch/arm64/boot/dts/qcom/
+      sdm845-google-blueline.dtb (enthaelt local-bd-address)
+  ramdisk_size 5.020.584 (v0al-Ramdisk)
+=> Das v0al-Bild ist in Ordnung, es liegt nur nicht auf boot_a.
+
+Hinweis zum Flash-Vorgang: Auf dem Mac haengen noch fastboot-Prozesse:
+  PID 2545 (bash-Kette, Start 16:14) und PID 2618
+  `/Users/gregor/Library/Android/sdk/platform-tools/fastboot flash boot_a
+   /Users/gregor/hermes-workspace/images/fl-v0al/firstlight.img`
+Ein Fastboot-Flash schreibt erst bei Erfolg; hier kam offenbar kein
+"Finished" zustande (z. B. durch das alte, seit 15:07 haengende
+fastboot-Kommando auf fl-v0aj oder USB-Kollision). Die Userdata-Wurzel ist
+dagegen neu (buildtime 2026-11-07T14:54:29Z, /usr/bin/pd-mapper vorhanden,
+wlan0/MSS laufen) - nur das Boot-Image ist alt.
+
+3. Byte-Reihenfolge: DT-Wert ist "verkehrt"
+-------------------------------------------
+Binding (Documentation/devicetree/bindings/net/bluetooth/bluetooth-controller.yaml):
+  "Formatted with least significant byte first (little-endian), e.g. in
+   order to assign the address 00:11:22:33:44:55 this property must have
+   the value [55 44 33 22 11 00]."
+
+Aktuell im DTS: local-bd-address = [02 00 00 5a 1b 3c];
+Das setzt bdaddr_t.b = 02 00 00 5a 1b 3c, d. h. die sichtbare Adresse waere
+  3C:1B:5A:00:00:02  (global administriert), nicht 02:00:00:5a:1b:3c.
+Fuer die gewuenschte lokal administrierte Adresse 02:00:00:5a:1b:3c:
+  local-bd-address = [3c 1b 5a 00 00 02];
+(Alternativ koennte man `qcom,local-bd-address-broken;` am bluetooth-Knoten
+setzen - dieser Quirk baswappt den Wert im Kernel; mit korrekter
+LSB-first-Schreibweise ist er nicht noetig.)
+
+4. Mechanismus im Kernel (kein Patch noetig)
+--------------------------------------------
+- drivers/bluetooth/hci_serdev.c: `SET_HCIDEV_DEV(hdev, &hu->serdev->dev);`
+  -> hdev->dev.parent = serdev-Geraet.
+- Am Geraet: /sys/bus/serial/devices/serial0-0/of_node ->
+  /sys/firmware/devicetree/base/soc@0/geniqup@8c0000/serial@898000/bluetooth
+  und uevent zeigt OF_FULLNAME=/soc@0/geniqup@8c0000/serial@898000/bluetooth.
+  Das serdev-Geraet hat also genau den bluetooth-Knoten als fwnode.
+- drivers/bluetooth/btqca.c (qca_check_bdaddr): wenn der Controller die
+  NVM-Standardadresse meldet, setzt der Treiber
+  HCI_QUIRK_USE_BDADDR_PROPERTY (deshalb HCI_UNCONFIGURED ohne Property).
+- net/bluetooth/hci_sync.c (hci_dev_get_bd_addr_from_property):
+  liest `local-bd-address` per fwnode_property_read_u8_array vom
+  dev_fwnode(hdev->dev.parent), also vom bluetooth-Knoten.
+- drivers/bluetooth/hci_qca.c: set_bdaddr = qca_set_bdaddr (WCN3990) ->
+  programmiert die Adresse in den Chip; bei Erfolg ist hci0 konfiguriert
+  (BlueZ-Default-Controller, hci0/address vorhanden).
+
+5. Naechste Schritte (Lead)
+---------------------------
+a) Haengende fastboot-Prozesse beenden (PID 2545/2618, ggf. weitere alte),
+   sonst Race beim Schreiben von boot_a.
+b) DTS-Zeile auf `local-bd-address = [3c 1b 5a 00 00 02];` korrigieren
+   (sdm845-google-common.dtsi, &uart6/bluetooth), DTB neu bauen, Boot-Image
+   neu packen (wie bei v0al; das Bild braucht den neuen DTB im Kernel-Blob).
+c) `fastboot flash boot_a <neues Image>` mit sichtbarer Ausgabe ausfuehren
+   (nicht via `2>&1 | tail -1` verdecken) und auf "Finished" warten.
+d) Nach dem Boot pruefen (alles lesend):
+   - dd if=/dev/sda11 bs=4096 count=5110 | sha256sum  == sha256(Image)
+   - od -An -tx1 /proc/device-tree/soc@0/geniqup@8c0000/serial@898000/bluetooth/local-bd-address
+     -> 3c 1b 5a 00 00 02
+   - cat /sys/class/bluetooth/hci0/address  (muss existieren), btmgmt info
+     (1 item), bluetoothctl list
+   - dmesg | grep -i hci0: keine HCI_UNCONFIGURED-Folgen; falls
+     "QCA Change address command failed"/"Failed to read device address"
+     kommt, dann ist der Chip-Pfad das Problem (dann `qcom,local-bd-address-broken`
+     testen bzw. Rückmeldung an mich).
