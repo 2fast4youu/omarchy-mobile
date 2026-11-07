@@ -123,3 +123,14 @@ OFFEN: Deployment auf die Arch-Wurzel (glibc) - entweder Arch-Build im
 chroot (pacman base-devel meson gtk4 libcamera feedbackd ... + libdng/
 libmegapixels aus Quellen) oder musl-Bundle mit Loader. Der "cam"-CLI
 bleibt der schnelle Kamera-Test.
+
+NACHTRAG Megapixels fuer die Arch-Wurzel gebaut (19:43)
+--------------------------------------------------------
+Im Arch-chroot (glibc) erfolgreich:
+  - libmegapixels: cmake --target megapixels (Tests deaktiviert), Header+.so
+  - libdng: meson setup/build/install
+  - Megapixels 2.1.0: meson setup/build/install -> /usr/bin/megapixels (504384 B)
+  - glib2 im chroot auf >=2.89.3 aktualisiert (Megapixels-Anforderung)
+  - pacman: gcc make patch meson ninja cmake git pkgconf gperf libconfig
+    gtk4 libcamera zbar libepoxy libpulse libraw libjpeg-turbo feedbackd
+Image-Sparse: 10cb452bda046e465e50ae279d40cf605acea70c75576c9ca89f2e81433e677b
