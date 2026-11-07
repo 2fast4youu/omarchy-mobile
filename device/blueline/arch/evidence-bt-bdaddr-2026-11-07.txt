@@ -1,0 +1,18 @@
+Bluetooth: gueltige BD-Adresse im DT (local-bd-address), 2026-11-07
+====================================================================
+
+Ursache (aus hci_sync.c:5071 + hci_sync.c:3609):
+Der Kernel liest die BD-Adresse aus dem Firmware-Node ("local-bd-address")
+und setzt HCI_UNCONFIGURED, wenn keine gueltige Adresse vorliegt. Der
+WCN3990 liefert selbst keine (Android setzt sie aus der Persist-Region),
+deshalb blieb die MGMT-Indexliste leer (read_index_list in mgmt.c:445
+zaehlt nur konfigurierte hci_devs) - BlueZ sah "Controllers: 0".
+
+Fix: im blueline-DTS am bluetooth-Knoten (uart6):
+  local-bd-address = [02 00 00 5a 1b 3c];
+(lokal administrierte Adresse, 02:...). DTB neu gebaut; der dtc-Dump des
+sdm845-google-blueline.dtb enthaelt die Property.
+
+Boot v0al (d6861a9a1ba5d997335cd120e20990a1db431658d8077ef9bf7d708a0f3d3f10)
+= Image + neues DTB + Ramdisk v0ag. Nach dem Flash: hci0 konfiguriert,
+BlueZ-Default-Controller, bluetoothctl/btmgmt, Scan.
