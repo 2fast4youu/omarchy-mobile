@@ -245,6 +245,70 @@ qcom,xo-cal-data; nur xo_cal_supported bleibt false.
 Damit ist die Ursache exakt eingegrenzt: Der Probe-Pfad ist intakt, es fehlt
 ausschliesslich die WLFW-QMI-Antwort (QRTR-Service 0x45) aus der MSS.
 
+5b. DURCHBRUCH: wlfw-Dienst mit OEM-wlanmdsp.mbn - ath10k-QMI-Handshake laeuft
+--------------------------------------------------------------------------------
+Ursache der fehlenden wlfw: Der Modem-DSP spawnt die PD "msm/modem/wlan_pd"
+aus der Datei wlanmdsp.mbn, die er per RFS/TFTP (tqftpserv) anfordert. In
+modem.mbn stehen die erwarteten Pfade:
+  $ strings modem.mbn | grep -i wlan
+  msm/modem/wlan_pd
+  wlan_process
+  wlanmdsp.mbn
+  /readonly/firmware/image/wlanmdsp.mbn
+  /readonly/vendor/firmware_mnt/image/wlanmdsp.mbn
+  /readonly/vendor/firmware/wlanmdsp.mbn
+tqftpserv mappt "/readonly/firmware/image/..." bzw.
+"/readonly/vendor/firmware_mnt/image/..." auf das Verzeichnis der
+remoteproc-Firmware, also /lib/firmware/qcom/sdm845/Google/blueline/.
+Wichtig: Es MUSS die OEM-Datei wlanmdsp.mbn aus der blueline-Firmware sein
+(3.035.952 B, md5 a16b01de48859f733acb2f38d227a560). Die Linux-Firmware-
+Variante (3.725.044 B) fuehrt NICHT zum wlfw-Dienst (getestet: keine 0x45).
+
+Mit OEM-wlanmdsp.mbn in /usr/lib/firmware/qcom/sdm845/Google/blueline/
+(und gespiegelt in /proc/1/root/...) nach MSS-Neustart:
+  # qrtr-lookup 69
+    Service Version Instance Node  Port
+         69       1        0    0    73 ATH10k WLAN firmware service
+  tqftpserv loggt: /readonly/vendor/firmware_mnt/image/wlanmdsp.mbn
+  opened for reading (hunderte Male; der Modem laedt daraus die WLAN-PD).
+
+Danach der ath10k-QMI-Handshake im dmesg:
+  ath10k_snoc 18800000.wifi: wifi fw qmi service found
+  ath10k_snoc 18800000.wifi: qmi wifi fw qmi service connected
+  ath10k_snoc 18800000.wifi: qmi indication register request completed
+  ath10k_snoc 18800000.wifi: qmi msa mem ready request completed
+  ath10k_snoc 18800000.wifi: qmi chip_id 0x30214 chip_family 0x4001 board_id 0xff soc_id 0x40030001
+  ath10k_snoc 18800000.wifi: qmi fw_version 0x2233020e fw_build_timestamp 2021-07-06 17:44
+      fw_build_id QC_IMAGE_VERSION_STRING=WLAN.HL.2.2.3-00526-QCAHLSWMTPLZ-1
+  ath10k_snoc 18800000.wifi: boot using board name 'bus=snoc,qmi-board-id=ff,qmi-chip-id=30214,variant=Google_blueline'
+  ath10k_snoc 18800000.wifi: boot fw request 'ath10k/WCN3990/hw1.0/board-2.bin': -2
+  ath10k_snoc 18800000.wifi: failed to fetch board-2.bin or board.bin from ath10k/WCN3990/hw1.0
+=> Der GESAMTE WLAN-QMI-Weg funktioniert. Es fehlte nur (a) die richtige
+   (OEM-)wlanmdsp.mbn und (b) board-2.bin im initns-Root (Punkt 3).
+   board-2.bin/firmware-5.bin habe ich live in den Init-Root gelegt.
+
+Aktueller Live-Zustand: Die WCN3990-WLAN-Firmware haengt nach mehreren
+rmmod/insmod- und MSS-Neustart-Zyklen in "incompatible state". Der wlfw-
+Dienst antwortet auf den host-cap-Request mit QMI-Fehler 90
+(QMI_ERR_INCOMPATIBLE_STATE_V01):
+  ath10k_snoc 18800000.wifi: host capability request rejected: 90
+Die WLAN-PD auf dem WCN3990 wird durch MSS-stop/start NICHT zurueckgesetzt
+(sie lief schon ab dem ersten erfolgreichen wlfw-Start). Ein sauberer
+Power-Cycle des WCN3990 ist erst mit einem frischen Boot moeglich; weitere
+Live-Erfolge sind von diesem Boot daher nicht erzwingbar. Auf einem frischen
+Boot ist die Init-Reihenfolge richtig (ath10k_snoc VOR dem MSS-Start), damit
+der Treiber den wlfw-Dienst beim Erscheinen erwartet - genau wie im
+erfolgreichen Handshake oben.
+
+Empfehlung fuer den Bau:
+- OEM-wlanmdsp.mbn in baue-arch-rootfs.sh aufnehmen (Quelle
+  /qcomfw/wlanmdsp.mbn, 3.035.952 B) -> liegt dann in
+  /usr/lib/firmware/qcom/sdm845/Google/blueline/ und wird von der Init
+  nach /proc/1/root/lib/firmware/... gespiegelt.
+- ath10k/WCN3990/hw1.0/{board-2.bin,firmware-5.bin} im Image sicherstellen
+  (im aktuellen Image vorhanden; die Init spiegelt sie in den Init-Root).
+- Nach dem Flash: frischer Boot -> erwartet wlan0 / /sys/class/ieee80211.
+
 6. Was der Lead bauen/flashen muss (Aenderungen ausserhalb meines Scopes)
 ------------------------------------------------------------------------
 A) /tmp/mods: qcom_q6v5.ko, qcom_q6v5_mss.ko, qcom_sysmon.ko,
@@ -256,18 +320,21 @@ B) arch-init-standalone.sh: Modulliste der Modem-Kette erweitern
    MSS beim Start.
 C) Firmware-in-initns-Problem loesen (Abschnitt 3) - sonst schlaegt jeder
    Kernel-Firmware-Load fehl, auch nach A+B.
-D) WLAN offen: wlfw-Dienst (QRTR 0x45) fehlt trotz laufendem MSS;
-   Kandidaten: pd-mapper/SERVREG (laeuft, SERVREG auf Node 1 sichtbar),
-   tqftpserv-Pfade, wlanmdsp.mbn neben modem.mbn. Kein wlan0 bis dahin.
-E) BUILD-LUECKE gefunden: baue-arch-rootfs.sh kopiert aus /qcomfw nur
-   mba.mbn, modem.mbn, modemr.jsn, modemuw.jsn - wlanmdsp.mbn FEHLT.
-   Quelle /qcomfw (= pmbootstraps blueline-Firmware) enthaelt aber eine
+D) WLAN: Loesung gefunden (Abschnitt 5b) - es braucht die OEM-wlanmdsp.mbn im
+   Verzeichnis der Modem-Firmware, dann erscheint der wlfw-Dienst (QRTR 0x45)
+   und ath10k laeuft bis zum board-2.bin-Load. board-2.bin/firmware-5.bin
+   muessen wie die Modem-Firmware in den Init-Root gespiegelt werden (in der
+   neuen Init bereits enthalten). Auf einem frischen Boot ist wlan0 zu erwarten;
+   der aktuelle Boot ist durch die Testzyklen im "incompatible state" (host
+   cap QMI-Fehler 90) und laesst sich nur per Power-Cycle zuruecksetzen.
+E) BUILD-LUECKE (kritisch fuer WLAN): baue-arch-rootfs.sh kopiert aus /qcomfw
+   nur mba.mbn, modem.mbn, modemr.jsn, modemuw.jsn - wlanmdsp.mbn FEHLT.
+   Quelle /qcomfw (= pmbootstraps blueline-Firmware) enthaelt die benoetigte
    OEM-Datei wlanmdsp.mbn (3.035.952 B, md5 a16b01de48859f733acb2f38d227a560),
-   die laut pmOS-Doku neben modem.mbn gehoert. Die Linux-Firmware-Variante
-   (/lib/firmware/ath10k/WCN3990/hw1.0/wlanmdsp.mbn, 3.725.044 B) ist eine
-   andere Datei. Live auf dem Geraet habe ich die OEM-Version nach
-   /usr/lib/firmware/qcom/sdm845/Google/blueline/ und in den Init-Root
-   gelegt (noch ohne Wirkung auf wlfw, der Dienst fehlt weiterhin).
+   die laut pmOS-Doku neben modem.mbn gehoert (und nach Abschnitt 5b zwingend
+   die OEM- und nicht die Linux-Firmware-Variante ist).
+   Live auf dem Geraet liegt die OEM-Version bereits in
+   /usr/lib/firmware/qcom/sdm845/Google/blueline/ und im Init-Root.
    -> Loop in baue-arch-rootfs.sh um wlanmdsp.mbn ergaenzen (und die
       Lead-Init-Mirrorliste findet die Datei dann auch).
 
