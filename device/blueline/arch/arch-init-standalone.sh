@@ -81,6 +81,15 @@ for r in /sys/class/remoteproc/remoteproc*; do
     [ -e "$r/state" ] && echo start > "$r/state" 2>/dev/null
 done
 
+# System-Bus: bluetoothd und NetworkManager sprechen ueber den System-
+# DBus, der ohne systemd hier nicht existiert. Ohne ihn scheitern beide,
+# egal wie gut Kernel/Treiber sind.
+mkdir -p /run/dbus
+[ -x /usr/bin/dbus-daemon ] && /usr/bin/dbus-daemon --system >/tmp/dbus-system.log 2>&1 &
+for _i in 1 2 3 4 5 6 7 8 9 10; do
+    [ -S /run/dbus/system_bus_socket ] && break
+    sleep 0.5
+done
 # BlueZ und NetworkManager: eigene Daemons, weil diese Wurzel ohne
 # systemd laeuft. bluetoothd braucht hci0 (kommt mit der Firmware), NM
 # nimmt wlan0, sobald der WLAN-Stack steht.
