@@ -1,0 +1,447 @@
+Thermisches Gutachten blueline v0aj (Ramdisk v0af) - 2026-11-07
+=================================================================
+
+Auftrag: Ursache fuer "extrem heiss" am laufenden Geraet belegen, die
+Initramfs-Schleifen bewerten, einen minimal-invasiven Aenderungsvorschlag
+liefern. Keine Flash-Aktion, kein Kill an /init, keine Aenderung an
+arch-init-standalone.sh. Alle Zahlen sind am Geraet gelesen (SSH ueber usb0),
+nichts geschaetzt. Einzige Schreibzugriffe: tracefs (Trace an/aus, Filter,
+Trace-Puffer; am Ende alles aus, tracing_on=0, current_tracer=nop) und
+Dateien unter /tmp auf dem Geraet. Das Geraet wurde nicht gebootet.
+
+0. Zustand und Versionen (belegt)
+---------------------------------
+- Kernel 7.1.0-rc1-sdm845 #7 SMP PREEMPT Sat Nov 7 12:03:12 UTC 2026 aarch64.
+- Boot v0aj: switch_root /ud /init bei 29,83 s, Sitzung (dbus-run-session,
+  Hyprland/Quickshell/Squeekboard) bei 35,68 s (dmesg).
+- Laufende Image-/init = device/blueline/arch/arch-init-standalone.sh in der
+  Fassung md5 d4814115dce2c0eee38b5b4bd0ac613f, 181 Zeilen (Git-Stand
+  8d4ff2c). HEAD enthaelt inzwischen eine 201-Zeilen-Fassung
+  (c1a8e6a988edce647cf9c19035ecf9d6, Modem-Erkenntnisse); der Kill-Block ist
+  in beiden Fassungen gleich.
+- Laufendes Ramdisk-/init (das PID 1 tatsaechlich ausfuehrt; aus
+  /proc/1/fd/10 gelesen): md5 dcaf7090767420c896fed456d07ac62b, 34935 Byte,
+  678 Zeilen. Das ist byte-identisch zu /tmp/rd5/init und zum init in
+  images/fl-v0aj/ramdisk.gz (Ramdisk v0af, Panel-Titel "first-light v0aq").
+- WICHTIG fuer den Patch: device/blueline/firstlight/initramfs/init im Repo
+  ist eine alte 290-Zeilen-Fassung (16180 Byte, 31.10.) und NICHT die
+  gebaute v0af-Ramdisk. Der Bauweg der v0af/v0aj-Ramdisk liegt nicht im Repo
+  (Reposcripts enden bei baue-v0aq-umbau.py); die gueltige Quelle ist
+  /tmp/rd5/init bzw. das init in images/fl-v0aj/ramdisk.gz.
+- Messfenster: 15:15-15:32 Ortszeit (Geraeteuhr UTC 14:15-14:32), uptime
+  489-1442 s.
+
+1. Temperaturen (90 Proben a 2 s, 3 Minuten)
+-------------------------------------------
+Zone                       min     avg     max     (Grad C)
+cpu0-thermal (zone1)      56,7    58,1    63,3
+cpu4-thermal (zone7)      55,7    57,2    62,9
+cpu5-thermal (zone8)      55,7    57,3    62,9
+cluster0-thermal (zone5)  58,0    58,9    63,9
+aoss0-thermal (zone0)     53,7    54,8    58,6
+gpu-top (zone11)          51,1    51,7    53,0
+gpu-bottom (zone12)       51,4    52,1    53,7
+
+Weitere Zonen zur gleichen Zeit: cluster1 59-60, cpu3 60-61, cpu6/7 57-62,
+aoss1 55-57, mem 53-54, wlan 54, camera 55, video 51-53, modem 52,
+pm8998 47. Einzelspitzen der Reihe: cpu0 63,3 / cluster0 63,9 / cpu5 62,9.
+Drift waehrend der Messstunde: cpu0 58,3 -> 60,0, cpu5 57,3 -> 62,6,
+cluster0 58,9 -> 61,3 - das Geraet wird unter der Dauerlast langsam waermer.
+
+Keine Drosselung: trip_points sind 90/95 Grad (passive), 110 Grad (critical);
+alle cooling_devices (cpufreq-cpu0, cpufreq-cpu4, devfreq-gpu, cx, ebi)
+stehen auf state=0. Der Kernel bremst also nicht - die Waerme ist reine
+Rechenlast. (Die 90-Grad-Schwelle wird nicht erreicht; die 58-63 Grad sind
+"nur" unangenehm heiss, nicht kritisch.)
+
+2. Last, und WER sie verursacht (gemessen)
+------------------------------------------
+loadavg: 2,96 2,65 1,56 (Beginn) -> 3,60 3,19 2,48 (Ende); procs_running 3.
+/proc/stat (5-s-Fenster, 8 Kerne): user 6,3 %, sys 21,9 %, idle 67,8 %.
+/per Prozess (10-s-Delta, utime+stime, Spitzenfenster):
+     1   init                       48,0 %
+   183   init                       47,0 %
+ 24790   sh (eigene SSH-Sitzung)      4,7 %   (Messartefakt, nicht Geraetelast)
+   125   sugov:0                     4,7 %
+ 24306   quickshell                  3,4 %
+  4823   tqftpserv                   2,8 %
+   127   sugov:4                     1,4 %
+ 17808   chromium (GPU-Prozess)      1,3 %   (Summe Chromium ~5-7 %)
+ 22713   kworker/0:2-events          0,9 %
+
+Ueber das 3-Minuten-Fenster (181 s, aus den utime/stime der Zeitreihe):
+  PID 1:  +6.029 Jiffies = 33,3 % eines Kerns
+  PID 183:+5.883 Jiffies = 32,5 % eines Kerns
+  zusammen 65,8 % eines Kerns. In kuerzeren Fenstern schwanken die Werte
+  stark (30-64 % je Prozess, zusammen 0,7-1,3 Kern); belastbar ist das
+  3-Minuten-Mittel. Die Kinder dieser beiden Prozesse sind kurzlebig
+  (0,2-0,6 ms) - ihre CPU steckt in cutime/cstime und im Sys-Anteil:
+  /proc/stat "processes" = 5.226.920 in 1442 s = ca. 3.600 Forks/s im
+  Boot-Schnitt; die beiden Spinner allein erzeugen aktuell 1.853 + 1.720
+  Forks/s.
+
+Identifikation der beiden Verbraucher (Beweiskette):
+a) PID 1, /bin/sh /init, exe -> /bin/busybox (deleted), comm "init".
+   - Das ist NICHT die Image-Init, sondern das RAMDISK-Hauptskript. Es ist
+     nach switch_root nie durch die Image-Init ersetzt worden.
+   - /proc/1/root ist die geloeschte Initramfs-Wurzel: sichtbar nur noch
+     "lib" (dort von einem anderen Arbeitsstrang angelegte
+     firmware-Verzeichnisse); /bin, /usr, /dev, /run fehlen.
+   - fd 10 zeigt auf das geloeschte Ramdisk-/init, Position 34935 =
+     Dateiende (md5 dcaf..., also das Skript ist vollstaendig gelesen).
+   - Damit steht PID 1 in der letzten Zeile (678): `while :; do sleep 3600;
+     done`. /bin/sleep existiert in seiner Wurzel nicht mehr -> jeder
+     sleep-Aufruf endet mit ENOENT, also gibt es keine Wartezeit mehr:
+     die Park-Schleife dreht mit ~1.850 Forks/s und reiner Sys-Zeit.
+   - Gegenprobe: /proc/1/syscall zeigt abwechselnd wait4 (260) und
+     "running"; im 10-s-Fenster +27 utime / +269 stime Jiffies.
+b) PID 183, /bin/sh /init, exe -> /bin/busybox (deleted), comm "init",
+   Startzeit 6,53 s (653 Jiffies). Das ist die WATCHDOG-HALTESCHLEIFE aus
+   Zeilen 55-71 der v0af-Ramdisk:
+   - Startzeit passt zwischen die Mounts (~6,4 s) und die "kernel 7.1.0-..."
+     Marke (dmesg 6,546 s); die spaeteren Schleifen (Heartbeat ~6,9 s,
+     telnetd ~7,0 s, weicher-bind ~7,1 s, v0z, Storage-Guard) haben hoehere
+     PIDs.
+   - Fork:Read-Verhaeltnis 1.720 Forks/s : 877 Reads/s = 1,96; die
+     Watchdog-Schleife hat genau eine Kommando-Substitution (up=$(cut ...))
+     und zwei Kommandos (cut, sleep) pro Runde -> 2:1. Heartbeat waere
+     3 Forks : 2 Reads = 1,5; telnetd 2:0; Storage-Guard >10:1.
+   - Immer genau ein Kind gleichzeitig; fd0 -> /dev/null (stdin der
+     Hintergrund-Jobs); beide Kinder (cut, sleep) scheitern wie oben.
+c) Ftrace (Tracepoints sched/sched_process_fork + Funktions-Tracer auf
+   __arm64_sys_execve/read/newfstatat/openat/write, 0,15-0,4 s Fenster):
+   - 278 Forks von PID 1, 258 von PID 183 im 0,15-s-Fenster.
+   - 1.676 newfstatat, 798 execve, 614 read, 190 openat, 23 write in 0,3 s;
+     0 bind und 0 socket, 1 clock_nanosleep (nicht von init) -> die
+     Schleifen schlafen nicht, sie suchen Pfade und starten vergeblich
+     Befehle. Genau das erwartet man, wenn /bin,/usr/bin in der Wurzel
+     fehlen.
+
+Fazit 2: Die Hitze kommt zu 0,7-1,3 Kernen aus zwei Shell-Schleifen der Ramdisk,
+die nach dem switch_root "blind" weiterlaufen. Image-Init, Quickshell,
+Chromium, tqftpserv etc. sind Nebenverbraucher (<15 % eines Kerns zusammen).
+
+3. CPU-Frequenz, Governor, Kappen
+---------------------------------
+- Governor: schedutil auf beiden Policies.
+- policy0 (4x Cortex-A55): min 300.000, max 1.766.400 Hz (cpuinfo_max =
+  1.766.400) -> Kappe wirkungslos, ist schon das Maximum.
+- policy4 (4x Cortex-A75): min 825.600, max 1.766.400 Hz, cpuinfo_max =
+  2.649.600 -> Kappe auf 66,7 % der Spitze.
+- Die Image-Init schreibt 1.800.000; die naechste OPP darunter ist
+  1.766.400. Der Kommentar "1,2 GHz" im Skript ist veraltet - es sind real
+  1,7664 GHz.
+- Verteilung in der 90-Proben-Reihe (scaling_cur_freq):
+  policy4: 55x 1.766,4 MHz + 32x 1.689,6 MHz = 97 % der Proben >= 1,69 GHz;
+  policy0: 37x 1.766,4, 9x 1.689,6, 14x 1.324,8, 13x 1.420,8, 6x 1.516,8,
+  Rest darunter. time_in_state bestaetigt (policy4: 67.434 Zehntelsekunden
+  bei 1.766.400 + 46.157 bei 1.689.600; policy0 analog Schwerpunkt oben).
+- Bewertung: Die hohen Frequenzen sind FOLGE der Last, nicht Ursache.
+  schedutil sieht dauerhaft lauffaehige Threads und taktet hoch; nach dem
+  Abschalten der Schleifen faellt es auf die Minima (300/825,6 MHz) zurueck.
+  Ein Wechsel auf powersave ist als Dauerzustand nicht notwendig (macht die
+  UI traege und die Taktung nur unsichtbar); ondemand ist nicht besser.
+  Eine zusaetzliche Kappung unter 1,7664 GHz braucht es fuer 45 Grad nicht.
+
+4. Helligkeit / Panel
+---------------------
+/sys/class/backlight/ae94000.dsi.0: max 255, ist 102 = 40 % (von der
+Image-Init gesetzt, unveraendert). Panel und Backlight tragen zur Waerme bei,
+sind aber nicht die Ursache (die Lastspitze korreliert mit CPU, nicht mit
+dem Panel; 40 % ist schon gedrosselt).
+
+5. Ursachenkette (Befund)
+-------------------------
+(1) switch_root loescht die Initramfs-Wurzel. Die Hintergrund-Schleifen des
+    Ramdisk-/init laufen als Kinder von PID 1 weiter, ihre Wurzel ist danach
+    leer. Jeder externe Befehl (sleep, cut, tail, cat, blockdev, telnetd ...)
+    scheitert mit ENOENT; sleep kann nicht mehr schlafen -> aus jeder
+    Schleife wird eine Drehschleife mit ~30-50 % CPU und ~1.700 Forks/s.
+(2) Die Image-Init (arch-init-standalone.sh, Zeilen 176-184; laufende
+    Fassung 156-164) startet nach dem Sitzungsstart einen verzoegerten Kill:
+    `sleep 150`, dann alle `/bin/sh /init` ausser PID 1 und ausser der
+    niedrigsten Nicht-1-PID. Die Praemisse im Kommentar ("die NIEDRIGSTE
+    /init-PID haelt den fruehen dropbear/USB-Dienst") ist FALSCH: PID 1 ist
+    die Ramdisk-Main, und die niedrigste Nicht-1-PID ist die
+    Watchdog-Schleife (PID 183). Folge:
+    - alle anderen Ramdisk-Schleifen werden beendet (das ist gut und
+      funktioniert),
+    - die Image-Init beendet sich SELBST, weil ihre eigene cmdline ebenfalls
+      /bin/sh /init ist. Belege: pgrep findet nur noch PID 1 und 183;
+      ALLE Kinder der Image-Init haengen jetzt unter PID 1 (su, rmtfs,
+      tqftpserv, NetworkManager, bluetoothd, udevd, seatd, runuser,
+      crashpad; `sleep 3600` mit Startzeit 35,67 s = Park-Schleife der
+      Image-Init, PPid jetzt 1).
+    - Dadurch wird PID 1 aus seinem wait4 auf das switch_root-Kind geweckt
+      und laeuft in die Park-Schleife (Zeile 678) -> dreht (Befund 2a).
+    Zeitpunkt: ca. 183-186 s nach Boot (Kill-Block-Fork ~35 s + 150 s).
+(3) Ergebnis: genau zwei Spinner (PID 1 + PID 183) mit zusammen 0,66-1,3
+    Kern und ~3.500 Forks/s; das haelt den SoC bei 58-63 Grad (unser
+    Messfenster, nach dem Kill). In den ersten ~186 s liefen ALLE
+    Hintergrund-Schleifen gleichzeitig (derselbe Mechanismus; nicht einzeln
+    gemessen, weil der eingebaute Kill sie beendet): sechs Schleifen
+    (Watchdog, Heartbeat, telnetd-Respawn, weicher-bind, v0z, Storage-Guard)
+    a ~30 % sind das ~1,8-2,0 Kerne; die fruehere Messung mit fuenf
+    Schleifen ergab ~150 % CPU und 78-84 Grad
+    (evidence-thermal-2026-11-06.txt). Das ist die Phase, in der das Geraet
+    "extrem heiss" gemeldet wurde; nach dem Kill bleiben 58-63 Grad - immer
+    noch zu warm fuer den Leerlauf.
+(4) Warum die Image-Init ueberhaupt in die Naehe kam: sie sollte eigentlich
+    die "Diagnose-Schleifen" aufraeumen; der Kommentar im Skript sagt auch,
+    dass ein frueheres Beenden den USB riss (evidence-kill-lehre-2026-11-06).
+    In DIESEM Boot ist belegt: der verzoegerte Kill hat fuenf
+    Diagnose-Schleifen beendet und USB/SSH liefen danach >20 Minuten weiter
+    (diese Messung selbst lief ueber usb0). Die frueheren Beobachtungen
+    (evidence-kill-lehre-2026-11-06.txt) sind mit dem Uebergang
+    Ramdisk-dropbear -> Root-sshd auf Port 22 (Key-Ablehnung) erklaerbar;
+    ein Verlust des Gadget-Zustands ist in diesem Boot nicht eingetreten
+    (UDC/state unveraendert configured). Fuer die Bewertung heisst das: ein
+    Kill der Diagnose-Schleifen ist in diesem Image nach dem Gadget-Aufbau
+    nicht USB-toetend - trotzdem schlaegt Abschnitt 6 die kill-freie
+    Variante vor.
+
+6. Aenderungsvorschlag (Patch, NICHT angewendet)
+------------------------------------------------
+6.1 EMPFOHLEN: Selbstabschaltung der Ramdisk-Schleifen (kein Kill, keine
+    Signale, PID 1 bleibt unberuehrt). Eine Zeile pro Schleife:
+        [ -e /init ] || break
+    als erste Zeile im Schleifenkoerper. `[` ist ein Shell-Builtin (kein
+    Fork, kein externer Befehl); `/init` existiert nur in der
+    Ramdisk-Wurzel - vor switch_root wahr, danach falsch. Beim naechsten
+    Durchlauf bricht die Schleife ab (der aktuelle sleep scheitert ohnehin
+    sofort, es gibt also keine Verzoegerung). Betroffen (Zeilen der
+    v0af-Quelle /tmp/rd5/init):
+      66   Watchdog-Schleife          (PID 183)
+      237  Heartbeat-Schleife
+      353  telnetd-Respawn-Schleife
+      364  weicher-bind/v0s-Schleife
+      419  v0z/v0al-Runde
+      536  Storage-Guard-Schleife
+      576  warte-Schleife (PID 1, Hauptfluss)
+      651  wachen/Halteschleife (PID 1, Hauptfluss)
+    Dazu die Park-Schleife Zeile 678, die ohne externen Befehl parkt
+    (read-Builtin blockiert auf dem offenen Konsolen-fd 0):
+      -while :; do sleep 3600; done
+      +# v0ag: Parken ohne externen Befehl. Nach switch_root gibt es /bin/sleep
+      +# nicht mehr (Initramfs-Wurzel geloescht); "sleep 3600" wird dann zur
+      +# Drehschleife mit ~30 % CPU. read ist ein Shell-Builtin und blockiert
+      +# auf dem offenen Konsolen-Deskriptor fd 0 (/dev/console).
+      +while :; do read -r _; done
+    Vollstaendiger Patch gegen /tmp/rd5/init (Ramdisk v0af; sh -n-geprueft,
+    laesst sich mit `patch` bzw. `git apply` auf /tmp/rd5/init anwenden;
+    die Diff-Kopfzeilen beziehen sich auf init.orig/init.vorschlag):
+
+    --- init.orig	2026-11-07 15:32:19
+    +++ init.vorschlag	2026-11-07 15:32:39
+    @@ -64,6 +64,7 @@
+         done
+         echo "omamobile-blueline: watchdog-Knoten ${wd:-KEINER}" > /dev/kmsg
+         while :; do
+    +        [ -e /init ] || break
+             [ -n "$wd" ] && { echo -n V > "$wd" 2>/dev/null; }
+             up=$(cut -d. -f1 /proc/uptime)
+             sleep 1
+    @@ -235,6 +236,7 @@
+         fi
+         _n=0
+         while :; do
+    +        [ -e /init ] || break
+             up=$(cut -d. -f1 /proc/uptime)
+             echo "omamobile-blueline: beat ${up}s steps:$(tail -1 "$steps" 2>/dev/null)" > /dev/kmsg
+             _n=$((_n + 1))
+    @@ -350,7 +352,7 @@
+     # der Host kommt drauf, sobald NCM erscheint - und wenn nicht, ist wenigstens
+     # steps.log uber telnet lesbar, sobald es ein Netzwerk gibt.
+     say 'debug shell: telnetd -l /bin/sh (Port 23, alle Adressen)'
+    -( while :; do telnetd -l /bin/sh; sleep 2; done ) &
+    +( while :; do [ -e /init ] || break; telnetd -l /bin/sh; sleep 2; done ) &
+     mark 'debug shell armed'
+     
+     # --- Zwangs-Nachbinden (v0s) -------------------------------------------------
+    @@ -362,6 +364,7 @@
+     (
+         rb=0
+         while [ "$rb" -lt 30 ]; do
+    +        [ -e /init ] || break
+             sleep 20
+             rb=$((rb + 1))
+             for g in /sys/kernel/config/usb_gadget/*; do
+    @@ -417,6 +420,7 @@
+     (
+         zs=0
+         while [ "$zs" -lt 8 ]; do
+    +        [ -e /init ] || break
+             # v0al: hat der Host schon enumeriert, ist der Zweck der Runde erfuellt.
+             # Gemessen 2026-11-03: state=configured ab 7 s, die Runde lief 8 x 15 s,
+             # und der Boot wartete 160 s auf sie. Nur wenn nichts gebunden ist, wird
+    @@ -534,6 +538,7 @@
+     # our image's partition; boot_b and every other LUN stay under the guard).
+     (
+         while :; do
+    +        [ -e /init ] || break
+             for s in /sys/class/block/sd*; do
+                 [ -e "$s" ] || continue
+                 [ -n "$bootdev" ] && [ "$bootdev" = "${s##*/}" ] && continue
+    @@ -574,6 +579,7 @@
+     mark 'v0aa wartet das Messfenster der Runde aus'
+     warte=0
+     while [ "$warte" -lt 48 ]; do
+    +    [ -e /init ] || break
+         kill -0 "$runden_pid" 2>/dev/null || break
+         sleep 5
+         warte=$((warte + 1))
+    @@ -649,6 +655,7 @@
+     wachen=0
+     verb=0
+     while [ "$wachen" -lt 720 ]; do
+    +    [ -e /init ] || break
+         wer=$(ls -l /proc/[0-9]*/fd 2>/dev/null | grep -c /dev/pts)
+         verb=$(grep -c ':0017 .* 01 ' /proc/net/tcp 2>/dev/null)
+         if [ -e /tmp/halt ] || [ "${wer:-0}" -gt 0 ]; then
+    @@ -675,4 +682,8 @@
+     # Kein Selbst-Rueckweg mehr (v0ag): frueher lief hier ABLESUNG, dann
+     # restart2/sysrq b als "Selbst-Rueckweg" - das rebootete das Geraet alle
+     # paar Minuten und verbrauchte die ABOOT-Retries. Jetzt parkt PID 1.
+    -while :; do sleep 3600; done
+    +# v0ag: Parken ohne externen Befehl. Nach switch_root gibt es /bin/sleep
+    +# nicht mehr (Initramfs-Wurzel geloescht); "sleep 3600" wird dann zur
+    +# Drehschleife mit ~30 % CPU. read ist ein Shell-Builtin und blockiert auf
+    +# dem offenen Konsolen-Deskriptor fd 0 (/dev/console).
+    +while :; do read -r _; done
+
+    Ergebnis mit dieser Aenderung allein: alle Schleifen beenden sich ~30 s
+    nach dem switch_root selbst; PID 1 faellt (weil der Kill-Block der
+    Image-Init sie selbst toetet, siehe 6.3) in die read-Park-Schleife und
+    kostet dann 0 % statt ~30-64 %. Erwartete Restlast: Quickshell +
+    Sitzung + Chromium, ~0,15-0,20 Kern.
+
+    Anmerkung/Risiko: `read` auf fd 0 blockiert, weil fd 0 (/dev/console)
+    als offener Deskriptor erhalten bleibt. Sollte read sofort
+    zurueckkehren (EOF/EIO), wuerde die Schleife drehen; das ist nach dem
+    Boot mit `cat /proc/loadavg` und `top` in 10 s pruefbar. Wer das
+    ausschliessen will, kann die Park-Schleife stattdessen so lassen und
+    6.3 anwenden (dann erreicht PID 1 die Park-Schleife nie).
+
+6.2 ALTERNATIVE ohne jede Zustandsaenderung an der Image-Init: nur 6.1
+    anwenden und die Park-Schleife unveraendert lassen - dann dreht PID 1
+    nach dem Selbst-Kill der Image-Init (~186 s) weiter. Das ist besser als
+    heute (nur noch ein Spinner statt zwei), aber nicht gut. Deshalb ist die
+    read-Park-Schleife Teil von 6.1.
+
+6.3 IMAGE-INIT (gehoert dem Lead, nur Vorschlag - nicht angewendet):
+    Kill-Block entschaerfen, damit er sich nicht selbst toetet. Mit 6.1 ist
+    er ohnehin gegenstandslos (es gibt dann keine Ramdisk-Schleife mehr);
+    sauberste Variante: Block entfernen. Wer ihn als Sicherheitsnetz
+    behalten will, schliesst die eigene PID aus (`$$` ist in der Subshell
+    die PID der Image-Init):
+      --- arch-init-standalone.sh (HEAD, Zeilen 176-184; laufend: 156-164)
+      +++ arch-init-standalone.sh (Vorschlag)
+      @@ -178,6 +178,7 @@
+           _first=
+           for _p in $(pgrep -f '^/bin/sh /init$' 2>/dev/null | sort -n); do
+               [ "$_p" = "1" ] && continue
+      +        [ "$_p" = "$$" ] && continue   # v0ag: eigene Init nicht toeten
+               if [ -z "$_first" ]; then _first=$_p; continue; fi
+               kill "$_p" 2>/dev/null
+           done
+    Dann bleibt die Image-Init am Leben; PID 1 bleibt in wait4 auf das
+    switch_root-Kind haengen und kostet 0 % (dann braucht es 6.1s
+    read-Park-Schleife nicht). Wenn der Kill-Block bleibt, ist ein frueheres
+    `sleep 60` statt `sleep 150` thermisch besser (Gadget ist ab 6,8 s
+    gebunden, Sitzung ab 35,7 s; der Kill greift nur /bin/sh /init an) -
+    das ist aber eine Ermessensfrage des Leads, nicht durch Messung gedeckt.
+
+6.4 Was NICHT hilft (und warum)
+    - Taktzeiten aendern (Storage-Guard 10->30 s, weicher-bind 20->60 s):
+      wirkungslos. Nach switch_root existiert /bin/sleep in der
+      Ramdisk-Wurzel nicht mehr; die Schleife wartet nicht 10 oder 30 s,
+      sondern gar nicht. Gemessen: 0 clock_nanosleep-Aufrufe aus init,
+      1.700+ Forks/s je Schleife. Nur das Beenden/Stilllegen wirkt.
+    - Nur die "Messblock-Schleife" oder nur "telnetd" entfernen: die
+      uebrigen Schleifen drehen unveraendert weiter (jede ~30-50 % CPU).
+      Es muessen alle acht Stellen erwischt werden.
+    - Governor auf powersave (Dauerzustand): senkt die Frequenz, aber die
+      Drehschleifen bleiben (Sys-Zeit/Forks bleiben); UI wird traege, der
+      Effekt ist nur optisch. Als Notbremse fuer einen heissen Einzelfall
+      okay (z. B. `echo powersave > .../scaling_governor`), nicht als Fix.
+    - Helligkeit weiter runter: 40 % ist schon gesetzt; Panel ist nicht die
+      Ursache. Fuer 45 Grad reicht 40 % (siehe 7).
+
+6.5 Warum USB/Gadget/SSH bei 6.1 NICHT kaputtgehen (kritische Teile)
+    - UDC-Bindung: macht der HAUPTFLUSS des Ramdisk-/init (Zeilen 205-207:
+      `echo "$udc" > "$g/UDC"`), Zeitpunkt ~6,8 s; danach Kernelzustand:
+      aktuell UDC=a600000.usb, state=configured, current_speed=high-speed.
+      Keine Schleife haelt die Bindung. Die EINZIGE Schleife, die den UDC
+      wieder anfasst, ist weicher-bind (Zeilen 364-406: `echo none >
+      $g/UDC` + Neubinden alle 20 s) - die Selbstabschaltung entfernt
+      dieses periodische Unbind-Risiko sogar.
+    - sshd: eigener Daemon (PID 4507, lauscht 0.0.0.0:22), im Hauptfluss
+      gestartet, kein Kind einer Schleife. telnetd: PID 313 auf :23,
+      gleiches Bild; die telnetd-Schleife ist nur der Respawn-Waechter.
+    - usb0/NCM: Kernel-Funktion + udhcpd (PID 278), keine Schleife.
+    - 6.1 sendet keine Signale und beendet keine fremden Prozesse: die
+      Schleifen stellen sich per Builtin-Test selbst ab, sobald ihre Wurzel
+      weg ist. PID 1 und die Image-Init werden nicht angefasst.
+    - Messbeleg: der bereits eingebaute Kill-Block hat in diesem Boot fuenf
+      Diagnose-Schleifen beendet (Heartbeat, telnetd-Respawn, weicher-bind,
+      v0z, Storage-Guard; nur PID 1 + 183 uebrig, alle Sitzungskinder unter
+      PID 1), und USB/SSH liefen danach >20 min weiter (diese Messung).
+    - Randnotiz: die Firmware-Spiegelung des aktuellen HEAD
+      (/proc/1/root/lib/firmware/...) arbeitet auf genau dieser
+      PID-1-Wurzel; 6.1 aendert daran nichts (kein Zugriff auf
+      /proc/1/root).
+
+7. Sichere Kombination fuer ~45 Grad C im Leerlauf
+--------------------------------------------------
+1) 6.1 anwenden (+ 6.3, damit die Image-Init nicht mehr sich selbst
+   beendet) -> ~0,7-1,0 Kern Dauerlast verschwindet.
+2) schedutil und die 1.766,4-MHz-Kappe BEHALTEN; kein powersave. Nach dem
+   Wegfall der Schleifen taktet schedutil auf 300/825,6 MHz herunter.
+3) Helligkeit bei 40 % (102/255) lassen. Nur wenn die Nachmessung >47 Grad
+   zeigt, auf 30 % (77/255) gehen.
+4) Chromium (laeuft mit --disable-gpu = Software-Raster, ~5-7 % CPU) beim
+   Thermiktest nicht autostarten. Quickshell (2,4-3,4 %) bleibt.
+5) Erwartung: Anhaltspunkt ist die fruehere Messung (evidence-thermal-
+   2026-11-06.txt): nach Beenden der Schleifen und 100/255 Helligkeit
+   45,8/44,1/45,1 Grad bei Load 0,52. Mit 6.1 ist dieselbe Groessenordnung
+   zu erwarten; 45 Grad im Leerlauf sind damit realistisch, aber nur per
+   Nachmessung zu belegen (10 min nach Boot: thermal_zone*, loadavg, top).
+   Ohne Schritt 1 ist 45 Grad nicht erreichbar (zwei Spinner halten den SoC
+   auf 58-63 Grad).
+
+8. Belege / Reproduktion (alles nur lesend)
+-------------------------------------------
+- Zeitreihe: /tmp/thermal-sample.log auf dem Geraet (90 Zeilen a 2 s:
+  uptime|loadavg|cpu0/cpu4/cpu5/cl0/aoss/gpu|scaling_cur_freq|Helligkeit|
+  utime+stime PID 1|utime+stime PID 183). Fluechtig (/tmp), Sampler ist
+  beendet.
+- Verwendete Befehle u. a.: /proc/loadavg, /proc/stat (5-s-Delta),
+  /proc/<pid>/stat (utime/stime), /proc/<pid>/fdinfo/<n> (Skript-Position),
+  /proc/<pid>/root, /sys/class/thermal/thermal_zone*/{type,temp,
+  trip_point_*}, /sys/class/thermal/cooling_device*/*, cpufreq
+  {scaling_governor,scaling_max_freq,scaling_cur_freq,stats/time_in_state},
+  /sys/class/backlight/*, dmesg, pgrep -af.
+- Ftrace: /sys/kernel/debug/tracing war bereits gemountet (Ramdisk-Init
+  Z. 19). Genutzt: events/sched/sched_process_fork, Funktions-Tracer auf
+  __arm64_sys_{execve,read,newfstatat,openat,write,bind,socket,
+  clock_nanosleep} in 0,15-0,4-s-Fenstern, set_event_pid nicht noetig.
+  Am Ende: tracing_on=0, current_tracer=nop, alle events aus,
+  set_ftrace_filter leer. Kein Neustart, keine Flash-Aktion, kein Kill.
+- Gegenprobe Versionen: laufendes Image-/init gelesen und gehasht
+  (d4814115..., 181 Zeilen); Ramdisk-/init ueber /proc/1/fd/10 gelesen und
+  gehasht (dcaf7090..., 678 Zeilen = /tmp/rd5/init =
+  images/fl-v0aj/ramdisk.gz).
+
+9. Offene Punkte
+----------------
+- Die ersten ~186 s des Bootes (alle Schleifen gleichzeitig) wurden nicht
+  direkt gemessen - der eingebaute Kill beendet sie, bevor eine Messung
+  moeglich war. Die Aussage "dort waere es deutlich heisser" folgt aus
+  demselben Mechanismus plus der frueheren 78-84-Grad-Messung, ist aber
+  nicht neu gemessen. Wer es belegen will: nach dem naechsten Flash
+  (=6.1) ist die Phase weg; alternativ eine Messung im Fenster 40-150 s
+  nach Boot.
+- Der Selbst-Kill der Image-Init (~186 s) ist gemessen (Reparenting), der
+  genaue Todeszeitpunkt nicht auf die Sekunde (keine Logzeile dafuer);
+  hergeleitet aus Fork-Zeit ~35 s + sleep 150.
+- Helligkeit/Frequenz wurden nur gelesen, nicht veraendert.
