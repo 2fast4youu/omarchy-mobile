@@ -1,0 +1,37 @@
+Team-Ergebnisse (Teammates modem-wlan, thermal-lag, bt-verify), 2026-11-07
+=======================================================================
+
+MODEM/WLAN (modem-wlan):
+- Blocker gefunden: qcom_sysmon/reset-qcom-pdc fehlten; ohne sie kein
+  MSS-Probe. Mit ihnen: MSS laeuft (remoteproc0 running, 13 rpmsg-Kanaele
+  inkl. IPCRTR; Modem-Dienste rmtfs 14/TFTP 4096/SERVREG 64).
+- rmtfs braucht /boot/modem_fs{1,2,fg,sc}; aus /dev/sdf3..6 (2/2/2 MiB,
+  128 KiB) rekonstruiert -> Modem stabil.
+- Firmware-Load des Kernels nutzt init_task.fs (PID 1 = Initramfs-Wurzel)
+  -> Dateien zusaetzlich nach /proc/1/root/lib/firmware/ spiegeln.
+- WLAN-Ursache: Der Modem-DSP spawnt die PD "msm/modem/wlan_pd" aus der
+  OEM-wlanmdsp.mbn (3.035.952 B, md5 a16b01de48859f733acb2f38d227a560)
+  via tqftpserv; die linux-firmware-Variante liefert keinen wlfw.
+  Mit der OEM-Datei live: QRTR "ATH10k WLAN firmware service" (Port 73),
+  QMI-Handshake komplett (chip_id, fw_version, board-name).
+  Naechster Hebel falls host-cap 90: qcom,snoc-host-cap-skip-quirk im DT.
+
+THERMAL (thermal-lag):
+- Zwei Spinner: PID 1 (Ramdisk-Park mit "sleep 3600" - busybox sleep fehlt
+  nach switch_root -> Busy-Loop) und der Watchdog-Halteloop.
+  Zusammen 0,66 Kern, 3.500 Forks/s; Startphase mit 6 Schleifen = die
+  78-84 Grad C; danach 58-63 Grad C.
+- Fix (Ramdisk v0ag): pro Endlos-Schleife "[ -e /init ] || break" (3
+  Stellen), Park auf builtin-read; der selbsttoetende Kill-Block der Init
+  entfaellt. Kein Kill, kein Signal.
+
+BT (bt-verify):
+- Treiber/Firmware ok (QCA crbtfw21/crnv21, "setup on UART completed"),
+  aber BlueZ sieht keinen Adapter (mgmt Index-Liste 0 trotz INDEX_ADDED).
+  Kernel-MGMT-Problem, kein Daemon-/Startreihenfolge-Problem; Pairing-
+  Agent zusaetzlich durch pyexpat-ABI blockiert.
+
+Bau: Image 61f7af41 mit OEM-wlanmdsp, sysmon/pdc/q6v5-Modulen,
+Firmware-Spiegel, Modem-FS, Kill-Block entfernt; Boot v0ak
+(282372296a95a5055fddcc0096619ae4e7634fdc7c944d64b8fa12da0fa31c35) mit
+Ramdisk v0ag.
