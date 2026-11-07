@@ -110,3 +110,16 @@ gewaehlt; Abhaengigkeitskette im Alpine-Container:
     libpulse-simple (pulseaudio-dev), danach ggf. weitere.
 Der "cam"-CLI-Weg (libcamera-tools) bleibt der schnelle Aufnahme-Test
 nach dem v0an-Flash.
+
+NACHTRAG Megapixels gebaut (18:15)
+----------------------------------
+Im Alpine-Container (aarch64/musl) erfolgreich gebaut:
+  - libmegapixels: Header include/libmegapixels.h + libmegapixels.so* manuell
+    nach /usr/include bzw. /usr/lib, pkg-config libmegapixels.pc
+  - libdng: meson install (libdng.pc)
+  - Megapixels 2.1.0: meson setup/build OK -> build/megapixels (aarch64)
+Deps: gtk4, libfeedback, zbar, libjpeg, epoxy, libpulse-simple, gperf.
+OFFEN: Deployment auf die Arch-Wurzel (glibc) - entweder Arch-Build im
+chroot (pacman base-devel meson gtk4 libcamera feedbackd ... + libdng/
+libmegapixels aus Quellen) oder musl-Bundle mit Loader. Der "cam"-CLI
+bleibt der schnelle Kamera-Test.
