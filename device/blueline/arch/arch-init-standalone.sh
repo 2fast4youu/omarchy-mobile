@@ -68,10 +68,30 @@ for m in rfkill ecc ecdh_generic bluetooth btqca btbcm hci_uart rfcomm \
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
 
-# Modem (MSS): Module laden, rmtfs/tqftpserv starten, MSS starten. Der
-# IPCRTR-Kanal entsteht erst mit laufendem Modem - und der ist der Weg
-# fuer WLAN (ath10k wlfw-QMI ueber QRTR).
-for m in qcom_q6v5 qcom_q6v5_mss; do
+# Modem (MSS) + Firmware-Sichtbarkeit (am Geraet belegt):
+# Der Kernel liest Firmware ueber init_task.fs (PID 1 = Initramfs-Root),
+# nicht ueber unsere ext4-Wurzel. Die Dateien deshalb zusaetzlich nach
+# /proc/1/root/lib/firmware/... spiegeln - sonst ENOENT fuer mba/modem,
+# ath10k und qca trotz vorhandener Dateien.
+for _fw in qcom/sdm845/Google/blueline/mba.mbn \
+           qcom/sdm845/Google/blueline/modem.mbn \
+           qcom/sdm845/Google/blueline/wlanmdsp.mbn \
+           ath10k/WCN3990/hw1.0/firmware-5.bin \
+           ath10k/WCN3990/hw1.0/board-2.bin \
+           qca/crbtfw21.tlv qca/crnv21.bin; do
+    [ -f "/usr/lib/firmware/$_fw" ] || continue
+    mkdir -p "/proc/1/root/lib/firmware/$(dirname "$_fw")" 2>/dev/null
+    cp "/usr/lib/firmware/$_fw" "/proc/1/root/lib/firmware/$_fw" 2>/dev/null
+done
+# rmtfs braucht die Modem-Dateisysteme; sie liegen auf sdf3..6.
+mkdir -p /boot
+for _p in 3:modem_fs1 4:modem_fs2 5:modem_fsg 6:modem_fsc; do
+    _n=${_p%%:*}; _f=${_p#*:}
+    [ -e "/dev/sdf$_n" ] && dd if="/dev/sdf$_n" of="/boot/$_f" bs=1M 2>/dev/null
+done
+# qcom_sysmon und reset-qcom-pdc zuerst; ohne sie scheitert der MSS-Probe
+# (Unknown symbol qcom_sysmon_shutdown_acked / pdc reset).
+for m in qcom_sysmon reset-qcom-pdc qcom_q6v5 qcom_q6v5_mss; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
 [ -x /usr/bin/rmtfs ] && /usr/bin/rmtfs >/tmp/rmtfs.log 2>&1 &
