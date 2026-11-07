@@ -226,6 +226,25 @@ board-2.bin) wieder. Moegliche Wege:
   /readwrite/modem_efs, ota_firewall/ruleset, mcfg.tmp,
   /readonly/vendor/mbn/mcfg_hw/mbn_hw.dig (invalid path).
 
+5a. ath10k-Probe selbst ist erfolgreich - er stoppt erst am QMI-Wait
+---------------------------------------------------------------------
+Beweis mit ath10k-debug_mask (Modulparameter, kein dyn-debug):
+  # echo 0xffffffff > /sys/module/ath10k_core/parameters/debug_mask
+  # rmmod ath10k_snoc && insmod /opt/omamobile/mods/ath10k_snoc.ko
+  dmesg:
+  ath10k_snoc 18800000.wifi: snoc remove
+  ath10k_snoc 18800000.wifi: snoc free resources
+  ath10k_snoc 18800000.wifi: snoc xo-cal-data return -22
+  ath10k_snoc 18800000.wifi: qmi msa.paddr: 0x000000008df00000 , msa.vaddr: 0x...
+  ath10k_snoc 18800000.wifi: snoc probe
+Danach: KEINE weitere Meldung, kein "qmi chip_id", kein
+ATH10K_QMI_EVENT_FW_READY_IND -> kein ath10k_core_register -> kein wlan0.
+Das Geraet bleibt gebunden (readlink driver -> ath10k_snoc).
+"xo-cal-data return -22" ist kein Fehler: blueline-DT hat kein
+qcom,xo-cal-data; nur xo_cal_supported bleibt false.
+Damit ist die Ursache exakt eingegrenzt: Der Probe-Pfad ist intakt, es fehlt
+ausschliesslich die WLFW-QMI-Antwort (QRTR-Service 0x45) aus der MSS.
+
 6. Was der Lead bauen/flashen muss (Aenderungen ausserhalb meines Scopes)
 ------------------------------------------------------------------------
 A) /tmp/mods: qcom_q6v5.ko, qcom_q6v5_mss.ko, qcom_sysmon.ko,
