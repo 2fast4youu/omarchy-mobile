@@ -59,3 +59,17 @@ Aufnahme-Test "cam -c 1 --capture=3": scheitert an
 /dev/dma_heap/system existiert (250:0, Rechte 666 gesetzt), /dev/video*
 660 root:video. Naechster Schritt: dma-heap-Allokation (ioctl) bzw.
 memfd-Fallback der libcamera; ggf. v4l2-ctl-Direkttest.
+
+NACHTRAG Kamera (17:20): dma-heap-Allokation als letzter Blocker
+-----------------------------------------------------------------
+Direkter ioctl-Test (python, als omarchy) auf /dev/dma_heap/system
+(DMA_HEAP_IOCTL_ALLOC 0xc0184800, len, fd_flags, heap_flags, fd):
+  size 4096 / 16 MiB, fd_flags=0        -> OK (fd zurueck)
+  fd_flags=O_CLOEXEC(0x80000|0x2|0x1)   -> EINVAL
+Der Quellcode (include/uapi/linux/dma-heap.h:19) erlaubt
+DMA_HEAP_VALID_FD_FLAGS (O_CLOEXEC | O_ACCMODE); der laufende Kernel
+weist O_CLOEXEC aber mit EINVAL ab -> libcamera (nutzt O_CLOEXEC) kann
+keine Puffer allozieren ("dma-heap allocation failure").
+Naechster Schritt: Kernel-Image mit aktueller dma-heap-Validierung neu
+bauen (oder libcamera ohne O_CLOEXEC / memfd-Fallback). v4l2-ctl
+funktioniert (video0..3 = qcom-camss, "Qualcomm Camera Subsystem").
