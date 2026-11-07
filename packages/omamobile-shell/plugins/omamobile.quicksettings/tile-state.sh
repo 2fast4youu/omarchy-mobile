@@ -116,3 +116,11 @@ print("data_status=" + " ".join(words))
 else
   echo "data=none"
 fi
+
+# torch: on while the flash LED's brightness is above zero; none without it
+if [ -e /sys/class/leds/white:flash/brightness ]; then
+  v=$(cat /sys/class/leds/white:flash/brightness 2>/dev/null)
+  if [ "${v:-0}" -gt 0 ] 2>/dev/null; then echo "torch=on"; else echo "torch=off"; fi
+else
+  echo "torch=none"
+fi

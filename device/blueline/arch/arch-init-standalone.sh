@@ -59,6 +59,7 @@ chown root:video /dev/dri/card0 /dev/dri/renderD128 2>/dev/null
 chmod 660 /dev/dri/card0 /dev/dri/renderD128 2>/dev/null
 [ -e /opt/omamobile/gpi.ko ] && insmod /opt/omamobile/gpi.ko 2>/dev/null
 [ -e /opt/omamobile/leds-qcom-flash.ko ] && insmod /opt/omamobile/leds-qcom-flash.ko 2>/dev/null
+[ -e /sys/class/leds/white:flash/brightness ] && chmod 666 /sys/class/leds/white:flash/brightness 2>/dev/null
 # Hardware-Module (aus dem Kernel-Out mitgebaut): BT-Kette, WLAN-Kette,
 # jeweils in Abhaengigkeitsreihenfolge; Doppelladungen sind harmlos.
 for m in rfkill ecc ecdh_generic bluetooth btqca btbcm hci_uart rfcomm \

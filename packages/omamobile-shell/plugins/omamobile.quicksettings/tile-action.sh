@@ -94,6 +94,18 @@ case $tile in
     # the first.
     if [ "$want" = on ]; then exec voxtype record start; else exec voxtype record stop; fi
     ;;
+  torch)
+    # The flash LED as a torch: the brightness value is the torch current
+    # (pmi8998 flash, 0-255). The init chmods the file 0666 so the session
+    # user can write it; no polkit round trip for a torch.
+    led=/sys/class/leds/white:flash/brightness
+    if [ -e "$led" ]; then
+      if [ "$want" = on ]; then echo 120 > "$led" 2>/dev/null; else echo 0 > "$led" 2>/dev/null; fi
+      exit 0
+    fi
+    echo "tile-action.sh: no flash LED on this device" >&2
+    exit 2
+    ;;
   *)
     echo "tile-action.sh: unknown tile $tile" >&2
     exit 2
