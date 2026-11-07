@@ -122,6 +122,14 @@ chown root:input /dev/input/event* 2>/dev/null
 chmod 660 /dev/input/event* 2>/dev/null
 setsid seatd -g seat >/dev/null 2>&1 &
 sleep 1
+# Ramdisk-Diagnoseschleifen beenden: ab hier haelt der Root-SSHD Port 22
+# (der Ramdisk-dropbear ist damit ersetzt; am Geraet belegt: SSH/USB
+# bleiben, Last 5,0 -> 2,7, Temperatur 64 -> 57 Grad C). PID 1 parkt
+# weiter in der Ramdisk.
+( sleep 60; for _p in $(pgrep -f '^/bin/sh /init$' 2>/dev/null); do
+    [ "$_p" = "1" ] || kill "$_p" 2>/dev/null
+done ) &
+
 cat > /run/omamobile-session.sh <<'SITZUNG'
 #!/bin/sh
 export XDG_RUNTIME_DIR=/run/user/1000 LIBSEAT_BACKEND=seatd LANG=en_US.UTF-8
