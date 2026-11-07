@@ -1,0 +1,19 @@
+BT-Firmware in den Kernel eingebettet, 2026-11-07 13:03-13:10
+=============================================================
+
+Der request_firmware fuer qca/crbtfw21.tlv scheiterte mit -2, obwohl die
+Datei unter /lib/firmware/qca (Symlink /lib -> usr/lib) liegt und per dd
+lesbar ist. Statt den Loader weiter zu debuggen: Firmware fest einbauen.
+
+  CONFIG_EXTRA_FIRMWARE="qca/crbtfw21.tlv qca/crnv21.bin"
+  CONFIG_EXTRA_FIRMWARE_DIR="/fw" (Build-Mount)
+
+Kernel neu gebaut: Image.gz 15.791.071 B (vorher 15.663.048; +128 KB =
+beide Firmware-Dateien).
+
+Boot-Image v0ai (9c3682b7465c208701322ef457af408eb5ec7cbd3f4bb9f60eb96047c596bbe7)
+= neuer Kernel + DTB + Lag-Ramdisk v0af (getty-Loops und 20-s-Console-
+Block entfernt, Watchdog-Ping bleibt).
+
+Noch nicht geflasht (kein Fastboot). Nach dem Flash: hci_uart laden ->
+Firmware aus dem Kernel -> hci0 sollte den QCA-Patch laden.
