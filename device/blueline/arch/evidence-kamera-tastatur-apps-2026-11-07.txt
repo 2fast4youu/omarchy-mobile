@@ -1,0 +1,27 @@
+Kamera/Tastatur/Apps: Stand + erster Test, 2026-11-07 16:53
+============================================================
+
+KAMERA:
+- Kernel: CONFIG_VIDEO_IMX363=m + qcom-camss.ko; DT hat &camss + die
+  Kamera-Regler (sdm845-google-common.dtsi:149/165/422/447).
+- Modul-Tree (752 .ko, modules.dep) live nach /lib/modules/7.1.0-rc1-
+  sdm845 installiert; modprobe qcom-camss loest die Kette.
+- Probe: "qcom-camss acb3000.camss: deferred probe timeout, ignoring
+  dependency" + "Failed to configure power domains: -110" ->
+  probe failed. Naechster Schritt: Power-Domains (rpmhpd/MMCX) im DT
+  bzw. deren Supplier; pmOS-Referenz vergleichen.
+
+TASTATUR:
+- squeekboard 1.43.1-6 enthaelt keine Layout-Dateien; die Layouts kommen
+  aus den GNOME-xkb-input-sources. gsettings war LEER (@a(ss) []) ->
+  jetzt [('xkb','de')] -> QWERTZ (z/y getauscht) in der OSK, sichtbar im
+  Screenshot; Umlaute auf der Shift/long-press-Ebene.
+- Beleg: device/blueline/arch/keyboard-de-wifi-panel-2026-11-07.png
+  (zeigt zugleich das Wi-Fi-Panel mit HOME-WLAN).
+
+APPS:
+- Installiert: mpv v0.41.0, imv, gnome-text-editor (+ .desktop).
+- Muessen noch in den Bau (pacman-Liste) fuer die Persistenz.
+
+WI-FI-PANEL: das Netz "HOME-WLAN" wird gelistet (Passwort + Connect) -
+Verbindung kann der Nutzer jetzt direkt ueber die Tastatur herstellen.
