@@ -98,3 +98,15 @@ Fix: fs/file.c:1431 erlaubt jetzt O_ACCMODE:
 Kernel-Image neu gebaut; Boot v0an =
 4db2b0a5a1686b5a7c90e781fd8a3ed09a64c6c226c5d7e9ab80f10f4e6f9473.
 Nach dem Flash: libcamera-Aufnahme (cam -c 1 --capture) sollte laufen.
+
+NACHTRAG Kamera-App Megapixels (18:13)
+--------------------------------------
+Megapixels 2.1.0 (gitlab.com/megapixels-org/Megapixels) als GUI-App
+gewaehlt; Abhaengigkeitskette im Alpine-Container:
+  - libmegapixels (CMake, libcamera/libconfig): gebaut (libmegapixels.so.0.1)
+  - libdng (meson): gebaut + installiert (libdng.pc)
+  - Megapixels meson: gtk4, libfeedback, zbar, jpeg, epoxy, libmegapixels,
+    libdng, gtk4-wayland/x11, gperf -> vorhanden; naechste fehlende:
+    libpulse-simple (pulseaudio-dev), danach ggf. weitere.
+Der "cam"-CLI-Weg (libcamera-tools) bleibt der schnelle Aufnahme-Test
+nach dem v0an-Flash.
