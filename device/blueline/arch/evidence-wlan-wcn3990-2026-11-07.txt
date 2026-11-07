@@ -32,3 +32,18 @@ Nachtrag 00:06 - QRTR loest den QMI-Defer:
 Offen: Firmware-Init/QMI wlan_enable und der netdev wlan0; naechster
 Schritt ist der Firmware-Download (firmware-5.bin/board-2.bin liegen,
 wlanmdsp.mbn im vendor.img) und die QMI-Sequenz.
+
+Nachtrag 12:02 - Probe laeuft bis zum QMI-MSA:
+  pwrseq-qcom_wcn geladen -> ldo3 da -> 18800000.wifi bindet und probt:
+    "snoc xo-cal-data return -22" (XO-Kalibrierung fehlt, Warnung)
+    "qmi msa.paddr: 0x8df00000, msa.vaddr: ..."
+    "snoc probe"
+  Danach keine weiteren Meldungen, kein wlan0.
+
+Deutung: Der naechste Schritt ist der QRTR-Transport zum WCN3990
+(wlfw-Dienst auf der Chip-Seite) bzw. der Firmware-Boot (wlanmdsp.mbn
+via PAS/QMI). Das ist die verbleibende Luecke - Treiber, Firmware im
+Image, PMU und QRTR stehen.
+
+Geraet stabil mit v0ag (kein Selbst-Reboot); die Module muessen nach
+jedem Flash neu kopiert werden (noch nicht im Image).
