@@ -1,0 +1,20 @@
+Kamera-Stack als Built-ins gebaut (v4l2-async-Fix), 2026-11-09 22:00
+====================================================================
+
+Ursache des Async-Problems: CONFIG_MEDIA_SUPPORT=m zwingt die gesamte
+Media-Kette auf Module; beim Modul-Laden verbindet der camss-Notifier
+die Sensoren nicht (0 Links, keine /dev/v4l-subdev*).
+
+Fix: die Media-Kette als Built-ins:
+  CONFIG_MEDIA_SUPPORT=y, VIDEO_DEV=y, V4L2_ASYNC=y, V4L2_FWNODE=y,
+  MEDIA_CONTROLLER=y, VIDEOBUF2_*=y, VIDEO_QCOM_CAMSS=y,
+  VIDEO_IMX355=y, VIDEO_IMX363=y, I2C_QCOM_CCI=y, SDM_CAMCC_845=y
+Image 16.047.747 B (vorher 15.790.559).
+
+Boot v0ar = a0eccae0ce1e0da9a924f183f89ecd6a97601966264b9bfe6ec6e9dd2f793dc4
+im ROM-Paket; Flash steht aus (kein Fastboot).
+
+Erwartung nach Flash: camss und Sensoren werden beim Boot in der
+richtigen Reihenfolge verbunden -> cam -l listet die Kameras,
+Megapixels findet sie, Rueckkamera probt (DT ist komplett; die
+I2C-Antwort haengt an der Power-Sequenz).
