@@ -1,0 +1,22 @@
+Stand 2026-11-09 22:02 - bereit zum Flashen von v0ar
+=====================================================
+
+Fertig und im ROM-Paket:
+  boot.img  = v0ar (a0eccae0) - Kamera-Stack als Built-ins
+  userdata  = e11b0bd4 - 43 Module, Megapixels-Config, hypridle/ppd/
+              upowerd, lock-freie Idle-Config
+
+Was funktioniert (am Geraet belegt):
+  - Akkumanagement: 99%, 4.25V, Statusleiste-Anzeige, UPower,
+    Idle (hypridle), Power-Profile (1.2/1.8 GHz)
+  - Thermik: 42/41 Grad C, Load 1.8
+  - Suspend: success=3, fail=0 (fsnotify-Fix + Wakeup-Quellen)
+  - Shell: Homescreen, OSK, Chromium, mpv/imv/Texteditor
+  - 2 Frontkameras: auf frueherem Boot mit echtem Frame belegt
+
+Offen (braucht v0ar-Flash):
+  - Kamera-Async-Bind: Built-ins loesen die Verbindung beim Boot
+  - Rueckkamera: DT komplett, Hardware-Power (I2C-Timeout) offen
+  - Megapixels-Vorschau
+
+Naechster Schritt: Power+Leiser -> Flash v0ar -> cam -l pruefen.
