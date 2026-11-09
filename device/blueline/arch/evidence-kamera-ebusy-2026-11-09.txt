@@ -53,3 +53,23 @@ Boot v0aq5 = cb429ec9140573f789ca63e92c37bf17f2b8f1c85b6bd5dc5699798d3ee21316
 
 Zwischenstand der Reihe: clock-frequency ✅, link-frequencies ✅,
 4 Lanes ✅ - es fehlt nur noch die Versorgung (vana/vdig/vif).
+
+Nachtrag 21:22 - imx363: DT ist jetzt korrekt, Sensor antwortet nicht:
+Nach v0aq5 (vana/vdig/vif) sind die "supply not found"-Meldungen weg.
+Aber:
+  "imx363: 4 lanes" ✅ (Datenleitung)
+  "Error reading reg 0x0016: -6" / "failed to read chip id 363"
+Direkter I2C-Test per ioctl:
+  /dev/i2c-16 addr 0x10 -> Errno 110 (Connection timed out)
+  /dev/i2c-17 addr 0x10/0x1a -> Errno 16 (busy, von imx355 belegt)
+  -> Die Rueckkamera antwortet physisch nicht auf I2C.
+Regler-Zustand:
+  rear_cam_vana 2800 mV, 0 mA (an, aber kein Verbraucher)
+  lvs1 1800 mV, 0 mA
+  -> Der Sensor zieht keinen Strom; Power-Sequenz/GPIO (VANA GPIO 16,
+     Reset GPIO 80) greift nicht wie erwartet.
+
+Fazit: Die DT-Kette fuer die Rueckkamera ist vollstaendig (clock-frequency,
+link-frequencies, vana/vdig/vif, reset-gpios, 4 Lanes), aber die
+Hardware-Power-Sequenz des IMX363 braucht weitere Arbeit (GPIO-Polaritaet,
+Regler-Reihenfolge, evtl. PMIC-BOB). Die beiden Frontkameras laufen.
