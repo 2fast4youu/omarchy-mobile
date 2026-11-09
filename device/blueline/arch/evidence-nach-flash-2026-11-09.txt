@@ -1,0 +1,18 @@
+Nach v0ap-Flash: Akku/Idle top, Kamera-DT-Fix wartet, 2026-11-09 16:45
+=======================================================================
+
+Geflasht (boot v0ap 939b6d5d + userdata e11b0bd4):
+  - Akku: qcom-battery Full 99%, upower fully-charged 99%  ✅
+  - Temperaturen: cpu0 42,5 / cpu7 41,5 Grad C, Load 1,79  ✅
+    (deutlich besser als 58-63 Grad C vorher)
+  - Rueckkamera im DT: cci@ac4a000/i2c-bus@0/camera@10 (imx363) ✅
+  - ABER: imx363-Probe scheitert an "input clock frequency of 0"
+    -> cam_cc_mclk0_clk ist "deviceless" (kein Consumer)
+  - cam -l: leer (Sensoren proben nicht)
+
+Fix gebaut: DTB mit clock-names = "xclk" am rear_cam-Knoten
+(Boot v0aq2 = a5eebdd5023f36a4415b8ed1ddfb3a538f0f1e299cdc8f4370c04fab682882fe).
+Der Flash kam nicht durch (kein Fastboot); der laufende DT hat
+clock-names noch NICHT (0 Treffer in /proc/device-tree).
+
+Naechster Schritt: v0aq2 flashen (Power+Leiser), dann cam -l pruefen.
