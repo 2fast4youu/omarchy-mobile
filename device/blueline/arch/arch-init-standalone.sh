@@ -70,10 +70,18 @@ done
 
 # Kamera: videodev/videobuf2 -> CCI-Controller -> camcc (GDSCs) -> camss
 # -> Sensoren. Reihenfolge ist Pflicht; sonst fehlen die Power-Domains.
-for m in videodev v4l2-async v4l2-fwnode v4l2-common mc videobuf2-common \
+for m in mc videodev v4l2-common v4l2-async v4l2-fwnode videobuf2-common \
          videobuf2-v4l2 videobuf2-memops videobuf2-dma-contig \
-         videobuf2-vmalloc i2c-qcom-cci camcc-sdm845 qcom-camss imx355 imx363; do
+         videobuf2-vmalloc videobuf2-dma-sg i2c-qcom-cci camcc-sdm845 \
+         qcom-camss imx355 imx363; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
+done
+# Sensoren nach dem camss neu binden (MCLK kommt vom camss; beim Boot
+# proben sie sonst vorher und scheitern mit -5).
+sleep 1
+for d in 17-0010 17-001a; do
+    [ -e /sys/bus/i2c/drivers/imx355/unbind ] && echo "$d" > /sys/bus/i2c/drivers/imx355/unbind 2>/dev/null
+    [ -e /sys/bus/i2c/drivers/imx355/bind ] && echo "$d" > /sys/bus/i2c/drivers/imx355/bind 2>/dev/null
 done
 chmod 666 /dev/dma_heap/* 2>/dev/null
 chmod 666 /dev/media* 2>/dev/null

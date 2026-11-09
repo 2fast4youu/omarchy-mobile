@@ -141,3 +141,15 @@ Build-Werkzeuge (gcc/make/meson/ninja/cmake/pkgconf/gperf) aus dem Image
 entfernt (git bleibt - omarchy-Dependency); /tmp-Quellen geloescht.
 megapixels, cam, mpv, imv, gnome-text-editor weiterhin vorhanden.
 Neues Sparse: 63d8d497d116f616e9c8350b982a551a448106bc87f940d267c2eeef0865908a
+
+NACHTRAG Kamera nach v0an-Flash (10:50)
+---------------------------------------
+- camss laedt jetzt (nach videobuf2-dma-sg), /dev/media0 + video0/1 da.
+- Sensoren: beim Boot "failed to find sensor: -5" (MCLK kommt vom camss,
+  der beim Sensor-Probe noch nicht geladen war). Nach unbind/bind der
+  i2c-Geraete 17-0010/17-001a: cam -l listet beide Frontkameras.
+- Init-Fix: Reihenfolge mc->videodev->v4l2->videobuf2 (inkl. dma-sg)->
+  cci->camcc->camss->imx355 + Re-Probe der Sensoren nach dem camss.
+- OFFEN: libcamera-Aufnahme scheitert weiter an dma-heap O_CLOEXEC
+  (EINVAL) trotz v0an (get_unused_fd_flags-Patch). Naechster Weg:
+  libcamera-Patch (fd_flags ohne O_RDWR/O_CLOEXEC) im Arch-chroot.
