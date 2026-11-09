@@ -1,0 +1,23 @@
+Telefon seit 2h im Suspend, weiterhin nicht erreichbar, 2026-11-09 18:57
+========================================================================
+
+Letzte Aktion: 16:47 "echo mem > /sys/power/state" -> Geraet schlief
+ein (SSH/USB brachen ab). Das war der Beleg, dass der fsnotify-Fix
+wirkt (vorher scheiterte das Einfrieren nach 20 s).
+
+Stand 18:57 (2h 10min spaeter):
+  - fastboot devices: leer
+  - system_profiler/iokit: 0 Google-/Pixel-USB-Geraete
+  - keine 172.16-Schnittstelle am Mac (en12 weg)
+  - SSH 172.16.42.1: Timeout
+  - ioreg IOUSB: keine passenden Geraete
+
+Deutung: Das Geraet haengt im s2idle; der USB-Gadget-Controller ist im
+Suspend abgeschaltet, deshalb emittiert es nichts. Ohne RTC/irq-wakeup
+gibt es keinen Selbst-Aufwacher. Das vorbereitete omamobile-wakeup.sh
+(Commit c2fa549) adressiert genau das, ist aber noch nicht im Boot.
+
+Naechster Schritt: physisch Power druecken, dann
+  - omamobile-wakeup testen (Suspend + Power -> wacht auf?)
+  - v0aq2 flashen (xclk-Fix, Rueckkamera)
+  - Megapixels-Vorschau
