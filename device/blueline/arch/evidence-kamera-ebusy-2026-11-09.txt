@@ -17,3 +17,14 @@ Rueckkamera; nach dem Flash ist ein sauberer Kamera-Test moeglich.
 
 Bereits belegt (frueherer Boot): beide Frontkameras in cam -l, echter
 Frame aufgenommen (kamera-frame-2026-11-09.png).
+
+Nachtrag 21:00 - imx363-Clock-Ursache gefunden:
+Der imx363-Treiber liest NICHT die Clock-Rate, sondern das DT-Property
+"clock-frequency" (device_property_read_u32, imx363.c:1334) und
+akzeptiert nur 24000000. Unser rear_cam-Knoten hatte es nicht
+("input clock frequency of 0 not supported").
+Fix: clock-frequency = <24000000> am rear_cam-Knoten; DTB gebaut,
+Boot v0aq3 = 6797b72524dd99820b9ef88f30b6cd9281016d702af6ec6db03ee5d6addc5e58.
+Der Flash kam nicht durch (kein Fastboot) - der laufende DT hat das
+Property noch nicht (xxd leer).
+Naechster Schritt: v0aq3 flashen -> imx363-Probe -> 3 Kameras in cam -l.
