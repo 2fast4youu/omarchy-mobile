@@ -1,0 +1,19 @@
+Kamera: -EBUSY nach Stream-Tests, sauberer Boot noetig, 2026-11-09 20:52
+=======================================================================
+
+Zustand nach dem Suspend/Neustart und mehreren cam-Tests:
+  - qcom_camss, imx355, imx363, v4l2_cci geladen (9 Module), /dev/media0 da
+  - imx355 17-0010/17-001a: "error -EBUSY: failed to enable clocks"
+    in imx355_power_on -> Sensoren halten Clocks von einem frueheren
+    Stream; unbind/bind hilft NICHT
+  - cam -l: "Available cameras:" (leer)
+  - media-ctl: imx355 hat 0 Links (Sensor nicht mit csiphy verbunden,
+    weil der Probe fehlschlug)
+
+Deutung: Der Clock-Zustand der Sensoren laesst sich nur mit einem
+frischen Boot zuruecksetzen (der camcc/CSI-PHY haelt die MCLK-Leitung).
+Boot v0aq2 (a5eebdd5) enthaelt zusaetzlich clock-names="xclk" fuer die
+Rueckkamera; nach dem Flash ist ein sauberer Kamera-Test moeglich.
+
+Bereits belegt (frueherer Boot): beide Frontkameras in cam -l, echter
+Frame aufgenommen (kamera-frame-2026-11-09.png).
