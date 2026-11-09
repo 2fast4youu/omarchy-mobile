@@ -1,0 +1,26 @@
+Kamera: MCLK-Clock nach fehlgeschlagenem Probe blockiert, 2026-11-09 23:56
+=========================================================================
+
+Stand v0as (EPROBE_DEFER):
+  - imx363 (16-0010) und imx355 (17-0010/17-001a) geben beim ersten
+    Probe -EPROBE_DEFER zurueck ("deferring" im dmesg) ✅
+  - imx355 werden danach GEBUNDEN (drv=imx355) ✅
+  - ABER: 0 Links zu msm_csiphy*, keine /dev/v4l-subdev*, cam -l leer
+  - devices_deferred: nur 16-0010 (imx363) bleibt deferred
+
+Ursache-Kette:
+  1) cam_cc_mclk2_clk enable_count=0, aber clk_prepare_enable() liefert
+     -EBUSY -> der MCLK-Branch laesst sich nicht erneut aktivieren.
+  2) titan_top_gdsc war "off-0"; nach "echo on > .../camss/power/control"
+     ist er "on", aber der Rebind scheitert weiter mit -EBUSY.
+  3) camcc-Unbind (ad00000.clock-controller) ist bei Built-in nicht
+     moeglich -> Kernel-Oops.
+
+Deutung: Der erste (fehlgeschlagene) power_on laesst die MCLK in einem
+Zustand, aus dem clk_prepare_enable nicht mehr herauskommt. Ein
+sauberer Weg ist, die SENSOREN als Module zu lassen (camcc/camss/cci
+built-in) und sie nach dem camcc zu laden - dieser Pfad hat frueher
+funktioniert (cam -l + echter Frame).
+
+Naechster Schritt: VIDEO_IMX355/VIDEO_IMX363 wieder =m, Init laedt nur
+diese beiden nach dem camcc.
