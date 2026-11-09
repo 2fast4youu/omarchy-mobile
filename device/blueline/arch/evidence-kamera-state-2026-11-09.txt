@@ -1,0 +1,21 @@
+Kamera-Zustand nach Live-Tests, 2026-11-09 14:35
+=================================================
+
+Der laufende Boot ist durch die vielen cam-/megapixels-Tests
+"verbraucht":
+  - imx355 17-0010/17-001a: "error -EBUSY: failed to enable clocks"
+    in imx355_power_on (Clocks bleiben von einem frueheren Stream an)
+  - qcom-camss: "Failed to start media pipeline: -32" (EPIPE)
+  - megapixels: VIDIOC_STREAMON -32 / DQBUF -22
+  - cam -l listet die beiden Frontkameras weiterhin (Subdevs ok)
+
+Ein Modul-Reload (rmmod/insmod imx355, qcom-camss) setzt den Clock-
+Zustand NICHT zurueck -> nur ein frischer Boot hilft.
+
+Wichtig fuer den naechsten Boot (v0ap):
+  - v4l2-cci.ko muss VOR imx363 geladen werden (in der Init ergaenzt)
+  - Kamera-Kette in der Reihenfolge mc -> videodev -> v4l2-* ->
+    videobuf2 (inkl. dma-sg) -> i2c-qcom-cci -> camcc -> qcom-camss ->
+    imx355/imx363 (Init)
+  - Sensoren nach dem camss neu binden (Init macht das)
+  - Megapixels-Config google,blueline.conf liegt im Image
