@@ -1,0 +1,21 @@
+Megapixels-Geraeteconfig, 2026-11-09 14:28
+==========================================
+
+libmegapixels sucht <model>.conf unter /usr/share/megapixels/config
+(Model aus /proc/device-tree/compatible = "google,blueline").
+Vorlage: google,b4s4-sdm670.conf (Pixel 3a, gleiche Kamera-Generation).
+
+Neue Config google,blueline.conf mit 3 Kameras:
+  Rear:     imx363, csiphy0 -> csid0 -> vfe0_rdi0, 4032x3024, rotate 90
+  Front:    imx355, csiphy1 -> csid0 -> vfe0_rdi0, 3264x2448, rotate 270
+  FrontAux: imx355, csiphy2 -> csid0 -> vfe0_rdi0, 3264x2448, rotate 270
+
+Am Geraet geprueft:
+  - Config wird geladen (OpenGL ES 3.2 initialisiert, Postprozessor
+    gefunden) - "No camera found" ist weg.
+  - Entity-Namen gegen media-ctl -p verifiziert (csiphy0-3, csid0-2,
+    vfe0_rdi0-2; csid pad1 -> vfe0_rdi0).
+  - STREAMON scheitert mit -32 (EPIPE): "qcom-camss: Failed to start
+    media pipeline: -32". Der Media-Graph ist durch die vorherigen
+    cam-Tests verstellt (Links/Formate), media-ctl --reset hilft nicht.
+  - Ein sauberer Test braucht einen frischen Boot (Flash v0ap).
