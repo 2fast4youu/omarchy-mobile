@@ -1,0 +1,20 @@
+Finales Image mit allen Fixes, 2026-11-09 15:00
+===============================================
+
+Boot v0ap = 939b6d5d06ffaf48efffc3af66cf028573fd2134726d558e33df0dfbdbb30197
+  (fsnotify-SRCU-Fix, Rueckkamera-DT mit cci_i2c0/camss port@0,
+   Akku-FG-Patch fuer charge_full)
+Userdata = 05527fb525e1e8f4063b565d1e4cc00f80ce0f7012b1647ba65d815208e33857
+
+Im Image per debugfs belegt:
+  - 43 Module in /opt/omamobile/mods, darunter v4l2-cci, pmi8998_fg,
+    qcom-spmi-rradc, qcom_smbx, imx355, imx363, videobuf2-dma-sg
+  - /usr/share/megapixels/config/google,blueline.conf (3 Kameras)
+  - /usr/bin/hypridle, /usr/lib/power-profiles-daemon, /usr/lib/upowerd,
+    /usr/bin/brightnessctl, /usr/local/bin/omamobile-power-profile
+  - Init: Akku-Kette (rradc->smbx->fg), Kamera-Kette (v4l2-cci vor
+    imx363, Sensor-Re-Probe, imx363-Fallback), upowerd, ppd, hypridle,
+    backlight-chmod
+
+Nach dem Flash zu pruefen: cam -l (3 Kameras), suspend (echo mem),
+megapixels (Vorschau), Akku (99 %, laden/entladen).
