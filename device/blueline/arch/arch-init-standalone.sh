@@ -109,6 +109,12 @@ for _p in 3:modem_fs1 4:modem_fs2 5:modem_fsg 6:modem_fsc; do
 done
 # qcom_sysmon und reset-qcom-pdc zuerst; ohne sie scheitert der MSS-Probe
 # (Unknown symbol qcom_sysmon_shutdown_acked / pdc reset).
+# Akku: RRADC (PMI8998) -> Charger (smbx) -> Fuel-Gauge (pmi8998_fg).
+# Ohne den RRADC scheitert der Charger an "usbin_v", ohne den Charger
+# bleibt der Fuel-Gauge deferred.
+for m in qcom-spmi-rradc qcom_smbx pmi8998_fg; do
+    [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
+done
 for m in qcom_sysmon reset-qcom-pdc qcom_q6v5 qcom_q6v5_mss; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done

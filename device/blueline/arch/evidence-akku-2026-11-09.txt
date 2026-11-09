@@ -1,0 +1,21 @@
+Akkumanagement funktioniert, 2026-11-09 13:10
+=============================================
+
+Vorher: /sys/class/power_supply war LEER (kein Akkustand, kein Laden).
+
+Kette (alle Module aus unserem Kernel 7.1.0-rc1-sdm845):
+  1) qcom-spmi-rradc  (PMI8998 RRADC, adc@4500) - war nicht geladen;
+     der Charger braucht den IIO-Kanal "usbin_v" von hier
+     ("Couldn't get usbin_v IIO channel" ohne ihn).
+  2) qcom_smbx        (qcom,pmi8998-charger, charger@1000)
+  3) pmi8998_fg       (qcom,pmi8998-fg, fuel-gauge@4000) - CONFIG war
+     nicht gesetzt, Treiber neu gebaut; der FG war vorher deferred
+     ("wait for supplier").
+
+Ergebnis live:
+  qcom-battery:   capacity=99, status=Full, voltage_now=4251209 uV,
+                  current_now=2441 uA, temp=308 (30.8 Grad C)
+  pmi8998-charger: online=1, status=Full, health=Good
+
+Init: der Block laedt rradc -> smbx -> fg (Reihenfolge ist Pflicht).
+Module in /tmp/mods (gehen in den naechsten Bau).
