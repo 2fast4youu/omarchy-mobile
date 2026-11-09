@@ -1,0 +1,26 @@
+KAMERA LAEUFT - erster echter Frame, 2026-11-09 12:56
+=====================================================
+
+Auf v0an (dma-heap-Kernel) + Image mit gepatchter libcamera:
+  cam -l: 1: Internal front camera (camera@10), 2: Internal front camera (camera@1a)
+  cam -c 1 --capture=3:
+    Using camera .../camera@10 as cam0
+    configuring streams: (0) 820x616-SRGGB10_CSI2P/RAW
+    Capture 3 frames: seq 0/1/2, je 640640 B (107-136 fps)
+  Frame konvertiert (MIPI RAW10 -> PNG): zeigt einen hellen Lichtstreifen
+  (Lampe/Fensterkante) vor dunklem Hintergrund -> echte Bilddaten.
+  Beleg: device/blueline/arch/kamera-frame-2026-11-09.png
+
+Der entscheidende Fix: libcamera-Patch in src/libcamera/dma_buf_allocator.cpp
+  alloc.fd_flags = O_CLOEXEC | O_RDWR;  ->  alloc.fd_flags = 0;
+(der Kernel lehnt O_CLOEXEC/O_RDWR beim dma-heap mit EINVAL ab). Im
+Arch-chroot gebaut (meson, qcam aus, python-jinja/ply), installiert;
+Image enthaelt die gepatchte libcamera (libcamera.so.0.7.2).
+
+MEGAPIXELS: startet (UI mit ISO/EXP/FOCUS/FLASH, Ausloeser, Galerie),
+meldet aber "No camera found" - die Geraete-Config fuer blueline fehlt
+(nur pine64,pinephone*.dcp vorhanden). Schemas kompiliert.
+Beleg: device/blueline/arch/megapixels-ui-2026-11-09.png
+
+TASTATUR: deutsche QWERTZ (xkb de) belegt.
+APPS: mpv, imv, gnome-text-editor, v4l-utils, libcamera-tools, megapixels.
