@@ -1,0 +1,21 @@
+Shell-Zombie und Lock-Blocker, 2026-11-09 15:10
+================================================
+
+Befund: Der Screenshot war seit 12:38 eingefroren (gleicher MD5).
+Ursache: quickshell PID 18752 war ein ZOMBIE und hielt die Layer
+(omarchy-background, omamobile-home, omamobile-dock, omarchy-bar);
+der echte Prozess 20696 hatte keine Layer. Ausgeloest hatte das der
+Omarchy-Lock: hypridle rief "lock-system: lock-timeout-immediate" und
+"process-start: lock omarchy-system-lock" (12:15).
+
+Fix:
+  - hyprlock/omarchy-system-lock beendet
+  - quickshell -9 beendet und neu gestartet -> rendert wieder
+    (neuer Frame, Akku 99%, Uhr 12:38; Beleg
+     device/blueline/arch/shell-nach-zombie-fix-2026-11-09.png)
+  - hypridle-Konfig ohne Lock (kein Passwort gesetzt; der Lock
+    blockierte die Shell): nur 30 s dimmen + 60 s DPMS off.
+    Neu gestartet (24293).
+
+Fuer den Bau: hypridle.conf ohne Lock mit ins Image (sonst lockt der
+naechste Boot wieder).
