@@ -54,6 +54,7 @@ printf '/dev/loop0 / ext4 defaults 0 1\n' > /tmp/arch/etc/fstab
 mkdir -p /tmp/arch/usr/local/bin
 cp /om/omamobile-time-sync /tmp/arch/usr/local/bin/omamobile-time-sync
 cp /om/omamobile-power-profile /tmp/arch/usr/local/bin/omamobile-power-profile
+cp /om/omamobile-wakeup.sh /tmp/arch/usr/local/bin/omamobile-wakeup
 chmod 755 /tmp/arch/usr/local/bin/omamobile-time-sync
 mkdir -p /tmp/arch/usr/local/bin /tmp/arch/usr/local/lib/qbootctl
 cp /qbootctl /tmp/arch/usr/local/bin/qbootctl
