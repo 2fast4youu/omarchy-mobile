@@ -1,0 +1,21 @@
+Suspend: harter Blocker ohne Kernel-Fix, 2026-11-09 16:10
+=========================================================
+
+Live-Test (laufender Boot, noch ohne fsnotify-Fix):
+  echo mem > /sys/power/state
+  -> "Freezing user space processes failed after 20s
+      (3 tasks refusing to freeze)"
+  -> suspend_stats: success=0, fail=3, last_failed_errno=-16
+
+Die Tasks:
+  quickshell (20696, 24096) in D-State, Call trace
+  wait_for_completion -> fsnotify_wait_marks_destroyed
+  kworker/u32:3+events_unbound (9709), kworker/u32:4 (19810) in
+  synchronize_srcu (fsnotify_mark_destroy/connector_destroy)
+
+Die Prozesse sind NICHT killbar (uninterruptible) - nur der Kernel-Fix
+in Boot v0ap (fsnotify_destroy_group flusht den Reaper nicht mehr)
+loest das. Danach ist s2idle-Suspend zu testen.
+
+Der Rest des Systems laeuft stabil (uptime ~5.5 h, Akku 99%,
+Shell rendert nach Neustart, WLAN/BT/Modem aktiv).
