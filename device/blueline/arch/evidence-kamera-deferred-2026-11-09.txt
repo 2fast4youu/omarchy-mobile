@@ -1,0 +1,18 @@
+Kamera: EPROBE_DEFER fuer die Sensoren, 2026-11-09 22:50
+========================================================
+
+Befund (v0ar, Built-in-Kamera):
+  imx355 17-0010/17-001a: "failed to find sensor: -5" bei t=0.58 s
+  sdm845-camcc wird erst bei t=17.6 s bereit
+  -> Sensor probt vor dem Clock-Provider, MCLK laeuft nicht,
+     Sensor antwortet nicht auf I2C, Probe scheitert endgueltig.
+
+Fix (Kernel): in imx355.c und imx363.c liefert der Probe bei
+fehlender Sensor-Antwort jetzt -EPROBE_DEFER statt -5/-EIO; der Kernel
+probiert spaeter erneut (nach dem camcc).
+
+Boot v0as = f7b22fa57bc7190c6eda9ebf8177609282db0e8d7f0455ea58328106e7fadc16
+im ROM-Paket; Flash steht aus (kein Fastboot).
+
+Erwartung: Sensoren werden nach dem camcc erneut geprobt und gefunden
+-> v4l2-async verbindet sie mit csiphy/csid -> cam -l listet Kameras.
