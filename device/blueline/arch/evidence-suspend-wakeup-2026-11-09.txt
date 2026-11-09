@@ -1,0 +1,21 @@
+Suspend mit Wakeup funktioniert, 2026-11-09 20:47
+=================================================
+
+Vorher: "echo mem" -> Geraet schlief, wachte nie auf (keine RTC,
+kein irq-wakeup). Nur physischer Power-Druck half.
+
+Fix: Wakeup-Quellen aktivieren (omamobile-wakeup.sh):
+  /sys/devices/platform/soc@0/c440000.spmi/spmi-0/0-00/*/power/wakeup
+  /sys/devices/platform/soc@0/c440000.spmi/spmi-0/0-02/*/power/wakeup
+  /sys/bus/i2c/devices/*/power/wakeup
+Der Power-Knopf pm8941_pwrkey ist damit "enabled" (IRQs 90: 2+1 Events).
+
+Ergebnis (live):
+  echo mem > /sys/power/state
+  -> suspend_stats: success=3, fail=0
+  -> dmesg: "PM: suspend entry (s2idle)" / "PM: suspend exit"
+  -> SSH bleibt erreichbar, Geraet wacht auf
+  (Die ersten Suspend-Zyklen waren kurz, weil PMIC-Wakeups feuerten;
+   nach Abschalten des Batterie-/Charger-Wakeups blieb es stabil.)
+
+Init ruft omamobile-wakeup beim Start auf.

@@ -147,6 +147,10 @@ done
 [ -x /usr/bin/NetworkManager ] && /usr/bin/NetworkManager --no-daemon >/tmp/nm.log 2>&1 &
 # Helligkeit fuer den Sitzungsnutzer schreibbar (Idle-Daemon/Shell).
 chmod 666 /sys/class/backlight/*/brightness 2>/dev/null
+# Wakeup-Quellen fuer s2idle: ohne sie bleibt das Telefon nach "echo mem"
+# schlafen (keine RTC). Der Power-Knopf (pm8941_pwrkey) und die PMIC-
+# Geraete wecken. Am Geraet belegt: suspend success=3, fail=0.
+[ -x /usr/local/bin/omamobile-wakeup ] && /usr/local/bin/omamobile-wakeup >/tmp/wakeup.log 2>&1
 # UPower: die Shell (Quickshell.Services.UPower) liest den Akku darueber.
 [ -x /usr/lib/upowerd ] && /usr/lib/upowerd >/tmp/upowerd.log 2>&1 &
 # Power-Profile (ppd) + Abbildung auf die CPU-Kappe.
