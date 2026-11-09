@@ -68,11 +68,14 @@ for m in rfkill ecc ecdh_generic bluetooth btqca btbcm hci_uart rfcomm \
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
 
-# Kamera: camss, cci, camcc und die Sensoren sind im Kernel EINGEBAUT
-# (CONFIG_MEDIA_SUPPORT=y ... VIDEO_QCOM_CAMSS=y). Sie werden beim Boot
-# in der richtigen Reihenfolge verbunden; Module NICHT nachladen, sonst
-# registriert sich alles doppelt ("Driver already registered") und der
-# v4l2-async-Bind scheitert.
+# Kamera: camss, cci und camcc sind EINGEBAUT (CONFIG_MEDIA_SUPPORT=y,
+# VIDEO_QCOM_CAMSS=y, SDM_CAMCC_845=y). NUR die Sensoren sind Module und
+# werden hier geladen - nach dem camcc, damit die MCLK schon laeuft
+# (als Built-in probten sie bei 0.5 s und scheiterten mit -5, danach war
+# die MCLK mit -EBUSY blockiert).
+for m in imx355 imx363; do
+    [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
+done
 chmod 666 /dev/dma_heap/* 2>/dev/null
 chmod 666 /dev/media* 2>/dev/null
 
