@@ -1,0 +1,22 @@
+Rueckkamera (IMX363): Live-Test und Blocker, 2026-11-09 14:32
+=============================================================
+
+Der laufende Boot hat bereits camss port@0 und cci i2c-bus@0 (aus v0ao),
+aber OHNE Sensor-Kindknoten - der &cci_i2c0-Block kam erst danach.
+
+Live-Test:
+  - echo imx363 0x10 > /sys/bus/i2c/devices/i2c-16/new_device
+    -> "Instantiated device imx363 at 0x10" (16-0010)
+  - v4l2-cci.ko fehlte in /opt/omamobile/mods (liegt in
+    drivers/media/v4l2-core/), nachgeladen -> imx363 laedt
+  - Probe scheitert: "input clock frequency of 0 not supported" (-22)
+    und "supply vana/vdig/vif not found, using dummy regulator"
+    -> erwartbar: ein manuell per new_device erzeugtes i2c-Geraet hat
+       keine DT-Clocks/Regler.
+
+Fazit: Die Rueckkamera braucht den DT-Knoten (im Boot v0ap/v0ao-DTB
+enthalten) und einen frischen Boot. Danach probt der imx363 mit
+MCLK0 (24 MHz) und den Reglern aus dem DT.
+
+Wichtig fuer den Bau: v4l2-cci.ko muss mit in /opt/omamobile/mods
+(sonst fehlen imx363 die cci_*-Symbole).
