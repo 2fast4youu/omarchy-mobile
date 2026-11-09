@@ -1,0 +1,21 @@
+Kamera: camss/cci/camcc Built-in + Sensoren als Module, 2026-11-10 00:18
+=======================================================================
+
+Erkenntnisse der Built-in-Versuche (v0ar/v0as):
+  - Alle built-in: Sensoren proben bei 0.5 s, camcc erst 17.6 s bereit
+    -> -5 (kein I2C-Ack); danach ist die MCLK mit -EBUSY blockiert und
+    ein camcc-Unbind ist bei Built-in nicht moeglich (Kernel-Oops).
+  - EPROBE_DEFER allein half nicht (Sensoren banden, aber die MCLK
+    blieb blockiert, v4l2-async verband nicht).
+
+Jetzt (v0at): camss/cci/camcc bleiben Built-in (loest das
+Doppel-Registrierungs-Problem), die SENSOREN sind wieder Module und
+werden von der Init NACH dem camcc geladen - dieser Pfad hat frueher
+funktioniert (cam -l + echter Frame).
+
+Boot v0at = 602c273e4afbbf17a4f7a1c9305c32978974c7ad0cd442179fc5dfbb6821df91
+Userdata  = 516bc37a819b04de2ad69515a2e52dcf7d1a9c595e2c732ba3a31b6b34241090
+  (43 Module inkl. imx355.ko/imx363.ko; Init laedt nur diese beiden)
+
+Erwartung: Sensoren laden nach dem camcc, bekommen die MCLK, antworten
+auf I2C, v4l2-async verbindet sie -> cam -l listet die Kameras.
