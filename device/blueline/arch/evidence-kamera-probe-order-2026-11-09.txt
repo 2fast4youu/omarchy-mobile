@@ -1,0 +1,21 @@
+Kamera: Sensoren proben VOR dem camcc -> -5, 2026-11-09 22:36
+==============================================================
+
+Nach dem Doppel-Registrierungs-Fix (v0ar + Image 92b766c2):
+  - "already registered": 0  (Doppel-Registrierung weg)
+  - imx355 17-0010/17-001a: "failed to find sensor: -5" bei t=0.58 s
+  - camcc (sdm845-camcc) wird erst bei t=17.6 s bereit
+    ("sync_state() pending due to 16-0010/17-0010/17-001a")
+  - cam_cc_mclk2_clk: enable_count=0, Rate 19.2 MHz, Consumer 17-001a
+  - front_cam_avdd/aux_avdd: 2800 mV, 0 mA (kein Verbraucher)
+  - i2c-17 0x10/0x1a: EBUSY (Geräte gebunden, Probe fehlgeschlagen)
+  - cam -l: leer, keine /dev/v4l-subdev*
+
+Deutung: Die Sensoren werden als Built-in sehr früh (0.58 s) geprobt,
+bevor der camcc die MCLK bereitstellt. Der Probe scheitert mit -5
+(kein I2C-Ack), ein erneuter Probe ist blockiert (-16).
+Frueher (Module) hat ein Rebind nach dem camss funktioniert.
+
+Naechster Schritt: Sensor-Probe nach hinten schieben (Built-in
+Reihenfolge / deferred probe erzwingen) oder die Sensoren wieder als
+Module laden und nach camcc/camss binden.
