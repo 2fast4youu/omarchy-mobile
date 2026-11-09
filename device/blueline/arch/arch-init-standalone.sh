@@ -68,26 +68,11 @@ for m in rfkill ecc ecdh_generic bluetooth btqca btbcm hci_uart rfcomm \
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
 
-# Kamera: videodev/videobuf2 -> CCI-Controller -> camcc (GDSCs) -> camss
-# -> Sensoren. Reihenfolge ist Pflicht; sonst fehlen die Power-Domains.
-for m in mc videodev v4l2-common v4l2-async v4l2-fwnode v4l2-cci \
-         videobuf2-common videobuf2-v4l2 videobuf2-memops \
-         videobuf2-dma-contig videobuf2-vmalloc videobuf2-dma-sg \
-         i2c-qcom-cci camcc-sdm845 qcom-camss imx355 imx363; do
-    [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
-done
-# Sensoren nach dem camss neu binden (MCLK kommt vom camss; beim Boot
-# proben sie sonst vorher und scheitern mit -5).
-sleep 1
-for d in 17-0010 17-001a; do
-    [ -e /sys/bus/i2c/drivers/imx355/unbind ] && echo "$d" > /sys/bus/i2c/drivers/imx355/unbind 2>/dev/null
-    [ -e /sys/bus/i2c/drivers/imx355/bind ] && echo "$d" > /sys/bus/i2c/drivers/imx355/bind 2>/dev/null
-done
-# Rueckkamera (IMX363) am CCI-Bus 0: der DT-Knoten (cci_i2c0/camera@10)
-# legt das Geraet an; fehlt es (aelterer DTB), hier instanziieren.
-if [ ! -e /sys/bus/i2c/devices/16-0010 ]; then
-    [ -e /sys/bus/i2c/devices/i2c-16/new_device ] && echo imx363 0x10 > /sys/bus/i2c/devices/i2c-16/new_device 2>/dev/null
-fi
+# Kamera: camss, cci, camcc und die Sensoren sind im Kernel EINGEBAUT
+# (CONFIG_MEDIA_SUPPORT=y ... VIDEO_QCOM_CAMSS=y). Sie werden beim Boot
+# in der richtigen Reihenfolge verbunden; Module NICHT nachladen, sonst
+# registriert sich alles doppelt ("Driver already registered") und der
+# v4l2-async-Bind scheitert.
 chmod 666 /dev/dma_heap/* 2>/dev/null
 chmod 666 /dev/media* 2>/dev/null
 
