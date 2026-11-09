@@ -1,0 +1,19 @@
+Ladepfad (USB-Typ-Erkennung), 2026-11-09 15:30
+===============================================
+
+Befund: Der Akku entlaedt trotz angeschlossenem Kabel:
+  pmi8998-charger: online=1, usb_type="Unknown [SDP] DCP CDP",
+                   voltage_now=0, current_now=0
+  qcom-battery:    Discharging, 99%, 4.251 V, ~2 mA
+Der Charger erkennt den USB-Typ nicht -> keine Ladung.
+
+Kette: qcom_smbx (Charger) braucht die Typec-Erkennung.
+  CONFIG_TYPEC_QCOM_PMIC=m -> qcom_pmic_tcpm.ko (nicht geladen)
+  Abhaengigkeiten: tcpm.ko, aux-hpd-bridge.ko (devm_drm_dp_hpd_bridge_*)
+Live geladen: tcpm, aux_hpd_bridge, qcom_pmic_tcpm -> Module aktiv,
+aber /sys/class/typec bleibt LEER (PMIC-Typec bindet nicht; DT-Knoten
+oder Probe-Fehler). usb_type bleibt "Unknown".
+
+Naechster Schritt: DT-Knoten des PMIC-Typec pruefen (pmi8998.dtsi,
+"qcom,pm8998-typec"?) und den Probe-Fehler im dmesg suchen; erst dann
+laedt der Akku ueber USB.
