@@ -1,0 +1,20 @@
+Rueckkamera (IMX363) im DT + Akku im Image, 2026-11-09 13:20-13:33
+==================================================================
+
+Die Rueckkamera fehlte komplett im DT (kein &cci_i2c0-Knoten). Werte aus
+dem Stock-DTBO (dtbo.img, Overlay 0, sensor_rear: qcom,cam-sensor@0):
+  cci-master 0, csiphy-sd-index 0, MCLK0 (CAM_CC_MCLK0_CLK) 24 MHz,
+  Reset GPIO TLMM 80, VANA GPIO TLMM 16, vdig = pm8998_s3 (1.35 V),
+  vio = pm8998_lvs1 (1.8 V), vana = pmi8998_bob (3.3 V),
+  Position roll 90 / yaw 180 (Rueckkamera).
+
+Umgesetzt in sdm845-google-common.dtsi:
+  - camera_rear_vana (regulator-fixed, GPIO 16, vin vreg_bob)
+  - &camss port@0 -> camss_endpoint0 (Rueckkamera)
+  - &cci_i2c0 { rear_cam: camera@10 { compatible "sony,imx363", ... } }
+DTB gebaut (dtc-Dump enthaelt imx363).
+
+Boot v0ao = 881caca58f43f6b5466be8ade31089972411cea1d491895bf3d64cea6979796e
+Image 50190c99 mit 42 Modulen (inkl. qcom-spmi-rradc/qcom_smbx/pmi8998_fg/
+videobuf2-dma-sg/imx363) und Init-Akku-Block.
+Sparse f52f902d99f12f8e72edc0964f80684f5f7043b1b21ed2df0b61e16560442202
