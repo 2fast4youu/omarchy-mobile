@@ -1,0 +1,22 @@
+Suspend funktioniert - aber kein Wakeup, 2026-11-09 16:47
+=========================================================
+
+Test auf dem v0ap-Boot (fsnotify-Fix aktiv):
+  echo mem > /sys/power/state
+  -> SSH-Verbindung bricht ab, kein USB mehr, Geraet schlaeft
+  -> Das ist der BEWEIS, dass der fsnotify/SRCU-Fix wirkt:
+     vorher scheiterte das Einfrieren nach 20 s (fail=3, -16),
+     jetzt geht das Geraet tatsaechlich in s2idle.
+
+Problem: Es gibt keinen Wakeup-Trigger.
+  - Keine RTC (Pixel 3 hat keine funktionierende RTC im mainline)
+  - Kein Tastendruck-Trigger konfiguriert (irq wakeup nicht gesetzt)
+  - USB-Events wecken nicht (dwc3 wakeup nicht aktiviert)
+  -> Das Geraet bleibt im Suspend, bis physisch Power gedrueckt wird.
+
+Naechster Schritt: Wakeup-Quellen konfigurieren
+  (echo enabled > /sys/class/.../power/wakeup fuer pwrkey/resin/touch,
+   bzw. irq wakeup; und/oder RTC-Alarm). Bis dahin ist Suspend
+  funktional, aber nicht alltagstauglich (kein Aufwachen).
+
+Wichtig: Der Kamera-xclk-Fix (v0aq2 a5eebdd5) ist noch nicht geflasht.
