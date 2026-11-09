@@ -32,3 +32,18 @@ Nachtrag 15:35 - Analyse vertieft:
     IIO-Kanal nicht ab bzw. der Power-Path-Status meldet kein USBIN.
 Naechster Schritt: POWER_PATH_STATUS lesen (Register-Dump) und mit dem
 Stock-Verhalten vergleichen; ggf. POWER_PATH/APSD-Init im Treiber.
+
+Nachtrag 15:50 - vollstaendige Diagnose:
+  - usbin-icl-change IRQ: 0 Events -> keine USB-Plugin-Interrupts
+  - dwc3 a600000.usb laeuft, USB-PHYs vorhanden
+  - charger DT: interrupts usb-plugin/bat-ov/wdog-bark/usbin-icl-change
+  - SMB2 init_seq setzt CHARGER_INHIBIT_BIT (Laden gehemmt ab
+    bestimmter Akkuspannung) und CHARGING_ENABLE_CMD
+  - Akku: 4.250965 V (max design 4.4 V), 99 %, Discharging, ~2 mA
+    -> NICHT voll (150 mV Reserve), aber der Charger meldet Full und
+       liefert keinen Strom.
+  - Spannung ueber 30 s konstant, Kapazitaet konstant 99 %
+Deutung: Entweder greift CHARGER_INHIBIT_BIT zu frueh, oder der
+Power-Path/APSD-Zustand ist nicht initialisiert (kein usb-plugin-IRQ).
+Naechster Schritt: CHARGER_INHIBIT_BIT im Treiber fuer SMB2 pruefen
+bzw. POWER_PATH_STATUS auslesen (regmap-Debug).
