@@ -1,0 +1,17 @@
+Image mit lock-freier Idle-Config, 2026-11-09 15:25
+===================================================
+
+Boot v0ap = 939b6d5d (fsnotify-Fix, Rueckkamera-DT, Akku-FG-Patch)
+Userdata = e11b0bd40c36f947bffb58e58b5324f0efc379971ee71c0b5ed8df0ba0030bb5
+
+Im Image per debugfs belegt:
+  - /home/omarchy/.config/hypr/hypridle.conf: 0x lock_cmd, 2 listener
+    (30 s dimmen, 60 s DPMS off) - verhindert den Shell-Zombie durch
+    den Omarchy-Lock
+  - 43 Module (v4l2-cci, Akku-Kette, imx355/imx363, dma-sg)
+  - /usr/share/megapixels/config/google,blueline.conf (3 Kameras)
+  - hypridle, power-profiles-daemon, upowerd, brightnessctl,
+    omamobile-power-profile
+
+Nach dem Flash zu pruefen: cam -l (3 Kameras), suspend (echo mem),
+megapixels (Vorschau), Akku (99 %, laden/entladen), Shell ohne Lock.
