@@ -17,3 +17,18 @@ oder Probe-Fehler). usb_type bleibt "Unknown".
 Naechster Schritt: DT-Knoten des PMIC-Typec pruefen (pmi8998.dtsi,
 "qcom,pm8998-typec"?) und den Probe-Fehler im dmesg suchen; erst dann
 laedt der Akku ueber USB.
+
+Nachtrag 15:35 - Analyse vertieft:
+  - Kein Typec-DT-Knoten in pmi8998.dtsi/pm8998.dtsi (mainline) und
+    keiner im Stock-DTBO -> der Pixel 3 nutzt keinen PMIC-Typec.
+  - qcom_smbx liest usb_type aus APSD_STATUS/APSD_RESULT_STATUS und
+    usb_online aus POWER_PATH_STATUS; usb_type bleibt Unknown, weil
+    smb_get_prop_usb_online false liefert (P_PATH_USE_USBIN_BIT bzw.
+    VALID_INPUT_POWER_SOURCE fehlt).
+  - Der RRADC-Kanal existiert: iio:device1 in_voltage0_label=usbin_v
+    (raw=265), in_current0_label=usbin_i. charger io-channels/names im
+    DT korrekt (usbin_i, usbin_v).
+  - charger voltage_now=0, current_now=0 -> der Treiber fragt den
+    IIO-Kanal nicht ab bzw. der Power-Path-Status meldet kein USBIN.
+Naechster Schritt: POWER_PATH_STATUS lesen (Register-Dump) und mit dem
+Stock-Verhalten vergleichen; ggf. POWER_PATH/APSD-Init im Treiber.
