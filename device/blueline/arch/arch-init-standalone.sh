@@ -140,6 +140,8 @@ done
 # nimmt wlan0, sobald der WLAN-Stack steht.
 [ -x /usr/lib/bluetooth/bluetoothd ] && /usr/lib/bluetooth/bluetoothd -n >/tmp/bluetoothd.log 2>&1 &
 [ -x /usr/bin/NetworkManager ] && /usr/bin/NetworkManager --no-daemon >/tmp/nm.log 2>&1 &
+# UPower: die Shell (Quickshell.Services.UPower) liest den Akku darueber.
+[ -x /usr/lib/upowerd ] && /usr/lib/upowerd >/tmp/upowerd.log 2>&1 &
 /usr/lib/systemd/systemd-udevd --daemon 2>/dev/null
 for d in /sys/class/input/event*/uevent; do echo add > "$d" 2>/dev/null; done
 chown root:input /dev/input/event* 2>/dev/null

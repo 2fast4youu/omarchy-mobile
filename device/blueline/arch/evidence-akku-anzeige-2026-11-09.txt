@@ -1,0 +1,21 @@
+Akkustand in der Statusleiste, 2026-11-09 13:39
+===============================================
+
+Kette: qcom-spmi-rradc -> qcom_smbx -> pmi8998_fg -> upowerd ->
+Quickshell.Services.UPower -> Statusleiste.
+
+Der FG-Treiber lieferte nur capacity/voltage_now/current_now; UPower
+konnte damit kein percentage/energy rechnen (energy-full 0 Wh).
+Patch in drivers/power/supply/pmi8998_fg.c: CHARGE_FULL (2915000 uAh,
+Pixel-3-Nennkapazitaet), CHARGE_NOW (capacity*design/100),
+CHARGE_FULL_DESIGN. Neu gebaut und live geladen.
+
+Ergebnis:
+  sysfs: capacity=99, charge_full=2915000, charge_now=2885850,
+         charge_full_design=2915000, voltage_now=4249989
+  upower: percentage=99%, energy=12.70 Wh, energy-full=12.83 Wh,
+          state=discharging
+  Statusleiste: Akku-Symbol mit Blitz + "99%" (Screenshot
+  device/blueline/arch/akku-statusleiste-2026-11-09.png)
+
+Init startet jetzt /usr/lib/upowerd.
