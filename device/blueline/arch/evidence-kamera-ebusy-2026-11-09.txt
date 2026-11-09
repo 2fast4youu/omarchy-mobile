@@ -39,3 +39,17 @@ Nachtrag 21:10 - imx363-Kette Schritt fuer Schritt:
    Boot v0aq4 = ab8518e990bf24a81dab6d6a6f55908ef6ba8b97ca7dfc180b1fcef23e85bd27
    (Flash noch offen; der laufende DT zeigt noch 600 MHz = 0x46c323).
 Naechster Schritt: v0aq4 flashen -> imx363-Probe -> 3 Kameras.
+
+Nachtrag 21:15 - imx363-Kette, naechster Schritt:
+Nach clock-frequency + 636-MHz-Linkfrequenz (v0aq4 geflasht):
+  "imx363: 4 lanes" ✅ (Sensor-Datenleitung erkannt)
+  "Error reading reg 0x0016: -6" + "failed to read chip id 363"
+  -> Sensor antwortet nicht auf I2C: Regler fehlen.
+Der Treiber verlangt "vana"/"vdig"/"vif" (imx363.c:475-477), unser DT
+hatte avdd/dovdd/dvdd -> "supply vdig/vif not found, using dummy".
+Fix: vana/vdig/vif im DT; DTB gebaut,
+Boot v0aq5 = cb429ec9140573f789ca63e92c37bf17f2b8f1c85b6bd5dc5699798d3ee21316
+(Flash offen; laufender DT zeigt noch avdd/dovdd/dvdd).
+
+Zwischenstand der Reihe: clock-frequency ✅, link-frequencies ✅,
+4 Lanes ✅ - es fehlt nur noch die Versorgung (vana/vdig/vif).
