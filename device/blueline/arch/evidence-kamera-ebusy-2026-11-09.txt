@@ -88,3 +88,22 @@ Fazit: Ein frischer Boot mit der Init-Reihenfolge
 (camss -> Sensoren -> Re-Probe) ist der richtige Weg; der laufende Boot
 hat die Reihenfolge nicht. Fuer die Rueckkamera bleibt die
 Hardware-Power-Sequenz offen (I2C-Timeout, 0 mA).
+
+Nachtrag 21:35 - v4l2-async verbindet Sensoren nicht:
+Nach frischem Flash (v0aq5 + Image) und komplettem Kamera-Stack-Reload
+(i2c-qcom-cci -> camcc -> camss -> imx355 -> imx363):
+  - camss laeuft (33 Entities, /dev/media0, video0..11)
+  - Sensoren im Graph (entity 237/239: imx355 17-0010/17-001a)
+  - ABER: 0 Links zu msm_csiphy1/2; keine /dev/v4l-subdev*
+  - cam -l: "No sensor found for /dev/media0"
+  - Endpoints im DT korrekt (remote-endpoint, data-lanes 1-4)
+Deutung: Der v4l2-async-Notifier des camss nimmt die Sensoren nicht auf
+(Reihenfolge/Timing beim Modul-Laden). Ein spaeterer Fix waere, camss
+und Sensoren als Built-ins zu bauen oder den Notifier im Treiber zu
+pruefen.
+
+Rueckkamera: DT komplett (clock-frequency, 636 MHz, vana/vdig/vif,
+4 Lanes erkannt), aber I2C-Timeout (kein Strom) -> Hardware-Power.
+
+Beide Frontkameras haben auf einem frueheren Boot funktioniert
+(cam -l + echter Frame); der aktuelle Zustand ist der Async-Bind.
