@@ -1,0 +1,34 @@
+Sitzung nach Suspend gerettet, 2026-11-09 20:32-20:40
+=====================================================
+
+Ausgangslage: Nach dem s2idle-Suspend (16:47) und dem Aufwecken per
+Power-Knopf war die grafische Sitzung komplett weg: kein Hyprland,
+kein Quickshell, kein Squeekboard, /run/user/1000/hypr fehlte.
+SSH lief (uptime 13845 s = das Geraet hatte durchgeschlafen).
+
+Ursachen (zwei):
+1) /home/omarchy/.local fehlte komplett (nur /home/omarchy existierte,
+   root-owned). Die Sitzung scheiterte an
+   "mkdir: cannot create directory '/home/omarchy/.local': Permission denied".
+2) /home/omarchy/.config/hypr/ enthielt nur hypridle.conf - alle
+   Hyprland-Configs fehlten (hyprland.lua, looknfeel.lua, ...).
+   Hyprland stuerzte ab: "Couldn't generate default config" +
+   "Hyprland terminated by signal 11".
+
+Rettung:
+  mkdir -p /home/omarchy/.local/state/omarchy/current/theme
+  chown -R omarchy:omarchy /home/omarchy/.local
+  cp -r /usr/share/omarchy/config/hypr/* /home/omarchy/.config/hypr/
+  chown -R omarchy:omarchy /home/omarchy/.config
+  setsid su - omarchy -c "dbus-run-session -- /run/omamobile-session.sh"
+  -> Hyprland (29323), Squeekboard (29352) starten
+  Quickshell neu gestartet (doppelte Instanz beendet)
+  first-run-user-Marke gesetzt, Notifications geleert
+
+Ergebnis: sauberer Homescreen (Uhr 19:40, Akku 99%, Waves-Hintergrund,
+Chromium/Files/Foot, keine Benachrichtigungen, eine Suchpille).
+Beleg: device/blueline/arch/homescreen-clean-2026-11-09.png
+
+Fuer den Bau: setup-user muss .local und die Hyprland-Configs anlegen
+(der 20-s-Timeout reicht nicht); die Init sollte das idempotent
+sicherstellen.
