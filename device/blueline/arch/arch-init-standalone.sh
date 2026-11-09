@@ -83,6 +83,11 @@ for d in 17-0010 17-001a; do
     [ -e /sys/bus/i2c/drivers/imx355/unbind ] && echo "$d" > /sys/bus/i2c/drivers/imx355/unbind 2>/dev/null
     [ -e /sys/bus/i2c/drivers/imx355/bind ] && echo "$d" > /sys/bus/i2c/drivers/imx355/bind 2>/dev/null
 done
+# Rueckkamera (IMX363) am CCI-Bus 0: der DT-Knoten (cci_i2c0/camera@10)
+# legt das Geraet an; fehlt es (aelterer DTB), hier instanziieren.
+if [ ! -e /sys/bus/i2c/devices/16-0010 ]; then
+    [ -e /sys/bus/i2c/devices/i2c-16/new_device ] && echo imx363 0x10 > /sys/bus/i2c/devices/i2c-16/new_device 2>/dev/null
+fi
 chmod 666 /dev/dma_heap/* 2>/dev/null
 chmod 666 /dev/media* 2>/dev/null
 
