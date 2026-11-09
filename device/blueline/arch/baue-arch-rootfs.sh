@@ -59,6 +59,8 @@ mkdir -p /tmp/arch/usr/local/bin /tmp/arch/usr/local/lib/qbootctl
 cp /qbootctl /tmp/arch/usr/local/bin/qbootctl
 cp /ld-musl-aarch64.so.1 /tmp/arch/usr/local/lib/qbootctl/ld-musl-aarch64.so.1
 chmod 755 /tmp/arch/usr/local/bin/qbootctl /tmp/arch/usr/local/lib/qbootctl/ld-musl-aarch64.so.1
+mkdir -p /tmp/arch/usr/share/megapixels/config
+cp /om/megapixels-config/*.conf /tmp/arch/usr/share/megapixels/config/ 2>/dev/null || true
 mkdir -p /tmp/arch/opt/omamobile/mods
 [ -f /leds-qcom-flash.ko ] && cp /leds-qcom-flash.ko /tmp/arch/opt/omamobile/leds-qcom-flash.ko
 cp /mods/*.ko /tmp/arch/opt/omamobile/mods/ 2>/dev/null || true
