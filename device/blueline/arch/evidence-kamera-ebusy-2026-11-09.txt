@@ -28,3 +28,14 @@ Boot v0aq3 = 6797b72524dd99820b9ef88f30b6cd9281016d702af6ec6db03ee5d6addc5e58.
 Der Flash kam nicht durch (kein Fastboot) - der laufende DT hat das
 Property noch nicht (xxd leer).
 Naechster Schritt: v0aq3 flashen -> imx363-Probe -> 3 Kameras in cam -l.
+
+Nachtrag 21:10 - imx363-Kette Schritt fuer Schritt:
+1) clock-frequency fehlte -> ergaenzt (24000000), v0aq3 geflasht ✅
+   ("input clock frequency of 0" ist weg)
+2) naechster Fehler: "no matching link frequencies found"
+   Der Treiber akzeptiert nur 636000000 oder 321000000
+   (link_freq_menu_items_24 in imx363.c:516); unser DT hatte 600000000.
+   Fix: link-frequencies = <636000000>; DTB gebaut,
+   Boot v0aq4 = ab8518e990bf24a81dab6d6a6f55908ef6ba8b97ca7dfc180b1fcef23e85bd27
+   (Flash noch offen; der laufende DT zeigt noch 600 MHz = 0x46c323).
+Naechster Schritt: v0aq4 flashen -> imx363-Probe -> 3 Kameras.
