@@ -73,3 +73,18 @@ Fazit: Die DT-Kette fuer die Rueckkamera ist vollstaendig (clock-frequency,
 link-frequencies, vana/vdig/vif, reset-gpios, 4 Lanes), aber die
 Hardware-Power-Sequenz des IMX363 braucht weitere Arbeit (GPIO-Polaritaet,
 Regler-Reihenfolge, evtl. PMIC-BOB). Die beiden Frontkameras laufen.
+
+Nachtrag 21:25 - Frontkameras: Async-Links fehlen nach Rebind:
+Beide imx355 sind gebunden (17-0010, 17-001a, drv=imx355), aber
+  media-ctl: "imx355 17-0010/17-001a (1 pad, 0 link)" -> keine
+  Verbindung zu msm_csiphy1/2; cam -l leer.
+Rebind-Versuche (unbind/bind, camss-Reload) stellen die Async-Links
+NICHT wieder her: der Media-Graph wird nur beim Erst-Probe aufgebaut
+(camss vor Sensoren, dann async-connect).
+Wichtig: Beide Frontkameras TEILEN sich MCLK2 (im DT dokumentiert);
+ein zweiter power_on scheitert mit -EBUSY, was beim Rebind auftritt.
+
+Fazit: Ein frischer Boot mit der Init-Reihenfolge
+(camss -> Sensoren -> Re-Probe) ist der richtige Weg; der laufende Boot
+hat die Reihenfolge nicht. Fuer die Rueckkamera bleibt die
+Hardware-Power-Sequenz offen (I2C-Timeout, 0 mA).
