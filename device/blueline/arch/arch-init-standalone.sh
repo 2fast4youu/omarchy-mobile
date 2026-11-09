@@ -140,6 +140,8 @@ done
 # nimmt wlan0, sobald der WLAN-Stack steht.
 [ -x /usr/lib/bluetooth/bluetoothd ] && /usr/lib/bluetooth/bluetoothd -n >/tmp/bluetoothd.log 2>&1 &
 [ -x /usr/bin/NetworkManager ] && /usr/bin/NetworkManager --no-daemon >/tmp/nm.log 2>&1 &
+# Helligkeit fuer den Sitzungsnutzer schreibbar (Idle-Daemon/Shell).
+chmod 666 /sys/class/backlight/*/brightness 2>/dev/null
 # UPower: die Shell (Quickshell.Services.UPower) liest den Akku darueber.
 [ -x /usr/lib/upowerd ] && /usr/lib/upowerd >/tmp/upowerd.log 2>&1 &
 /usr/lib/systemd/systemd-udevd --daemon 2>/dev/null
@@ -183,6 +185,8 @@ done
 sleep 2
 export WAYLAND_DISPLAY=wayland-1 HYPRLAND_INSTANCE_SIGNATURE=$sig
 squeekboard >/tmp/squeekboard.log 2>&1 &
+# Idle-Daemon: Helligkeit runter, dann Bildschirm aus (Akku).
+hypridle >/tmp/hypridle.log 2>&1 &
 quickshell -p /usr/share/omarchy/shell >/tmp/quickshell.log 2>&1 &
 wait
 SITZUNG

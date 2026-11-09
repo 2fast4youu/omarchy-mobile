@@ -1,0 +1,22 @@
+Suspend/Idle/Power: Stand, 2026-11-09 13:45
+==========================================
+
+SUSPEND (s2idle): BLOCKIERT durch einen Kernel-Deadlock.
+  "Freezing user space processes failed after 20s (2 tasks refusing to
+   freeze)"; suspend_stats/fail=2, last_failed_errno=-16, step=freeze.
+  Stacks: kworker/events_unbound in synchronize_srcu (fsnotify_mark_
+  destroy_workfn / fsnotify_connector_destroy_workfn) und quickshell in
+  fsnotify_wait_marks_destroyed (inotify_release). Ein SRCU-Deadlock
+  beim Schliessen von inotify-Watches - Kernel-Bug, nicht Konfiguration.
+  Der Akku-Wake-Lock (qcom-battery) wurde zusaetzlich abgeschaltet
+  (charger power/wakeup=disabled), brachte aber nur den Wake-Lock weg.
+
+IDLE (Ersatz, funktioniert):
+  hypridle 0.1.8 installiert; ~/.config/hypr/hypridle.conf:
+    30 s -> Helligkeit 26/255, 60 s -> DPMS off, Resume -> zurueck.
+  Helligkeit ist jetzt per chmod 666 auch fuer den Nutzer schreibbar
+  (brightnessctl scheitert an der Geraeteklasse, sysfs geht).
+  DPMS off/on ueber hyprctl ist verfuegbar (Lua-Dispatch-Hinweis beachten).
+
+POWER-PROFILE: powerprofilesctl fehlt; schedutil + 1.8-GHz-Kappe +
+40 % Helligkeit + Idle-DPMS sind der aktuelle Stand.
