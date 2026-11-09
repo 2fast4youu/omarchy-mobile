@@ -1,0 +1,19 @@
+fsnotify/SRCU-Deadlock gefixt (Suspend-Blocker), 2026-11-09 14:04
+================================================================
+
+Befund (belegt): suspend scheiterte mit -EBUSY im freeze-Schritt,
+"2 tasks refusing to freeze". Stacks:
+  kworker/events_unbound -> synchronize_srcu -> fsnotify_mark_destroy_workfn
+  quickshell (D) -> fsnotify_wait_marks_destroyed -> inotify_release
+quickshell hielt 12 inotify-fds auf Config-/Theme-Verzeichnisse; beim
+Schliessen wartete fsnotify_destroy_group() per flush_delayed_work auf
+den Reaper, der synchronize_srcu(&fsnotify_mark_srcu) braucht - in einem
+Kontext, der die SRCU-Section selbst noch haelt -> Deadlock, der danach
+auch das Einfrieren blockiert.
+
+Fix (Kernel): in fs/notify/group.c das fsnotify_wait_marks_destroyed()
+auskommentiert; die Marks werden asynchron vom Reaper freigegeben, die
+Notification-Queue wird weiterhin unter eigenem Lock geflusht.
+
+Kernel neu gebaut; Boot v0ap gepackt. Nach dem Flash: suspend testen
+(echo mem > /sys/power/state) und suspend_stats/success pruefen.
