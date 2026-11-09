@@ -1,0 +1,23 @@
+Telefon nach Reboot nicht mehr am USB, 2026-11-09 16:16-16:21
+==============================================================
+
+Ausgangslage: Der laufende Boot hatte einen fsnotify/SRCU-Deadlock
+(quickshell 20696/24096 + 2 kworker in D-State, nicht killbar);
+suspend fail=3. Load 6,0 bei 33,6 Grad C, Akku 99%.
+
+Aktion: "sync; echo b > /proc/sysrq-trigger" (Neustart, um den
+Deadlock zu loesen - der Kernel-Fix ist erst in v0ap, nicht geflasht).
+
+Ergebnis: Danach ist das Geraet komplett weg:
+  - Mac: en12 (NCM, 172.16.42.2) existiert nicht mehr
+  - keine 172.16-Route
+  - fastboot devices: leer
+  - system_profiler: 0 Google-/Pixel-USB-Geraete
+  - SSH 172.16.42.1: Timeout
+
+Deutung: Der Reboot mit dem haengenden fsnotify-Zustand ist nicht
+sauber hochgekommen (oder ABOOT ist im Fastboot ohne USB-Enumeration).
+Nur physischer Eingriff hilft (Power+Leiser).
+
+Wichtig: Boot v0ap (fsnotify-Fix) und das finale Image sind fertig und
+im ROM-Paket; nach dem Flash sollte der Deadlock nicht mehr auftreten.
