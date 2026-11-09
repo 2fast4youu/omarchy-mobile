@@ -1,0 +1,20 @@
+Kamera: doppelte Treiber-Registrierung als Async-Blocker, 2026-11-09 22:19
+=========================================================================
+
+Nach dem v0ar-Flash (Kamera-Stack als Built-ins) zeigte dmesg:
+  "v4l2_async: exports duplicate symbol __v4l2_async_nf_add_fwnode
+   (owned by kernel)"
+  "v4l2_fwnode: exports duplicate symbol ..."
+  "Error: Driver 'qcom-camss' is already registered, aborting..."
+  "Error: Driver 'imx363' is already registered, aborting..."
+  -> 5 Meldungen dieser Art.
+Ursache: Die Init laedt die Kamera-Module weiterhin per insmod
+(/opt/omamobile/mods/*.ko), obwohl camss/cci/camcc/imx355/imx363 jetzt
+im Kernel eingebaut sind. Die zweite Registrierung zerstoert den
+v4l2-async-Graph -> 0 Links, keine /dev/v4l-subdev*, cam -l leer.
+
+Fix: Kamera-Module aus der Init entfernt (Commit d51dc41); Image neu
+gebaut (rootfs cda3d1d2, Sparse 92b766c2), Init laedt keine
+Kamera-Module mehr (0 Treffer).
+ROM-Paket: boot v0ar (a0eccae0) + userdata 92b766c2.
+Naechster Schritt: flashen -> cam -l sollte die Kameras listen.
