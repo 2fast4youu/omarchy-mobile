@@ -60,3 +60,15 @@ Nachtrag 16:00 - Einordnung:
   Fazit: Akkumanagement ist funktional (Kapazitaet, Spannung, Strom,
   Temperatur, Anzeige, Idle, Profile); Feinschliff waere die
   APSD/USB-Typ-Erkennung.
+
+Nachtrag 16:10 - APSD-Start gepatcht, usb_type bleibt Unknown:
+  smb2_init_seq setzte APSD_START_ON_CC_BIT nicht (nur SMB5 tat das).
+  Patch: eigener TYPE_C_CFG-Eintrag mit APSD_START_ON_CC_BIT in der
+  SMB2-Sequenz; Treiber neu gebaut und geladen (SMB2 erkannt).
+  Ergebnis: usb_type weiter "Unknown [SDP] DCP CDP", online=1,
+  voltage_now=0, Akku Discharging ~2 mA.
+  -> Der APSD-Start allein genuegt nicht; der Pixel 3 nutzt den SMB2
+     offenbar mit anderer VBUS-/Typec-Verdrahtung (Stock-Android regelt
+     das ueber einen eigenen usbpd-Treiber, der im mainline fehlt).
+  Fazit: Akkumanagement funktional (Kapazitaet/Spannung/Strom/Temp,
+  Anzeige, Idle, Profile); Ladegeschwindigkeits-Erkennung offen.
