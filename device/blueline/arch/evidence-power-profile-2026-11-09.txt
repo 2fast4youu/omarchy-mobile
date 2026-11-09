@@ -1,0 +1,18 @@
+Power-Profile, 2026-11-09 14:10
+===============================
+
+power-profiles-daemon installiert und manuell gestartet (kein systemd):
+  /usr/lib/power-profiles-daemon, D-Bus org.freedesktop.UPower.PowerProfiles
+  powerprofilesctl list: balanced (aktiv), power-saver
+
+Befund: ppd hat auf sdm845 keinen Platform-Treiber ("PlatformDriver:
+placeholder") und aendert scaling_max_freq NICHT.
+
+Loesung: /usr/local/bin/omamobile-power-profile uebersetzt das Profil in
+die CPU-Kappe:
+  power-saver -> 1.200.000 Hz, balanced -> 1.800.000 Hz,
+  performance -> 2.649.600 Hz (A75-Spitze)
+Live belegt: balanced 1.766.400 Hz, power-saver 1.132.800 Hz,
+zurueck auf balanced 1.766.400 Hz.
+
+Init startet ppd; das Skript liegt im Image.

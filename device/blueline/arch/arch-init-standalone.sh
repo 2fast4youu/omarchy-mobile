@@ -144,6 +144,8 @@ done
 chmod 666 /sys/class/backlight/*/brightness 2>/dev/null
 # UPower: die Shell (Quickshell.Services.UPower) liest den Akku darueber.
 [ -x /usr/lib/upowerd ] && /usr/lib/upowerd >/tmp/upowerd.log 2>&1 &
+# Power-Profile (ppd) + Abbildung auf die CPU-Kappe.
+[ -x /usr/lib/power-profiles-daemon ] && DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket /usr/lib/power-profiles-daemon >/tmp/ppd.log 2>&1 &
 /usr/lib/systemd/systemd-udevd --daemon 2>/dev/null
 for d in /sys/class/input/event*/uevent; do echo add > "$d" 2>/dev/null; done
 chown root:input /dev/input/event* 2>/dev/null
