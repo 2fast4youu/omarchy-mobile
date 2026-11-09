@@ -47,3 +47,16 @@ Deutung: Entweder greift CHARGER_INHIBIT_BIT zu frueh, oder der
 Power-Path/APSD-Zustand ist nicht initialisiert (kein usb-plugin-IRQ).
 Naechster Schritt: CHARGER_INHIBIT_BIT im Treiber fuer SMB2 pruefen
 bzw. POWER_PATH_STATUS auslesen (regmap-Debug).
+
+Nachtrag 16:00 - Einordnung:
+  Der Akku ist bei 99% / 4.251 V (max design 4.4 V) - fast voll.
+  SMB2 setzt CHARGER_INHIBIT_BIT (Laden bei hoher Akkuspannung gehemmt),
+  das ist bei 99% plausibel und verhindert Ueberladung.
+  60-s-Messung: Kapazitaet 99% konstant, Spannung 4.2507-4.2510 V,
+  Strom ~2 mA (Discharging) - konsistent, kein Defekt.
+  Offen bleibt nur die USB-Typ-Erkennung (usb_type=Unknown statt
+  SDP/DCP/CDP) -> beeinflusst die Ladegeschwindigkeit, nicht die
+  Grundfunktion; und der Status "Discharging" statt "Full" bei 99%.
+  Fazit: Akkumanagement ist funktional (Kapazitaet, Spannung, Strom,
+  Temperatur, Anzeige, Idle, Profile); Feinschliff waere die
+  APSD/USB-Typ-Erkennung.
