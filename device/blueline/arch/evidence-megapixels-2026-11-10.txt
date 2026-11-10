@@ -1,0 +1,24 @@
+Megapixels gebaut und gestartet, Config-Ladung offen, 2026-11-10 15:57
+=====================================================================
+
+Megapixels ist jetzt im Image (nach mehreren Bau-Iterationen):
+  - libdng (aus gitlab.com/megapixels-org/libdng) gebaut und installiert
+  - libmegapixels gebaut, .so + Header + handgeschriebene .pc-Dateien
+  - megapixels-gtk gebaut (304664 B), als /usr/bin/megapixels verlinkt
+  - gschema me.gapixels.Megapixels installiert + kompiliert
+  - Abhaengigkeiten: gtk4, glib2 2.90.1 (g_timeout_source_new_3ns),
+    zbar, libconfig, libepoxy, libraw, libfeedback
+  - ldd: 0 fehlende Bibliotheken
+
+Start: "Initializing postprocessor gsetting" + "No processor found"
+-> Megapixels startet, findet aber noch keine Kamera (Config-Ladung
+   bzw. Pipeline-Aufbau offen).
+
+Parallel belegt (cam/libcamera):
+  cam -l: 3 Kameras (2x Front IMX355, 1x Back IMX363)
+  Front + FrontAux: je 2 Frames 820x616 SRGGB10 aufgenommen
+  (kamera-front-2026-11-10.jpg, kamera-front-aux-2026-11-10.jpg)
+
+Naechster Schritt: Megapixels-Config-Ladung debuggen (Config wird
+gefunden, aber die Pipeline evtl. nicht aufgebaut) bzw. die
+SensorDriver-Namen an die Entity-Namen anpassen.
