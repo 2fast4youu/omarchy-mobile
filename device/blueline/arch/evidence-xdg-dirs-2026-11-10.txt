@@ -1,0 +1,21 @@
+XDG-Verzeichnisse fuer Megapixels angelegt, 2026-11-10 18:31
+============================================================
+
+Befund: Megapixels speichert Fotos in
+  g_get_user_special_dir(G_USER_DIRECTORY_PICTURES)
+Das lieferte NULL, weil ~/.config/user-dirs.dirs fehlte
+-> Fotos konnten nicht gespeichert werden.
+
+Fix:
+  ~/.config/user-dirs.dirs mit XDG_PICTURES_DIR="$HOME/Pictures"
+  plus alle Standard-Verzeichnisse (Desktop, Downloads, Documents,
+  Music, Videos, Templates, Public) angelegt.
+  Test: GLib.get_user_special_dir(DIRECTORY_PICTURES)
+        -> /home/omarchy/Pictures  ✅
+
+Ausloeser: reagiert weiterhin nicht auf simulierte Events
+(ydotool/uinput); echte Touch-Eingabe funktioniert. Die Live-Vorschau
+laeuft stabil.
+
+Beide Frontkameras liefern Frames; Rueckkamera braucht v0bb
+(vana -> vreg_bob).
