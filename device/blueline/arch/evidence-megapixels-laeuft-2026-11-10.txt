@@ -1,0 +1,28 @@
+Megapixels laeuft vollstaendig (UI/GL/Postprozessor), 2026-11-10 17:08
+======================================================================
+
+Megapixels startet jetzt komplett durch:
+  Initializing postprocessor gsetting
+  Found postprocessor script at /home/omarchy/.config/megapixels/postprocess.sh
+  Initialized postprocessor to .../postprocess.sh
+  Initialized OpenGL ES 3.2
+  Found calibration file at .config
+  Using shader /org/postmarketos/Megapixels/debayer.vert und debayer_packed.frag
+  Exposure limit: 907
+
+Config wird geladen (per Testprogramm belegt):
+  find=1 path=/usr/share/megapixels/config/google,blueline.conf
+  load=1 count=3
+  cam[0] name=Rear, cam[1] name=Front, cam[2] name=FrontAux
+
+Was dafuer noetig war:
+  - libdng + libmegapixels + megapixels-gtk gebaut (Header, .pc-Dateien,
+    gschema me.gapixels.Megapixels)
+  - gtk4 + glib 2.90.1 (g_timeout_source_new_ns), zbar, libconfig
+  - postprocess.sh in ~/.config/megapixels/ (sonst exit 1 "No processor found")
+  - ~/.cache fuer den Shader-Cache
+
+Verbleibend: "MPCamera: VIDIOC_STREAMON error 6" -> die Sensoren sind
+nach den vielen Live-Tests im -EBUSY-Zustand (Clock belegt); ein frischer
+Boot mit dem v0ba-Image ist noetig, dann sollte auch das Kamerabild
+kommen.
