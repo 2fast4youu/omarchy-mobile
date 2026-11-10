@@ -1,0 +1,26 @@
+Kamera: MCLK2-Fix (camss-Power-Domain), 2026-11-10 11:34
+========================================================
+
+Ursache gefunden (dmesg):
+  "cam_cc_mclk2_clk status stuck at 'off'"
+  WARNING at drivers/clk/qcom/clk-branch.c:88 (clk_branch_toggle)
+-> Die MCLK2-Branch laesst sich nicht einschalten, solange die
+   camss-Power-Domains (genpd:0/1/2:acb3000.camss) "suspended" sind.
+   clk_branch_wait() liefert dann -EBUSY.
+
+Fix (live verifiziert):
+  echo on > /sys/devices/platform/soc@0/acb3000.camss/power/control
+  -> titan_top_gdsc on, genpd:2:acb3000.camss active
+  -> danach imx355-Probe:
+       OMADBG power_on: clk rate=19200000 name=ok
+       OMADBG clk_prepare_enable ret=0   (vorher -16!)
+       OMADBG regulator_bulk_enable ret=0
+     fuer BEIDE Sensoren (17-0010 und 17-001a) ✅
+
+Damit ist die MCLK-Kette geloest. Verbleibend: Die Sensoren
+registrieren noch keine Subdevs (0 Links zu csiphy, cam -l leer);
+CCI-IRQ hat 58 Events (Bus arbeitet). Naechster Schritt: Chip-ID-Read
+und Subdev-Registrierung pruefen.
+
+Wichtig fuer die Init: camss-Runtime-PM MUSS aktiv sein, bevor die
+Sensoren geladen werden (echo on > .../camss/power/control).
