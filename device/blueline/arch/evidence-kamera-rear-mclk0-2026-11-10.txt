@@ -1,0 +1,26 @@
+Rueckkamera: power_on laeuft, MCLK0 bleibt aus, 2026-11-10 11:52
+================================================================
+
+Debug-Patch in imx363_power_on:
+  imx363 16-0010: OMADBG imx363_power_on start
+  imx363 16-0010: OMADBG imx363 regulators ret=0     ✅
+  imx363 16-0010: Error reading reg 0x0016: -6        ❌ (ENXIO)
+  imx363 16-0010: failed to read chip id 363 (-6), deferring
+
+Dabei gemessen:
+  cam_cc_mclk0_clk (Rueckkamera): enable_count=0, Rate 24 MHz,
+    Consumer "deviceless" -> die Clock wird NICHT aktiviert
+  cam_cc_mclk2_clk (Front): Consumer 17-001a, enable_count=0
+  camss runtime_status=active, titan_top_gdsc=on
+  rear_cam_vana: num_users=0, 2800 mV, 0 mA
+  Kein "failed to enable clock" und kein "stuck at off" im dmesg ->
+    clk_prepare_enable liefert keinen Fehler, aktiviert aber nichts.
+
+Deutung: Der imx363 bekommt keinen MCLK0 (Clock bleibt deviceless),
+deshalb antwortet der Sensor nicht auf I2C (Chip-ID -6). Die
+Rueckkamera braucht denselben camss-PM-Fix wie die Frontkameras
+(power/control=on VOR dem Sensor-Laden) - der laeuft auf diesem Boot
+noch nicht, weil die Init-Aenderung erst mit dem naechsten Flash kommt.
+
+Naechster Schritt: v0ax flashen (Init setzt camss-PM vor dem
+Sensor-Laden; DT hat alle 3 Sensoren).
