@@ -1,0 +1,19 @@
+camss nach Live-Tests dauerhaft im Fehlerzustand, 2026-11-10 17:41
+==================================================================
+
+Zustand nach vielen cam/megapixels/v4l2-Tests:
+  - cam -l: 3 Kameras (Subdevs, 34 Links, Sensoren gebunden) OK
+  - v4l2-ctl --stream-mmap: "VIDIOC_STREAMON returned -1 (Broken pipe)"
+  - dmesg: "qcom-camss: Failed to start media pipeline: -32" (EPIPE)
+  - video-Nodes nach camss-Rebind auf Default 1920x1080 UYVY; cam setzt
+    korrekt auf 1920x1080 pRAA (SRGGB10) um, aber es kommen keine Frames
+  - camss-Rebind (unbind/bind) hilft nicht; Modul-Reload hilft nicht
+  - titan_top_gdsc on, camss runtime active, mclk2 Rate 19.2 MHz
+
+Deutung: Der camss haelt nach den vielen Starts interne Stream-/
+Power-Referenzen (s_stream_enabled, Pipeline-Zustand), die nur ein
+frischer Boot zuruecksetzt. Vor dem ersten Test nach dem Boot
+funktionierten cam, v4l2-ctl und Megapixels-UI einwandfrei.
+
+Naechster Schritt: v0ba flashen (vana-gpios fuer die Rueckkamera) und
+danach die Kamera-Tests in EINEM Durchgang ohne Wiederholungen fahren.
