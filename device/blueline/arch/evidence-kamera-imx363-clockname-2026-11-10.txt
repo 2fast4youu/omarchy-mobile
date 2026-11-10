@@ -1,0 +1,18 @@
+Rueckkamera: clock-names "xclk" + Treiber-Fix, 2026-11-10 11:55
+================================================================
+
+Befund: Der imx363 holte seine Clock mit
+  devm_clk_get_optional(&client->dev, NULL)
+Der DT-Knoten hat aber clock-names = "xclk" -> clk_get mit NULL findet
+die Clock nicht, cam_cc_mclk0_clk bleibt "deviceless"/enable_count=0,
+der Sensor bekommt keinen MCLK0 und antwortet nicht (Chip-ID -6).
+
+Fix (Treiber): zuerst devm_clk_get_optional(dev, "xclk"), Fallback NULL.
+Zusaetzlich hat der DT-Knoten jetzt clock-names="xclk" (v0ax-DTB).
+
+Auf dem LAUFENDEN Boot greift der Fix nicht, weil der DT dort noch kein
+clock-names hat (v0ax nicht geflasht).
+
+Naechster Schritt: v0ax flashen (DT mit clock-names + alle 3 Sensoren,
+Init mit camss-PM vor dem Sensor-Laden) -> Rueckkamera sollte proben und
+der Notifier alle drei Sensoren binden.
