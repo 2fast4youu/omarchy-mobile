@@ -1,0 +1,23 @@
+Rueckkamera: GPIO 16 Input/Output-Widerspruch, 2026-11-10 13:10
+==============================================================
+
+Live-Befund (laufender Boot):
+  /sys/kernel/debug/gpio:        "gpio16: in low ... push-pull low"
+  /sys/kernel/debug/pinctrl:     "gpio16 : out low func0 2mA pull down"
+  -> Der GPIO-Controller (gpiolib) meldet INPUT, der Pinctrl meldet
+     OUTPUT. gpiod_set_value() greift daher nicht.
+  rear_cam_vana: state=disabled, num_users=0
+  i2c-16 0x10: Errno 110 (Timeout)
+
+Versuche:
+  - reg-fixed-voltage unbind/bind -> keine Aenderung
+  - linehandle ueber /dev/gpiochip2 -> EINVAL (Pin vom Treiber belegt)
+  - regulator_enable -> 0, aber Pin bleibt low
+
+Deutung: Der Fixed-Regulator fordert den GPIO an, konfiguriert ihn im
+Pinmux als Output, aber gpiolib fuehrt ihn als Input. Deshalb kann der
+Regler ihn nicht treiben und der Sensor bleibt ohne VANA.
+
+Der v0ba-Fix (vana-gpios im imx363-Treiber, gpiod_set_value in
+power_on) umgeht den Fixed-Regulator und sollte das loesen; er braucht
+aber den Flash.
