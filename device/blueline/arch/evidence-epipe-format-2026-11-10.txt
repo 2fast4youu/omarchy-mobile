@@ -1,0 +1,28 @@
+STREAMON -EPIPE: Format-Mismatch im Media-Graph, 2026-11-10 17:57
+=================================================================
+
+Ursache gefunden (Kernel-Code + Messung):
+  v4l2_subdev_link_validate_default() gibt -EPIPE zurueck, wenn die
+  Formate an zwei verbundenen Pads NICHT uebereinstimmen
+  (drivers/media/v4l2-core/v4l2-subdev.c:1317).
+  camss-video.c:252 -> video_device_pipeline_alloc_start ->
+  __media_pipeline_start -> link_validate -> -EPIPE.
+
+Messung im Graph (vor dem Fix):
+  msm_csiphy0: SRGGB10 1920x1080
+  msm_csiphy1: SRGGB10  820x616
+  msm_csiphy2: SRGGB10  820x616
+  msm_csiphy3: UYVY8    1920x1080
+  msm_csid0:   SRGGB10  820x616
+  msm_csid1:   UYVY8    1920x1080
+  -> inkonsistente Formate auf verbundenen Pads
+
+Beweis: Nach dem manuellen Setzen von 820x616 SRGGB10 auf
+imx355 17-0010, csiphy2 (pad0+1), csid0 (pad0+1) und vfe0_rdi0:
+  v4l2-ctl -d /dev/video0 --stream-mmap --stream-count=2 -> "<<<"
+  (Frames kommen!)
+
+Megapixels setzt die Formate aber selbst und trifft dabei wieder
+inkonsistente Werte -> erneut EPIPE. Naechster Schritt: Megapixels-
+Pipeline-Konfiguration (libmegapixels_select_mode / Link-Setup) so
+anpassen, dass alle Entities dasselbe Format bekommen.
