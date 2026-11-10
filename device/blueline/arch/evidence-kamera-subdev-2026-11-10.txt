@@ -1,0 +1,21 @@
+Kamera: Sensoren registrieren keine Subdevs (v0au), 2026-11-10 10:36
+====================================================================
+
+Stand v0au (Modul-Kette, Init-Reihenfolge):
+  - Module laden: imx355, imx363, qcom-camss, i2c-qcom-cci, v4l2-cci
+  - imx363: "4 lanes" erkannt, dann "failed to read chip id 363 (-6),
+    deferring" (Rueckkamera ohne Power, erwartbar)
+  - imx355: bindet (17-0010, 17-001a) und ist als Entity im Graph
+  - ABER: 0 Links zu msm_csiphy1/2, /sys/class/video4linux/ hat
+    0 Subdev-Eintraege, keine /dev/v4l-subdev*, cam -l leer
+  - titan_top_gdsc: off-0 (nach "echo on" -> on, aber Rebind hilft nicht)
+  - cam_cc_mclk2_clk: enable_count 0 (wird nie aktiviert)
+  - CONFIG_VIDEO_V4L2_SUBDEV_API=y ist gesetzt
+
+Deutung: Die Sensoren kommen bis zur Entity-Erzeugung, registrieren
+ihre Subdevs aber nicht (kein v4l2-async-Eintrag), daher verbindet der
+camss-Notifier nichts und die MCLK wird nie eingeschaltet. Das ist der
+Kern-Blocker; er betrifft beide Frontkameras.
+
+Frueher (vor den DT-Aenderungen an cci_i2c0/clock-frequency) haben
+beide Frontkameras in cam -l gestanden und einen echten Frame geliefert.
