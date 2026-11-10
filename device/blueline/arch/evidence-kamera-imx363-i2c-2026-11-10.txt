@@ -1,0 +1,32 @@
+Rueckkamera: Clock+Regler ok, I2C antwortet nicht, 2026-11-10 12:12
+===================================================================
+
+Debug-Patch (imx363_power_on) auf dem Geraet:
+  OMADBG imx363_power_on start
+  OMADBG imx363 regulators ret=0
+  OMADBG imx363 clk=ok rate=24000000
+  OMADBG imx363 clk_prepare_enable ret=0      ✅
+  Error reading reg 0x0016: -6                ❌ (ENXIO)
+  failed to read chip id 363 (-6), deferring
+
+DT-Kette vollstaendig geprueft:
+  vana-supply -> 0xd9 = rear-cam-vana-regulator (gpios=<&tlmm 16 0>,
+                 regulator-fixed, reg-fixed-voltage gebunden)
+  vdig-supply -> 0xda = smps3
+  vif-supply  -> 0xdb = lvs1
+  clock-names = "xclk", clocks -> camcc MCLK0 (24 MHz)
+
+Aber:
+  rear_cam_vana: state=disabled, num_users=0, KEINE Consumer
+  gpio16 (VANA-Enable): out low
+  gpio80 (Reset): out low
+  i2c-16 0x10: Errno 110 (Connection timed out)
+  waiting_for_supplier=0, devices_deferred: 16-0010
+
+Deutung: Der Treiber bekommt einen Regler, aktiviert ihn aber nicht
+wirklich (kein Consumer registriert, GPIO bleibt low) -> der Sensor ist
+nicht versorgt und antwortet nicht auf I2C.
+
+Naechster Schritt: pruefen, ob devm_regulator_bulk_get den vana-Regler
+als Dummy liefert (regulator_get mit falschem dev/name) bzw. ob der
+Fixed-Regulator ohne pinctrl-0 nicht schaltet.
