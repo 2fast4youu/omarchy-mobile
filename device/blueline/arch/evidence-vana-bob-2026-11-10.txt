@@ -1,0 +1,16 @@
+Rueckkamera: VANA direkt an vreg_bob (PMIC-Boost), 2026-11-10 18:25
+===================================================================
+
+Befund: Der Fixed-Regulator rear_cam_vana treibt seinen Enable-GPIO
+(TLMM 16) nicht (gpiolib "in low", Regler disabled), deshalb bekommt
+der IMX363 keine VANA und antwortet nicht auf I2C (reg 0x0016 -6).
+
+Loesung: VANA direkt an den PMIC-Boost haengen (wie im Stock-Android):
+  vana-supply = <&vreg_bob>;
+Der bob-Regler ist im laufenden System bereits "enabled"
+(regulator.3: bob state=enabled).
+
+Boot v0bb = gepackt (DTB mit vana -> vreg_bob).
+Erwartung: IMX363 bekommt 3.3 V, antwortet auf I2C, liefert Frames.
+
+Beide Frontkameras liefern bereits Frames (cam -c 1/-c 2).
