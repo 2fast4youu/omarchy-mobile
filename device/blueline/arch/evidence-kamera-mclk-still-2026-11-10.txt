@@ -1,0 +1,27 @@
+Kamera: MCLK2 wird nicht aktiviert (ftrace-Beleg), 2026-11-10 11:22
+====================================================================
+
+ftrace (set_ftrace_filter) zeigt den Probe-Verlauf:
+  imx355_power_on     <- __rpm_callback
+  imx355_probe        <- i2c_device_probe
+  imx355_power_on     <- imx355_probe
+  imx355_identify_module <- imx355_probe
+-> Der Probe LAEUFT, scheitert im Chip-ID-Read (imx355_read_reg ist
+   inline und wird nicht getraced).
+
+Dabei gemessen:
+  cam_cc_mclk2_clk enable_count = 0 (vor UND nach dem Probe)
+  cam_cc_mclk2_clk Rate 19.2 MHz, Parent cam_cc_mclk2_clk_src (19.2 MHz)
+  titan_top_gdsc: on; genpd:2:acb3000.camss active
+  camcc (ad00000.clock-controller) gebunden, 85 Clocks
+  imx355_power_on ruft clk_prepare_enable + regulator_bulk_enable auf,
+  loggt aber keinen Fehler -> die Clock wird nicht aktiviert, ohne dass
+  der Treiber es merkt.
+
+Deutung: Die MCLK2 laesst sich nicht einschalten; der Sensor bekommt
+keinen Takt und antwortet nicht auf I2C (Chip-ID-Read scheitert).
+Das erklaert 0 Subdevs / 0 Links / cam -l leer.
+
+Naechster Schritt: Debug-Patch in imx355_power_on (Rueckgabewerte von
+clk_prepare_enable und regulator_bulk_enable + clk_get_rate loggen),
+um die Ursache sichtbar zu machen.
