@@ -1,0 +1,23 @@
+Kamera: zurueck auf Modul-Kette (v0au), 2026-11-10 10:26
+=======================================================
+
+Warum: Mit camss/cci als Built-ins
+  - probten die Sensoren vor dem camcc (-5), danach war die MCLK mit
+    -EBUSY blockiert;
+  - liess sich camss nicht entladen (rmmod: "not currently loaded");
+  - matchte der camss-Notifier die Sensor-Subdevs nicht (0 Links,
+    keine /dev/v4l-subdev*, cam -l leer), obwohl die DT-Verknuepfung
+    geprueft korrekt ist (port@0->0xd2 imx363, port@1->0xd3,
+    port@2->0xd4 imx355).
+
+Jetzt (v0au): die gesamte Media-Kette wieder als Module
+(MEDIA_SUPPORT=m, VIDEO_DEV=m, V4L2_ASYNC=m, V4L2_CCI=m,
+VIDEO_QCOM_CAMSS=m, I2C_QCOM_CCI=m, VIDEO_IMX355=m, VIDEO_IMX363=m;
+camcc bleibt =y). Die Init laedt in der bewaehrten Reihenfolge:
+mc -> videodev -> v4l2-* -> videobuf2* -> i2c-qcom-cci -> camcc ->
+qcom-camss -> imx355/imx363, danach Re-Bind der Sensoren.
+
+Boot v0au = cbf879cf17d072fb1ebb7d5f1f40fb9ddd6beafedb2809a94fac266081befa73
+Userdata  = cce51d3b813cdc03267ee59464380bf4a22fde45b04f0abc6402f291dcc90eaa
+  (43 Module inkl. qcom-camss/i2c-qcom-cci/v4l2-cci/imx355/imx363)
+ROM-Paket aktualisiert.
