@@ -1,0 +1,25 @@
+Rueckkamera: Stand 2026-11-10 18:53
+====================================
+
+cam -l: 3 Kameras (2x Front + 1x Back) - alle gelistet
+Front (cam -c 1/-c 2): liefern Frames
+Back  (cam -c 3): "Creating IPA for software ISP failed"
+  dmesg: Error reading reg 0x0016: -6 (ENXIO)
+         chip id read failed, registering anyway
+         chip id mismatch 363!=0, continuing
+         pixel_rate: 508800000
+
+Der Sensor antwortet nicht auf I2C -> kein VANA-Strom.
+
+Ursachenkette (vollstaendig belegt):
+  1) rear_cam_vana (Fixed-Regulator) treibt GPIO 16 nicht
+     - fixed_voltage_ops ist leer; Enable laeuft nur ueber ena_gpiod
+     - gpio16 bleibt "in low" (gpiolib) bei pinctrl "out low func0"
+  2) Treiber-Aenderung vana->bob: bob wird enabled (is_enabled=1),
+     aber GPIO 16 bleibt low -> Sensor ohne Strom
+  3) DT-Aenderung vana->vreg_bob (v0bb) und Kernel-Fix
+     gpiod_direction_output (v0bc) sind gebaut, aber nicht geflasht
+
+Naechster Schritt: v0bc flashen (Kernel-Fix + DT) -> GPIO 16 sollte
+getrieben werden -> rear_cam_vana/bob versorgt den Sensor -> i2c
+antwortet -> Frames.
