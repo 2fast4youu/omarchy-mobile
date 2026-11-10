@@ -1,0 +1,18 @@
+VANA-Regler: kein sysfs-Enable, nur DT-Fix moeglich, 2026-11-10 17:51
+=====================================================================
+
+Versuche, den VANA-Regler live einzuschalten:
+  - /sys/class/regulator/regulator.30/ hat KEIN enable-Interface
+    (nur state/suspend_*/type/uevent, alle read-only)
+  - /sys/kernel/debug/regulator/rear_cam_vana/consumers ist leer
+    -> kein Treiber haelt den Regler aktiv
+  - regulator_enable() im imx363 liefert 0 und is_enabled=1, aber
+    Runtime-PM schaltet nach dem Probe wieder aus
+  - gpio16 bleibt "in low" (gpiolib) bei pinctrl "out low func0"
+
+Fazit: Der Regler laesst sich ohne DT-Aenderung nicht dauerhaft
+einschalten. v0ba (vana-gpios = <&tlmm 16 GPIO_ACTIVE_HIGH> im DT +
+Treiber treibt den GPIO in power_on) ist der einzige Weg.
+
+Beide Frontkameras liefern bereits Frames (cam -c 2/-c 3, 640640 B).
+Die Rueckkamera braucht den v0ba-Flash.
