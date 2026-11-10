@@ -1,0 +1,24 @@
+Rueckkamera: bob als Supply, GPIO bleibt das Problem, 2026-11-10 18:40
+=====================================================================
+
+Treiber-Aenderung (imx363_supply_name): "vana" -> "bob"
+Ergebnis:
+  OMADBG supply bob ok
+  OMADBG enable bob -> 0 (is_enabled=1)     ✅ bob wird aktiviert
+  bob state=enabled, users=4
+  ABER: gpio16 bleibt "in low" (gpiolib) / "out low func0" (pinctrl)
+        i2c-16 0x10 -> EBUSY (Treiber haelt Bus)
+        Error reading reg 0x0016: -6
+
+Versuche:
+  - reg-fixed-voltage unbind (rear-cam-vana-regulator) -> keine
+    Aenderung an gpio16
+  - bob direkt als Supply -> Regler enabled, aber GPIO bleibt low
+
+Deutung: GPIO 16 ist der eigentliche Schalter des VANA-Pfads (nicht der
+Regler). Er wird von gpiolib als INPUT gefuehrt, obwohl pinctrl ihn als
+OUTPUT konfiguriert hat - ein tiefer GPIO-Integrationsblock im
+mainline-sdm845. Der DT-Fix (v0bb: vana-gpios + Treiber treibt GPIO)
+ist der vorgesehene Weg, braucht aber den Flash.
+
+Beide Frontkameras liefern Frames; Megapixels-Vorschau laeuft.
