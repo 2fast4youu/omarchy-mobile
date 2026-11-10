@@ -1,0 +1,20 @@
+Fixed-Regulator ist built-in, Debug nur per Kernel-Neubau, 2026-11-10 18:44
+===========================================================================
+
+CONFIG_REGULATOR_FIXED_VOLTAGE=y -> der Treiber ist im Kernel
+eingebaut, nicht als Modul. Ein Debug-Patch (ena_gpiod-Wert loggen)
+wuerde einen kompletten Kernel-Neubau + Flash erfordern.
+
+Bereits ausgeschlossen:
+  - gpiod_get_optional(&pdev->dev, NULL, gflags) im fixed.c ist der
+    Aufruf, der den GPIO anfordert (DT: rear-cam-vana-regulator/gpios)
+  - fixed_voltage_ops ist leer -> Enable laeuft nur ueber den GPIO
+  - gpio16 bleibt "in low", Regler disabled, keine Consumer
+  - Treiber-Aenderung vana->bob: bob enabled, gpio16 bleibt low
+  - reg-fixed-voltage unbind: keine Aenderung
+
+Fazit: Der saubere Fix ist v0bb (vana-gpios am Sensor-Knoten + imx363
+treibt den GPIO selbst). Alternativ ein Kernel-Patch im fixed.c, der
+den GPIO nach dem Request explizit als Output setzt.
+
+Beide Frontkameras liefern Frames; Megapixels-Vorschau laeuft.
