@@ -1,0 +1,17 @@
+Megapixels-Config auf 820x616 korrigiert, 2026-11-10 18:03
+==========================================================
+
+Ursache des STREAMON -EPIPE (Format-Mismatch) gefunden:
+  v4l2_subdev_link_validate_default() -> -EPIPE, wenn Formate an
+  verbundenen Pads nicht uebereinstimmen (v4l2-subdev.c:1317).
+
+Der imx355 unterstuetzt im mainline-Treiber nur 820x616 (nicht
+3264x2448 wie in der Config gefordert). Dadurch setzte der Sensor
+820x616, waehrend csiphy/csid/vfe auf 3264x2448 blieben -> Mismatch.
+
+Fix: Config-Modes auf 820x616 (Width/Height) fuer alle drei Kameras.
+Beweis: Nach manuellem Setzen von 820x616 auf imx355/csiphy2/csid0/
+vfe0_rdi0 lieferte v4l2-ctl Frames ("<<<").
+
+Megapixels startet danach ohne STREAMON-Fehler (Log leer), beendet
+sich aber ohne Fenster - naechster Schritt: Fenster-/GL-Pfad pruefen.
