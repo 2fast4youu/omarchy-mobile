@@ -78,12 +78,9 @@ for m in mc videodev v4l2-common v4l2-async v4l2-fwnode v4l2-cci \
          i2c-qcom-cci camcc-sdm845 qcom-camss imx355 imx363; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
-# Sensoren nach dem camss neu binden (MCLK kommt vom camss).
-sleep 1
-for d in 17-0010 17-001a; do
-    [ -e /sys/bus/i2c/drivers/imx355/unbind ] && echo "$d" > /sys/bus/i2c/drivers/imx355/unbind 2>/dev/null
-    [ -e /sys/bus/i2c/drivers/imx355/bind ] && echo "$d" > /sys/bus/i2c/drivers/imx355/bind 2>/dev/null
-done
+# KEIN Re-Bind der Sensoren: das loeste einen zweiten power_on aus und
+# die geteilte MCLK2 scheiterte mit -EBUSY (am Geraet belegt). Die
+# Sensoren werden nach dem camss geladen und proben dort einmalig.
 chmod 666 /dev/dma_heap/* 2>/dev/null
 chmod 666 /dev/media* 2>/dev/null
 
