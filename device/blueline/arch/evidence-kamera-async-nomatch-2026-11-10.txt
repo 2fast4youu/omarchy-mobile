@@ -1,0 +1,24 @@
+Kamera: Sensor registriert sich, camss matcht nicht, 2026-11-10 11:37
+=====================================================================
+
+Mit Debug-Patch in imx355.c (nach v4l2_async_register_subdev_sensor):
+  imx355 17-0010: OMADBG async_register_subdev_sensor ret=0  ✅
+  imx355 17-001a: OMADBG async_register_subdev_sensor ret=0  ✅
+  imx355 17-0010/1a: OMADBG power_on/clk_prepare_enable(ret=0)/
+                     regulator_bulk_enable(ret=0)            ✅
+
+Trotzdem:
+  - /sys/class/video4linux/ hat 0 subdev-Eintraege
+  - /dev/v4l-subdev* fehlt
+  - imx355 17-001a: "1 pad, 0 link" (keine Verbindung zu msm_csiphy1)
+  - cam -l: "No sensor found for /dev/media0"
+  - camss-Reload nach den Sensoren hilft nicht
+
+Deutung: Der Sensor registriert sich erfolgreich beim v4l2-async-
+Notifier, aber der camss-Notifier (v4l2_async_nf_add_fwnode_remote in
+camss_parse_ports) matcht ihn nicht. Damit entstehen keine Subdev-
+Nodes und keine Media-Links.
+
+Naechster Schritt: camss_parse_ports/Notifier-Match debuggen
+(fwnode-Vergleich) oder die frueher funktionierende DT-Konfiguration
+wiederherstellen.
