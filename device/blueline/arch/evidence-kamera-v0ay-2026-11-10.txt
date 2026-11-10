@@ -1,0 +1,16 @@
+Kamera: v0ay-Paket mit allen Fixes, 2026-11-10 12:06
+====================================================
+
+Boot v0ax-DTB/Kernel = bb3124002e58a2151e761e56cbb94edda16f2f2db04e04b7055a1feb1b544400
+  - DT: alle 3 Sensoren (rear_cam + camss port@0), clock-names="xclk",
+    clock-frequency 24 MHz, link-frequencies 636 MHz, vana/vdig/vif,
+    bus-type in den Front-Endpoints
+Userdata = 239b2f4161f6fbc341752a774a066acd38b028f696b259255e596c2d294648e8
+  - 43 Module, imx363.ko mit Clock-Fix (devm_clk_get_optional "xclk")
+  - Init: camss-PM (power/control=on) VOR dem Sensor-Laden (2 Treffer)
+  - Init: KEIN Re-Bind mehr (0 Treffer)
+
+Erwartung nach dem Flash:
+  - camss-PM aktiv -> MCLK0/MCLK2 schaltbar
+  - imx363 holt die Clock mit Namen "xclk" -> MCLK0 laeuft
+  - alle drei Sensoren proben -> Notifier bindet -> cam -l listet 3 Kameras
