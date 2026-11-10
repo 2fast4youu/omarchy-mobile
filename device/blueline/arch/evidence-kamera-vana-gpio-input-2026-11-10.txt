@@ -1,0 +1,22 @@
+Rueckkamera: VANA-GPIO wird als Input angefordert, 2026-11-10 12:18
+===================================================================
+
+Live-Befund:
+  gpio16: in low normal vin-0 pull-down 10uA push-pull low
+  gpio16  : out low func0 2mA pull down
+  -> Der GPIO ist angefordert (zwei Eintraege), aber als INPUT
+     ("in low") statt als getriebener Output.
+  rear_cam_vana: state=disabled, num_users=0, keine Consumer
+  i2c-16 0x10: Errno 110 (Timeout)
+  imx363: OMADBG regulators ret=0, clk=ok, clk_prepare_enable ret=0,
+          dann Chip-ID -6 -> deferring
+  waiting_for_supplier=0 (kein Supplier-Problem)
+  DT: enable-active-high vorhanden, gpios=<&tlmm 16 GPIO_ACTIVE_HIGH>
+
+Deutung: reg-fixed-voltage fordert den GPIO an, treibt ihn aber nicht
+hoch, weil der Regler nie enabled wird (num_users=0). Der Treiber
+bekommt fuer "vana" offenbar einen Dummy-Regler (deshalb ret=0 ohne
+Consumer).
+
+Naechster Schritt: v0az flashen (pinctrl-0 fuer gpio16/80) und pruefen,
+ob der Regler dann als Consumer registriert und geschaltet wird.
