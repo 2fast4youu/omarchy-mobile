@@ -1,0 +1,26 @@
+Kamera: Probe laeuft durch, aber Async-Match scheitert, 2026-11-10 11:25
+=======================================================================
+
+Debug-Patch in imx355_power_on (dev_info) auf dem Geraet geladen:
+  imx355 17-0010: OMADBG power_on: clk rate=19200000 name=ok
+  imx355 17-0010: OMADBG clk_prepare_enable ret=0 rate=19200000
+  imx355 17-0010: OMADBG regulator_bulk_enable ret=0
+  (dasselbe fuer 17-001a)
+-> Clock (19.2 MHz MCLK2) und Regler werden KORREKT aktiviert; der
+   Probe laeuft bis zur Subdev-Registrierung ohne Fehler durch.
+
+Trotzdem:
+  - 0 Subdevs (/sys/class/video4linux/ hat keine subdev-Eintraege)
+  - imx355 17-001a: "1 pad, 0 link" (keine Verbindung zu msm_csiphy1)
+  - cam -l: "No sensor found for /dev/media0"
+  - camss laeuft (33 Entities), camss-Reload nach den Sensoren hilft
+    nicht; DT-Verknuepfung geprueft (port@2 -> 0xd4 = 17-0010,
+    port@1 -> 0xd3 = 17-001a)
+
+Deutung: Der Sensor registriert sich beim v4l2-async-Notifier, aber der
+camss-Notifier matcht ihn nicht (fwnode-Match). Das ist der verbleibende
+Kern-Blocker fuer die Frontkameras.
+
+Naechster Schritt: camss-Notifier-Match pruefen (v4l2_async_nf_add_
+fwnode_remote vs. Sensor-Endpoint) bzw. frueher funktionierende
+Konfiguration wiederherstellen.
