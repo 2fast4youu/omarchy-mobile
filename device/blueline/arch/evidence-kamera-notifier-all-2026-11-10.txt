@@ -1,0 +1,18 @@
+Kamera: camss-Notifier braucht ALLE Sensoren, 2026-11-10 11:45
+==============================================================
+
+Debug-Patch in camss_parse_ports zeigt:
+  OMADBG parse_ports ep=/soc@0/camss@acb3000/ports/port@0/endpoint csd=ok
+  OMADBG parse_ports ep=.../port@1/endpoint csd=ok
+  OMADBG parse_ports ep=.../port@2/endpoint csd=ok
+-> Der camss registriert alle drei Endpoints korrekt beim Notifier.
+
+Aber: port@0 (Rueckkamera) hatte keinen Sensor, weil der rear_cam-Knoten
+testweise entfernt war. Der v4l2-async-Notifier bindet erst, wenn ALLE
+erwarteten Subdevs da sind -> keine Links, cam -l leer.
+
+Fix: rear_cam-Knoten (cci_i2c0) und camss port@0 wiederhergestellt;
+DTB gebaut. Boot v0ax.
+
+Zusaetzlich in der Init: camss-Runtime-PM (power/control=on) vor dem
+Sensor-Laden, sonst bleibt die MCLK2 "stuck at off" (-EBUSY).
