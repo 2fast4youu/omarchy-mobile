@@ -1,0 +1,24 @@
+DREI KAMERAS IN cam -l, zwei liefern Frames, 2026-11-10 13:32
+==============================================================
+
+cam -l (live):
+  1: Internal front camera (/base/soc@0/cci@ac4a000/i2c-bus@1/camera@10)
+  2: Internal front camera (/base/soc@0/cci@ac4a000/i2c-bus@1/camera@1a)
+  3: Internal back camera  (/base/soc@0/cci@ac4a000/i2c-bus@0/camera@10)
+-> 22 Subdevs, 34 Media-Links
+
+Frames (cam -c 1 / -c 2 --capture=2):
+  820x616-SRGGB10_CSI2P/RAW, bytesused 640640, seq 0 und 1
+  Dateien: kamera-front-2026-11-10.jpg, kamera-front-aux-2026-11-10.jpg
+Rueckkamera (cam -c 3): keine Frames (VANA-GPIO treibt nicht, s.u.)
+
+Was den Durchbruch brachte:
+1) imx363-Probe toleriert fehlende Chip-ID (registering anyway +
+   mismatch continuing) -> der camss-Async-Notifier kann abschliessen
+   und bindet ALLE drei Sensoren.
+2) libcamera mit Patch "alloc.fd_flags = 0" (dma_buf_allocator.cpp)
+   neu gebaut und installiert -> dma-heap-Allokation funktioniert.
+   (Das Image hatte das UNGEPATCHTE Paket-libcamera.)
+
+Offen: Rueckkamera (VANA-GPIO 16 wird vom reg-fixed-voltage nicht
+getrieben; v0ba adressiert das mit vana-gpios im Treiber).
