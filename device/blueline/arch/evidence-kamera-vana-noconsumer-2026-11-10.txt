@@ -1,0 +1,21 @@
+Rueckkamera: vana-Regler ohne Consumer, 2026-11-10 12:16
+========================================================
+
+Live-Befund (laufender Boot, v0ay-Stand):
+  - i2c-Client 16-0010 hat vana/vdig/vif-supply im of_node ✅
+  - imx363_probe ruft imx363_get_regulators() (vor der Clock) ✅
+  - OMADBG: regulators ret=0, clk=ok, clk_prepare_enable ret=0 ✅
+  - ABER: rear_cam_vana state=disabled, num_users=0, KEINE Consumer,
+    keine Device-Links am i2c-Client
+  - gpio 16: pinmux = GPIO, aber gpiod NICHT angefordert
+    (kein "gpio-16" im GPIO-Debug) -> reg-fixed-voltage schaltet nie
+  - Folge: Sensor ohne VANA -> i2c-16 Timeout (-6) -> Chip-ID fail
+
+Deutung: Der Treiber bekommt fuer "vana" einen Dummy-Regler (deshalb
+ret=0 ohne echten Consumer). Ursache ist vermutlich, dass der
+Fixed-Regulator ohne pinctrl-0 seinen GPIO nicht anfordern kann; das
+ist mit v0az (pinctrl-0 fuer gpio16/80) adressiert, aber noch nicht
+geflasht.
+
+Naechster Schritt: v0az flashen -> gpio16 sollte angefordert und
+geschaltet werden -> vana 2.8 V -> i2c-16 antwortet -> Chip-ID ok.
