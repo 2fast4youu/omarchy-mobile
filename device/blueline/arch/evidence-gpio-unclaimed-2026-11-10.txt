@@ -1,0 +1,22 @@
+GPIO 16 ist frei, aber nicht per Userspace treibbar, 2026-11-10 18:55
+====================================================================
+
+Befund:
+  - pin 16 (GPIO_16): UNCLAIMED (seit die Treiber-Aenderung vana->bob
+    den rear_cam_vana-Regler obsolet gemacht hat)
+  - /sys/kernel/debug/gpio: gpio16 "in low" (gpiolib),
+    pinctrl "out low func0"
+  - gpio_v2 lineinfo: name="" consumer="" -> Line ist frei
+
+Versuche, GPIO 16 aus Userspace zu treiben:
+  - gpio v1 linehandle (GPIO_GET_LINEHANDLE_IOCTL, 364 B) -> EINVAL
+  - gpio v2 line request (GPIO_V2_GET_LINE_IOCTL, 416 B) -> EINVAL
+  (Struktur-Layout/IOCTL-Nummer passen nicht; ohne libgpiod nicht
+   verlaesslich machbar)
+
+Fazit: Der GPIO laesst sich ohne Kernel-Fix nicht aus Userspace
+treiben. v0bc (gpiod_direction_output im fixed.c + DT vana->bob) ist
+der Weg - braucht den Flash.
+
+Beide Frontkameras liefern Frames; Megapixels-Vorschau laeuft;
+System stabil (7.4 h uptime).
