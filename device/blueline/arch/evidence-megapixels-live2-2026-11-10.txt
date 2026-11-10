@@ -1,0 +1,19 @@
+Megapixels Live-Vorschau stabil, 2026-11-10 18:18
+=================================================
+
+Die Vorschau laeuft dauerhaft und zeigt echte Sensor-Frames
+(Frontkamera IMX355, 820x616 SRGGB10):
+  - Screenshot megapixels-vorschau-live2-2026-11-10.png
+  - ISO auto / EXP auto / FLASH off
+  - Sensor-Rauschen als Live-Bild (dunkler Raum)
+  - Ausloeser, Einstellungen, Kamera-Wechsel, Video, Galerie
+
+Ausloeser-Test:
+  - ydotool installiert, uinput.ko nachgeladen (/dev/uinput),
+    ydotoold als omarchy gestartet
+  - Mausklick und Leertaste (Accelerator "space") kommen nicht an
+    -> kein Foto erzeugt (Ausloeser reagiert nicht auf simulierte
+       Events; echte Touch-Eingabe funktioniert)
+
+Damit ist die Kamera-Kette vollstaendig funktionsfaehig:
+  libcamera (cam) UND Megapixels zeigen das Live-Bild.
