@@ -1,0 +1,20 @@
+Megapixels-UI laeuft mit Frontkamera, 2026-11-10 17:27
+======================================================
+
+Nach dem Umsortieren der Config (Front, FrontAux, Rear) startet
+Megapixels mit der FRONTKAMERA statt der Rueckkamera:
+  /dev/video0 Format: 3264x2448 pRAA (10-bit Bayer)  <- Frontkamera
+  (vorher 4032x3024 = Rueckkamera, die keine Frames liefert)
+
+UI (Screenshot device/blueline/arch/megapixels-ui-2026-11-10.png):
+  - ISO auto, EXP auto, FLASH off
+  - grosser Ausloeser unten mittig
+  - Einstellungen, Kamera-Wechsel, Video (M.D.), Galerie
+  - Statusleiste mit 99% Akku
+  - Vorschau noch grau (Frames kommen noch nicht an)
+
+Log: nur noch "movie.sh not found, video pipeline disabled"
+  -> kein STREAMON-Fehler mehr, Prozess laeuft stabil (EXIT=0 bei Close)
+
+Naechster Schritt: Vorschau-Frames (STREAMON/DQBUF) pruefen; die
+Frontkamera liefert ueber libcamera bereits Frames (cam -c 1).
