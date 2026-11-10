@@ -1,0 +1,16 @@
+Kamera: bus-type in den Sensor-Endpoints fehlte, 2026-11-10 11:29
+===================================================================
+
+Befund: Die camss-Endpoints haben bus-type=<4> (CSI2_DPHY), die
+SENSOR-Endpoints (cam_front_endpoint, cam_aux_front_endpoint) hatten
+KEIN bus-type. v4l2_fwnode_endpoint_parse im camss
+(camss_parse_endpoint_node) wertet das aus; ohne bus-type bleibt der
+Async-Match der Sensoren aus -> 0 Subdevs, 0 Links, cam -l leer.
+
+Fix: bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY> in beiden
+Frontkamera-Endpoints; DTB gebaut.
+Boot v0aw = be20b64fd5bbfa992dc0d228d5074422fb23c6a05663cbdfa9b21cbe28bda9e8
+Flash steht aus (kein Fastboot).
+
+Erwartung: camss matcht die Sensoren -> Subdevs + Links entstehen ->
+cam -l listet die Frontkameras.
