@@ -1,0 +1,20 @@
+Kamera: STREAMON Broken pipe nach vielen Live-Tests, 2026-11-10 17:37
+=====================================================================
+
+Zustand:
+  - cam -l: 3 Kameras (Subdevs/Graph intakt)
+  - v4l2-ctl --stream-mmap: "VIDIOC_STREAMON returned -1 (Broken pipe)"
+  - dmesg: wiederholte WARN in video_start_streaming/call_s_stream
+    (v4l2-subdev.c:484, "s_stream already enabled") - der camss wurde
+    durch die vielen Megapixels/cam-Starts in einen inkonsistenten
+    Zustand gebracht
+  - Modul-Reload (qcom_camss + imx355 + imx363) hilft NICHT
+
+Deutung: Der camss haelt interne Stream-/Power-Referenzen, die nur ein
+frischer Boot zuruecksetzt. Das ist ein Test-Artefakt, kein
+Konfigurationsfehler: vorher (frischer Boot) lieferten cam und
+v4l2-ctl Frames ("<<<", 640640 Bytes).
+
+Naechster Schritt: v0ba flashen (enthaelt vana-gpios fuer die
+Rueckkamera) und danach frisch testen: cam -l, cam -c 1 --capture,
+Megapixels-Vorschau.
