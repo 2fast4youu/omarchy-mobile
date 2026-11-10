@@ -1,0 +1,17 @@
+Rueckkamera: VANA-GPIO direkt im Treiber treiben, 2026-11-10 12:58
+===================================================================
+
+Befund: regulator_enable() liefert 0 fuer vana/vdig/vif, aber gpio16
+bleibt "in low" und rear_cam_vana "disabled" - der Fixed-Regulator
+treibt seinen Enable-Pin im mainline-sdm845 nicht.
+
+Fix:
+  Treiber (imx363.c): optionales "vana"-GPIO (devm_gpiod_get_optional,
+  GPIOD_OUT_LOW); in power_on wird es auf 1 gesetzt (2 ms warten) und in
+  power_off wieder auf 0.
+  DT: vana-gpios = <&tlmm 16 GPIO_ACTIVE_HIGH> am rear_cam-Knoten,
+  pinctrl-0 erweitert um cam_rear_vana_default_pin.
+
+Boot v0ba = gepackt (DT mit vana-gpios + imx363.ko mit GPIO-Treiben).
+Auf dem laufenden Boot fehlt vana-gpios noch (0 Treffer), daher greift
+der Fix erst nach dem Flash.
