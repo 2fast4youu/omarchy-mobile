@@ -1,0 +1,21 @@
+Megapixels: UI laeuft, Vorschau noch grau, 2026-11-10 17:32
+===========================================================
+
+Belegt:
+  - Megapixels laeuft stabil mit Frontkamera (PID 24129)
+  - haelt /dev/video0 offen (fuser zeigt omarchy megapixels)
+  - /dev/video0 Format 3264x2448 pRAA (Front, nicht Rear)
+  - 34 Media-Links ENABLED
+  - Log: nur "movie.sh not found" (kein STREAMON-Fehler mehr)
+  - UI vollstaendig: ISO/EXP/FLASH, Ausloeser, Galerie, Video
+  - Screenshot: megapixels-ui-2026-11-10.png
+
+Direkter v4l2-Test auf /dev/video0 (nach Freigabe):
+  v4l2-ctl --stream-mmap --stream-count=2 -> "<<<" (Frames kommen!)
+
+Aber: dmesg zeigt wiederholtes imx355 power_on -> der Sensor wird
+zyklisch neu gepowert, die Vorschau bleibt grau.
+
+Naechster Schritt: Megapixels-IO-Pipeline pruefen (Buffer/Format-
+Auswahl); die Kamera selbst liefert Frames (cam und v4l2-ctl belegen
+das).
