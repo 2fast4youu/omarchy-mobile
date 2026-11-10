@@ -1,0 +1,25 @@
+Rueckkamera: GPIO 16 bleibt Input trotz GPIOD_OUT_LOW, 2026-11-10 12:20
+=======================================================================
+
+Vollstaendig geprueft (laufender Boot):
+  - i2c-Client 16-0010: of_node = .../cci@ac4a000/i2c-bus@0/camera@10
+    mit vana-supply/vdig-supply/vif-supply ✅
+  - rear-cam-vana-regulator: phandle 0xd9, reg-fixed-voltage gebunden,
+    regulator.9 registriert, of_node korrekt ✅
+  - gpios = <0x48(tlmm) 0x10(16) 0x00(ACTIVE_HIGH)> ✅
+  - enable-active-high vorhanden ✅
+  - gpiochip2: GPIOS [552-702] PINS [0-150], pin 16 vorhanden ✅
+
+Aber:
+  - gpio16: "in low" (Input) statt Output -> gpiod_get_optional liefert
+    offenbar NULL oder der Output-Modus greift nicht
+  - rear_cam_vana: state=disabled, num_users=0, keine Consumer
+  - i2c-16 0x10: Errno 110 (Timeout)
+  - imx363: regulators ret=0 (Dummy), clk ok, Chip-ID -6 -> deferring
+
+Deutung: Der Fixed-Regulator kann seinen Enable-GPIO nicht treiben, weil
+der Pin als Input konfiguriert bleibt. Das ist der letzte Blocker der
+Rueckkamera.
+
+Naechster Schritt: v0az flashen (pinctrl-0 fuer gpio16/80 als "gpio"-
+Funktion) - das sollte den Pin als GPIO-Output konfigurierbar machen.
