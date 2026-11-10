@@ -1,0 +1,20 @@
+GPIO 16 HIGH, aber Sensor zieht keinen Strom, 2026-11-10 18:58
+=============================================================
+
+Mit libgpiod (gpioset -c gpiochip2 16=1):
+  gpio16 : out high func0 2mA pull down   (pinctrl-Sicht)  ✅
+  gpioset laeuft (PID 16230), Pin bleibt high
+
+Aber:
+  bob-Regler: 3328 mV, 0 mA  -> keine Last
+  16-0010-bob: 0 mA, 0 mV    -> der Sensor zieht nichts
+  i2c-16 0x10: EBUSY (Treiber haelt den Bus)
+  imx363: Error reading reg 0x0016: -6 -> Sensor antwortet nicht
+
+Deutung: GPIO 16 ist jetzt getrieben, aber der VANA-Pfad ist damit
+nicht vollstaendig: entweder schaltet der GPIO einen anderen Zweig
+(der Stock-DT nutzt GPIO 16 als VANA-Enable fuer den BOB-Zweig), oder
+der Sensor braucht zusaetzlich den Reset-GPIO 80 korrekt getrieben.
+
+Naechster Schritt: Reset-GPIO 80 pruefen/treiben und v0bc flashen
+(Kernel-Fix + DT), das beide GPIOs im Treiber setzt.
