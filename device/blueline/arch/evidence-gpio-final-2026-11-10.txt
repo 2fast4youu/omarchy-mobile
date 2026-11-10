@@ -1,0 +1,23 @@
+Rueckkamera: GPIO-16-Diagnose abgeschlossen, 2026-11-10 18:42
+============================================================
+
+Vollstaendige Kette geprueft:
+  1) fixed_voltage_ops in drivers/regulator/fixed.c ist LEER ({}) -
+     der Fixed-Regulator hat keine eigene enable-Funktion; er verlaesst
+     sich auf den Enable-GPIO (rdev->ena_pin).
+  2) regulator_ena_gpio_ctrl() braucht rdev->ena_pin; ohne ihn
+     -EINVAL.
+  3) /sys/kernel/debug/regulator/rear_cam_vana/ ist LEER (keine
+     Consumer) -> der Regler wurde nie enabled.
+  4) gpio16: "in low" (gpiolib), pinctrl "out low func0" - der Pin ist
+     angefordert, wird aber nicht getrieben.
+  5) Nur /proc/device-tree/rear-cam-vana-regulator/gpios referenziert
+     GPIO 16 (kein anderer Knoten).
+  6) Treiber-Aenderung vana->bob: bob wird enabled (is_enabled=1),
+     aber gpio16 bleibt low -> Sensor ohne VANA -> i2c -6.
+
+Fazit: GPIO 16 laesst sich ohne DT-Aenderung nicht treiben. v0bb
+(vana-gpios = <&tlmm 16 GPIO_ACTIVE_HIGH> am rear_cam-Knoten + Treiber
+treibt den GPIO in power_on) ist der einzige Weg - braucht den Flash.
+
+Beide Frontkameras liefern Frames; Megapixels-Vorschau laeuft stabil.
