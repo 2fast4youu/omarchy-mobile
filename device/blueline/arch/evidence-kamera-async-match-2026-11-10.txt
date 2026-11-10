@@ -1,0 +1,24 @@
+Kamera: v4l2-async-Match scheitert, 2026-11-10 10:02
+====================================================
+
+Stand v0at (camss/cci/camcc built-in, Sensoren als Module):
+  - imx355 laedt und bindet (17-0010, 17-001a), Entities 235/251 im
+    Media-Graph -> der Probe laeuft bis v4l2_async_register_subdev_sensor
+  - imx363 laedt nach dem Nachladen von v4l2-cci.ko ("4 lanes"),
+    deferrt aber (Rueckkamera ohne Power: reg 0x0016 -6)
+  - ABER: imx355 hat 0 Links zu msm_csiphy1/2, keine /dev/v4l-subdev*,
+    cam -l leer ("No sensor found for /dev/media0")
+  - titan_top_gdsc: on (manuell), camss runtime_status active
+  - DT-Verknuepfung ist korrekt geprueft:
+      camss port@0 -> 0xd2 = imx363 (bus0 0x10)
+      camss port@1 -> 0xd3 = imx355 (bus1 0x1a)
+      camss port@2 -> 0xd4 = imx355 (bus1 0x10)
+  - camss-Rebind (unbind/bind) hilft nicht; Notifier verbindet nicht.
+
+Deutung: Der v4l2-async-Notifier des camss matcht die Sensor-Subdevs
+nicht. Frueher (alles als Module, camss nach den Sensoren geladen)
+hat es funktioniert (cam -l + echter Frame).
+
+Naechster Schritt: camss als Modul laden NACH den Sensoren (die alte,
+funktionierende Reihenfolge), oder den Notifier-Fix im Kernel
+(v4l2_async_nf_add_fwnode Match-Daten).
