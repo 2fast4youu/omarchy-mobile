@@ -1,0 +1,18 @@
+ROM-Paket final aktualisiert, 2026-11-10 18:50
+==============================================
+
+boot.img    = v0bc (ef33cae8...) - Kernel-Fix fixed.c (GPIO als Output)
+              + DT mit vana -> vreg_bob
+userdata.img = 364aecab... - Megapixels (megapixels-gtk 304664 B),
+              libmegapixels (76176), libdng (74592), gschema
+              me.gapixels.Megapixels, Config google,blueline.conf (820x616),
+              XDG user-dirs + Pictures/Videos, postprocess.sh,
+              43 Kernel-Module
+
+Im Image verifiziert (debugfs):
+  megapixels-gtk, config, libmegapixels, libdng, 43 Module
+  gschema nachtraeglich ergaenzt (fehlte!) + glib-compile-schemas
+  XDG-Verzeichnisse + postprocess.sh ergaenzt
+
+Damit ist das Paket flashbereit: v0bc bringt den Kernel-Fix fuer den
+VANA-GPIO, das Image alles fuer Megapixels inkl. Schema und Speicherpfad.
