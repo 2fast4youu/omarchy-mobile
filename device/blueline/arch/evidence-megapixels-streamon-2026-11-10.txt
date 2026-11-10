@@ -1,0 +1,28 @@
+Megapixels: STREAMON error 6 (Pipeline-Konflikt), 2026-11-10 17:18
+==================================================================
+
+Megapixels laeuft vollstaendig durch:
+  Config geladen (3 Kameras: Rear/Front/FrontAux)
+  OpenGL ES 3.2, Debayer-Shader, Exposure 907, Postprozessor gefunden
+  ABER: "MPCamera: VIDIOC_STREAMON error 6, No such device or address"
+  -> kein Fenster, Prozess beendet sich
+
+Parallel funktioniert libcamera/cam einwandfrei:
+  cam -l: 3 Kameras
+  cam -c 1 --capture=1: 1 Frame, 640640 Bytes (SRGGB10 820x616)
+
+Geprueft und ausgeschlossen:
+  - Rechte: /dev/video0 und /dev/media0 sind rw fuer omarchy (video-
+    Gruppe), Zugriff als omarchy getestet -> ok
+  - csiphy-Zuordnung korrigiert (Front->csiphy2, FrontAux->csiphy1)
+  - Config-Reihenfolge (Front zuerst) - kein Unterschied
+  - Media-Links: 34 ENABLED, imx355 17-0010 haengt an csiphy2
+
+Deutung: Megapixels setzt die Pipeline ueber einen anderen Pfad
+(msm_vfe0_rdi0 + eigene Link-Konfiguration) und trifft dabei auf einen
+Zustand, den der camss als "No such device" ablehnt. libcamera nutzt
+den "simple"-Pipeline-Handler und funktioniert.
+
+Naechster Schritt: Megapixels-Pipeline gegen camss-Anforderungen
+pruefen (z.B. Pad-Format/Stream-Konfiguration) oder Megapixels auf den
+libcamera-Pfad umstellen.
