@@ -1,0 +1,20 @@
+Rueckkamera: GPIO 16 ist belegt, Live-Treiben nicht moeglich, 2026-11-10 13:06
+=============================================================================
+
+Versuch, GPIO 16 live ueber /dev/gpiochip2 (v2-ABI, linehandle) zu
+treiben:
+  GPIO_GET_LINEHANDLE_IOCTL -> EINVAL
+Grund: Der Pin ist bereits vom reg-fixed-voltage-Treiber angefordert
+(gpio16 erscheint zweimal im GPIO-Debug: "in low" + "out low func0").
+Ein zweiter Consumer kann ihn nicht exklusiv uebernehmen.
+
+Damit ist klar: Der Fixed-Regulator haelt den GPIO, treibt ihn aber
+nicht (regulator_enable -> 0, Pin bleibt low). Genau das adressiert der
+v0ba-Fix: Der imx363-Treiber fordert vana-gpios selbst an und setzt es
+in power_on auf 1.
+
+Boot v0ba = 8c84958ff8f76a546676372757960d6a3cc170d96382ef817e24a1c1eff39ceb
+  - DT: vana-gpios = <&tlmm 16 GPIO_ACTIVE_HIGH> am rear_cam-Knoten,
+    pinctrl-0 mit cam_rear_vana_default_pin
+  - imx363.ko: optionales vana-GPIO, in power_on -> 1 (2 ms), power_off -> 0
+Flash steht aus (kein Fastboot).
