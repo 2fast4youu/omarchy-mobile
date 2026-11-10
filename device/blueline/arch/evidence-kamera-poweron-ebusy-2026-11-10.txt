@@ -1,0 +1,21 @@
+Kamera: power_on doppelt -> -EBUSY auf der MCLK, 2026-11-10 11:31
+==================================================================
+
+Debug-Log (imx355, 17-0010) auf dem Geraet:
+  32.031  power_on: clk rate=19200000, clk_prepare_enable ret=0
+  32.032  regulator_bulk_enable ret=0
+  33.133  power_on (erneut!)
+  33.460  clk_prepare_enable ret=-16 (EBUSY)
+  33.479  error -EBUSY: failed to enable clocks
+  33.487  power_on (erneut) -> ret=0
+
+Deutung: Der Sensor wird mehrfach hintereinander gepowert (Runtime-PM
++ Probe + Re-Bind), und der zweite clk_prepare_enable scheitert, weil
+die MCLK2 von beiden Sensoren geteilt wird und der erste power_on
+nicht aufgeraeumt ist. Der fehlgeschlagene power_on laesst den Sensor
+in einem Zustand, in dem er sich nicht beim Async-Notifier registriert
+-> 0 Subdevs, 0 Links, cam -l leer.
+
+Wichtig: MCLK2 wird von BEIDEN Frontkameras geteilt (im DT dokumentiert).
+Naechster Schritt: power_on/power_off sauber paaren (Runtime-PM) bzw.
+den Re-Bind in der Init entfernen, der den zweiten power_on ausloest.
