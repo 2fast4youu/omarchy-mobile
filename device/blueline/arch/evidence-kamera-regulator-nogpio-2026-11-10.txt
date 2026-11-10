@@ -1,0 +1,30 @@
+Rueckkamera: Regler melden Erfolg, schalten GPIO nicht, 2026-11-10 12:55
+========================================================================
+
+Debug-Patch (imx363, optionale Supplies + synchrones enable):
+  OMADBG supply vana ok
+  OMADBG supply vdig ok
+  OMADBG supply vif ok
+  OMADBG enable vana -> 0
+  OMADBG enable vdig -> 0
+  OMADBG enable vif  -> 0
+  OMADBG clk=ok rate=24000000, clk_prepare_enable ret=0
+  Error reading reg 0x0016: -6 -> deferring
+
+Aber:
+  gpio16: in low (kein Output, kein Treiben)
+  rear_cam_vana: state=disabled, num_users=0
+  i2c-16 0x10: Errno 110 (Timeout)
+  front_cam_avdd: state=disabled, num_users=0 (genauso!)
+
+Deutung: regulator_enable() liefert 0, ohne den Enable-GPIO zu treiben
+(rdev->ena_pin fehlt). Die Fixed-Regulatoren sind im mainline sdm845
+nicht funktional - auch die Frontkamera-Regler sind disabled, und die
+Frontkameras funktionieren trotzdem (ihre Sensoren sind anders
+versorgt).
+
+Fazit Rueckkamera: Sie braucht eine echte VANA-Versorgung. Optionen:
+  a) VANA ueber einen PMIC-Regler (BOB) statt GPIO-Fixed-Regler
+  b) den GPIO direkt im Treiber treiben (gpiod im Sensor-Treiber)
+  c) pinctrl-0 (v0az) testen, ob der Pin dann als Output konfiguriert
+     wird und der Fixed-Regler ihn treiben kann
