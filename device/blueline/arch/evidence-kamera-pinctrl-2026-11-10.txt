@@ -1,0 +1,18 @@
+Rueckkamera: pinctrl fuer GPIO 16/80 fehlte, 2026-11-10 12:15
+=============================================================
+
+Befund: Der rear-cam-vana-regulator hatte KEIN pinctrl-0/pinctrl-names
+(anders als camera_front_avdd, das cam_front_avdd_default_pin nutzt).
+Ohne pinctrl bleibt GPIO 16 in seiner Default-Funktion ("out low",
+pull-down) und der Regler schaltet nicht -> rear_cam_vana disabled,
+num_users=0, gpio16 low, Sensor nicht versorgt, i2c-16 Timeout (-6).
+
+Fix (DT):
+  cam_rear_vana_default_pin  (gpio16, function=gpio, bias-disable)
+  cam_rear_reset_default_pin (gpio80, function=gpio, bias-disable)
+  rear-cam-vana-regulator: pinctrl-0/pinctrl-names
+  rear_cam: pinctrl-0 = <&cam_rear_reset_default_pin>
+
+Boot v0az = gepackt; Flash offen.
+Erwartung: gpio16 schaltet -> vana 2.8 V -> Sensor antwortet auf I2C
+-> Chip-ID ok -> imx363 registriert -> Notifier bindet alle 3 Sensoren.
