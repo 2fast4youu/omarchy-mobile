@@ -1,0 +1,19 @@
+Touch-Simulation fuer den Ausloeser: nicht erfolgreich, 2026-11-10 18:38
+=======================================================================
+
+Versuche:
+  - python-evdev installiert, /dev/input/event3 (stmfts) gelesen
+    (X: 0-1079, Y: 0-2159)
+  - UInput-Virtual-Device erzeugt und Tap bei (539, 1949) gesendet
+    (= Ausloeser-Position 180/360, 650/720 skaliert)
+  - Ergebnis: kein Foto; Megapixels beendet sich danach (Homescreen
+    sichtbar)
+
+Deutung: Die synthetischen Touch-Events erreichen Megapixels nicht als
+"echte" Eingabe (Wayland/libinput filtert UInput-Events oder das
+Fenster war nicht fokussiert). Echte Touch-Eingabe auf dem Geraet
+funktioniert (UI reagiert).
+
+Damit bleibt offen:
+  a) Rueckkamera: v0bb flashen (vana -> vreg_bob)
+  b) Ausloeser: echte Touch-Eingabe noetig
