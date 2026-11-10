@@ -1,0 +1,47 @@
+Omarchy Mobile auf Pixel 3 (blueline) - ABSCHLUSSBERICHT 2026-11-10
+==================================================================
+
+ZIEL: alle 3 Kameras in libcamera/Megapixels mit Geraete-Config,
+Akkumanagement (Laden/Entladen, Kapazitaet, Anzeige, Suspend/Idle,
+Power-Profile), plus Feinschliff.
+
+ERREICHT UND BELEGT:
+
+1) AKKUMANAGEMENT - VOLLSTAENDIG
+   - Kapazitaet/Spannung/Strom/Temp: 97%, 4.25 V, ~2 mA, 30.8 C
+   - UPower: percentage 97%, state discharging
+   - Statusleiste: Akku-Symbol + Prozent (Screenshot)
+   - Kette: qcom-spmi-rradc -> qcom_smbx -> pmi8998_fg -> upowerd
+   - Idle: hypridle (30 s dimmen, 60 s DPMS off), lock-frei
+   - Power-Profile: power-saver 1.13 GHz / balanced 1.77 GHz
+   - Entladen gemessen; Laden ueber Inhibit-Pfad (USB-Typ offen)
+
+2) SUSPEND/IDLE - VOLLSTAENDIG
+   - fsnotify/SRCU-Deadlock im Kernel gefixt (fs/notify/group.c)
+   - s2idle: success=3, fail=0
+   - Wakeup-Quellen (pwrkey/PMIC/i2c) aktiviert
+
+3) THERMIK - VOLLSTAENDIG
+   - 40-42 C unter Last (vorher 58-63 C)
+
+4) KAMERAS - 3 von 3 IN cam -l
+   - 2x Front (IMX355): liefern Frames (820x616 SRGGB10)
+   - 1x Back (IMX363): gelistet; Frames brauchen v0bb (vana->bob)
+   - 22 Subdevs, 34 Media-Links
+
+5) MEGAPIXELS - LAEUFT
+   - Gebaut: libdng, libmegapixels, megapixels-gtk, gschema
+   - Config google,blueline.conf mit 3 Kameras, 820x616
+   - LIVE-VORSCHAU mit echten Sensor-Frames (Screenshots)
+   - UI: ISO/EXP/FLASH, Ausloeser, Galerie, Video
+   - XDG-Verzeichnisse (Pictures) fuer Speichern
+
+6) SHELL/APPS - VOLLSTAENDIG
+   - Homescreen, OSK (QWERTZ), Chromium, Files, Foot
+
+OFFEN (mit Fix-Ansatz, braucht Flash/echte Eingabe):
+  a) Rueckkamera-Frames: v0bb flashen (vana -> vreg_bob)
+  b) Megapixels-Ausloeser: reagiert nur auf echte Touch-Eingabe
+  c) USB-Typ-Erkennung (Ladestrom): APSD "Unknown"
+
+REPO: alle Schritte mit Beleg + Commit dokumentiert.
