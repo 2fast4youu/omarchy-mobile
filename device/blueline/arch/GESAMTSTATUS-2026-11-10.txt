@@ -1,0 +1,36 @@
+Omarchy Mobile auf Pixel 3 (blueline) - Gesamtstatus 2026-11-10 17:35
+=====================================================================
+
+FUNKTIONIERT (am Geraet belegt):
+  Akkumanagement
+    - qcom-battery: 99%, Discharging, 4.25 V, ~2 mA, 30.8 C
+    - UPower: percentage 99%, state discharging
+    - Statusleiste: Akku-Symbol mit 99% (Screenshot)
+    - Kette: qcom-spmi-rradc -> qcom_smbx -> pmi8998_fg -> upowerd
+    - Idle: hypridle (30 s dimmen, 60 s DPMS off), lock-frei
+    - Power-Profile: power-saver 1.13 GHz / balanced 1.77 GHz
+  Suspend
+    - fsnotify/SRCU-Deadlock im Kernel gefixt
+    - s2idle: success=3, fail=0 (mit Wakeup-Quellen)
+  Thermik
+    - 41-42 C unter Last (vorher 58-63 C)
+  Kameras
+    - cam -l: 3 Kameras (2x Front IMX355, 1x Back IMX363)
+    - 22 Subdevs, 34 Media-Links
+    - Front + FrontAux: Frames aufgenommen (820x616 SRGGB10,
+      kamera-front-2026-11-10.jpg, kamera-front-aux-2026-11-10.jpg)
+    - v4l2-ctl --stream-mmap: Frames kommen
+  Megapixels
+    - gebaut (libdng, libmegapixels, megapixels-gtk, gschema)
+    - UI laeuft mit Frontkamera (megapixels-ui-2026-11-10.png)
+    - Config google,blueline.conf mit 3 Kameras
+    - OpenGL ES 3.2, Debayer-Shader, Exposure 907
+  Shell/Apps
+    - Homescreen, OSK, Chromium, Files, Foot
+
+OFFEN:
+  - Megapixels-Vorschau: Frames kommen am v4l2-Device an, werden aber
+    nicht angezeigt (IO-Pipeline/GL-Pfad)
+  - Rueckkamera (IMX363): VANA-GPIO wird vom Fixed-Regulator nicht
+    getrieben -> i2c-Timeout; v0ba adressiert das (vana-gpios im Treiber)
+  - USB-Typ-Erkennung (Ladestrom): APSD liefert "Unknown"
