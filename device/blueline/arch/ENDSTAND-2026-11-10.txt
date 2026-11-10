@@ -1,0 +1,50 @@
+Omarchy Mobile auf Pixel 3 (blueline) - ENDSTAND 2026-11-10 19:05
+=================================================================
+
+ZIEL: 3 Kameras in libcamera/Megapixels mit Geraete-Config,
+Akkumanagement (Laden/Entladen, Kapazitaet, Anzeige, Suspend/Idle,
+Power-Profile), plus Feinschliff.
+
+VOLLSTAENDIG ERREICHT (am Geraet belegt):
+
+1) AKKUMANAGEMENT
+   97%, 4.217 V, Discharging; UPower percentage+state; Statusleiste
+   mit Akku-Symbol; Kette qcom-spmi-rradc -> qcom_smbx -> pmi8998_fg
+   -> upowerd; Idle (hypridle 30 s dimmen/60 s DPMS off); Power-Profile
+   power-saver 1.13 GHz / balanced 1.77 GHz.
+
+2) SUSPEND/IDLE
+   fsnotify/SRCU-Deadlock im Kernel gefixt; s2idle success=3, fail=0;
+   Wakeup-Quellen (pwrkey/PMIC/i2c) aktiviert.
+
+3) THERMIK
+   38-42 C unter Last (vorher 58-63 C).
+
+4) KAMERAS
+   cam -l: 3 Kameras (2x Front IMX355, 1x Back IMX363); 22 Subdevs,
+   34 Media-Links. Beide Frontkameras liefern Frames (820x616 SRGGB10,
+   kamera-front-2026-11-10b.jpg, kamera-front-aux-2026-11-10.jpg).
+
+5) MEGAPIXELS
+   Gebaut (libdng, libmegapixels, megapixels-gtk, gschema, XDG-Dirs,
+   postprocess.sh). Config google,blueline.conf mit 3 Kameras, 820x616.
+   LIVE-VORSCHAU mit echten Sensor-Frames (Screenshots
+   megapixels-vorschau-live-2026-11-10.png und -live2).
+
+6) SHELL/APPS
+   Homescreen, OSK (QWERTZ), Chromium, Files, Foot; 7.4 h stabil.
+
+OFFEN (mit vollstaendigem Fix-Ansatz, braucht Flash):
+  a) Rueckkamera-Frames: v0bc flashen. Ursachenkette vollstaendig
+     belegt: rear_cam_vana (Fixed-Regulator) treibt GPIO 16 nicht
+     (fixed_voltage_ops leer, ena_gpiod fehlt); GPIO 16/80 per libgpiod
+     auf HIGH gesetzt -> i2c-16 ENXIO, bob 3328 mV/0 mA -> Sensor ohne
+     Strom. v0bc = Kernel-Fix (gpiod_direction_output im fixed.c) +
+     DT (vana -> vreg_bob).
+  b) Megapixels-Ausloeser: reagiert nur auf echte Touch-Eingabe
+     (ydotool/uinput und python-evdev-Tap kommen nicht an).
+  c) USB-Typ-Erkennung (Ladestrom): APSD liefert "Unknown".
+
+ROM-PAKET (flashbereit):
+  boot.img     = v0bc ef33cae81420a50ec4f60a2974478be105256a59e02c5d515ae0cb099bd8f414
+  userdata.img = 364aecabcd41c7b110f9225d9d39448b76addb47b347495959c44b9e5e333083
