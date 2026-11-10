@@ -1,0 +1,19 @@
+Megapixels-Ausloeser: nur echte Touch-Eingabe, 2026-11-10 18:33
+===============================================================
+
+Versuche, den Ausloeser programmatisch zu triggern:
+  - ydotool/uinput: Mausklick auf (180,650) -> kein Foto
+  - ydotool Leertaste (Accelerator "space") -> kein Foto
+  - ydotoold als root und als omarchy gestartet -> kein Foto
+  - GAction "capture" existiert (main.c:1475), aber Megapixels
+    registriert keinen D-Bus-Namen (ServiceUnknown) -> nicht per
+    gdbus aufrufbar
+  - Megapixels beendet sich nach einiger Zeit selbst (EXIT ohne
+    Fehlermeldung, nur Zombies bleiben)
+
+Die Live-Vorschau laeuft (Sensor-Frames sichtbar), XDG-Pictures ist
+gesetzt. Der Ausloeser reagiert auf ECHTE Touch-Eingabe (das Geraet
+hat einen funktionierenden Touchscreen).
+
+Offen bleibt: Rueckkamera (v0bb: vana -> vreg_bob) und der
+Ausloeser per simulierter Eingabe.
