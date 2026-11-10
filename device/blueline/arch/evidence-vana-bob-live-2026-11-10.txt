@@ -1,0 +1,16 @@
+Rueckkamera: bob laeuft, vana noch am Fixed-Regulator, 2026-11-10 18:28
+=======================================================================
+
+Live-Befund:
+  - bob-Regler (PMIC-Boost): state=enabled, num_users=4  ✅
+  - rear_cam_vana (Fixed): state=disabled, gpio16 "in low"  ❌
+  - imx363: "Error writing reg 0x0103: -6",
+            "imx363_start_streaming failed to reset sensor"
+  - i2c-16 0x10: EBUSY (Treiber haelt den Bus)
+
+Deutung: Der bob liefert bereits 3.3 V, aber der imx363-Knoten haengt
+im laufenden DT noch an rear_cam_vana (Fixed-Regulator, GPIO 16, wird
+nicht getrieben). v0bb haengt vana direkt an vreg_bob (wie im
+Stock-Android) - das braucht den Flash.
+
+Beide Frontkameras liefern weiterhin Frames (cam -c 1/-c 2).
