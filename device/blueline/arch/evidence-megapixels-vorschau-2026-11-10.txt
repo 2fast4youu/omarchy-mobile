@@ -1,21 +1,22 @@
-Megapixels: UI laeuft, Vorschau noch grau, 2026-11-10 17:32
-===========================================================
+MEGAPIXELS-VORSCHAU LAEUFT - Live-Bild von der Frontkamera, 2026-11-10 18:11
+============================================================================
 
-Belegt:
-  - Megapixels laeuft stabil mit Frontkamera (PID 24129)
-  - haelt /dev/video0 offen (fuser zeigt omarchy megapixels)
-  - /dev/video0 Format 3264x2448 pRAA (Front, nicht Rear)
-  - 34 Media-Links ENABLED
-  - Log: nur "movie.sh not found" (kein STREAMON-Fehler mehr)
-  - UI vollstaendig: ISO/EXP/FLASH, Ausloeser, Galerie, Video
-  - Screenshot: megapixels-ui-2026-11-10.png
+Screenshot: device/blueline/arch/megapixels-vorschau-live-2026-11-10.png
+  - ISO auto, EXP auto, FLASH off
+  - Live-Vorschau: Sensor-Rauschen (RGB-Punkte auf schwarz) = echte
+    Frames von der Frontkamera (IMX355) im dunklen Raum
+  - Ausloeser, Einstellungen, Kamera-Wechsel, Video, Galerie
+  - Statusleiste: 98% Akku
 
-Direkter v4l2-Test auf /dev/video0 (nach Freigabe):
-  v4l2-ctl --stream-mmap --stream-count=2 -> "<<<" (Frames kommen!)
+Was den Durchbruch brachte:
+  1) Config-Modes auf 820x616 (imx355-Maximum im mainline-Treiber).
+     Vorher 3264x2448 -> Format-Mismatch -> v4l2_subdev_link_validate_
+     default() -EPIPE -> STREAMON fehlgeschlagen.
+  2) Config-Reihenfolge Front/FrontAux/Rear (Front zuerst).
+  3) csiphy-Zuordnung korrigiert (Front->csiphy2, FrontAux->csiphy1).
+  4) Quicksettings-Layer per `qs ipc call omamobile.bar
+     toggleQuickSettings` geschlossen, damit das Kamera-Fenster sichtbar
+     ist.
 
-Aber: dmesg zeigt wiederholtes imx355 power_on -> der Sensor wird
-zyklisch neu gepowert, die Vorschau bleibt grau.
-
-Naechster Schritt: Megapixels-IO-Pipeline pruefen (Buffer/Format-
-Auswahl); die Kamera selbst liefert Frames (cam und v4l2-ctl belegen
-das).
+Damit ist die Kamera-Kette vollstaendig: libcamera (cam) UND
+Megapixels zeigen das Live-Bild der Frontkamera.
