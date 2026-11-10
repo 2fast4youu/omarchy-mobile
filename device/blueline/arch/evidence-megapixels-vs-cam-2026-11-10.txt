@@ -1,0 +1,26 @@
+Megapixels (direktes V4L2) vs. cam (libcamera), 2026-11-10 17:55
+===============================================================
+
+Beide nutzen dieselbe Kamera (Front, imx355 auf cci_i2c1/camera@10):
+
+  cam -c 2 --capture=1  -> "Capture 1 frames", 640640 B   OK
+  Megapixels            -> "MPCamera: VIDIOC_STREAMON error 32,
+                            Broken pipe"                    FEHLER
+
+Megapixels-Log sonst sauber:
+  OpenGL ES 3.2, Debayer-Shader, Exposure limit 734 (Frontkamera!),
+  Postprozessor gefunden, UI sichtbar.
+
+Unterschied: libcamera nutzt den "simple"-Pipeline-Handler und
+konfiguriert Media-Links/Formate selbst; Megapixels setzt die Pipeline
+direkt ueber V4L2 (msm_vfe0_rdi0) und trifft dabei auf einen Zustand,
+den der camss mit EPIPE ablehnt.
+
+Deutung: Der camss verlangt eine bestimmte Reihenfolge/Format-Setzung,
+die libcamera einhaelt und Megapixels (noch) nicht. Beide Frontkameras
+sind funktional (cam-Beleg); Megapixels braucht eine angepasste
+Pipeline-Konfiguration.
+
+Naechster Schritt: Megapixels-Pipeline an libcamera annaehern
+(Format vor Link-Setup, Pad-Formate auf allen Entities) oder
+Megapixels auf den libcamera-Pfad umstellen.
