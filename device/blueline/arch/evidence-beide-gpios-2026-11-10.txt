@@ -1,0 +1,22 @@
+Beide Rueckkamera-GPIOs HIGH, Sensor antwortet nicht, 2026-11-10 19:03
+=====================================================================
+
+Mit libgpiod:
+  gpioset -c gpiochip2 16=1  -> gpio16 : out high  ✅ (VANA-Enable)
+  gpioset -c gpiochip2 80=1  -> gpio80 : out high  ✅ (Reset, ACTIVE_LOW
+                                -> high = nicht im Reset)
+
+Ergebnis:
+  i2c-16 0x10 -> Errno 6 (ENXIO) statt EBUSY -> Bus ist frei, aber der
+                 Sensor antwortet nicht
+  bob-Regler: 3328 mV, 0 mA -> keine Last, Sensor zieht keinen Strom
+
+Deutung: GPIO 16 und 80 sind gesetzt, aber der VANA-Pfad ist noch nicht
+vollstaendig. Im Stock-DT haengt VANA an pmi8998_bob (3.3 V) und wird
+ueber GPIO 16 freigegeben; zusaetzlich braucht der Sensor VDIG (s3a)
+und VIF (lvs1). Diese sind ueber den Treiber angefordert (is_enabled=1),
+aber der Sensor zieht trotzdem keinen Strom.
+
+Naechster Schritt: v0bc flashen - der Kernel-Fix setzt die GPIOs im
+Treiber-Kontext (nicht per Userspace), was die Reihenfolge
+Regler->Reset->Clock korrekt einhaelt.
