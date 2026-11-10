@@ -1,0 +1,17 @@
+Kamera: Testkernel ohne rear_cam-Knoten (v0av), 2026-11-10 11:20
+===============================================================
+
+Verdacht: Der neue &cci_i2c0-Block (rear_cam/IMX363) stoert den
+i2c-/Async-Aufbau so, dass der imx355 nicht mehr geprobt wird.
+
+v0av entfernt testweise:
+  - den &cci_i2c0 { rear_cam: camera@10 { ... } }-Block
+  - den camss port@0 (der auf cam_rear_endpoint verweist)
+Der camera_rear_vana-Regler bleibt (unbenutzt, harmlos).
+
+Boot v0av = 637067950236248fd16f0b860c5bff0314f38448a6d7f6b6f7c5a2dc0fad84ce
+
+Erwartung: Wenn die Frontkameras damit wieder in cam -l erscheinen,
+ist der cci_i2c0-Block die Ursache; dann wird die Rueckkamera anders
+eingebunden (z.B. eigener i2c-Bus-Knoten oder nur die noetigen
+Properties).
