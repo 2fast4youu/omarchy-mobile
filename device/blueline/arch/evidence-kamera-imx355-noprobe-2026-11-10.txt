@@ -1,0 +1,24 @@
+Kamera: imx355-Probe wird nie aufgerufen, 2026-11-10 11:15
+==========================================================
+
+Reproduzierbar auf v0au (Modul-Kette):
+  - imx355.ko laedt (lsmod zeigt es), refcnt=0
+  - i2c-Geraete 17-0010/17-001a sind mit dem Treiber verlinkt
+    (/sys/bus/i2c/drivers/imx355/17-001a existiert)
+  - of_match ist korrekt (alias of:N*T*Csony,imx355, modalias
+    of:NcameraT(null)Csony,imx355)
+  - ABER: nach dmesg -C und unbind/bind bzw. rmmod/insmod erscheint
+    KEINE einzige imx355-Meldung; nur imx363 probt (und deferrt
+    korrekt mit -6, weil die Rueckkamera keinen Strom hat)
+  - Folge: keine Subdevs, keine Links zu msm_csiphy1/2, cam -l leer
+  - titan_top_gdsc off-0 (nach "echo on" -> on, Rebind hilft nicht)
+  - cam_cc_mclk2_clk enable_count=0
+
+Vergleich: Frueher (vor den DT-Aenderungen am cci_i2c0-Knoten,
+clock-frequency, link-frequencies und den vana/vdig/vif-Reglern)
+standen beide Frontkameras in cam -l und lieferten einen echten Frame.
+
+Verdacht: Der von mir ergaenzte &cci_i2c0-Block (rear_cam) stoert den
+i2c-Controller/Async-Aufbau so, dass der imx355 nicht mehr gebunden
+wird. Naechster Schritt: rear_cam-Knoten testweise entfernen und
+Frontkameras pruefen.
