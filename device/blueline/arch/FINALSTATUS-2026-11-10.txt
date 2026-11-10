@@ -1,0 +1,41 @@
+Omarchy Mobile auf Pixel 3 (blueline) - FINALSTATUS 2026-11-10 18:20
+====================================================================
+
+VOLLSTAENDIG FUNKTIONSFAEHIG (am Geraet belegt):
+
+1) AKKUMANAGEMENT
+   - qcom-battery: 97-99%, Discharging, 4.25 V, ~2 mA, 30.8 C
+   - UPower: percentage + state, Statusleiste zeigt Akku-Symbol + %
+   - Kette: qcom-spmi-rradc -> qcom_smbx -> pmi8998_fg -> upowerd
+   - Idle: hypridle (30 s dimmen, 60 s DPMS off), lock-frei
+   - Power-Profile: power-saver 1.13 GHz / balanced 1.77 GHz
+
+2) SUSPEND/IDLE
+   - fsnotify/SRCU-Deadlock im Kernel gefixt
+   - s2idle: success=3, fail=0, Wakeup-Quellen (pwrkey/PMIC/i2c)
+
+3) THERMIK
+   - 41-42 C unter Last (vorher 58-63 C)
+
+4) KAMERAS (3 von 3 in cam -l)
+   - 2x Front (IMX355): liefern Frames (820x616 SRGGB10)
+   - 1x Back (IMX363): in cam -l gelistet; Frames brauchen VANA-GPIO
+     (v0ba-Fix: vana-gpios im DT + Treiber)
+   - 22 Subdevs, 34 Media-Links
+
+5) MEGAPIXELS
+   - gebaut (libdng, libmegapixels, megapixels-gtk, gschema)
+   - Config google,blueline.conf: 3 Kameras, 820x616
+   - LIVE-VORSCHAU LAEUFT (Sensor-Frames sichtbar)
+   - UI: ISO/EXP/FLASH, Ausloeser, Galerie, Video
+   - Screenshots: megapixels-vorschau-live-2026-11-10.png,
+     megapixels-vorschau-live2-2026-11-10.png
+
+6) SHELL/APPS
+   - Homescreen, OSK (squeekboard, QWERTZ), Chromium, Files, Foot
+
+OFFEN (dokumentiert, mit Fix-Ansatz):
+  a) Rueckkamera-Frames: v0ba flashen (vana-gpios im DT)
+  b) Megapixels-Ausloeser: reagiert nicht auf simulierte Events
+     (echte Touch-Eingabe funktioniert)
+  c) USB-Typ-Erkennung (Ladestrom): APSD liefert "Unknown"
