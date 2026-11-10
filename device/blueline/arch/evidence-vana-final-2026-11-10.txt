@@ -1,0 +1,26 @@
+VANA-Regler: an, aber GPIO nicht getrieben, 2026-11-10 17:50
+============================================================
+
+Debug (imx363_power_on, is_enabled):
+  OMADBG enable vana -> 0 (is_enabled=1)
+  OMADBG enable vdig -> 0 (is_enabled=1)
+  OMADBG enable vif  -> 0 (is_enabled=1)
+-> Alle drei Regler melden "enabled".
+
+Aber gleichzeitig:
+  gpio16: in low (gpiolib) / out low func0 (pinctrl)
+  rear_cam_vana: state=disabled, num_users=0 (nach dem Probe)
+  pinctrl pin 16: GPIO 3400000.pinctrl:568 (gemuxt, aber low)
+
+Deutung: Der reg-fixed-voltage-Treiber haelt den GPIO, aber gpiolib
+fuehrt ihn als INPUT ("in low"), waehrend pinctrl ihn als OUTPUT
+konfiguriert hat. regulator_enable() liefert 0 und is_enabled=1, ohne
+dass der Pin getrieben wird. Nach dem Probe schaltet Runtime-PM den
+Regler wieder aus.
+
+Das ist ein tiefer GPIO-/Regulator-Integrationsblock im mainline-
+sdm845, kein Konfigurationsfehler. v0ba (vana-gpios im DT + Treiber
+treibt den GPIO selbst) ist der vorgesehene Fix, braucht aber den
+Flash.
+
+Beide Frontkameras liefern bereits Frames (cam -c 2/-c 3).
