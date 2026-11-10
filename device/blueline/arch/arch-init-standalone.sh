@@ -78,9 +78,13 @@ for m in mc videodev v4l2-common v4l2-async v4l2-fwnode v4l2-cci \
          i2c-qcom-cci camcc-sdm845 qcom-camss imx355 imx363; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
-# KEIN Re-Bind der Sensoren: das loeste einen zweiten power_on aus und
-# die geteilte MCLK2 scheiterte mit -EBUSY (am Geraet belegt). Die
-# Sensoren werden nach dem camss geladen und proben dort einmalig.
+# camss-Runtime-PM MUSS aktiv sein, bevor die Sensoren laden: sonst sind
+# die camss-genpds "suspended", die MCLK2-Branch bleibt "stuck at off"
+# und clk_prepare_enable liefert -EBUSY (am Geraet belegt, dmesg:
+# "cam_cc_mclk2_clk status stuck at 'off'").
+[ -e /sys/devices/platform/soc@0/acb3000.camss/power/control ] && \
+    echo on > /sys/devices/platform/soc@0/acb3000.camss/power/control 2>/dev/null
+sleep 1
 chmod 666 /dev/dma_heap/* 2>/dev/null
 chmod 666 /dev/media* 2>/dev/null
 
