@@ -1,0 +1,18 @@
+Kernel-Fix: Fixed-Regulator treibt GPIO als Output, 2026-11-10 18:46
+====================================================================
+
+Problem: gpio16 bleibt "in low" (gpiolib), obwohl pinctrl ihn als
+"out low func0" fuehrt. Der Fixed-Regulator fordert den GPIO mit
+gpiod_get_optional(..., GPIOD_OUT_LOW) an, aber der Pin wird nicht
+getrieben -> rear_cam_vana bleibt disabled -> Sensor ohne VANA.
+
+Fix (drivers/regulator/fixed.c): nach dem GPIO-Request die Richtung
+explizit setzen:
+  if (cfg.ena_gpiod)
+      gpiod_direction_output(cfg.ena_gpiod, config->enabled_at_boot);
+
+Kernel gebaut (Image.gz 15.795.481 B), Boot v0bc gepackt.
+Erwartung: GPIO 16 wird als Output getrieben -> rear_cam_vana kann
+schalten -> IMX363 bekommt VANA -> i2c antwortet -> Frames.
+
+Beide Frontkameras liefern Frames; Megapixels-Vorschau laeuft.
