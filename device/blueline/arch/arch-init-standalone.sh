@@ -68,13 +68,21 @@ for m in rfkill ecc ecdh_generic bluetooth btqca btbcm hci_uart rfcomm \
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
 
-# Kamera: camss, cci und camcc sind EINGEBAUT (CONFIG_MEDIA_SUPPORT=y,
-# VIDEO_QCOM_CAMSS=y, SDM_CAMCC_845=y). NUR die Sensoren sind Module und
-# werden hier geladen - nach dem camcc, damit die MCLK schon laeuft
-# (als Built-in probten sie bei 0.5 s und scheiterten mit -5, danach war
-# die MCLK mit -EBUSY blockiert).
-for m in imx355 imx363; do
+# Kamera: videodev/videobuf2 -> CCI-Controller -> camcc (GDSCs) -> camss
+# -> Sensoren. Diese Reihenfolge ist die einzige, die den
+# v4l2-async-Bind zuverlaessig herstellt (als Built-in probten die
+# Sensoren vor dem camcc und die MCLK blieb mit -EBUSY blockiert).
+for m in mc videodev v4l2-common v4l2-async v4l2-fwnode v4l2-cci \
+         videobuf2-common videobuf2-v4l2 videobuf2-memops \
+         videobuf2-dma-contig videobuf2-vmalloc videobuf2-dma-sg \
+         i2c-qcom-cci camcc-sdm845 qcom-camss imx355 imx363; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
+done
+# Sensoren nach dem camss neu binden (MCLK kommt vom camss).
+sleep 1
+for d in 17-0010 17-001a; do
+    [ -e /sys/bus/i2c/drivers/imx355/unbind ] && echo "$d" > /sys/bus/i2c/drivers/imx355/unbind 2>/dev/null
+    [ -e /sys/bus/i2c/drivers/imx355/bind ] && echo "$d" > /sys/bus/i2c/drivers/imx355/bind 2>/dev/null
 done
 chmod 666 /dev/dma_heap/* 2>/dev/null
 chmod 666 /dev/media* 2>/dev/null
