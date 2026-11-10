@@ -1,0 +1,21 @@
+System laeuft stabil ueber 7.4 Stunden, 2026-11-10 18:51
+=========================================================
+
+Live-Messung:
+  uptime      = 26647 s (7.4 h)
+  Akku        = 97%, Discharging, 4.217 V
+  Thermal     = cpu0 38.2 C, cpu7 38.2 C
+  Kameras     = 3 in cam -l
+  Megapixels  = laeuft (PID 2014)
+  Hyprland    = laeuft (PID 30674)
+  Screenshot  = homescreen-final-2026-11-10.png (Uhr 17:51,
+                Akku 97%, Chromium/Files/Foot, Suchleiste)
+
+Damit ist die ROM im Alltag nutzbar: Shell, Apps, Akkuanzeige,
+Thermik und Kameras laufen stabil.
+
+Offen bleiben (dokumentiert):
+  a) Rueckkamera-Frames: v0bc flashen (Kernel-Fix fixed.c +
+     DT vana->bob)
+  b) Megapixels-Ausloeser: echte Touch-Eingabe noetig
+  c) USB-Typ-Erkennung (Ladestrom): APSD "Unknown"
