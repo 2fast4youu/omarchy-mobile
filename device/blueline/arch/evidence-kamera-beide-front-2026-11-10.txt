@@ -1,0 +1,21 @@
+Beide Frontkameras liefern Frames, Rueckkamera blockiert, 2026-11-10 17:44
+==========================================================================
+
+cam -l (nach camss-Rebind, Reihenfolge Rear/FrontAux/Front):
+  1: Internal back camera  (cci/i2c-bus@0/camera@10)  -> imx363
+  2: Internal front camera (cci/i2c-bus@1/camera@1a)  -> imx355
+  3: Internal front camera (cci/i2c-bus@1/camera@10)  -> imx355
+
+Einzeltests:
+  cam -c 2 --capture=1 -> "Capture 1 frames", 640640 B  OK
+  cam -c 3 --capture=1 -> "Capture 1 frames", 640640 B  OK
+  cam -c 1 --capture=1 -> "Creating IPA for software ISP failed"
+    dmesg: imx363 16-0010: Error writing reg 0x0103: -6
+           imx363_start_streaming failed to reset sensor
+
+Deutung: Beide Frontkameras (IMX355) funktionieren einwandfrei; die
+Rueckkamera (IMX363) scheitert am Sensor-Reset, weil ihr VANA-GPIO
+(GPIO 16) nicht getrieben wird (reg-fixed-voltage schaltet den Pin
+nicht). v0ba behebt das mit vana-gpios direkt im Treiber.
+
+Belege: kamera-frontaux-2026-11-10.jpg, kamera-front-2026-11-10b.jpg
