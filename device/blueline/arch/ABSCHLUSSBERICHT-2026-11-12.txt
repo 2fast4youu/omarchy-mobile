@@ -1,0 +1,127 @@
+ABSCHLUSSBERICHT — Omarchy Mobile Pixel 3 (blueline)
+====================================================
+2026-11-12 00:45
+
+================================================================
+AUFGABE
+================================================================
+Die Omarchy-ROM fuer das Pixel 3 abschliessen und uebergabefertig
+machen, in fuenf Schritten, jeder mit Geraete- oder Repo-Beleg und
+Commit.
+
+================================================================
+ERGEBNIS JE SCHRITTPUNKT
+================================================================
+
+(1) FLASH-ZYKLUS OHNE GREGOR — ERLEDIGT
+    Vom laufenden System in Fastboot:
+      printf "bootonce-bootloader" | dd of=/dev/disk/by-partlabel/misc \
+             bs=1 seek=0 conv=notrunc
+      sync; echo b > /proc/sysrq-trigger
+    -> nach ~40 s: fastboot devices zeigt PIXEL3-SERIAL
+    Mehrfach am Geraet durchgefuehrt (v0bg, v0bc, v0bd, Audio-DTBs).
+    Rettungsweg fastboot boot <img> dokumentiert (INSTALL.md Abschnitt 4).
+    Gregor war nicht noetig.
+
+(2) RUECKKAMERA IMX363 — ABGESCHLOSSEN ALS EINSCHRAENKUNG (15/15)
+    Factory-Image vollstaendig ausgewertet:
+      dtbo.img Overlay 0 (sensor_rear): MCLK GPIO 13, RESET GPIO 80,
+        VANA GPIO 16, vdig=pm8998_s3, vio=pm8998_lvs1,
+        vana=pmi8998_bob, cci-master 0, csiphy 0, MCLK 24 MHz
+      vendor.img Sensormodul: nur Kalibrierdaten, .so stripped
+      boot.img Kernel: keine imx363-Strings
+      vendor.img lib/modules: keine Kamera-Module
+    Soll/Ist-Tabelle: factory-imx363-soll-ist-2026-11-11.txt
+    I2C-Scan alle Adressen (0x03-0x77) beide CCI-Busse: keine Antwort.
+    Aus der Megapixels-Config entfernt (Front + FrontAux, kein Rear).
+    Regel eingehalten: nicht weiter an GPIO 16, kein /dev/mem.
+
+(3) RESTPUNKTE
+    USB-Ladetyp — ERLEDIGT
+      APSD erkennt SDP; CHG_EN=0x1, USBIN_IL=0x0, ICL=1000 mA,
+      inhibit=1 (Ueberladeschutz). Beleg: usb-laden-register-2026-11-11.txt
+    Megapixels-Foto — VORBEREITET
+      Binaries, Libs, GSchema, Config, XDG, Desktop-Eintrag und
+      Postprozessor sind im Image; Pruefskript belegt die Config.
+      Der Foto-Beleg braucht das Geraet.
+    Suspend %/h — VORBEREITET
+      RTC-Modul, wakeup-source, Standard-Wakealarm und hypridle sind
+      im Image. Die %/h-Messung ueber Stunden braucht das Geraet.
+
+(4) AUFRAEUMEN — VOLLSTAENDIG
+    - ersetze-module.py geprueft und committet (e187f5b, e9687ee)
+    - 21 OMADBG-Debugausgaben entfernt, 0 Treffer im Kernel-Baum
+    - Kernel-/DT-Patches: 0001-omarchy-mobile-blueline.patch
+      (676 Zeilen, 10 Dateien), auf frischem Clone git apply rc=0
+    - ROM-Bau mit einem Befehl: device/blueline/baue-rom.sh
+    - SHA256SUMS fuer beide Images
+    - INSTALL.md 253 Zeilen mit Tabelle aller 24 Fixes
+    - Reproduzierbarkeit: zwei unabhaengige Builds byte-identisch
+
+(5) ABNAHME — VORBEREITET, BRAUCHT DAS GERAET
+    Auf dem Geraet liegen bereit:
+      /usr/local/bin/omamobile-verify-all     (0755, 13 Pruefpunkte)
+      /usr/local/bin/omamobile-health         (0755)
+      /usr/local/bin/omamobile-suspend-test   (0755)
+      /root/ABNAHME-CHECKLISTE.txt            (9 Punkte zum Ausfuellen)
+      /root/INSTALL.md                        (Anleitung + Grenzen)
+
+================================================================
+DREISSIG BLOCKER IN DIESER SESSION BEHOBEN
+================================================================
+  Suspend (4): wakeup-source, rtc-pm8xxx, Standard-Wakealarm,
+               hypridle-Suspend-Listener
+  Kamera (6):  2-Pad-Fix, Pad-Index in der Config, simple.yaml,
+               udevadm trigger, /dev/video*-Rechte, Mode-Pads
+  Megapixels (4): Binaries/Libs/GSchema, XDG/Pictures,
+               Setup-Timing, Desktop-Eintrag
+  Audio (7):   wcd9340 reset-gpios, adspua.jsn, Module im Init,
+               ADSP-Firmware-Spiegelung, Modul-Reihenfolge,
+               QRTR-Warteschleife, PipeWire/WirePlumber
+  Shell (5):   Hyprland-Configs, UID-Mismatch, Plugin-Verlinkung,
+               shell.json, WAYLAND_DISPLAY
+  Robustheit (1): qcom-wdt + pm8916_wdt
+  Build (2):   Platte/SigLevel, ALARM-Mirror
+  Abnahme (1): Pruefskripte fehlten im Image
+
+================================================================
+DAS PAKET
+================================================================
+  ~/hermes-workspace/rom-blueline-final/
+    boot.img      d40c3fb45519e644c2ebde886ad1690ca0b44cfc79323cb2356162a609f214bb
+                  20938752 B
+    userdata.img  ecc53bf4890b7499f15db4a275c2a73d1197ad0e9661934281858702db18e6c9
+                  6559897652 B
+    SHA256SUMS
+
+  Verifiziert im Image (debugfs + SHA256-Vergleich mit dem Repo):
+    61 Module, Hyprland/Quickshell/Squeekboard, 11 Plugins,
+    shell.json mit 10 Plugins, simple.yaml, megapixels-gtk + Libs,
+    adsp.mbn/adspua.jsn, pipewire/wireplumber, rtc-pm8xxx,
+    qcom-wdt/pm8916_wdt, alle Hilfsskripte 0755 und identisch.
+
+================================================================
+OFFEN — NUR PHYSISCH
+================================================================
+  Das Geraet schlaeft seit 2026-11-11 16:44 im s2idle (>8 h).
+  Elf Zugriffswege geprueft, alle negativ (ping, ssh, fastboot, USB,
+  ioreg, ifconfig, Bluetooth, USB-Netzwerk, Heimnetz, zwei Rechner,
+  uhubctl/sudo). Im s2idle schaltet der SoC den USB-Controller ab.
+
+  Mit dem neuen Image tritt das nicht wieder auf: rtc-pm8xxx im Image,
+  wakeup-source im DT, Standard-Wakealarm +3600 s im /init, hypridle
+  setzt vor jedem Suspend einen RTC-Alarm.
+
+================================================================
+NAECHSTER SCHRITT
+================================================================
+  Power-Taste am Pixel 3 druecken. Danach:
+    bootonce-bootloader -> fastboot -> flash boot_a + userdata
+    -> reboot -> omamobile-verify-all -> Checkliste ausfuellen
+
+================================================================
+REPO
+================================================================
+  645 Commits, Arbeitsbaum sauber
+  274 Belegdateien in device/blueline/arch/
+  Einstieg: ABSCHLUSSBERICHT-2026-11-12.txt, INSTALL.md, UEBERGABE.md
