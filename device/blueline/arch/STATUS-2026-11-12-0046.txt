@@ -1,0 +1,27 @@
+Status, 2026-11-12 00:46
+========================
+
+REPO:   646 Commits, Arbeitsbaum sauber, 275 Belegdateien
+PAKET:  boot.img d40c3fb4 (20938752 B)
+        userdata.img ecc53bf4 (6559897652 B)
+
+ABGESCHLOSSEN
+  (1) Flash-Zyklus ohne Gregor      VOLLSTAENDIG
+  (2) Rueckkamera IMX363            ABGESCHLOSSEN (15/15, Einschraenkung)
+  (3) USB-Ladetyp                   ERLEDIGT
+  (4) Aufraeumen                    VOLLSTAENDIG (2 Builds byte-identisch)
+  30 Blocker behoben, alle im Image verifiziert
+
+OFFEN (nur physisch)
+  (3) Megapixels-Foto, Suspend %/h  brauchen das Geraet
+  (5) Abnahme                       braucht das Geraet
+
+BLOCKER
+  Geraet schlaeft seit 2026-11-11 16:44 im s2idle (>8 h).
+  11 Zugriffswege geprueft, alle negativ.
+  Im s2idle ist der USB-Controller abgeschaltet.
+
+NAECHSTER SCHRITT
+  Power-Taste druecken. Danach laeuft alles automatisch:
+    bootonce-bootloader -> fastboot -> flash boot_a + userdata
+    -> reboot -> omamobile-verify-all -> Checkliste
