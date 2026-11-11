@@ -26,7 +26,7 @@ mit Commit und Belegdatei in `device/blueline/arch/`.
   boot.img      d40c3fb45519e644c2ebde886ad1690ca0b44cfc79323cb2356162a609f214bb
                 20938752 B — Kernel 7.1.0-rc1-sdm845 + Initramfs + DTB
                 (RTC wakeup-source, WCD9340 reset-gpios, 2-Pad-DTB)
-  userdata.img  c45b09c50a7b381d10315aab12f5a0e8a442fca3fc813cafb0455515aa8c8fb2
+  userdata.img  ecc53bf4890b7499f15db4a275c2a73d1197ad0e9661934281858702db18e6c9
                 6559897652 B — Arch-Rootfs (sparse, 61 Module)
   SHA256SUMS
 ```

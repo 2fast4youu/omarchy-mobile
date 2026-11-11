@@ -34,7 +34,7 @@ Aufgabenpunkt (4) "Aufraeumen" vollstaendig verifiziert, 2026-11-12 00:16
 (4e) SHA256 der Bilder
      ~/hermes-workspace/rom-blueline-final/SHA256SUMS
        d40c3fb4...  boot.img      20938752 B
-       c45b09c5...  userdata.img  6559897652 B
+       ecc53bf4...  userdata.img  6559897652 B
 
 (4f) INSTALL.md
      device/blueline/INSTALL.md, 253 Zeilen
