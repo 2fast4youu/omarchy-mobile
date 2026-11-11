@@ -1,0 +1,38 @@
+Bluetooth vollstaendig im Image, 2026-11-11 21:42
+================================================
+
+Per debugfs geprueft:
+
+FIRMWARE
+  /usr/lib/firmware/qca/crbtfw21.tlv   177060 B
+  /usr/lib/firmware/qca/crnv21.bin       4587 B
+
+DAEMON + WERKZEUGE
+  /usr/lib/bluetooth/bluetoothd        2195568 B
+  /usr/bin/bluetoothctl                 736064 B
+  /usr/bin/btmgmt                       199024 B
+
+PYTHON (fuer den Pairing-Agent)
+  /usr/lib/python3.14/lib-dynload/pyexpat.cpython-314-aarch64-linux-gnu.so
+  /usr/lib/libexpat.so.1                Inode 35856
+  /usr/lib/libexpat.so                  Inode 35855
+
+Der frueher beobachtete Fehler "python3.14/pyexpat" beim Pairing
+duerfte damit behoben sein: pyexpat und libexpat sind vorhanden.
+
+INIT
+  bluetoothd -n laeuft als eigener Daemon (kein systemd)
+  BT-Firmware wird ins Initramfs gespiegelt (qca/crbtfw21.tlv,
+  qca/crnv21.bin in der Firmware-Liste)
+
+DAMIT SIND ALLE HARDWARE-BEREICHE IM IMAGE VERIFIZIERT:
+  Display/Touch  - DRM, stmfts (Kernel)
+  WLAN           - ath10k-Firmware + Profil HOME-WLAN
+  Bluetooth      - Firmware + bluetoothd + bluetoothctl + pyexpat
+  Audio          - ADSP, WCD9340, SLIMbus, PipeWire
+  Kamera         - camss, 2-Pad-Sensoren, libcamera-Config
+  Megapixels     - Binary, Libs, GSchema, Config, Desktop-Eintrag
+  Akku           - RRADC, smbx, pmi8998_fg, UPower
+  Suspend        - rtc-pm8xxx, wakeup-source, Standard-Wakealarm
+  Shell          - Hyprland, quickshell, squeekboard, 11 Plugins
+  Robustheit     - qcom-wdt, pm8916_wdt
