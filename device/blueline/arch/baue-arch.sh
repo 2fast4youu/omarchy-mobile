@@ -27,6 +27,9 @@ docker run --rm --platform linux/arm64 --privileged \
   -v "$HOME/hermes-workspace/images/fl-v0ba/gpi.ko":/gpi.ko:ro \
   -v "$HOME/hermes-workspace/pmos-kernel-out/drivers/leds/flash/leds-qcom-flash.ko":/leds-qcom-flash.ko:ro \
   -v /tmp/mods:/mods:ro \
+  -v /tmp/megapixels:/mega/megapixels:ro \
+  -v /tmp/libmegapixels:/mega/libmegapixels:ro \
+  -v /tmp/libdng:/mega/libdng:ro \
   -v /tmp/modem-bin/usr/bin:/modembin:ro \
   -v /tmp/modem-bin/usr/lib:/modembin-lib:ro \
   -v "/Users/gregor/hermes-workspace/pmos-ref-build/pmbootstrap-work/chroot_rootfs_google-blueline/usr/lib/firmware/qcom/sdm845/Google/blueline":/qcomfw:ro \

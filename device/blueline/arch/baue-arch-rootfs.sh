@@ -66,6 +66,24 @@ mkdir -p /tmp/arch/home/omarchy/.config/hypr
 cp /om/hypridle/hypridle.conf /tmp/arch/home/omarchy/.config/hypr/hypridle.conf 2>/dev/null || true
 mkdir -p /tmp/arch/usr/share/megapixels/config
 cp /om/megapixels-config/*.conf /tmp/arch/usr/share/megapixels/config/ 2>/dev/null || true
+# Megapixels-Binaries: wurden frueher nur manuell per scp installiert,
+# fehlten damit im Image. Jetzt aus den Build-Verzeichnissen einbauen.
+if [ -x /mega/megapixels/build/megapixels ]; then
+    install -Dm755 /mega/megapixels/build/megapixels /tmp/arch/usr/bin/megapixels-gtk
+    ln -sfn megapixels-gtk /tmp/arch/usr/bin/megapixels
+    install -Dm644 /mega/megapixels/data/me.gapixels.Megapixels.gschema.xml \
+        /tmp/arch/usr/share/glib-2.0/schemas/me.gapixels.Megapixels.gschema.xml
+fi
+if [ -f /mega/libmegapixels/build/libmegapixels.so ]; then
+    install -Dm644 /mega/libmegapixels/build/libmegapixels.so \
+        /tmp/arch/usr/lib/libmegapixels.so.0
+    ln -sfn libmegapixels.so.0 /tmp/arch/usr/lib/libmegapixels.so
+fi
+if [ -f /mega/libdng/build/libdng.so ]; then
+    install -Dm644 /mega/libdng/build/libdng.so /tmp/arch/usr/lib/liblibdng.so.0.1
+    ln -sfn liblibdng.so.0.1 /tmp/arch/usr/lib/libdng.so
+    ln -sfn liblibdng.so.0.1 /tmp/arch/usr/lib/liblibdng.so
+fi
 mkdir -p /tmp/arch/opt/omamobile/mods
 [ -f /leds-qcom-flash.ko ] && cp /leds-qcom-flash.ko /tmp/arch/opt/omamobile/leds-qcom-flash.ko
 cp /mods/*.ko /tmp/arch/opt/omamobile/mods/ 2>/dev/null || true
