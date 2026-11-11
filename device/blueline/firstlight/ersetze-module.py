@@ -34,13 +34,14 @@ def main():
     ersetzt = 0
     for e in es:
         name = e["name"]
-        if "/usr/lib/modules/" + ALT + "/" in "/" + name and name.endswith(".ko"):
-            base = os.path.basename(name)
-            assert base in MODULE, "unerwartetes Modul: %s" % base
-            e["content"] = open(finde(bau, base), "rb").read()
+        if ALT in name:
+            if name.endswith(".ko"):
+                base = os.path.basename(name)
+                assert base in MODULE, "unerwartetes Modul: %s" % base
+                e["content"] = open(finde(bau, base), "rb").read()
+                e["meta"]["datasize"] = len(e["content"])
+                ersetzt += 1
             e["name"] = name.replace(ALT, neu)
-            e["meta"]["datasize"] = len(e["content"])
-            ersetzt += 1
         elif name == "init":
             txt = e["content"].decode()
             if ALT not in txt:
