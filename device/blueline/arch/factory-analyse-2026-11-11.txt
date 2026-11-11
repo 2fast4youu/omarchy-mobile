@@ -1,0 +1,39 @@
+Factory-Image-Analyse IMX363, 2026-11-11 14:35
+===============================================
+
+Ausgewertet:
+  1) dtbo.img Overlay 0 -> sensor_rear: qcom,cam-sensor@0
+     GPIOs: MCLK0=13, RESET=80, VANA=16
+     Regler: vdig=pm8998_s3, vio=pm8998_lvs1, vana=pmi8998_bob
+     cci-master=0, csiphy=0, MCLK 24 MHz
+     pinctrl cam_sensor_rear_active: gpio80+gpio16, function=gpio,
+       bias-disable, drive-strength=2  (KEIN output-high)
+     gpio-req-tbl-flags = <1 0 0> -> MCLK=out, RESET=in, VANA=in
+     => Der Stock-Treiber TREIBT GPIO 16 nicht selbst; er ist ein
+        Enable-Signal fuer pmi8998_bob, das der Regulator-Core setzt.
+
+  2) vendor.img lib64/camera/com.qti.sensormodule.metric_imx363.bin
+     (777507 B): enthaelt nur Kalibrierdaten (sensorDriverData,
+     PDConfigData, cameraModuleData, actuatorDriverData, EEPROM/OIS/
+     Flash) - KEINE I2C-Adresse, KEINE Power-Sequenz.
+
+  3) vendor.img lib64/camera/com.qti.sensor.imx363.so (10712 B):
+     stripped; .gnu_debugdata (lzma) enthaelt nur Exposure/Gain-
+     Funktionen (CalculateExposure, RealToRegisterGain, ...).
+     KEINE Power-Sequenz.
+
+  4) boot.img Kernel (lz4): enthaelt keine imx363/sony,imx-Strings
+     -> die Kamera-Treiber sind nicht im Stock-Kernel.
+
+  5) vendor.img lib/modules: 15 Module, keine Kamera-Module.
+
+FAZIT: Die I2C-Adresse (0x10) und Power-Up-Reihenfolge sind aus dem
+Factory-Image NICHT extrahierbar - sie stecken im proprietären
+Qualcomm-Camera-Stack (userspace HAL), nicht in DT/Firmware.
+
+UMSETZUNG (v0bg, gebaut): DT auf Stock-Layout zurueckgefuehrt:
+  - vana-gpios entfernt (Stock hat es nicht)
+  - RESET ACTIVE_HIGH (Stock: gpio-req-tbl-flags[1]=0)
+  - pinctrl ohne output-high
+  - VANA wieder als regulator-fixed mit gpios=<&tlmm 16>
+  - Treiber: vana_gpio-Code entfernt
