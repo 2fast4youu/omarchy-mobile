@@ -1,0 +1,38 @@
+Build-Skripte und Modulliste verifiziert, 2026-11-11 23:55
+==========================================================
+
+SYNTAX ALLER SKRIPTE
+  device/blueline/baue-rom.sh                  ok
+  device/blueline/arch/baue-arch-rootfs.sh     ok
+  device/blueline/arch/baue-arch.sh            ok
+  device/blueline/arch/arch-init-standalone.sh ok
+  alle weiteren *.sh in device/blueline/arch/  ok
+
+MODULLISTE (Init vs. /tmp/mods)
+  Module im Init:        61
+  Module in /tmp/mods:   61
+  Fehlend:               v4l2-common  (ist builtin, korrekt)
+
+  Die 61 Module umfassen:
+    RTC/Akku:   rtc-pm8xxx, qcom-spmi-rradc, qcom_smbx, pmi8998_fg
+    Remote:     qcom_sysmon, reset-qcom-pdc, qcom_q6v5,
+                qcom_q6v5_mss, qcom_q6v5_pas
+    Watchdog:   qcom-wdt, pm8916_wdt
+    Audio (14): soundwire-bus, regmap-slimbus, regmap-sdw,
+                slim-qcom-ngd-ctrl, snd-soc-rl6231, snd-soc-rt5663,
+                snd-soc-qcom-sdw, snd-soc-qcom-common,
+                snd-soc-wcd-common, snd-soc-wcd-classh,
+                snd-soc-wcd-mbhc, wcd934x, snd-soc-wcd934x,
+                snd-soc-sdm845
+    Kamera:     camcc-sdm845, camss, cci, imx355, imx363, ...
+
+BUILD MIT EINEM BEFEHL
+  NUR=alle|kernel|rootfs|packen AUSGABE=<dir> sh device/blueline/baue-rom.sh
+  -> Kernel+DTB, Rootfs, boot.img, userdata.img, SHA256SUMS
+
+REPRODUZIERBARKEIT
+  Patch auf frischem Clone: git apply rc=0
+  DTB identisch (in 959cd27 belegt)
+
+ERGEBNIS: Alle Skripte sind syntaktisch korrekt, die Modulliste ist
+konsistent, der Build laeuft mit einem Befehl.
