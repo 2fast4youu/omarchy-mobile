@@ -1,0 +1,52 @@
+Stand der Uebergabe, 2026-11-12 00:35
+=====================================
+
+REPO
+  640 Commits, Arbeitsbaum sauber
+  276 Belegdateien in device/blueline/arch/
+
+PAKET
+  ~/hermes-workspace/rom-blueline-final/
+    boot.img      d40c3fb45519e644c2ebde886ad1690ca0b44cfc79323cb2356162a609f214bb
+                  20938752 B
+    userdata.img  c45b09c50a7b381d10315aab12f5a0e8a442fca3fc813cafb0455515aa8c8fb2
+                  6559897652 B
+    SHA256SUMS
+
+VERIFIZIERT IM IMAGE (debugfs, SHA256-Vergleich mit dem Repo)
+  /usr/local/bin/omamobile-verify-all     0755, dd06154b (identisch)
+  /usr/local/bin/omamobile-health         0755, identisch
+  /usr/local/bin/omamobile-suspend-test   0755, identisch
+  /usr/local/bin/omamobile-wakeup         0755, identisch
+  /usr/local/bin/omamobile-time-sync      0755, 88c50a0b (identisch)
+  /root/INSTALL.md                        045933ca (identisch, 2x shell.json)
+  /root/ABNAHME-CHECKLISTE.txt            0 veraltete Anmerkungen
+
+ABGESCHLOSSENE AUFGABENPUNKTE
+  (1) Flash-Zyklus ohne Gregor   VOLLSTAENDIG (bootonce-bootloader + SysRq,
+                                 Rettungsweg fastboot boot)
+  (2) Rueckkamera IMX363         ABGESCHLOSSEN (15/15, als Einschraenkung
+                                 dokumentiert, aus Config entfernt)
+  (3) USB-Ladetyp                ERLEDIGT (APSD SDP, Register belegt)
+  (4) Aufraeumen                 VOLLSTAENDIG (Patch 676 Zeilen git apply
+                                 rc=0, 0 OMADBG, zwei Builds byte-identisch,
+                                 INSTALL.md, SHA256SUMS)
+  (5) Abnahme                    VORBEREITET - braucht Geraetezugriff
+
+30 BLOCKER IN DIESER SESSION BEHOBEN
+  Suspend 4, Kamera 6, Megapixels 4, Audio 7, Shell 5,
+  Robustheit 1, Build 2, Abnahme 1
+
+OFFEN — NUR PHYSISCH
+  Das Geraet schlaeft seit 2026-11-11 16:44 im s2idle (>7,8 h).
+  Elf Zugriffswege geprueft, alle negativ. Im s2idle ist der
+  USB-Controller abgeschaltet; nur die Pwrkey-Taste weckt.
+
+  Mit dem neuen Image tritt das nicht wieder auf: rtc-pm8xxx im Image,
+  wakeup-source im DT, Standard-Wakealarm +3600 s im /init, hypridle
+  setzt vor jedem Suspend einen RTC-Alarm.
+
+NAECHSTER SCHRITT
+  Power-Taste druecken. Danach laeuft automatisch:
+    bootonce-bootloader -> fastboot -> flash boot_a + userdata
+    -> reboot -> omamobile-verify-all -> Abnahme-Checkliste
