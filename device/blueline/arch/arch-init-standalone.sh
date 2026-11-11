@@ -302,8 +302,9 @@ for bl in /sys/class/backlight/*/brightness; do
 done
 
 # Die Initramfs-Schleifen drehen die CPU im Leerlauf hoch; ohne Drossel
-# wird das Geraet 78-84 Grad C warm. 1,2 GHz (naechste OPP) und 40 %
-# Helligkeit halten es bei ~62 Grad C (gemessen).
+# wird das Geraet 78-84 Grad C warm. 1,8 GHz (volle OPP, kein Deckel -
+# die Waerme kommt von den Ramdisk-Schleifen, nicht von der Frequenz)
+# und 40 % Helligkeit halten es bei ~62 Grad C (gemessen).
 for cf in /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq; do
     [ -e "$cf" ] || continue
     echo 1800000 > "$cf" 2>/dev/null
