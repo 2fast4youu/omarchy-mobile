@@ -1,0 +1,30 @@
+omamobile-setup-user und Abhaengigkeiten verifiziert, 2026-11-11 23:45
+=====================================================================
+
+SKRIPT
+  /usr/bin/omamobile-setup-user   20059 B
+  (Bash-Skript; laeuft als omarchy, setzt Plugins, Profil, Theme)
+
+ABHAENGIGKEITEN
+  /usr/bin/python3                 10 B (Symlink auf python3.14)
+  /usr/bin/omarchy-done           746 B (Marker-Verwaltung)
+  /usr/bin/glib-compile-schemas  67952 B (GSchema-Kompilierung)
+
+WAS DAS SKRIPT MACHT
+  - omarchy-done mark welcome-keybindings-not-applicable
+  - Plugin-Symlinks nach ~/.config/omarchy/plugins/ anlegen
+  - profile/shell.json nach ~/.config/omarchy/shell.json kopieren
+  - add_plugin: neue Plugins in shell.json eintragen
+  - Theme/Foot-Config vorbereiten
+
+ABSICHERUNGEN IM INIT
+  1. timeout 30 omamobile-setup-user  (synchron, nicht im Hintergrund)
+  2. Fallback: Plugin-Symlinks direkt anlegen, falls sie fehlen
+  3. shell.json pruefen: fehlt sie oder enthaelt sie keine
+     omamobile-Plugins, wird profile/shell.json erneut kopiert
+  4. Plugin-Symlinks bereits im Rootfs vorverlinkt
+  5. shell.json bereits im Rootfs gesetzt (10 Plugins)
+
+ERGEBNIS: Der Setup laeuft synchron, hat alle Abhaengigkeiten und ist
+dreifach abgesichert. Die Shell sollte mit Homescreen, Dock und
+Statusleiste starten.
