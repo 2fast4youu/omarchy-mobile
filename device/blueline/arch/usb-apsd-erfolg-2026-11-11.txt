@@ -1,0 +1,27 @@
+USB-APSD-Erkennung funktioniert jetzt (SDP erkannt), 2026-11-11 15:00
+=====================================================================
+
+Debug-Patch in qcom_smbx.c (POWER_PATH_STATUS + APSD_STATUS +
+APSD_RESULT_STATUS loggen) auf dem Geraet geladen:
+
+  OMADBG POWER_PATH_STATUS=0x95 usbin=1 valid=1
+  OMADBG APSD_STATUS=0x11 done=1
+  OMADBG APSD_RESULT_STATUS=0x1 masked=0x1
+
+Bedeutung:
+  - usbin=1 und valid=1 -> usb_online = true
+  - APSD done=1 -> APSD-Erkennung abgeschlossen
+  - result=0x1 = SDP_CHARGER_BIT -> POWER_SUPPLY_USB_TYPE_SDP
+
+Damit ist die APSD-Erkennung FUNKTIONAL (vorher immer "Unknown").
+Der Treiber setzt SDP_CURRENT_UA und ruft power_supply_changed().
+
+Aber:
+  - sysfs usb_type zeigt weiter "Unknown [SDP] DCP CDP"
+    (die Property-Abfrage liefert einen anderen Wert als der
+     status_change_work-Pfad)
+  - charger voltage_now=0, current_now=0
+  - Akku: 99%, Discharging, 2441 uA
+
+Naechster Schritt: usb_type-Property-Abfrage und Charger-Enable
+(CHARGING_ENABLE_CMD / USBIN_SUSPEND_BIT) pruefen.
