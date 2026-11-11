@@ -1,0 +1,36 @@
+ROM-Paket mit ADSP-Firmware, 2026-11-11 17:55
+=============================================
+
+  boot.img      d40c3fb45519e644c2ebde886ad1690ca0b44cfc79323cb2356162a609f214bb
+                20938752 B
+                Kernel + Initramfs + DTB mit:
+                  - RTC wakeup-source (Suspend-Wakeup)
+                  - WCD9340 reset-gpios=<&tlmm 54> (Audio)
+                  - WCD9340-Knoten, SLIMbus, Primary-MI2S
+                  - Kamera-DT
+
+  userdata.img  3ef9cd032722f54acf578c626e6804f779ddc8029f3b0aa38a2ab8213bb75bb9
+                Arch-Rootfs (sparse) mit:
+                  - /usr/lib/firmware/qcom/sdm845/Google/blueline/
+                      adsp.mbn   (13144196 B im fs)
+                      adspr.jsn  (403 B)
+                      adspua.jsn (555 B)   <- PDR-Service avs/audio
+                  - 43 Module, darunter imx355/imx363 mit 2-Pad-Fix
+                  - Megapixels, libdng, libmegapixels, gschema
+                  - omamobile-verify-all, omamobile-suspend-test
+
+WAS DAMIT BELEGT WERDEN KANN (nach dem Flash):
+  1) Audio:   /proc/asound/cards zeigt "Google Pixel 3"
+              (adspua.jsn meldet den PDR-Service, SLIMbus geht UP)
+  2) Suspend: omamobile-suspend-test 10 -> RTC-Alarm weckt
+  3) Kamera:  cam -c 2 --capture=1 -> Stream startet (2-Pad-Fix)
+  4) Abnahme: sh /usr/local/bin/omamobile-verify-all
+
+FLASH (nur boot_a und userdata):
+  fastboot flash boot_a    ~/hermes-workspace/rom-blueline-final/boot.img
+  fastboot flash userdata  ~/hermes-workspace/rom-blueline-final/userdata.img
+  fastboot --set-active=a && fastboot reboot
+
+OHNE TASTENDRUCK in Fastboot:
+  printf "bootonce-bootloader" | dd of=/dev/disk/by-partlabel/misc bs=1 seek=0 conv=notrunc
+  sync; echo b > /proc/sysrq-trigger
