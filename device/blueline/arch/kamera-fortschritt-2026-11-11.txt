@@ -1,0 +1,28 @@
+Kamera-Fortschritt Runde 10/15, 2026-11-11 15:35
+================================================
+
+ERREICHT:
+  - 3/3 Kameras in cam -l (udev-trigger war die Ursache)
+  - imx355: cur_mode -> 820x616 (letzter supported_mode)
+  - imx355: get_selection implementiert (CROP/CROP_BOUNDS/NATIVE_SIZE)
+    -> media-ctl zeigt jetzt "fmt:SRGGB10_1X10/820x616
+       crop.bounds:(0,0)/820x616 crop:(0,0)/820x616"
+
+OFFEN:
+  cam -c 2 --capture=1 -> "dma-heap allocation failure for frame-0"
+  libcamera meldet weiter "Input 3280x2464-RGGB-10-CSI2P stride 4112",
+  obwohl der Sensor-Subdev 820x616 meldet.
+  msm_csiphy2 pad0/pad1 standen noch auf 3280x2464; ein manuelles
+  media-ctl-Setzen aendert daran nichts (cam setzt die Formate selbst
+  zurueck).
+
+  Der reserved-dma-heap ist zu klein fuer 3280x2464-Frames
+  (3280*2464*2 = 16.1 MB pro Frame, mehrere Puffer).
+
+NAECHSTER SCHRITT: libcamera muss die 820x616 aus der Sensor-Property
+uebernehmen. Ansatz: simple.yaml mit explizitem mode 820x616 UND
+PixelArraySize im Treiber korrigieren (der Treiber meldet 3280x2464
+als PixelArraySize, weil er die volle Sensorflaeche annimmt).
+
+REGEL: Rueckkamera-Runden sind bei 10/15. Ab Runde 15 wird die
+Rueckkamera als bekannte Einschraenkung dokumentiert.
