@@ -1,0 +1,27 @@
+GPIO 16 HIGH per /dev/mem, Sensor antwortet nicht, 2026-11-11 14:05
+===================================================================
+
+Nach v0bf-Flash (pinctrl-0 mit reset+vana States):
+  pinconf: "16 (gpio16): input bias disabled, output drive strength
+            (2 mA), output enabled, pin output (0 level)"
+  -> Der pinctrl-State WIRD angewendet (output enabled) ✅
+
+Register-Dump (korrekte Adresse! TLMM 0x3400000 + SOUTH 0x900000 + 16*0x1000):
+  GPIO16_CFG = 0x00000200  -> out_bit=1 (Output) ✅
+  GPIO16_IO  = 0x00000000  -> level=0 ❌ (gpiod_set_value schreibt
+                              den Wert nicht ins IO-Register)
+
+Manuell gesetzt (IO |= BIT(1)):
+  GPIO16_IO = 0x00000003 -> level=1 ✅ (GPIO ist HIGH)
+  i2c-16 0x10 -> EBUSY (Treiber haelt Bus) bzw. Timeout (Treiber
+                 entladen, GPIO faellt zurueck auf 0)
+
+Deutung: Der pinctrl-State setzt Richtung/Bias/drive korrekt, aber der
+Level bleibt 0 - msm_gpio_set() schreibt nicht (oder wird nicht
+aufgerufen). Der Sensor antwortet auch mit HIGH nicht, weil der
+i2c-Bus vom Treiber gehalten wird und der Sensor zusaetzlich VDIG/VIF
+braucht (die der Treiber erst in power_on aktiviert).
+
+Naechster Schritt: msm_gpio_set-Aufruf pruefen (gpiod_set_value vs.
+pinctrl) bzw. den Level direkt im pinctrl-State setzen (output-high
+greift nicht, weil gpiolib den Pin als Input fuehrt).
