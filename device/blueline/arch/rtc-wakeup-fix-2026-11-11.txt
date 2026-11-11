@@ -1,0 +1,29 @@
+RTC-Wakeup für Suspend: Analyse und Fix-Ansatz
+==============================================
+
+PROBLEM: Das Gerät schläft (echo mem), wacht aber nicht per RTC auf.
+rtcwake -m mem -s 5 weckt nicht.
+
+ANALYSE:
+  - RTC-Knoten im DT: pm8998.dtsi rtc@6000, compatible
+    "qcom,pm8941-rtc", reg <0x6000 0x6100>, interrupts <0x0 0x61 0x1>
+  - Treiber drivers/rtc/rtc-pm8xxx.c:
+      devm_request_any_context_irq(alarm_irq, pm8xxx_alarm_trigger)
+      devm_pm_set_wake_irq(&pdev->dev, rtc_dd->alarm_irq)
+      devm_device_init_wakeup(&pdev->dev)
+    -> Der Treiber KANN wecken, wenn der Alarm gesetzt ist.
+  - Wakeup-Quellen werden von omamobile-wakeup.sh fuer pwrkey/PMIC/i2c
+    aktiviert; der RTC ist nicht dabei.
+
+FIX-ANSATZ:
+  1) Pruefen ob /dev/rtc0 existiert und /sys/class/rtc/rtc0/wakealarm
+     beschreibbar ist.
+  2) Falls ja: echo +600 > /sys/class/rtc/rtc0/wakealarm vor dem
+     Suspend; dann weckt der PMIC-RTC.
+  3) Falls nein: im DT den rtc-Knoten mit "wakeup-source" markieren
+     und in omamobile-wakeup.sh /sys/class/rtc/rtc0/device/power/wakeup
+     auf "enabled" setzen.
+  4) Zusaetzlich: die IRQ-Nummer im DT pruefen (interrupts <0x0 0x61
+     0x1> = PMIC-SPMI-IRQ 0x61); im Stock-DTBO steht die gleiche.
+
+STATUS: Analyse fertig, Umsetzung braucht das laufende Gerät.
