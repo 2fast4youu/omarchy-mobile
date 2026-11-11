@@ -1,0 +1,42 @@
+BLOCKER-ESKALATION: Geraet seit >1 h nicht erreichbar
+=====================================================
+
+SEIT: 2026-11-11 16:44 (Runde 22)
+DAUER: >1 Stunde (Stand 17:00, Runde 27)
+
+BEFUND (mehrfach geprueft):
+  - ping 172.16.42.1        -> 100% packet loss
+  - ssh                     -> Operation timed out
+  - fastboot devices        -> leer
+  - system_profiler USB     -> PIXEL3-SERIAL NICHT vorhanden
+  - ifconfig                -> KEIN Interface mit 172.16.42.x
+  - Kein sudo -> USB-Controller-Reset am Mac nicht moeglich
+
+URSACHE: Der Suspend-Test (echo mem) hat das Geraet schlafen gelegt.
+Im s2idle schaltet der USB-Port ab. Der RTC-Alarm war nicht gesetzt
+(rtcwake hat ihn nicht wirksam gesetzt), deshalb weckt nichts.
+
+WAS ICH NICHT KANN: Das Geraet per Software wecken. Es gibt keinen
+Netzwerk-, USB- oder Fastboot-Kanal mehr. Der einzige Weg ist die
+physische Pwrkey-Taste.
+
+WAS BEREIT LIEGT (alles committed, wartet nur auf das Geraet):
+  ~/hermes-workspace/rom-blueline-final/
+    boot.img      f5f3f806...  (Audio-DTB + WCD-Reset-Fix)
+    userdata.img  364aecab...
+    SHA256SUMS
+  device/blueline/baue-rom.sh          Ein-Befehl-Build
+  device/blueline/INSTALL.md           Anleitung + Einschraenkungen
+  device/blueline/arch/kernel-patches/ 0001-omarchy-mobile-blueline.patch
+  device/blueline/arch/omamobile-verify-all.sh      alle Punkte pruefen
+  device/blueline/arch/omamobile-suspend-test.sh    RTC-Wakeup belegen
+  device/blueline/arch/PAKET-BEREIT-2026-11-11.txt  Flash-Befehle
+  device/blueline/arch/ABGABE-STATUS-2026-11-11.txt Abgabestatus
+
+NAECHSTE SCHRITTE (sobald das Geraet wach ist):
+  1) omamobile-suspend-test 10        -> RTC-Wakeup belegen
+  2) %/h-Messung im Suspend ueber mehrere Stunden
+  3) Punkt 5: frisch flashen, Kaltstart, Checkliste am Geraet
+
+REGEL: Ein Punkt, der >10 Runden feststeckt, wird dokumentiert.
+Das ist hier der Fall (Runden 22-27, Geraetezugriff).
