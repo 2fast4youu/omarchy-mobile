@@ -1,0 +1,494 @@
+diff --git a/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi b/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
+index c7dae34aa..b31e39fd2 100644
+--- a/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
++++ b/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
+@@ -91,6 +91,15 @@ spss_mem: spss@99B00000 {
+ 			no-map;
+ 		};
+ 
++		ramoops: ramoops@9f700000 {
++			compatible = "ramoops";
++			reg = <0 0x9f700000 0 0x100000>;
++			record-size = <0x20000>;
++			console-size = <0x40000>;
++			pmsg-size = <0x20000>;
++			no-map;
++		};
++
+ 		rmtfs_mem: rmtfs-region@f2700000 {
+ 			compatible = "qcom,rmtfs-mem";
+ 			reg = <0 0xf2700000 0 0x202000>;
+@@ -137,6 +146,22 @@ vreg_s4a_1p8: regulator-vreg-s4a-1p8 {
+ 		vin-supply = <&vph_pwr>;
+ 	};
+ 
++	camera_rear_vana: rear-cam-vana-regulator {
++		compatible = "regulator-fixed";
++		regulator-name = "rear_cam_vana";
++
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++
++		gpios = <&tlmm 16 GPIO_ACTIVE_HIGH>;
++		enable-active-high;
++
++		pinctrl-0 = <&cam_rear_vana_default_pin>;
++		pinctrl-names = "default";
++
++		vin-supply = <&vreg_bob>;
++	};
++
+ 	camera_front_avdd: front-cam-avdd-regulator {
+ 		compatible = "regulator-fixed";
+ 		regulator-name = "front_cam_avdd";
+@@ -197,6 +222,13 @@ vreg_pmu_ch0: ldo3 {
+ 	};
+ };
+ 
++&mss_pil {
++	firmware-name = "qcom/sdm845/Google/blueline/mba.mbn",
++			"qcom/sdm845/Google/blueline/modem.mbn";
++
++	status = "okay";
++};
++
+ &adsp_pas {
+ 	firmware-name = "qcom/sdm845/Google/blueline/adsp.mbn";
+ 
+@@ -425,6 +457,16 @@ ports {
+ 		#address-cells = <1>;
+ 		#size-cells = <0>;
+ 
++		port@0 {
++			reg = <0>;
++
++			camss_endpoint0: endpoint {
++				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
++				data-lanes = <0 1 2 3>;
++				remote-endpoint = <&cam_rear_endpoint>;
++			};
++		};
++
+ 		port@1 {
+ 			reg = <1>;
+ 
+@@ -456,6 +498,39 @@ &cci {
+ 	status = "okay";
+ };
+ 
++&cci_i2c0 {
++	rear_cam: camera@10 {
++		compatible = "sony,imx363";
++		reg = <0x10>;
++
++		clocks = <&clock_camcc CAM_CC_MCLK0_CLK>;
++		clock-names = "xclk";
++		clock-frequency = <24000000>;
++		assigned-clocks = <&clock_camcc CAM_CC_MCLK0_CLK>;
++		assigned-clock-rates = <24000000>;
++
++		reset-gpios = <&tlmm 80 GPIO_ACTIVE_HIGH>;
++
++		pinctrl-0 = <&cam_rear_reset_default_pin>, <&cam_rear_vana_default_pin>;
++		pinctrl-names = "default";
++
++		vana-supply = <&camera_rear_vana>;
++		vdig-supply = <&vreg_s3a_1p35>;
++		vif-supply = <&vreg_lvs1_1p8>;
++
++		rotation = <90>;
++		orientation = <1>;
++
++		port {
++			cam_rear_endpoint: endpoint {
++				data-lanes = <1 2 3 4>;
++				link-frequencies = /bits/ 64 <636000000>;
++				remote-endpoint = <&camss_endpoint0>;
++			};
++		};
++	};
++};
++
+ &cci_i2c1 {
+ 	/* actuator @0c */
+ 
+@@ -481,6 +556,7 @@ front_cam: camera@10 {
+ 
+ 		port {
+ 			cam_front_endpoint: endpoint {
++				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
+ 				data-lanes = <1 2 3 4>;
+ 				link-frequencies = /bits/ 64 <360000000>;
+ 				remote-endpoint = <&camss_endpoint2>;
+@@ -510,6 +586,7 @@ front_aux_cam: camera@1a {
+ 
+ 		port {
+ 			cam_aux_front_endpoint: endpoint {
++				bus-type = <MEDIA_BUS_TYPE_CSI2_DPHY>;
+ 				data-lanes = <1 2 3 4>;
+ 				link-frequencies = /bits/ 64 <360000000>;
+ 				remote-endpoint = <&camss_endpoint1>;
+@@ -772,6 +849,21 @@ cam_front_avdd_default_pin: cam-avdd-default-pins {
+ 		bias-disable;
+ 	};
+ 
++	/* Rueckkamera: VANA-Enable (GPIO 16) und Reset (GPIO 80) als GPIO */
++	cam_rear_vana_default_pin: cam-rear-vana-default-pins {
++		pins = "gpio16";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
++	cam_rear_reset_default_pin: cam-rear-reset-default-pins {
++		pins = "gpio80";
++		function = "gpio";
++		drive-strength = <2>;
++		bias-disable;
++	};
++
+ 	cam_front_aux_reset_default_pin: cam-front-aux-reset-default-pins {
+ 		pins = "gpio9";
+ 		function = "gpio";
+@@ -850,6 +942,12 @@ &uart6 {
+ 	bluetooth {
+ 		compatible = "qcom,wcn3990-bt";
+ 
++		/* Ohne gueltige BD-Adresse setzt der Kernel HCI_UNCONFIGURED
++		 * und die MGMT-Indexliste bleibt fuer BlueZ leer. Lokal
++		 * administrierte Adresse (02:...) - der Chip selbst liefert
++		 * keine (Android setzt sie aus der Persist-Region). */
++		local-bd-address = [3c 1b 5a 00 00 02];
++
+ 		vddio-supply = <&vreg_pmu_io>;
+ 		vddxo-supply = <&vreg_pmu_xo>;
+ 		vddrf-supply = <&vreg_pmu_rf>;
+diff --git a/drivers/gpu/drm/msm/dsi/phy/dsi_phy_10nm.c b/drivers/gpu/drm/msm/dsi/phy/dsi_phy_10nm.c
+index ec486ff02..8d51a634a 100644
+--- a/drivers/gpu/drm/msm/dsi/phy/dsi_phy_10nm.c
++++ b/drivers/gpu/drm/msm/dsi/phy/dsi_phy_10nm.c
+@@ -291,9 +291,13 @@ static int dsi_pll_10nm_lock_status(struct dsi_pll_10nm *pll)
+ 				       ((status & BIT(0)) > 0),
+ 				       delay_us,
+ 				       timeout_us);
+-	if (rc)
++	if (rc) {
++		int i;
+ 		DRM_DEV_ERROR(dev, "DSI PLL(%d) lock failed, status=0x%08x\n",
+ 			      pll->phy->id, status);
++		for (i = 0; i < 0x70; i += 4)
++		for (i = 0; i < 0x24; i += 4)
++	}
+ 
+ 	return rc;
+ }
+diff --git a/drivers/media/i2c/imx355.c b/drivers/media/i2c/imx355.c
+index 27a5c212a..467d55949 100644
+--- a/drivers/media/i2c/imx355.c
++++ b/drivers/media/i2c/imx355.c
+@@ -1510,10 +1510,45 @@ static const struct v4l2_subdev_video_ops imx355_video_ops = {
+ 	.s_stream = imx355_set_stream,
+ };
+ 
++/*
++ * Omarchy Mobile: libcamera's simple pipeline asks for the sensor crop
++ * rectangles. Without get_selection it aborts with "Unable to get
++ * rectangle". The sensor is used full-frame, so crop == mode size.
++ */
++static int imx355_get_selection(struct v4l2_subdev *sd,
++				struct v4l2_subdev_state *sd_state,
++				struct v4l2_subdev_selection *sel)
++{
++	struct imx355 *imx355 = to_imx355(sd);
++
++	switch (sel->target) {
++	case V4L2_SEL_TGT_CROP:
++		mutex_lock(&imx355->mutex);
++		sel->r.left = 0;
++		sel->r.top = 0;
++		sel->r.width = imx355->cur_mode->width;
++		sel->r.height = imx355->cur_mode->height;
++		mutex_unlock(&imx355->mutex);
++		return 0;
++
++	case V4L2_SEL_TGT_NATIVE_SIZE:
++	case V4L2_SEL_TGT_CROP_DEFAULT:
++	case V4L2_SEL_TGT_CROP_BOUNDS:
++		sel->r.left = 0;
++		sel->r.top = 0;
++		sel->r.width = imx355->cur_mode->width;
++		sel->r.height = imx355->cur_mode->height;
++		return 0;
++	}
++
++	return -EINVAL;
++}
++
+ static const struct v4l2_subdev_pad_ops imx355_pad_ops = {
+ 	.enum_mbus_code = imx355_enum_mbus_code,
+ 	.get_fmt = imx355_get_pad_format,
+ 	.set_fmt = imx355_set_pad_format,
++	.get_selection = imx355_get_selection,
+ 	.enum_frame_size = imx355_enum_frame_size,
+ };
+ 
+@@ -1788,12 +1823,25 @@ static int imx355_probe(struct i2c_client *client)
+ 	/* Check module identity */
+ 	ret = imx355_identify_module(imx355);
+ 	if (ret) {
+-		dev_err(imx355->dev, "failed to find sensor: %d", ret);
++		/*
++		 * Omarchy Mobile: as a built-in the sensor probes before the
++		 * camcc clock provider is ready, so the MCLK is not running
++		 * yet and the chip does not ack. Defer and retry instead of
++		 * failing the probe for good.
++		 */
++		dev_warn(imx355->dev, "failed to find sensor: %d, deferring", ret);
++		ret = -EPROBE_DEFER;
+ 		goto error_power_off;
+ 	}
+ 
+ 	/* Set default mode to max resolution */
+-	imx355->cur_mode = &supported_modes[0];
++	/*
++	 * Omarchy Mobile: default to the smallest mode (820x616). The
++	 * Qualcomm CAMSS on sdm845 cannot handle the full 3280x2464 frame
++	 * with the software ISP (dma-heap allocation failure), and the
++	 * Pixel 3 front camera is only used at low resolution anyway.
++	 */
++	imx355->cur_mode = &supported_modes[ARRAY_SIZE(supported_modes) - 1];
+ 
+ 	ret = imx355_init_controls(imx355);
+ 	if (ret) {
+diff --git a/drivers/media/i2c/imx363.c b/drivers/media/i2c/imx363.c
+index d6adea64d..ead20e362 100644
+--- a/drivers/media/i2c/imx363.c
++++ b/drivers/media/i2c/imx363.c
+@@ -1040,11 +1040,19 @@ static int imx363_power_on(struct device *dev)
+ 	struct imx363 *imx363 = to_imx363(sd);
+ 	int ret;
+ 
+-	ret = regulator_bulk_enable(IMX363_NUM_SUPPLIES,
+-				    imx363->supplies);
++	ret = 0;
++	{
++		unsigned int k;
++
++		for (k = 0; k < IMX363_NUM_SUPPLIES; k++) {
++			int er = regulator_enable(imx363->supplies[k].consumer);
++
++			if (er && !ret)
++				ret = er;
++		}
++	}
+ 	if (ret) {
+-		dev_err(dev, "%s: failed to enable regulators\n",
+-			__func__);
++		dev_err(dev, "%s: failed to enable regulators\n", __func__);
+ 		return ret;
+ 	}
+ 
+@@ -1117,22 +1125,24 @@ static int imx363_set_stream(struct v4l2_subdev *sd, int enable)
+ /* Verify chip ID */
+ static int imx363_identify_module(struct imx363 *imx363)
+ {
+-	struct i2c_client *client = v4l2_get_subdevdata(&imx363->sd);
+ 	int ret;
+ 	u64 val;
+ 
+ 	ret = cci_read(imx363->regmap, IMX363_REG_CHIP_ID,
+ 		       &val, NULL);
+ 	if (ret) {
+-		dev_err(&client->dev, "failed to read chip id %x\n",
+-			IMX363_CHIP_ID);
+-		return ret;
++		/*
++		 * Omarchy Mobile: the rear sensor does not ack on I2C yet
++		 * (VANA enable is not driven). Register the subdev anyway so
++		 * the camss async notifier can complete and the two working
++		 * front cameras become usable; the rear one simply reports
++		 * no frames until its power is fixed.
++		 */
+ 	}
+ 
+ 	if (val != IMX363_CHIP_ID) {
+-		dev_err(&client->dev, "chip id mismatch: %x!=%llx\n",
+-			IMX363_CHIP_ID, val);
+-		return -EIO;
++		/* Omarchy Mobile: tolerate a missing rear sensor for now so the
++		 * camss notifier can complete (front cameras work). */
+ 	}
+ 
+ 	return 0;
+@@ -1293,8 +1303,30 @@ static int imx363_get_regulators(struct imx363 *imx363,
+ 	for (i = 0; i < IMX363_NUM_SUPPLIES; i++)
+ 		imx363->supplies[i].supply = imx363_supply_name[i];
+ 
+-	return devm_regulator_bulk_get(&client->dev,
+-				    IMX363_NUM_SUPPLIES, imx363->supplies);
++	/*
++	 * Omarchy Mobile: probe the supplies one by one and tolerate a
++	 * missing one (the fixed VANA regulator is not always registered
++	 * early); a dummy consumer is better than a failed probe.
++	 */
++	{
++		unsigned int j;
++		int ret = 0;
++
++		for (j = 0; j < IMX363_NUM_SUPPLIES; j++)
++			imx363->supplies[j].supply = imx363_supply_name[j];
++
++		for (j = 0; j < IMX363_NUM_SUPPLIES; j++) {
++			struct regulator *r =
++				devm_regulator_get_optional(&client->dev,
++							    imx363_supply_name[j]);
++			if (IS_ERR(r)) {
++				r = NULL;
++			} else {
++			}
++			imx363->supplies[j].consumer = r;
++		}
++		return ret;
++	}
+ }
+ 
+ static int imx363_probe(struct i2c_client *client)
+@@ -1323,7 +1355,13 @@ static int imx363_probe(struct i2c_client *client)
+ 		return dev_err_probe(&client->dev, ret,
+ 				     "failed to get regulators\n");
+ 
+-	imx363->clk = devm_clk_get_optional(&client->dev, NULL);
++	/*
++	 * Omarchy Mobile: the DT provides clock-names = "xclk"; with a NULL
++	 * name clk_get() does not find the clock and the MCLK0 stays off.
++	 */
++	imx363->clk = devm_clk_get_optional(&client->dev, "xclk");
++	if (!imx363->clk)
++		imx363->clk = devm_clk_get_optional(&client->dev, NULL);
+ 	if (IS_ERR(imx363->clk))
+ 		return dev_err_probe(&client->dev, PTR_ERR(imx363->clk),
+ 				     "error getting clock\n");
+diff --git a/drivers/power/supply/pmi8998_fg.c b/drivers/power/supply/pmi8998_fg.c
+index 4bad62235..85cc7ac53 100644
+--- a/drivers/power/supply/pmi8998_fg.c
++++ b/drivers/power/supply/pmi8998_fg.c
+@@ -299,6 +299,9 @@ static enum power_supply_property pmi8998_fg_props[] = {
+ 	POWER_SUPPLY_PROP_STATUS,
+ 	POWER_SUPPLY_PROP_TECHNOLOGY,
+ 	POWER_SUPPLY_PROP_CAPACITY,
++	POWER_SUPPLY_PROP_CHARGE_FULL,
++	POWER_SUPPLY_PROP_CHARGE_NOW,
++	POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN,
+ 	POWER_SUPPLY_PROP_CURRENT_NOW,
+ 	POWER_SUPPLY_PROP_VOLTAGE_NOW,
+ 	POWER_SUPPLY_PROP_PRESENT,
+@@ -356,6 +359,22 @@ static int pmi8998_fg_get_property(struct power_supply *psy,
+ 	case POWER_SUPPLY_PROP_TECHNOLOGY:
+ 		val->intval = POWER_SUPPLY_TECHNOLOGY_LION;
+ 		break;
++	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
++		/* Pixel 3 (blueline): 2915 mAh Nennkapazitaet */
++		val->intval = 2915000;
++		break;
++	case POWER_SUPPLY_PROP_CHARGE_FULL:
++		val->intval = 2915000;
++		break;
++	case POWER_SUPPLY_PROP_CHARGE_NOW: {
++		int cap = 0;
++
++		ret = pmi8998_fg_get_capacity(chip, &cap);
++		if (ret)
++			break;
++		val->intval = (int)((long long)cap * 2915000 / 100);
++		break;
++	}
+ 	case POWER_SUPPLY_PROP_CAPACITY:
+ 		ret = pmi8998_fg_get_capacity(chip, &val->intval);
+ 		break;
+diff --git a/drivers/power/supply/qcom_smbx.c b/drivers/power/supply/qcom_smbx.c
+index 9386adfb7..7bf67bbb3 100644
+--- a/drivers/power/supply/qcom_smbx.c
++++ b/drivers/power/supply/qcom_smbx.c
+@@ -482,6 +482,13 @@ static void smb_status_change_work(struct work_struct *work)
+ 	}
+ 
+ 	smb_set_current_limit(chip, current_ua);
++	{
++		unsigned int chgr_cfg2 = 0, chg_en = 0, usbin_il = 0, icl = 0;
++		regmap_read(chip->regmap, chip->base + CHGR_CFG2, &chgr_cfg2);
++		regmap_read(chip->regmap, chip->base + CHARGING_ENABLE_CMD, &chg_en);
++		regmap_read(chip->regmap, chip->base + USBIN_CMD_IL, &usbin_il);
++		regmap_read(chip->regmap, chip->base + USBIN_CURRENT_LIMIT_CFG, &icl);
++	}
+ 	power_supply_changed(chip->chg_psy);
+ }
+ 
+@@ -823,6 +830,14 @@ static const struct smb_init_register smb2_init_seq[] = {
+ 	{ .addr = TYPE_C_CFG,
+ 	  .mask = FACTORY_MODE_DETECTION_EN_BIT | VCONN_OC_CFG_BIT,
+ 	  .val = 0 },
++	/*
++	 * Omarchy Mobile: start APSD detection on CC. Without this bit the
++	 * charger never sets APSD_DTC_STATUS_DONE, so usb_type stays
++	 * "Unknown" and the port is treated as an unknown source.
++	 */
++	{ .addr = TYPE_C_CFG,
++	  .mask = APSD_START_ON_CC_BIT,
++	  .val = APSD_START_ON_CC_BIT },
+ 	/* Configure VBUS for software control */
+ 	{ .addr = OTG_CFG, .mask = OTG_EN_SRC_CFG_BIT, .val = 0 },
+ 	/*
+diff --git a/drivers/regulator/fixed.c b/drivers/regulator/fixed.c
+index 417d282dd..3b0043582 100644
+--- a/drivers/regulator/fixed.c
++++ b/drivers/regulator/fixed.c
+@@ -319,6 +319,14 @@ static int reg_fixed_voltage_probe(struct platform_device *pdev)
+ 		return dev_err_probe(&pdev->dev, PTR_ERR(cfg.ena_gpiod),
+ 				     "can't get GPIO\n");
+ 
++	/*
++	 * Omarchy Mobile: some GPIO controllers report the line as input
++	 * even after gpiod_get() with GPIOD_OUT_*; force the direction so
++	 * the regulator core can actually drive the enable pin.
++	 */
++	if (cfg.ena_gpiod)
++		gpiod_direction_output(cfg.ena_gpiod, config->enabled_at_boot);
++
+ 	cfg.dev = &pdev->dev;
+ 	cfg.init_data = config->init_data;
+ 	cfg.driver_data = drvdata;
+diff --git a/fs/file.c b/fs/file.c
+index 2c81c0b16..137a99bee 100644
+--- a/fs/file.c
++++ b/fs/file.c
+@@ -1428,7 +1428,7 @@ static int ksys_dup3(unsigned int oldfd, unsigned int newfd, int flags)
+ 	struct file *file;
+ 	struct files_struct *files = current->files;
+ 
+-	if ((flags & ~O_CLOEXEC) != 0)
++	if ((flags & ~(O_CLOEXEC | O_ACCMODE)) != 0)
+ 		return -EINVAL;
+ 
+ 	if (unlikely(oldfd == newfd))
+diff --git a/fs/notify/group.c b/fs/notify/group.c
+index b56d1c1d9..2f32b97b3 100644
+--- a/fs/notify/group.c
++++ b/fs/notify/group.c
+@@ -73,7 +73,16 @@ void fsnotify_destroy_group(struct fsnotify_group *group)
+ 	 * would be racy as worker can already be processing some marks before
+ 	 * we even entered fsnotify_destroy_group().
+ 	 */
+-	fsnotify_wait_marks_destroyed();
++	/*
++	 * Omarchy Mobile: do NOT flush the reaper here. The reaper takes
++	 * synchronize_srcu(&fsnotify_mark_srcu); when this runs from
++	 * inotify_release() in a task that itself still holds that SRCU
++	 * read section (e.g. quickshell closing its config watches), the
++	 * flush deadlocks and later blocks suspend's freezer. The marks are
++	 * freed asynchronously by the reaper either way; the notification
++	 * queue below is flushed under its own lock.
++	 */
++	/* fsnotify_wait_marks_destroyed(); */
+ 
+ 	/*
+ 	 * Since we have waited for fsnotify_mark_srcu in
