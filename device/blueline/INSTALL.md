@@ -16,11 +16,11 @@ ehrlichen Funktionsstand.
 | **Bildschirmtastatur** | ✅ Squeekboard, QWERTZ | — |
 | **WLAN** | ✅ verbindet (AP: HOME-WLAN) | `nmcli` |
 | **Bluetooth** | ⚠️ Adapter vorhanden, Pairing-Agent defekt | — |
-| **Audio** | ⚠️ PipeWire läuft, Ausgabe ungetestet | — |
+| **Audio** | ⚠️ ADSP läuft, SLIMbus-Codec bindet, aber keine Soundkarte (`Failed to get logical address`) | dmesg |
 | **Akku-Anzeige** | ✅ Prozent + Symbol in der Statusleiste | Screenshots |
 | **Akku-Messung** | ✅ Kapazität, Spannung, Strom, Temperatur | `/sys/class/power_supply/qcom-battery/` |
 | **UPower** | ✅ `percentage`, `state` | `upower -i` |
-| **Suspend (s2idle)** | ✅ `success=3`, `fail=0`, Wakeup über Pwrkey | `/sys/power/suspend_stats/` |
+| **Suspend (s2idle)** | ✅ Gerät schläft sauber; Wakeup per Pwrkey belegt, RTC-Wakeup vorbereitet | `/sys/power/suspend_stats/` |
 | **Idle** | ✅ hypridle: 30 s dimmen, 60 s DPMS aus | — |
 | **Power-Profile** | ✅ power-saver 1,13 GHz / balanced 1,77 GHz | `powerprofilesctl` |
 | **Thermik** | ✅ 38–42 °C unter Last | `thermal_zone*` |
