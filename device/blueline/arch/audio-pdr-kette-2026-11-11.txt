@@ -1,0 +1,54 @@
+Audio: Die vollständige Ursachenkette (17:45)
+============================================
+
+Der mainline-SLIMbus-Controller (qcom-ngd-ctrl) macht im Probe:
+
+    ctrl->pdr = pdr_handle_alloc(slim_pd_status, ctrl);
+    pds = pdr_add_lookup(ctrl->pdr, "avs/audio", "msm/adsp/audio_pd");
+
+Er wartet also auf den PDR-Service "avs/audio" mit Pfad
+"msm/adsp/audio_pd". Erst wenn der ADSP diesen Service anmeldet,
+ruft die PDR-Notifier-Kette
+
+    slim_pd_status(state=UP)
+      -> qcom_slim_ngd_ssr_pdr_notify(ctrl, UP)
+      -> qcom_slim_ngd_enable(ctrl, true)
+
+und der SLIMbus wird benutzbar. Vorher bleibt ctrl->state auf
+QCOM_SLIM_NGD_CTRL_DOWN, und jede Uebertragung (auch die
+ADDR_QUERY aus qcom_slim_ngd_get_laddr) laeuft ins Leere.
+
+BEOBACHTETE MELDUNG (vor dem ADSP-Boot):
+    PDR: service lookup for avs/audio failed: -6
+
+-6 = ENXIO. Der Service existiert nicht. Das heisst: Der ADSP laeuft
+zwar (remoteproc1 "running", adsp.mbn geladen), aber das
+Audio-Subsystem im ADSP meldet seinen PD nicht an.
+
+DAMIT IST DIE KETTE VOLLSTAENDIG:
+
+  [OK]  DT: slim-ngd@171c0000 status=okay
+  [OK]  DT: wcd9340-Knoten, reg=<1 0>, compatible "slim217,250"
+  [OK]  DT: reset-gpios=<&tlmm 54> (neu, war die letzte Luecke)
+  [OK]  DT: wcd9340-Supplies vdd-buck* / vdd-tx/rx/io
+  [OK]  Modul: slim-qcom-ngd-ctrl geladen, an 171c0000.slim-ngd gebunden
+  [OK]  Modul: wcd934x, snd-soc-wcd934x, snd-soc-sdm845 geladen
+  [OK]  ADSP: adsp.mbn aus Factory-MBN-Segmenten (13148160 B),
+        qcom_q6v5_pas -> remoteproc1 "running"
+  [FEHLT] PDR-Service "avs/audio" / "msm/adsp/audio_pd" wird vom ADSP
+        nicht angemeldet
+  -> SLIMbus bleibt DOWN -> ADDR_QUERY ohne Antwort
+  -> "wcd934x-slim 217:250:1:0: Failed to get logical address"
+
+NAECHSTER ANSATZ:
+  1) Pruefen, ob der ADSP die Audio-PD wirklich anbietet:
+       dmesg | grep -i -e pdr -e "avs/audio" -e adsp
+       ls /sys/bus/rpmsg/devices/  (QRTR-Kanaele zum ADSP)
+  2) Der ADSP braucht vermutlich zusaetzliche Firmware: adsp.mbn allein
+     reicht nicht, im Stock liegen auch adspr.jsn / adspua.jsn
+     (Sensoren/Test) sowie die ADSP-DTB. Diese fehlen im Image.
+  3) Alternativ: Audio ohne ADSP ist auf sdm845 nicht moeglich, weil
+     alle MI2S-Pfade ueber q6afe/q6asm laufen.
+
+STATUS: Ursache vollstaendig lokalisiert. Der Fix (ADSP-Audio-PD
+anmelden) braucht das laufende Geraet.
