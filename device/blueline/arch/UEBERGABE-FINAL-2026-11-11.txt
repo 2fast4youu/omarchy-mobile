@@ -1,0 +1,108 @@
+ÜBERGABE — Omarchy Mobile Pixel 3 (blueline), 2026-11-11 18:42
+==============================================================
+
+1) WAS ABGESCHLOSSEN IST (mit Beleg)
+
+   (1) FLASH-ZYKLUS OHNE GREGOR  — ERLEDIGT
+       Vom laufenden System in Fastboot:
+         printf "bootonce-bootloader" | dd of=/dev/disk/by-partlabel/misc \
+                bs=1 seek=0 conv=notrunc
+         sync; echo b > /proc/sysrq-trigger
+       -> nach ~40 s: fastboot devices zeigt PIXEL3-SERIAL
+       Mehrfach durchgeführt (v0bg, v0bc, v0bd, Audio-DTBs).
+       Rettungsweg fastboot boot <img> dokumentiert (INSTALL.md).
+
+   (2) RUECKKAMERA IMX363  — ABGESCHLOSSEN ALS EINSCHRAENKUNG (15/15)
+       Factory-Image vollständig ausgewertet:
+         - dtbo.img Overlay 0 (sensor_rear: GPIO 13/80/16,
+           vdig=pm8998_s3, vio=pm8998_lvs1, vana=pmi8998_bob,
+           cci-master 0, csiphy 0, MCLK 24 MHz)
+         - vendor.img Sensormodul .bin: nur Kalibrierdaten
+         - vendor.img sensor .so: stripped, nur Exposure/Gain
+         - boot.img Kernel: keine imx363-Strings
+         - vendor.img lib/modules: keine Kamera-Module
+       Soll/Ist-Tabelle: factory-imx363-soll-ist-2026-11-11.txt
+       I2C-Scan alle Adressen beide CCI-Busse: keine Antwort.
+       Rueckkamera aus der Megapixels-Config entfernt.
+
+   (3) USB-LADETYP  — ERLEDIGT
+       APSD erkennt SDP (APSD_RESULT_STATUS=0x1).
+       Register: CHG_EN=0x1, USBIN_IL=0x0 (nicht suspendiert),
+       ICL=0x14 (1000 mA), CHGR_CFG2 inhibit=1 (Ueberladeschutz).
+       Beleg: usb-laden-register-2026-11-11.txt
+
+   (4) AUFRAEUMEN  — ERLEDIGT
+       - ersetze-module.py geprueft und committet (e187f5b)
+       - 21 OMADBG-Debugausgaben aus 5 Dateien entfernt
+       - Kernel-/DT-Patches: 0001-omarchy-mobile-blueline.patch
+         (10 Dateien, 668 Zeilen) mit README
+       - ROM-Bau mit einem Befehl: device/blueline/baue-rom.sh
+       - SHA256SUMS fuer beide Images
+       - INSTALL.md mit Installation und bekannten Einschraenkungen
+       - Reproduzierbarkeit belegt: Patch auf frischem Clone,
+         DTB identisch (959cd27)
+
+2) ACHT WURZEL-URSACHEN IN DIESER SESSION BEHOBEN (alle im Paket)
+
+   1. Suspend: RTC-Knoten ohne "wakeup-source" -> Alarm weckt nicht.
+      Fix: pm8998_rtc-Label + &pm8998_rtc { wakeup-source; }
+   2. Megapixels: libcamera 0.7.2 verlangt 1 SINK + 1 SOURCE-Pad,
+      Treiber hatten nur 1 SOURCE.
+      Fix: pads[2] in imx355.c und imx363.c.
+   3. Audio: wcd934x-Treiber zieht optionalen "reset"-GPIO; fehlte im DT
+      -> Codec bleibt im Reset.
+      Fix: reset-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>.
+   4. Audio: adspua.jsn (PDR-Service "avs/audio"/"msm/adsp/audio_pd")
+      fehlte im Image.
+      Fix: adsp.mbn + adspr.jsn + adspua.jsn aus dem Factory-Image
+      extrahiert und in die Rootfs-Kopierliste.
+   5. Audio: Module wurden im Init gar nicht geladen.
+      Fix: 14 Audio-Module in Abhaengigkeitsreihenfolge.
+   6. Audio: ADSP-Firmware fehlte in der Initramfs-Spiegelung.
+      Fix: adsp.mbn/adspr.jsn/adspua.jsn in die Spiegelungsliste.
+   7. Audio: Module wurden VOR dem ADSP-Start geladen.
+      Fix: Reihenfolge ADSP -> Audio.
+   8. Audio: feste 3 s Wartezeit zu knapp.
+      Fix: QRTR-Warteschleife bis 20 s.
+
+3) WAS OFFEN IST (nur durch fehlenden Geraetezugriff)
+
+   Das Geraet schlaeft seit 16:44 (>4 h) im s2idle. Elf Software-Wege
+   geprueft (ping, ssh, fastboot, USB, ifconfig, sudo, Heimnetz, mDNS,
+   zwei andere Rechner, USB-Hubs) - keiner weckt es. Im s2idle ist der
+   USB-Port abgeschaltet; nur die physische Pwrkey-Taste hilft.
+
+   Offen:
+   - Beleg der acht Fixes am Geraet
+   - %/h-Messung im Suspend (Wachzustand: 2,16 mA, 0,074 %/h)
+   - Abnahme: Kaltstart bis Homescreen + Checkliste je Punkt
+
+4) DAS PAKET (flashbereit, verifiziert)
+
+   ~/hermes-workspace/rom-blueline-final/
+     boot.img      d40c3fb45519e644c2ebde886ad1690ca0b44cfc79323cb2356162a609f214bb
+     userdata.img  3064538069373cc81a47ba6b02dc0c3fc732fc9f86528d3e94933ecdc28f1ab3
+     SHA256SUMS
+
+   Im Image per debugfs verifiziert:
+     58 Module (slim-qcom-ngd-ctrl, wcd934x, snd-soc-sdm845,
+     qcom_q6v5_pas, imx355/imx363 mit 2-Pad-Fix)
+     adsp.mbn 13144196 B, adspr.jsn 403 B, adspua.jsn 555 B
+
+5) NAECHSTE SCHRITTE (sobald das Geraet wach ist)
+
+   fastboot flash boot_a    rom-blueline-final/boot.img
+   fastboot flash userdata  rom-blueline-final/userdata.img
+   fastboot --set-active=a && fastboot reboot
+
+   dann:
+   sh /usr/local/bin/omamobile-verify-all      (alle Punkte)
+   omamobile-suspend-test 10                   (RTC-Wakeup)
+   cam -c 2 --capture=1 --file=/tmp/f.jpg      (Kamera-Stream)
+   cat /proc/asound/cards                      (Audio)
+
+6) REPO
+
+   573 Commits, Arbeitsbaum sauber.
+   Belege: device/blueline/arch/ (235 Dateien)
+   Einstieg: device/blueline/UEBERGABE.md, INSTALL.md, UEBERGABE-FINAL.txt
