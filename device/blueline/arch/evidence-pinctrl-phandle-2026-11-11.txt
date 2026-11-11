@@ -1,0 +1,24 @@
+GPIO 16 unkonfiguriert: pinctrl-0 zeigte nur auf Reset, 2026-11-11 13:37
+========================================================================
+
+Befund (v0be-Boot):
+  GPIO16_CFG = 0x00000000 (out_bit=0, kein drive, kein func)
+  GPIO16_IO  = 0x00000000
+  -> Der Pin ist komplett unkonfiguriert; "output-high" im
+     pinctrl-State greift nicht, weil der State GAR NICHT angewendet
+     wird.
+
+Ursache: pinctrl-0 am rear_cam-Knoten zeigte nur auf
+  cam_rear_reset_default_pin (phandle 0xd9)
+Der cam_rear_vana_default_pins-State (mit output-high) war in v0bd
+entfernt worden, um den GPIO-Doppelrequest zu beheben - dadurch wurde
+der Pin aber gar nicht mehr konfiguriert.
+
+Fix (v0bf): pinctrl-0 = <&cam_rear_reset_default_pin>,
+                       <&cam_rear_vana_default_pin>;
+Der Doppelrequest entsteht nicht mehr, weil der obsolete
+rear-cam-vana-regulator (der gpios = <&tlmm 16> hielt) in v0bd entfernt
+wurde - jetzt haelt nur noch der imx363 den Pin.
+
+Boot v0bf = dc7504b548e1a58a368e15183ece2b9cb5b62838ba6dca4be1ff5562bdd449c6
+Flash offen (kein Fastboot).
