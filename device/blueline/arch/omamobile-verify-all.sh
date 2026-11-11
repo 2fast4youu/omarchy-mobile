@@ -32,6 +32,17 @@ echo "== suspend"; for f in success fail; do printf '%s=' "$f"; cat "/sys/power/
 echo "== rtc-wakealarm"; ls -l /sys/class/rtc/rtc0/wakealarm 2>/dev/null; cat /sys/class/rtc/rtc0/device/power/wakeup 2>/dev/null
 echo "== ladetyp"; cat /sys/class/power_supply/pmi8998-charger/usb_type 2>/dev/null; cat /sys/class/power_supply/pmi8998-charger/online 2>/dev/null
 echo "== kameras"; command -v cam >/dev/null && timeout 25 cam -l 2>&1 | grep -E '^[0-9]:' | head -4
+echo "== kamera-pads"; for sd in /dev/v4l-subdev*; do
+    [ -e "$sd" ] || continue
+    n=$(cat "/sys/class/video4linux/$(basename "$sd")/name" 2>/dev/null)
+    case "$n" in *imx355*|*imx363*)
+        pads=$(ls -d /sys/class/video4linux/"$(basename "$sd")"/../../*/ 2>/dev/null | wc -l)
+        echo "$n: pad-check ueber media-ctl"
+        media-ctl -p -d /dev/media0 2>/dev/null | grep -A2 "$n" | head -3
+    ;; esac
+done
+echo "== libcamera-config"; ls -l /usr/share/libcamera/pipeline/simple/simple.yaml 2>/dev/null
+echo "== megapixels-shell"; grep -c omamobile.home /home/omarchy/.config/omarchy/shell.json 2>/dev/null
 echo "== media"; ls /dev/media* 2>/dev/null; ls /dev/video* 2>/dev/null | wc -l
 echo "== megapixels"; ls -l /usr/bin/megapixels 2>/dev/null | head -1; ls /usr/share/megapixels/config/ 2>/dev/null
 echo "== audio"; cat /proc/asound/cards 2>/dev/null | head -4; ls /dev/snd/ 2>/dev/null | head -4
