@@ -1,0 +1,31 @@
+FLASH-ZYKLUS OHNE GREGOR FUNKTIONIERT, 2026-11-11 14:43
+=======================================================
+
+Punkt 1 der Aufgabe ist GELOEST:
+
+1) Vom laufenden System in Fastboot wechseln:
+   - "reboot bootloader" scheitert (kein Android-Bootloader-Parameter)
+   - "reboot" scheitert ("Running in chroot, ignoring request")
+   - FUNKTIONIERT: misc-Partition beschreiben + SysRq-Reboot:
+       printf "bootonce-bootloader" | dd of=/dev/disk/by-partlabel/misc \
+              bs=1 seek=0 conv=notrunc
+       sync; echo b > /proc/sysrq-trigger
+   - Nach ~40 s: fastboot devices zeigt PIXEL3-SERIAL  ✅
+
+2) Flashen: fastboot flash boot_a <img>; fastboot --set-active=a;
+   fastboot reboot  -> Geraet bootet normal (uptime 46 s)  ✅
+
+3) Rettungsweg (fastboot boot <img>) steht bereit, war nicht noetig.
+
+Damit ist der komplette Zyklus ohne physischen Eingriff moeglich.
+
+RUECKKAMERA (v0bg, Stock-Layout):
+  - RESET GPIO 80: "out high" ✅ (ACTIVE_HIGH korrigiert)
+  - VANA-Regler: state=disabled, users=0
+  - gpio16: "in low" (gpiolib), pinconf "output enabled, level 0"
+  - imx363: supply vana ok, enable vana -> 0 (is_enabled=1),
+            clk ok, dann reg 0x0016 -6
+  - cam -l: leer (Notifier wartet auf alle Sensoren)
+
+Der Regler-Core setzt den GPIO nicht (level bleibt 0), obwohl der
+pinctrl-State "output enabled" meldet.
