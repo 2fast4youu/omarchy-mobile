@@ -1,0 +1,38 @@
+Audio: Module laden, aber keine Soundkarte, 2026-11-11 16:00
+===========================================================
+
+ERREICHT:
+  Alle Audio-Module sind geladen (lsmod zeigt sie):
+    soundwire-bus, regmap-slimbus, regmap-sdw,
+    snd-soc-rl6231, snd-soc-rt5663, snd-soc-qcom-sdw,
+    snd-soc-qcom-common, snd-soc-wcd-common, snd-soc-wcd-classh,
+    snd-soc-wcd-mbhc, wcd934x, snd-soc-wcd934x, snd-soc-sdm845
+
+  Abhaengigkeitskette (per depmod ermittelt):
+    snd-soc-sdm845  -> snd-soc-rt5663 -> snd-soc-rl6231
+                    -> snd-soc-qcom-sdw -> soundwire-bus
+                    -> snd-soc-qcom-common
+    snd-soc-wcd934x -> snd-soc-wcd-common -> soundwire-bus
+                    -> snd-soc-wcd-classh, snd-soc-wcd-mbhc
+                    -> regmap-slimbus
+
+ABER: /proc/asound/cards -> "--- no soundcards ---"
+      /dev/snd/ enthaelt nur "timer"
+
+URSACHE:
+  Der DT-Sound-Knoten (/proc/device-tree/sound) hat
+    compatible = "qcom,db845c-sndcard", "qcom,sdm845-sndcard"
+  und DAI-Links "cs35l36-dai-link", "mm1-dai-link".
+  Das ist die DragonBoard 845c, nicht das Pixel 3. Dem Pixel 3 fehlen:
+    - der WCD934x-Codec-Knoten (slimbus/soundwire)
+    - die passenden DAI-Links (Primary MI2S -> WCD934x,
+      Secondary/Quaternary MI2S -> CS35L36-Speaker)
+    - der SLIMbus-Controller-Knoten
+
+  Ohne diese DT-Knoten bindet snd-soc-sdm845 keine Karte, obwohl alle
+  Module geladen sind.
+
+NAECHSTER SCHRITT (fuer spaeter):
+  DT-Sound-Knoten fuer blueline schreiben: slimbus-Controller
+  (ngd@171c0000), wcd934x@0, sound-Knoten mit den DAI-Links aus dem
+  Stock-DTBO (dort ist alles vorhanden).
