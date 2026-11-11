@@ -1,8 +1,16 @@
 diff --git a/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi b/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
-index c7dae34aa..b31e39fd2 100644
+index c7dae34aa..ba82f2d85 100644
 --- a/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
 +++ b/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
-@@ -91,6 +91,15 @@ spss_mem: spss@99B00000 {
+@@ -14,6 +14,7 @@
+ 
+ 
+ #include "sdm845.dtsi"
++#include "sdm845-wcd9340.dtsi"
+ #include "pm8998.dtsi"
+ #include "pmi8998.dtsi"
+ 
+@@ -91,6 +92,15 @@ spss_mem: spss@99B00000 {
  			no-map;
  		};
  
@@ -18,7 +26,7 @@ index c7dae34aa..b31e39fd2 100644
  		rmtfs_mem: rmtfs-region@f2700000 {
  			compatible = "qcom,rmtfs-mem";
  			reg = <0 0xf2700000 0 0x202000>;
-@@ -137,6 +146,22 @@ vreg_s4a_1p8: regulator-vreg-s4a-1p8 {
+@@ -137,6 +147,22 @@ vreg_s4a_1p8: regulator-vreg-s4a-1p8 {
  		vin-supply = <&vph_pwr>;
  	};
  
@@ -41,7 +49,7 @@ index c7dae34aa..b31e39fd2 100644
  	camera_front_avdd: front-cam-avdd-regulator {
  		compatible = "regulator-fixed";
  		regulator-name = "front_cam_avdd";
-@@ -197,6 +222,13 @@ vreg_pmu_ch0: ldo3 {
+@@ -197,6 +223,13 @@ vreg_pmu_ch0: ldo3 {
  	};
  };
  
@@ -55,7 +63,7 @@ index c7dae34aa..b31e39fd2 100644
  &adsp_pas {
  	firmware-name = "qcom/sdm845/Google/blueline/adsp.mbn";
  
-@@ -425,6 +457,16 @@ ports {
+@@ -425,6 +458,16 @@ ports {
  		#address-cells = <1>;
  		#size-cells = <0>;
  
@@ -72,7 +80,7 @@ index c7dae34aa..b31e39fd2 100644
  		port@1 {
  			reg = <1>;
  
-@@ -456,6 +498,39 @@ &cci {
+@@ -456,6 +499,39 @@ &cci {
  	status = "okay";
  };
  
@@ -112,7 +120,7 @@ index c7dae34aa..b31e39fd2 100644
  &cci_i2c1 {
  	/* actuator @0c */
  
-@@ -481,6 +556,7 @@ front_cam: camera@10 {
+@@ -481,6 +557,7 @@ front_cam: camera@10 {
  
  		port {
  			cam_front_endpoint: endpoint {
@@ -120,7 +128,7 @@ index c7dae34aa..b31e39fd2 100644
  				data-lanes = <1 2 3 4>;
  				link-frequencies = /bits/ 64 <360000000>;
  				remote-endpoint = <&camss_endpoint2>;
-@@ -510,6 +586,7 @@ front_aux_cam: camera@1a {
+@@ -510,6 +587,7 @@ front_aux_cam: camera@1a {
  
  		port {
  			cam_aux_front_endpoint: endpoint {
@@ -128,7 +136,96 @@ index c7dae34aa..b31e39fd2 100644
  				data-lanes = <1 2 3 4>;
  				link-frequencies = /bits/ 64 <360000000>;
  				remote-endpoint = <&camss_endpoint1>;
-@@ -772,6 +849,21 @@ cam_front_avdd_default_pin: cam-avdd-default-pins {
+@@ -717,12 +795,48 @@ &qup_uart9_tx {
+ 	bias-disable;
+ };
+ 
++/*
++ * Omarchy Mobile: the mainline wcd934x driver wants these supply names
++ * (vdd-buck, vdd-buck-sido, vdd-tx, vdd-rx, vdd-io); the stock DT used
++ * cdc-vdd-* names. All rails come from pm8998_s4 (1.8 V).
++ */
++/*
++ * Omarchy Mobile: the WCD934x reset line (gpio54) is active-low; the
++ * generic sdm845-wcd9340.dtsi pins it with bias-pull-down, which holds
++ * the codec in reset. Drive it high so the codec can answer the
++ * SLIMbus address query.
++ */
++&tlmm {
++	wcd_intr_default: wcd-intr-default-state {
++		pins = "gpio54";
++		function = "gpio";
++
++		output-high;
++		bias-disable;
++		drive-strength = <2>;
++	};
++};
++
++&wcd9340 {
++	vdd-buck-supply = <&vreg_s4a_1p8>;
++	vdd-buck-sido-supply = <&vreg_s4a_1p8>;
++	vdd-tx-supply = <&vreg_s4a_1p8>;
++	vdd-rx-supply = <&vreg_s4a_1p8>;
++	vdd-io-supply = <&vreg_s4a_1p8>;
++};
++
++/*
++ * Omarchy Mobile: Pixel 3 (blueline) audio.
++ * The stock device uses a WCD934x (Tavil) codec on SLIMbus, not the
++ * DragonBoard's CS35L36 amplifiers. The codec node comes from
++ * sdm845-wcd9340.dtsi (which also enables &slim).
++ */
+ &sound {
+-	compatible = "qcom,db845c-sndcard", "qcom,sdm845-sndcard";
++	compatible = "qcom,sdm845-sndcard";
++	model = "Google Pixel 3";
+ 	pinctrl-0 = <&quat_mi2s_active
+ 			&quat_mi2s_sd0_active &quat_mi2s_sd1_active>;
+ 	pinctrl-names = "default";
+-	model = "Google Pixel 3";
+ 
+ 	mm1-dai-link {
+ 		link-name = "MultiMedia1";
+@@ -731,10 +845,25 @@ cpu {
+ 		};
+ 	};
+ 
+-	cs35l36-dai-link {
+-		link-name = "Speaker Playback";
++	pri-mi2s-dai-link {
++		link-name = "Primary MI2S Playback";
++		cpu {
++			sound-dai = <&q6afedai PRIMARY_MI2S_RX>;
++		};
++
++		platform {
++			sound-dai = <&q6routing>;
++		};
++
++		codec {
++			sound-dai = <&wcd9340 0>;
++		};
++	};
++
++	pri-mi2s-capture-dai-link {
++		link-name = "Primary MI2S Capture";
+ 		cpu {
+-			sound-dai = <&q6afedai QUATERNARY_TDM_RX_0>;
++			sound-dai = <&q6afedai PRIMARY_MI2S_TX>;
+ 		};
+ 
+ 		platform {
+@@ -742,7 +871,7 @@ platform {
+ 		};
+ 
+ 		codec {
+-			sound-dai = <&cs35l36_codec1 0>, <&cs35l36_codec2 0>;
++			sound-dai = <&wcd9340 0>;
+ 		};
+ 	};
+ };
+@@ -772,6 +901,21 @@ cam_front_avdd_default_pin: cam-avdd-default-pins {
  		bias-disable;
  	};
  
@@ -150,7 +247,7 @@ index c7dae34aa..b31e39fd2 100644
  	cam_front_aux_reset_default_pin: cam-front-aux-reset-default-pins {
  		pins = "gpio9";
  		function = "gpio";
-@@ -850,6 +942,12 @@ &uart6 {
+@@ -850,6 +994,12 @@ &uart6 {
  	bluetooth {
  		compatible = "qcom,wcn3990-bt";
  
