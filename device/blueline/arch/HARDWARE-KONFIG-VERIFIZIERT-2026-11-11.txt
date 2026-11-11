@@ -1,0 +1,51 @@
+Hardware-Kernel-Konfiguration verifiziert, 2026-11-11 21:53
+===========================================================
+
+DISPLAY
+  CONFIG_DRM_MSM=y            (MSM-DRM-Treiber eingebaut)
+  CONFIG_DRM_MSM_KMS=y
+  CONFIG_DRM_MSM_MDSS=y
+  CONFIG_DRM_MSM_MDP5=y
+  CONFIG_DRM_PANEL_BRIDGE=y
+  SW43408-Panel-Treiber vorhanden
+  Backlight: ae94000.dsi.0 (im Init auf 40 %, chmod 666)
+
+TOUCH
+  CONFIG_TOUCHSCREEN_STMFTS=y  (eingebaut, kein Modul noetig)
+  /dev/input/event3 im Init auf root:input 660
+
+AKKU
+  qcom-spmi-rradc.ko   309000 B
+  qcom_smbx.ko         334168 B
+  pmi8998_fg.ko        329616 B
+  upowerd              265064 B
+  power-profiles-daemon 133376 B
+
+IDLE/SUSPEND
+  hypridle             397008 B
+  brightnessctl         67576 B
+  hypridle.conf           581 B  (30 s dimmen, 60 s DPMS aus,
+                                  300 s Suspend mit RTC-Alarm)
+  rtc-pm8xxx.ko        316584 B
+  Standard-Wakealarm im /init
+
+KAMERA
+  camss, cci, imx355/imx363 (2-Pad-Fix), simple.yaml (999 B)
+
+AUDIO
+  ADSP-Firmware (adsp.mbn 13144196 B, adspua.jsn 555 B)
+  slim-qcom-ngd-ctrl, wcd934x, snd-soc-sdm845
+  pipewire, wireplumber
+
+WLAN / BLUETOOTH
+  ath10k-Firmware, wlanmdsp.mbn, Profil HOME-WLAN
+  crbtfw21.tlv, crnv21.bin, bluetoothd, bluetoothctl, pyexpat
+
+SHELL
+  Hyprland, quickshell, squeekboard, 11 Plugins, UID 1001 korrekt
+
+ROBUSTHEIT
+  qcom-wdt.ko 296272 B, pm8916_wdt.ko 287248 B
+
+ERGEBNIS: Alle Hardware-Bereiche sind im Kernel und im Image
+konfiguriert. Es fehlt nur der Beleg am Geraet.
