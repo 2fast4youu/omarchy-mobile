@@ -1,0 +1,44 @@
+ABNAHME-CHECKLISTE am Gerät, 2026-11-11 15:55
+=============================================
+
+Punkt              Status  Messung
+-----------------  ------  ------------------------------------------
+Display            OK      1080x2160, DSI-1, Helligkeit 26/255
+Touch              OK      stmfts (event3), UI reagiert
+Shell/Homescreen   OK      Quickshell-Layer: omamobile-home,
+                           omamobile-dock, omarchy-bar, omamobile-back
+Bildschirmtastatur OK      squeekboard laeuft (PID 23736)
+WLAN               TEIL    wlan0 vorhanden, "HOME-WLAN" gespeichert,
+                           aber Passwort fehlt (Secrets required)
+Audio              OFFEN   keine /dev/snd-Geraete; snd-soc-sdm845 laesst
+                           sich nicht laden (Kette: wcd934x braucht
+                           regmap-slimbus, snd-soc-wcd934x braucht
+                           wcd-classh + micbias, snd-soc-sdm845 braucht
+                           rt5663_sel_asrc_clk_src) - Module sind im
+                           Kernel-Out vorhanden, aber nicht im Image
+Akku-Anzeige       OK      99%, Statusleiste zeigt Symbol + Prozent
+Akku-Messung       OK      99%, Discharging, 4.315 V, ~2 mA
+                           Logger laeuft (/var/log/akku-messung.log)
+UPower             OK      percentage 99%, state discharging
+Suspend            OK      s2idle funktioniert (success/fail-Zaehler
+                           werden vom suspend-messung.sh erfasst)
+Thermik            OK      38-42 C unter Last
+Power-Profile      OK      balanced (1.77 GHz), power-saver (1.13 GHz)
+USB-Ladetyp        OK      APSD erkennt SDP; Register: CHG_EN=0x1,
+                           USBIN_IL=0x0, ICL=1000 mA, inhibit=1
+                           (Ueberladeschutz bei 99%/4.317 V)
+Kameras erkannt    OK      3 von 3 in cam -l
+Frontkameras       TEIL    erkannt; Stream startet nicht
+                           (libcamera 0.7.2 erwartet 2 Sensor-Pads)
+Rueckkamera        AUS     bekannte Einschaenkung, aus Config entfernt
+Megapixels         TEIL    startet, UI laeuft, Stream offen
+Flash ohne Tasten  OK      bootonce-bootloader + SysRq -> fastboot
+Rettungsweg        OK      fastboot boot <img> (nicht benoetigt)
+
+EHRLICHE BILANZ
+  Voll funktionsfaehig: Display, Touch, Shell, OSK, Akku-Anzeige,
+  Akku-Messung, UPower, Suspend, Thermik, Power-Profile, USB-APSD,
+  Kamera-Erkennung, Flash ohne Tastendruck.
+  Teilweise: WLAN (Passwort fehlt), Frontkameras (libcamera-Pads),
+  Megapixels (Stream).
+  Offen: Audio (Modul-Abhaengigkeiten), Rueckkamera (Sensor-Hardware).
