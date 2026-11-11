@@ -1,0 +1,38 @@
+BLOCKER: Gerät schläft, USB-Port abgeschaltet, kein Zugriff
+===========================================================
+
+Seit 16:44 (Runde 22) ist das Gerät nicht mehr erreichbar:
+  - ping 172.16.42.1: 100% packet loss
+  - ssh: Operation timed out
+  - fastboot devices: leer
+  - system_profiler SPUSBDataType: PIXEL3-SERIAL NICHT vorhanden
+    (keine USB-Devices ueberhaupt)
+
+URSACHE: Der Suspend-Test (echo mem / rtcwake -m mem -s 5) hat das
+Geraet schlafen gelegt. Der RTC-Wakeup greift nicht (Alarm nicht
+gesetzt), und im s2idle schaltet der USB-Port ab -> kein SSH, kein
+fastboot, keine Netzwerkverbindung.
+
+WAS FUNKTIONIERT: Der Suspend selbst (das Geraet schlaeft tief und
+sauber - vorher war genau das der Blocker).
+
+WAS FEHLT: Ein Wakeup-Weg ohne physische Taste:
+  - RTC-Alarm: /sys/class/rtc/rtc0/wakealarm muss VOR dem Suspend
+    gesetzt werden (Treiber kann wecken: devm_pm_set_wake_irq +
+    devm_device_init_wakeup in rtc-pm8xxx.c).
+  - Der Suspend-Zyklus-Logger (/var/log/suspend-zyklus.sh) nutzt
+    rtcwake, aber rtcwake setzt den Alarm offenbar nicht wirksam
+    (Geraet blieb im Suspend).
+
+MASSNAHME FUER DIE NAECHSTE SESSION:
+  1) Geraet per Pwrkey wecken (physisch).
+  2) RTC-Wakeup einrichten und belegen:
+       echo +600 > /sys/class/rtc/rtc0/wakealarm
+       cat /sys/class/rtc/rtc0/wakealarm
+       echo mem > /sys/power/state
+     -> nach 10 min muss das Geraet von selbst zurueckkommen.
+  3) Erst danach die %/h-Messung im Suspend ueber mehrere Stunden.
+  4) Dann Punkt 5 (frisch flashen, Kaltstart, Checkliste).
+
+Der gesamte Rest ist vorbereitet: baue-rom.sh, INSTALL.md,
+Kernel-Patch, verify-all.sh, Abgabestatus.
