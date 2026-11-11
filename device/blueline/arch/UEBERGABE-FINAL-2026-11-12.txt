@@ -1,0 +1,87 @@
+UEBERGABE — Omarchy Mobile Pixel 3 (blueline)
+=============================================
+Stand: 2026-11-12 00:25, 633 Commits, Arbeitsbaum sauber
+
+================================================================
+DAS PAKET
+================================================================
+
+~/hermes-workspace/rom-blueline-final/
+  boot.img      d40c3fb45519e644c2ebde886ad1690ca0b44cfc79323cb2356162a609f214bb
+                20938752 B
+  userdata.img  3ef916344d19ce068dd04dd8c0a6a7968e2c7982e775049405eff4f79901c4dc
+                6559897652 B
+  SHA256SUMS
+
+Reproduzierbar: zwei unabhaengige Builds liefern byte-identische Images.
+
+================================================================
+FLASHEN (ohne Tastendruck, vom laufenden System)
+================================================================
+
+  printf "bootonce-bootloader" | dd of=/dev/disk/by-partlabel/misc \
+         bs=1 seek=0 conv=notrunc
+  sync; echo b > /proc/sysrq-trigger
+  # nach ~40 s: fastboot devices zeigt PIXEL3-SERIAL
+
+  fastboot flash boot_a    rom-blueline-final/boot.img
+  fastboot flash userdata  rom-blueline-final/userdata.img
+  fastboot --set-active=a && fastboot reboot
+
+Rettungsweg (falls ein Image nicht startet):
+  fastboot boot rom-blueline-final/boot.img     # aus dem RAM
+
+================================================================
+ABNAHME (auf dem Geraet)
+================================================================
+
+  omamobile-verify-all          # 13 Pruefpunkte, inkl. Kamera-Pads,
+                                #   simple.yaml, shell.json
+  omamobile-suspend-test 10     # RTC-Wakeup belegen
+  cam -l ; cam -c 2 --capture=1 --file=/tmp/f.jpg
+  cat /proc/asound/cards
+  megapixels
+  cat /root/ABNAHME-CHECKLISTE.txt
+
+================================================================
+WAS FUNKTIONIERT (am Geraet belegt)
+================================================================
+
+  Display + Touch   ja (Hyprland, stmfts)
+  WLAN              ja (ath10k, Profil HOME-WLAN vorbereitet)
+  Bluetooth         ja (Firmware + bluetoothd + pyexpat)
+  Akku              ja (RRADC, smbx, pmi8998_fg, UPower)
+  USB-Ladetyp       ja (APSD erkennt SDP, ICL 1000 mA)
+  Frontkameras      ja (2x imx355, 2-Pad-Fix, simple.yaml)
+  Megapixels        ja (Binary, Libs, GSchema, Desktop-Eintrag)
+  Shell             ja (Hyprland, Quickshell, 11 Plugins, shell.json)
+  OSK               ja (squeekboard, QWERTZ)
+  Suspend           ja (s2idle, RTC-Wakeup, Standard-Wakealarm)
+  Audio             ADSP laeuft, Codec konfiguriert - Beleg offen
+  Rueckkamera       NEIN - als Einschraenkung dokumentiert (15/15)
+
+================================================================
+BEKANNTE EINSCHRAENKUNGEN
+================================================================
+
+  1. Rueckkamera IMX363 liefert keine Chip-ID. Factory-Image
+     vollstaendig ausgewertet, I2C-Scan ueber alle Adressen auf
+     beiden CCI-Bussen ohne Antwort. Aus der Megapixels-Config
+     entfernt.
+  2. Audio: ADSP startet, WCD9340 konfiguriert, aber der akustische
+     Beleg am Geraet fehlt (Geraet war nicht erreichbar).
+  3. Suspend %/h ueber Stunden nicht gemessen (Geraet nicht
+     erreichbar).
+  4. WLAN-Passwort muss einmalig eingegeben werden:
+     nmcli --ask connection up HOME-WLAN
+  5. Rootfs 8 GB - beim Bau groesserer Pakete Platz pruefen.
+
+================================================================
+REPO
+================================================================
+
+  633 Commits, Arbeitsbaum sauber
+  267 Belegdateien in device/blueline/arch/
+  Einstieg: INSTALL.md, UEBERGABE.md, UEBERGABE-FINAL-2026-11-12.txt
+  Kernel-Patch: device/blueline/arch/kernel-patches/
+  Build: NUR=alle|kernel|rootfs|packen sh device/blueline/baue-rom.sh
