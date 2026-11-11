@@ -1,0 +1,20 @@
+Reproduzierbarkeit belegt, 2026-11-11 17:16
+===========================================
+
+Test: Kernel-Patch aus dem Repo auf einen FRISCHEN Clone des
+Kernel-Baums anwenden und das DTB bauen.
+
+  git clone --depth 1 ~/hermes-workspace/linux-sdm845 /tmp/patchtest
+  cd /tmp/patchtest
+  git apply .../kernel-patches/0001-omarchy-mobile-blueline.patch
+    -> rc=0, sauber angewendet
+  Pruefung im Ergebnis:
+    sdm845-google-common.dtsi: wakeup-source 1x, wcd9340 6x
+    pm8998.dtsi:               pm8998_rtc 1x
+  make ARCH=arm64 LLVM=1 O=/out -j12 dtbs
+    -> sdm845-google-blueline.dtb, 114444 B
+       (identische Groesse wie das Arbeits-DTB)
+
+Damit ist belegt: der Patch ist vollstaendig, wendet sich auf einen
+sauberen Checkout an und baut dasselbe DTB. Zusammen mit baue-rom.sh
+ist der ROM-Bau aus dem Repo reproduzierbar.
