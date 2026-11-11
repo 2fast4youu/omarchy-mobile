@@ -1,0 +1,72 @@
+Image-Verifikation: alle 23 Komponenten vorhanden, 20:10
+=======================================================
+
+Per debugfs im userdata-Image (SHA256 ceef2257...) geprueft:
+
+SHELL
+  /usr/bin/Hyprland
+  /usr/bin/quickshell
+  /usr/bin/squeekboard
+  11 Omarchy-Mobile-Plugins unter /usr/share/omamobile/shell/plugins
+  /usr/bin/omamobile-setup-user
+
+KAMERA
+  /usr/bin/cam
+  /usr/share/libcamera/pipeline/simple/simple.yaml  (999 B, neu)
+  /opt/omamobile/mods/imx355.ko  (2-Pad-Fix)
+  /opt/omamobile/mods/imx363.ko  (2-Pad-Fix)
+
+MEGAPIXELS
+  /usr/bin/megapixels-gtk  (497192 B)
+  /usr/lib/libmegapixels.so.0  (77184 B)
+  /usr/lib/liblibdng.so.0.1  (96624 B)
+  /usr/share/glib-2.0/schemas/me.gapixels.Megapixels.gschema.xml
+  /usr/share/megapixels/config/google,blueline.conf  (Front, FrontAux)
+  /home/omarchy/Pictures
+  /home/omarchy/.config/user-dirs.dirs
+  /home/omarchy/.config/megapixels/postprocess.sh
+
+AUDIO
+  /usr/bin/pipewire
+  /usr/bin/wireplumber
+  /opt/omamobile/mods/slim-qcom-ngd-ctrl.ko
+  /opt/omamobile/mods/wcd934x.ko
+  /opt/omamobile/mods/snd-soc-sdm845.ko
+  /usr/lib/firmware/qcom/sdm845/Google/blueline/adsp.mbn  (13144196 B)
+  /usr/lib/firmware/qcom/sdm845/Google/blueline/adspua.jsn  (555 B)
+
+SUSPEND
+  /opt/omamobile/mods/rtc-pm8xxx.ko
+
+ERGEBNIS: OK: 23, FEHLT: 0
+
+INIT-KETTE (geprueft im Skript):
+  1. Module: rtc-pm8xxx, Akku, q6v5/q6v5_pas
+  2. rmtfs/tqftpserv/pd-mapper
+  3. remoteproc start (MSS + ADSP)
+  4. QRTR-Warteschleife bis 20 s
+  5. Audio-Module (14, Abhaengigkeitsreihenfolge)
+  6. udevadm trigger (SYSTEMD_IGNORE_CHROOT)
+  7. chmod 666 /dev/video* /dev/v4l-subdev*
+  8. start-hyprland -> squeekboard -> hypridle -> quickshell
+  9. PipeWire + WirePlumber als omarchy
+
+ACHTZEHN BLOCKER IN DIESER SESSION BEHOBEN:
+  1. Suspend: wakeup-source im RTC-Knoten
+  2. Megapixels: Sensoren 1 statt 2 Pads
+  3. Audio: reset-gpios fehlte
+  4. Audio: adspua.jsn fehlte
+  5. Audio: Module nicht im Init
+  6. Audio: ADSP-Firmware nicht gespiegelt
+  7. Audio: Module vor ADSP geladen
+  8. Audio: feste 3 s zu knapp
+  9. Suspend: rtc-pm8xxx fehlte
+ 10. Kamera: udev-Trigger fehlte
+ 11. Kamera: Video-Rechte fehlten
+ 12. Megapixels: XDG/Pictures fehlten
+ 13. Shell: Hyprland-Configs fehlten
+ 14. Audio: PipeWire/WirePlumber fehlten
+ 15. Megapixels: Binaries fehlten
+ 16. Kamera: libcamera simple.yaml fehlte
+ 17. Shell: Plugin-Setup lief zu spaet
+ 18. Build: Mac-Platte voll / SigLevel
