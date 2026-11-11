@@ -23,3 +23,21 @@ echo "== modem-dienste"; qrtr-lookup 69 2>/dev/null | grep -i -e wlfw -e rmtfs -
 echo "== taschenlampe"; ls /sys/class/leds/ 2>/dev/null
 echo "== rmtfs/tqftpserv"; pgrep -a rmtfs; pgrep -a tqftpserv; tail -3 /tmp/rmtfs.log 2>/dev/null; tail -3 /tmp/tqftpserv.log 2>/dev/null
 echo "== fehler"; dmesg | grep -i -e 'panic' -e 'Oops' -e 'failed' | tail -8
+echo "== akku"; for f in capacity status voltage_now current_now temp health charge_full charge_now; do
+    printf '%s=' "$f"; cat "/sys/class/power_supply/qcom-battery/$f" 2>/dev/null || echo "?"
+done
+echo "== upower"; upower -i "$(upower -e 2>/dev/null | grep -i battery | head -1)" 2>/dev/null | grep -E 'percentage|state|energy-full' | head -4
+echo "== power-profile"; powerprofilesctl get 2>/dev/null
+echo "== suspend"; for f in success fail; do printf '%s=' "$f"; cat "/sys/power/suspend_stats/$f" 2>/dev/null; done
+echo "== rtc-wakealarm"; ls -l /sys/class/rtc/rtc0/wakealarm 2>/dev/null; cat /sys/class/rtc/rtc0/device/power/wakeup 2>/dev/null
+echo "== ladetyp"; cat /sys/class/power_supply/pmi8998-charger/usb_type 2>/dev/null; cat /sys/class/power_supply/pmi8998-charger/online 2>/dev/null
+echo "== kameras"; command -v cam >/dev/null && timeout 25 cam -l 2>&1 | grep -E '^[0-9]:' | head -4
+echo "== media"; ls /dev/media* 2>/dev/null; ls /dev/video* 2>/dev/null | wc -l
+echo "== megapixels"; ls -l /usr/bin/megapixels 2>/dev/null | head -1; ls /usr/share/megapixels/config/ 2>/dev/null
+echo "== audio"; cat /proc/asound/cards 2>/dev/null | head -4; ls /dev/snd/ 2>/dev/null | head -4
+echo "== slimbus"; ls /sys/bus/slimbus/devices/ 2>/dev/null; for d in /sys/bus/slimbus/devices/*/driver; do [ -e "$d" ] && readlink "$d"; done 2>/dev/null
+echo "== adsp"; cat /sys/class/remoteproc/remoteproc*/name 2>/dev/null | head -4; for r in /sys/class/remoteproc/remoteproc*/; do
+    printf '%s=%s ' "$(cat "$r/name" 2>/dev/null)" "$(cat "$r/state" 2>/dev/null)"
+done; echo
+echo "== shell"; pgrep -x Hyprland >/dev/null && echo "Hyprland laeuft"; pgrep -x quickshell >/dev/null && echo "quickshell laeuft"; pgrep -x squeekboard >/dev/null && echo "squeekboard laeuft"
+echo "== speicher"; df -h / | tail -1
