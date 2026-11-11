@@ -25,7 +25,7 @@ WS=${WS:-$HOME/hermes-workspace}
 KERNEL=${KERNEL:-$WS/linux-sdm845}
 KOUT=${KOUT:-$WS/pmos-kernel-out}
 CACHE=${CACHE:-$HOME/.cache/omamobile-rootfs}
-PKGS=${PKGS:-$WS/pkgs}
+PKGS=${PKGS:-$REPO/packages}
 FW=${FW:-$WS/firmware}
 AUSGABE=${AUSGABE:-$WS/rom-blueline}
 NUR=${NUR:-alle}
@@ -74,8 +74,8 @@ fi
 # ---------------------------------------------------------------- Rootfs
 if [ "$NUR" = alle ] || [ "$NUR" = rootfs ]; then
     schritt "Arch-Rootfs bauen"
-    pruefe "$CACHE/ArchLinuxARM-aarch64-latest.tar.gz" "$PKGS" "$FW"
-    CACHE="$CACHE" PKGS="$PKGS" FW="$FW" ZIEL="$IMAGE" \
+    pruefe "$CACHE/ArchLinuxARM-aarch64-latest.tar.gz" "$PKGS" "$WS/omarchy-pkg"
+    CACHE="$CACHE" FW="$FW" ZIEL="$IMAGE" \
         sh "$ARCH/baue-arch.sh"
     gruen "Rootfs gebaut: $(ls -l "$IMAGE/rootfs.ext4" | awk '{print $5}') Bytes"
 fi

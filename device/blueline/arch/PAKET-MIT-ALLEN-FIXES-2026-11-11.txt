@@ -1,0 +1,40 @@
+ROM-Paket mit allen Fixes, 2026-11-11 17:33
+===========================================
+
+  boot.img      7a087bbc51425066363c519caca333053f6e5c31a441ff634322816ced1f0578
+                20938752 B
+                Kernel + Initramfs + DTB mit:
+                  - RTC wakeup-source (Suspend-Wakeup)
+                  - WCD9340-Audio-Knoten + SLIMbus + Primary-MI2S
+                  - WCD-Reset GPIO54 output-high
+                  - Kamera-DT (camss, cci, imx363/imx355)
+  userdata.img  6829a1e8fe016924e638c9023f71ce7752e25305b4d5ecca0971ee1f851f2137
+                6509566004 B (sparse)
+                Arch-Rootfs mit 43 Modulen, darunter:
+                  - imx355.ko 459888 B  (2-Pad-Fix fuer libcamera)
+                  - imx363.ko 454576 B  (2-Pad-Fix fuer libcamera)
+                  - Megapixels, libdng, libmegapixels, gschema
+                  - omamobile-verify-all, omamobile-suspend-test
+
+WAS DAMIT BELEGT WERDEN KANN (nach dem Flash):
+  1) Suspend: omamobile-suspend-test 10
+     -> RTC-Alarm weckt (wakeup-source im DT)
+  2) Megapixels: Kamera-Stream
+     -> libcamera akzeptiert die Sensoren (2 Pads)
+  3) Abnahme: sh /usr/local/bin/omamobile-verify-all
+
+FLASH (nur boot_a und userdata):
+  fastboot flash boot_a    ~/hermes-workspace/rom-blueline-final/boot.img
+  fastboot flash userdata  ~/hermes-workspace/rom-blueline-final/userdata.img
+  fastboot --set-active=a && fastboot reboot
+
+OHNE TASTENDRUCK in Fastboot:
+  printf "bootonce-bootloader" | dd of=/dev/disk/by-partlabel/misc bs=1 seek=0 conv=notrunc
+  sync; echo b > /proc/sysrq-trigger
+
+Build-Reparaturen in dieser Runde:
+  - baue-rom.sh: PKGS-Pfad war $WS/pkgs (existiert nicht) -> $REPO/packages
+  - baue-arch-rootfs.sh: SigLevel = Never im Build-Container (neue Pakete
+    bringen Keys mit, die der ALARM-Keyring nicht kennt, z.B. default-cursors)
+  - /tmp/mods: 4 veraltete Module aktualisiert (imx355, imx363, qcom_smbx,
+    qcom-camss)

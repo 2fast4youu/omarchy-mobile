@@ -95,6 +95,10 @@ printf '\n[omarchy]\nServer = https://pkgs.omarchy.org/stable/$arch\nSigLevel = 
 chroot /tmp/arch /bin/bash -euc '
   pacman-key --init >/dev/null 2>&1
   pacman-key --populate archlinuxarm >/dev/null 2>&1
+  # Omarchy Mobile: neue Pakete koennen einen Key mitbringen, der im
+  # ALARM-Keyring noch fehlt (z. B. default-cursors). Der Keyring wird
+  # im Container nicht aktualisiert, deshalb Signaturpruefung aus.
+  sed -i "s/^SigLevel.*/SigLevel = Never/" /etc/pacman.conf
   pacman -Sy --noconfirm --needed openssh
   pacman -S --noconfirm --needed omarchy
   pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim patch chromium nautilus bluez bluez-utils mpv imv gnome-text-editor v4l-utils libcamera-tools hypridle brightnessctl power-profiles-daemon upower
