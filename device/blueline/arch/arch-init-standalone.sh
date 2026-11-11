@@ -262,6 +262,16 @@ if [ ! -e /home/omarchy/.config/omarchy/plugins/omamobile.home ]; then
     done
     chown -R omarchy:omarchy /home/omarchy/.config/omarchy 2>/dev/null
 fi
+# shell.json pruefen: ohne die Datei (oder mit leerer plugins-Liste) laedt
+# Quickshell KEINE omamobile-Plugins -> kein Homescreen, kein Dock.
+if [ ! -s /home/omarchy/.config/omarchy/shell.json ] || \
+   ! grep -q omamobile.home /home/omarchy/.config/omarchy/shell.json 2>/dev/null; then
+    if [ -f /usr/share/omamobile/shell/profile/shell.json ]; then
+        cp /usr/share/omamobile/shell/profile/shell.json /home/omarchy/.config/omarchy/shell.json
+        chown omarchy:omarchy /home/omarchy/.config/omarchy/shell.json
+        echo "shell.json wiederhergestellt" > /dev/kmsg 2>/dev/null
+    fi
+fi
 # Foot/Omarchy-Theme: das Include in ~/.config/foot/foot.ini zeigt auf
 # eine Theme-Datei, die ohne Theme-Anwendung fehlt.
 mkdir -p /home/omarchy/.local/state/omarchy/current/theme
