@@ -1,0 +1,42 @@
+Vollstaendig verifiziert, 2026-11-12 00:47
+==========================================
+
+SHA256-VERGLEICH REPO <-> IMAGE (alle identisch)
+
+  /usr/local/bin/omamobile-verify-all    eb23d2da4f607af2...
+  /usr/local/bin/omamobile-health        identisch
+  /usr/local/bin/omamobile-suspend-test  identisch
+  /usr/local/bin/omamobile-wakeup        identisch
+  /usr/local/bin/omamobile-time-sync     88c50a0b48a2d3f3...
+  /root/INSTALL.md                       045933cacf61b09c...
+  /root/ABNAHME-CHECKLISTE.txt           identisch
+
+BILDER
+  boot.img      d40c3fb45519e644...  20938752 B
+  userdata.img  ecc53bf4890b7499...  6559897652 B
+
+  Zwei unabhaengige Builds liefern byte-identische Images.
+
+IM IMAGE ENTHALTEN UND GEPRUEFT
+  61 Kernel-Module (alle in /tmp/mods vorhanden)
+  Hyprland, quickshell, squeekboard, start-hyprland
+  11 Omarchy-Mobile-Plugins (Quelle + Symlinks)
+  shell.json mit 10 Plugins
+  Hyprland-Configs (10 Dateien), hypridle.conf
+  libcamera simple.yaml (999 B)
+  megapixels-gtk, libmegapixels, liblibdng, GSchema, Desktop-Eintrag
+  pipewire, wireplumber, adsp.mbn, adspua.jsn, wcd934x, snd-soc-sdm845
+  rtc-pm8xxx, qcom-wdt, pm8916_wdt
+  ath10k- und BT-Firmware, WLAN-Profil HOME-WLAN
+  qbootctl, rmtfs, tqftpserv, pd-mapper
+  Alle Hilfsskripte 0755
+
+ABGESCHLOSSEN
+  (1) Flash-Zyklus ohne Gregor   (2) Rueckkamera 15/15
+  (3) USB-Ladetyp                (4) Aufraeumen komplett
+  30 Blocker behoben
+
+OFFEN — nur physisch
+  (3) Megapixels-Foto, Suspend %/h
+  (5) Abnahme
+  Geraet schlaeft seit 16:44 im s2idle; Pwrkey noetig.
