@@ -184,6 +184,14 @@ chmod 666 /sys/class/backlight/*/brightness 2>/dev/null
 # schlafen (keine RTC). Der Power-Knopf (pm8941_pwrkey) und die PMIC-
 # Geraete wecken. Am Geraet belegt: suspend success=3, fail=0.
 [ -x /usr/local/bin/omamobile-wakeup ] && /usr/local/bin/omamobile-wakeup >/tmp/wakeup.log 2>&1
+# Audio-Server: PipeWire + WirePlumber laufen in der Nutzer-Session
+# (XDG_RUNTIME_DIR), nicht als Systemdienst. Sie werden hier fuer
+# omarchy gestartet, damit die Shell einen Sink/Source findet.
+if [ -x /usr/bin/pipewire ]; then
+    su - omarchy -c 'export XDG_RUNTIME_DIR=/run/user/1000; setsid nohup pipewire >/tmp/pipewire.log 2>&1 </dev/null &' 2>/dev/null
+    sleep 2
+    su - omarchy -c 'export XDG_RUNTIME_DIR=/run/user/1000; setsid nohup wireplumber >/tmp/wireplumber.log 2>&1 </dev/null &' 2>/dev/null
+fi
 # UPower: die Shell (Quickshell.Services.UPower) liest den Akku darueber.
 [ -x /usr/lib/upowerd ] && /usr/lib/upowerd >/tmp/upowerd.log 2>&1 &
 # Power-Profile (ppd) + Abbildung auf die CPU-Kappe.
