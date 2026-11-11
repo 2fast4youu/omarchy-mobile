@@ -1,0 +1,29 @@
+USB-Laden: Register verifiziert, Inhibit wegen fast vollem Akku, 15:03
+======================================================================
+
+Debug-Patch (qcom_smbx.c, nach smb_set_current_limit):
+  OMADBG type=1 CHGR_CFG2=0x1(inhibit=1) CHG_EN=0x1 USBIN_IL=0x0(susp=0) ICL=0x14
+
+Bedeutung:
+  type=1        -> POWER_SUPPLY_USB_TYPE_SDP (Standard-USB-Port)
+  CHGR_CFG2=0x1 -> CHARGER_INHIBIT_BIT gesetzt (Laden gehemmt)
+  CHG_EN=0x1    -> CHARGING_ENABLE_CMD_BIT gesetzt (Laden aktiviert)
+  USBIN_IL=0x0  -> USBIN_SUSPEND_BIT NICHT gesetzt (Pfad offen)
+  ICL=0x14      -> 20 * 50 mA = 1000 mA Stromlimit
+
+Vorher (APSD-Kette):
+  POWER_PATH_STATUS=0x95 (usbin=1, valid=1)
+  APSD_STATUS=0x11 (done=1)
+  APSD_RESULT_STATUS=0x1 (SDP)
+
+FAZIT: Die Ladepfad-Konfiguration ist vollstaendig und korrekt.
+Der Charger hemmt das Laden (CHARGER_INHIBIT_BIT), weil der Akku mit
+4.317 V nahe der Maximalspannung (4.4 V) und bei 99% Kapazitaet ist -
+das ist gewuenschtes Verhalten (Ueberladeschutz), kein Fehler.
+
+Beleg: Akku 99%, 4.317 V, Discharging mit ~2 mA (Eigenverbrauch).
+
+Offen: Der sysfs-usb_type zeigt weiter "Unknown [SDP] DCP CDP" -
+die Property-Abfrage liefert einen anderen Wert als der
+status_change_work-Pfad (type=1). Kosmetisch, die Erkennung selbst
+funktioniert (Registerbeleg).
