@@ -1,0 +1,34 @@
+Suspend: RTC-Wakeup als Loesung (Vorbereitung, 17:00)
+=====================================================
+
+PROBLEM (belegt): Nach "echo mem" schlaeft das Geraet, aber der
+RTC-Wakeup greift nicht. Im s2idle wird der USB-Port abgeschaltet ->
+kein SSH, kein fastboot, kein ping. Ohne physische Taste kommt das
+Geraet nicht zurueck.
+
+LOESUNG (umgesetzt, noch nicht am Geraet belegt):
+
+1) omamobile-wakeup.sh erweitert:
+   Zusaetzlich zu pwrkey/PMIC/i2c wird jetzt auch
+     /sys/class/rtc/rtc0/device/power/wakeup
+   auf "enabled" gesetzt. Der RTC-Treiber (rtc-pm8xxx.c) kann wecken:
+     devm_request_any_context_irq(alarm_irq, pm8xxx_alarm_trigger)
+     devm_pm_set_wake_irq(&pdev->dev, alarm_irq)
+     devm_device_init_wakeup(&pdev->dev)
+   Am Ende wird der aktuelle wakealarm geloggt.
+
+2) Neues Skript omamobile-suspend-test.sh:
+   - aktiviert die Wakeup-Quellen
+   - setzt den RTC-Alarm: echo 0 > wakealarm; echo "+600" > wakealarm
+   - loggt Zeit, Kapazitaet, suspend_stats
+   - echo mem > /sys/power/state
+   - nach dem Resume: vergleicht Schlafdauer mit der erwarteten Zeit
+   - Ergebnis "RTC-Wakeup FUNKTIONIERT" wenn die Dauer passt
+   Aufruf: omamobile-suspend-test [Minuten]   (Default 10)
+
+3) baue-arch-rootfs.sh installiert das Skript nach /usr/local/bin.
+
+NAECHSTER SCHRITT AM GERAET:
+   omamobile-suspend-test 10
+   -> muss nach ~10 min von selbst zurueckkommen.
+   Danach die %/h-Messung im Suspend ueber mehrere Stunden.
