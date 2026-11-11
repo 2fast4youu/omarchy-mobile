@@ -133,7 +133,20 @@ done
 # Audio erst NACH dem ADSP-Start: der SLIMbus-Controller (qcom-ngd-ctrl)
 # wartet auf den PDR-Service "avs/audio", den der ADSP erst beim Boot
 # anmeldet. Vorher bleibt der SLIMbus DOWN und die ADDR_QUERY ohne Antwort.
-sleep 3
+# Auf den ADSP warten: er meldet den PDR-Service "avs/audio" erst, wenn
+# der QRTR-Kanal steht. Bis zu 20 s in 1-s-Schritten pruefen.
+_i=0
+while [ $_i -lt 20 ]; do
+    # ADSP laeuft und hat QRTR-Kanaele angelegt?
+    if [ "$(cat /sys/class/remoteproc/remoteproc*/state 2>/dev/null | grep -c running)" -ge 1 ]; then
+        if [ -d /sys/bus/rpmsg/devices ] && [ "$(ls /sys/bus/rpmsg/devices 2>/dev/null | wc -l)" -gt 0 ]; then
+            break
+        fi
+    fi
+    sleep 1
+    _i=$((_i + 1))
+done
+sleep 2
 for m in soundwire-bus regmap-slimbus regmap-sdw slim-qcom-ngd-ctrl \
          snd-soc-rl6231 snd-soc-rt5663 snd-soc-qcom-sdw snd-soc-qcom-common \
          snd-soc-wcd-common snd-soc-wcd-classh snd-soc-wcd-mbhc \
