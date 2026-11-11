@@ -23,10 +23,11 @@ mit Commit und Belegdatei in `device/blueline/arch/`.
 
 ```
 ~/hermes-workspace/rom-blueline-final/
-  boot.img      7a087bbc51425066363c519caca333053f6e5c31a441ff634322816ced1f0578
+  boot.img      d40c3fb45519e644c2ebde886ad1690ca0b44cfc79323cb2356162a609f214bb
                 20938752 B — Kernel 7.1.0-rc1-sdm845 + Initramfs + DTB
-  userdata.img  364aecabcd41c7b110f9225d9d39448b76addb47b347495959c44b9e5e333083
-                8153733172 B — Arch-Rootfs (sparse)
+                (RTC wakeup-source, WCD9340 reset-gpios, 2-Pad-DTB)
+  userdata.img  16e4b8c80348a9913c1d1bb6ff29efd6fec1460e3e5845e34ca061fc1fdfe350
+                6559897652 B — Arch-Rootfs (sparse, 61 Module)
   SHA256SUMS
 ```
 
@@ -74,7 +75,7 @@ zu überschreiben.
 ### 4.1 Suspend-RTC-Wakeup belegen
 
 Die Ursache ist behoben (`wakeup-source` im DT, neues `boot.img`
-`7a087bbc`). Der Beleg am Gerät fehlt, weil das Gerät seit 16:44 schläft.
+`d40c3fb4`). Der Beleg am Gerät fehlt, weil das Gerät seit 16:44 schläft.
 
 ```sh
 omamobile-suspend-test 10
