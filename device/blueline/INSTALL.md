@@ -165,6 +165,33 @@ Deshalb startet der Stream nicht (`STREAMON error 32`), obwohl alle drei
 Kameras in `cam -l` erscheinen. Ein Downgrade auf libcamera 0.5/0.6 oder
 ein Treiber-Patch (zweites Pad) wäre der nächste Schritt.
 
+### Audio (WCD934x) — teilweise
+
+Der ADSP bootet (adsp.mbn aus den Factory-MBN-Segmenten zusammengesetzt),
+der SLIMbus-Codec erscheint als `217:250:1:0`, `wcd934x-slim` bindet und
+der WCD-Reset (GPIO 54) ist high. Aber:
+
+```
+wcd934x-slim 217:250:1:0: Failed to get logical address
+```
+
+Die SLIMbus-`ADDR_QUERY` an den Codec bleibt unbeantwortet, deshalb bindet
+`snd-soc-sdm845` keine Karte und `/proc/asound/cards` bleibt leer.
+
+Nächster Ansatz: Power-Up-Reihenfolge (Regler → Reset → Clock → Query) und
+den WCD-SPI-Pfad aus dem Stock-DTBO vergleichen.
+
+### Suspend ohne Tastendruck
+
+`echo mem > /sys/power/state` schläft sauber, aber im s2idle wird der
+USB-Port abgeschaltet — ohne funktionierenden RTC-Alarm ist das Gerät dann
+weder per SSH noch per fastboot erreichbar.
+
+`omamobile-wakeup` aktiviert inzwischen auch
+`/sys/class/rtc/rtc0/device/power/wakeup`, und
+`omamobile-suspend-test [Minuten]` setzt den RTC-Alarm, schläft und prüft
+die Schlafdauer. Am Gerät noch zu belegen.
+
 ### Bluetooth-Pairing
 
 Der BlueZ-Pairing-Agent scheitert an `python3.14`/`pyexpat`.
