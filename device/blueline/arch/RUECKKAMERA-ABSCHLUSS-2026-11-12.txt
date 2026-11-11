@@ -1,0 +1,35 @@
+Rueckkamera IMX363 — Abschluss der 15-Runden-Grenze, 2026-11-12 00:26
+=====================================================================
+
+AUFGABE (Punkt 2): Wahrheit aus dem Factory-Image holen, Soll/Ist-
+Tabelle, I2C-Scan ueber alle Adressen auf beiden CCI-Bussen. Nach 15
+Runden ohne Chip-ID: als Einschränkung dokumentieren, aus der
+Megapixels-Config nehmen, weitergehen.
+
+DURCHGEFUEHRT
+  [x] dtbo.img dekompiliert, Overlay 0 (sensor_rear) vollstaendig
+      gelesen: MCLK GPIO 13, RESET GPIO 80, VANA GPIO 16,
+      vdig=pm8998_s3, vio=pm8998_lvs1, vana=pmi8998_bob,
+      cci-master 0, csiphy 0, MCLK 24 MHz
+  [x] vendor.img Sensormodul-Datei ausgewertet: nur Kalibrierdaten
+      (.bin), .so stripped, keine Power-Up-Sequenz extrahierbar
+  [x] boot.img Kernel (lz4) auf imx363-Strings geprueft: keine
+  [x] vendor.img lib/modules: keine Kamera-Module
+  [x] Soll/Ist-Tabelle: factory-imx363-soll-ist-2026-11-11.txt
+  [x] I2C-Scan ueber alle Adressen (0x03-0x77) auf beiden CCI-Bussen:
+      keine Antwort, keine Chip-ID
+  [x] Rueckkamera aus der Megapixels-Config entfernt
+      (google,blueline.conf: Front + FrontAux, kein Rear)
+
+ERGEBNIS
+  Die Rueckkamera liefert keine Chip-ID. Die Ursache liegt nicht an
+  den GPIOs (16 und 80 waren per libgpiod HIGH), sondern an einer
+  Ebene, die ohne Hersteller-Dokumentation nicht zugaenglich ist.
+  Als bekannte Einschränkung dokumentiert (INSTALL.md Abschnitt 6).
+
+  Die Frontkameras (2x imx355) funktionieren und sind in der
+  Megapixels-Config eingetragen.
+
+REGEL EINGEHALTEN
+  Nicht weiter an GPIO 16 gearbeitet, kein /dev/mem. Nach 15 Runden
+  dokumentiert und zum naechsten Punkt gegangen.
