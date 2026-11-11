@@ -57,6 +57,10 @@ cp /om/omamobile-power-profile /tmp/arch/usr/local/bin/omamobile-power-profile
 cp /om/omamobile-wakeup.sh /tmp/arch/usr/local/bin/omamobile-wakeup
 cp /om/omamobile-suspend-test.sh /tmp/arch/usr/local/bin/omamobile-suspend-test
 chmod 755 /tmp/arch/usr/local/bin/omamobile-suspend-test
+# Pruefskripte fuer die Abnahme
+cp /om/omamobile-verify-all.sh /tmp/arch/usr/local/bin/omamobile-verify-all
+cp /om/omamobile-health.sh /tmp/arch/usr/local/bin/omamobile-health
+chmod 755 /tmp/arch/usr/local/bin/omamobile-verify-all /tmp/arch/usr/local/bin/omamobile-health
 chmod 755 /tmp/arch/usr/local/bin/omamobile-time-sync
 mkdir -p /tmp/arch/usr/local/bin /tmp/arch/usr/local/lib/qbootctl
 cp /qbootctl /tmp/arch/usr/local/bin/qbootctl
