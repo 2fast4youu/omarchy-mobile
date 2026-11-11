@@ -1,0 +1,23 @@
+pinctrl-State mit output-high (v0be), 2026-11-11 11:17
+=====================================================
+
+Befund (v0bd-Boot): Der Treiber ruft gpiod_set_value_cansleep(vana, 1)
+auf ("OMADBG vana_gpio -> 1"), aber /sys/kernel/debug/gpio zeigt
+gpio16 "in low" - gpiolib fuehrt den Pin als Input, der Wert kommt
+nicht an.
+
+Fix (v0be): cam_rear_vana_default_pin bekommt explizit "output-high":
+  cam_rear_vana_default_pin: cam-rear-vana-default-pins {
+      pins = "gpio16";
+      function = "gpio";
+      drive-strength = <2>;
+      output-high;          <- neu
+      bias-disable;
+  };
+Damit wird der Pin schon beim Muxen als Output HIGH konfiguriert,
+bevor gpiolib ihn uebernimmt.
+
+Boot v0be = b443e82cea1ed04ff6e9ebf8ffa8278d3effa548e1be07c3b97ab3d3b4eb8fd4
+Flash offen (kein Fastboot).
+
+Beide Frontkameras liefern Frames; Megapixels-Vorschau laeuft.
