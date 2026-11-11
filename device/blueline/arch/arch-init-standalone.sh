@@ -87,6 +87,11 @@ done
 sleep 1
 chmod 666 /dev/dma_heap/* 2>/dev/null
 chmod 666 /dev/media* 2>/dev/null
+# Kamera-Geraete fuer die Nutzer-Session freigeben: ohne das scheitert
+# Megapixels mit "Could not open /dev/video0: Permission denied" (am
+# Geraet belegt). Die Devices entstehen erst nach dem camss-Probe, daher
+# zusaetzlich weiter unten nach dem udev-Trigger.
+chmod 666 /dev/video* /dev/v4l-subdev* 2>/dev/null
 
 # Modem (MSS) + Firmware-Sichtbarkeit (am Geraet belegt):
 # Der Kernel liest Firmware ueber init_task.fs (PID 1 = Initramfs-Root),
@@ -193,6 +198,7 @@ mkdir -p /run/systemd/system /run/udev/data
 sleep 2
 SYSTEMD_IGNORE_CHROOT=1 udevadm trigger >/tmp/udev-trigger.log 2>&1
 sleep 2
+chmod 666 /dev/video* /dev/v4l-subdev* /dev/media* /dev/dma_heap/* 2>/dev/null
 for d in /sys/class/input/event*/uevent; do echo add > "$d" 2>/dev/null; done
 chown root:input /dev/input/event* 2>/dev/null
 chmod 660 /dev/input/event* 2>/dev/null

@@ -110,6 +110,29 @@ chroot /tmp/arch /bin/bash -euc '
   groupadd -f video; groupadd -f input; groupadd -f seat
   id omarchy >/dev/null 2>&1 || useradd -m -G video,input,seat -s /bin/bash omarchy
   ln -sfn /proc/self/fd /dev/fd
+  # XDG-Verzeichnisse + Megapixels-Postprozessor: ohne user-dirs.dirs
+  # liefert g_get_user_special_dir(PICTURES) NULL, Megapixels kann keine
+  # Fotos speichern (am Geraet belegt).
+  mkdir -p /home/omarchy/Pictures /home/omarchy/Videos /home/omarchy/Downloads
+  cat > /home/omarchy/.config/user-dirs.dirs <<"EOD"
+XDG_DESKTOP_DIR="$HOME/Desktop"
+XDG_DOWNLOAD_DIR="$HOME/Downloads"
+XDG_TEMPLATES_DIR="$HOME/Templates"
+XDG_PUBLICSHARE_DIR="$HOME/Public"
+XDG_DOCUMENTS_DIR="$HOME/Documents"
+XDG_MUSIC_DIR="$HOME/Music"
+XDG_PICTURES_DIR="$HOME/Pictures"
+XDG_VIDEOS_DIR="$HOME/Videos"
+EOD
+  mkdir -p /home/omarchy/.config/megapixels
+  cat > /home/omarchy/.config/megapixels/postprocess.sh <<"EOP"
+#!/bin/sh
+IN="$1"; OUT="$2"
+if command -v convert >/dev/null 2>&1; then convert "$IN" "$OUT" 2>/dev/null && exit 0; fi
+cp "$IN" "$OUT" 2>/dev/null || exit 1
+EOP
+  chmod 755 /home/omarchy/.config/megapixels/postprocess.sh
+  chown -R omarchy:omarchy /home/omarchy/Pictures /home/omarchy/Videos /home/omarchy/Downloads /home/omarchy/.config
   for p in omamobile-apps omamobile-omarchy omamobile-shell; do
     [ -d /root/pkgs/$p ] || continue
     ( cd /root/pkgs/$p
