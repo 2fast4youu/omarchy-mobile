@@ -1,0 +1,18 @@
+GPIO 16: output enabled, aber Level 0, 2026-11-11 11:19
+=======================================================
+
+pinconf-groups fuer pin 16:
+  "input bias pull down (1 ohms), input bias pull up (2200 ohms),
+   output drive open drain, output drive strength (2 mA),
+   output enabled, pin output (0 level)"
+
+-> Der Pin IST als Output konfiguriert (output enabled), steht aber auf
+   Level 0. Der Treiber ruft gpiod_set_value_cansleep(vana, 1) auf
+   (dmesg: "OMADBG vana_gpio -> 1"), aber der Wert kommt nicht an.
+-> pinmux: GPIO 3400000.pinctrl:568 (korrekt gemuxt)
+
+Fix in v0be: cam_rear_vana_default_pin mit "output-high" - der Pin wird
+beim Muxen direkt auf HIGH gesetzt, unabhaengig von gpiolib.
+
+Boot v0be = b443e82c..., Flash offen.
+Beide Frontkameras liefern Frames; Megapixels-Vorschau laeuft.
