@@ -78,6 +78,14 @@ if [ -x /mega/megapixels/build/megapixels ]; then
     ln -sfn megapixels-gtk /tmp/arch/usr/bin/megapixels
     install -Dm644 /mega/megapixels/data/me.gapixels.Megapixels.gschema.xml \
         /tmp/arch/usr/share/glib-2.0/schemas/me.gapixels.Megapixels.gschema.xml
+    # Desktop-Eintrag: ohne ihn erscheint Megapixels nicht im Launcher.
+    install -Dm644 /mega/megapixels/data/me.gapixels.Megapixels.desktop \
+        /tmp/arch/usr/share/applications/me.gapixels.Megapixels.desktop
+    # Ressourcen (Shader, UI-Dateien) fuer den GL-Pfad.
+    if [ -d /mega/megapixels/data ]; then
+        install -d /tmp/arch/usr/share/megapixels
+        cp -a /mega/megapixels/data/. /tmp/arch/usr/share/megapixels/ 2>/dev/null || true
+    fi
 fi
 if [ -f /mega/libmegapixels/build/libmegapixels.so ]; then
     install -Dm644 /mega/libmegapixels/build/libmegapixels.so \
