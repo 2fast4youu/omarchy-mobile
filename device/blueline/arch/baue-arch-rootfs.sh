@@ -170,6 +170,34 @@ cp "$IN" "$OUT" 2>/dev/null || exit 1
 EOP
   chmod 755 /home/omarchy/.config/megapixels/postprocess.sh
   chown -R omarchy:omarchy /home/omarchy/Pictures /home/omarchy/Videos /home/omarchy/Downloads /home/omarchy/.config
+  # WLAN-Profil vorbereiten: SSID und Land sind gesetzt, das Passwort
+  # fehlt absichtlich (kein Klartext im Image). Nach dem Boot einmal
+  #   nmcli --ask connection up HOME-WLAN
+  # und NetworkManager speichert das Passwort im Profil.
+  mkdir -p /etc/NetworkManager/system-connections
+  cat > /etc/NetworkManager/system-connections/HOME-WLAN.nmconnection <<'NMC'
+[connection]
+id=HOME-WLAN
+uuid=9b1c2f3a-4d5e-4f60-8a7b-1c2d3e4f5a6b
+type=wifi
+autoconnect=true
+autoconnect-priority=10
+
+[wifi]
+mode=infrastructure
+ssid=HOME-WLAN
+
+[wifi-security]
+auth-alg=open
+key-mgmt=wpa-psk
+
+[ipv4]
+method=auto
+
+[ipv6]
+method=auto
+NMC
+  chmod 600 /etc/NetworkManager/system-connections/HOME-WLAN.nmconnection
   # Hyprland-Configs: ohne sie startet Hyprland nicht (SIGSEGV, am Geraet
   # belegt). omamobile-setup-user legt sie normalerweise an, aber das
   # laeuft erst im Init - hier vorab aus dem Omarchy-Paket kopieren.
