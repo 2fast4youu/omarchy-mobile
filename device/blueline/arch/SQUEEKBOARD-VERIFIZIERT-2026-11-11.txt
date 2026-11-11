@@ -1,0 +1,25 @@
+Squeekboard vollstaendig verifiziert, 2026-11-11 23:14
+======================================================
+
+BINARY
+  /usr/bin/squeekboard   5249344 B
+
+LAYOUTS
+  Die Layouts sind als GResource IM BINARY eingebettet
+  (.gresource.squeekboard, Treffer fuer us.yaml, de.yaml,
+   terminal/*). Es gibt bewusst KEIN /usr/share/squeekboard -
+   Squeekboard liest sie aus der eingebauten Ressource.
+  SQUEEKBOARD_KEYBOARDSDIR kann sie zur Laufzeit ueberschreiben
+  (wird hier nicht gesetzt).
+
+LAYOUT-WAHL
+  Squeekboard liest die GNOME-xkb-Einstellung:
+    gsettings set org.gnome.desktop.input-sources sources "[('xkb','de')]"
+  Das setzt der Init vor dem Session-Start (Zeile 274).
+  -> QWERTZ-Layout.
+
+START
+  squeekboard & im Session-Skript (nach Hyprland, vor Quickshell).
+
+ERGEBNIS: Die Bildschirmtastatur ist vollstaendig - Binary mit
+eingebetteten Layouts, QWERTZ per gsettings, Start im Init.
