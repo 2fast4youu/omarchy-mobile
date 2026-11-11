@@ -18,8 +18,9 @@ Dann je Punkt den ehrlichen Status eintragen:
                  Ist: ______________________________________
 
 [ ] AUDIO        Soll: /proc/asound/cards zeigt eine Karte
-                 Ist: (bekannt: "Failed to get logical address",
-                       keine Karte) _________________________
+                 (ADSP-Firmware, WCD9340 reset-gpios, SLIMbus und
+                  PipeWire sind im Image; Beleg offen)
+                 Ist: ______________________________________
 
 [ ] AKKU         Soll: capacity/status/voltage_now/current_now plausibel,
                       UPower percentage + state, Statusleiste-Symbol
@@ -29,11 +30,13 @@ Dann je Punkt den ehrlichen Status eintragen:
                  Ist: ______________________________________
 
 [ ] FRONTKAMERAS Soll: cam -l zeigt 3 Kameras; Front liefert Frames
-                 Ist: (bekannt: 3 erkannt, Stream scheitert an
-                       libcamera-Pads) ______________________
+                 (2-Pad-Fix, simple.yaml und Mode-Pads sind im Image)
+                 Ist: ______________________________________
 
 [ ] MEGAPIXELS   Soll: startet, UI sichtbar, Vorschau, Foto speicherbar
-                 Ist: (bekannt: startet, UI läuft, Stream offen) ____
+                 (Binaries, GSchema, Config, XDG und Desktop-Eintrag
+                  sind im Image)
+                 Ist: ______________________________________
 
 [ ] FLASH OHNE TASTEN  Soll: bootonce-bootloader + SysRq -> fastboot
                  Ist: belegt (mehrfach) ______________________
