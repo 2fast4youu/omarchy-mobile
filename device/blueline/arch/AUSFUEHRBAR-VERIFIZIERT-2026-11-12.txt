@@ -1,0 +1,24 @@
+Alle Hilfsskripte im Image ausfuehrbar, 2026-11-12 00:30
+========================================================
+
+Dateirechte (debugfs stat, Mode):
+
+  /usr/local/bin/omamobile-verify-all     0755
+  /usr/local/bin/omamobile-health         0755
+  /usr/local/bin/omamobile-suspend-test   0755
+  /usr/local/bin/omamobile-wakeup         0755
+  /usr/local/bin/omamobile-time-sync      0755
+
+  Alle fuenf sind direkt aufrufbar:
+    omamobile-verify-all
+    omamobile-health
+    omamobile-suspend-test 10
+    omamobile-wakeup
+    omamobile-time-sync
+
+DOKUMENTE (lesbar)
+  /root/INSTALL.md                 9714 B
+  /root/ABNAHME-CHECKLISTE.txt     1919 B
+
+ERGEBNIS: Die Abnahme ist auf dem Geraet ohne weitere Vorbereitung
+durchfuehrbar.
