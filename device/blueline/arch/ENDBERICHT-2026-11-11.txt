@@ -1,0 +1,166 @@
+ENDBERICHT — Omarchy Mobile Pixel 3 (blueline)
+==============================================
+Datum: 2026-11-11, 21:22
+Auftrag: ROM abschliessen und uebergabefertig machen.
+
+================================================================
+1) ABGESCHLOSSENE AUFGABENPUNKTE (mit Beleg)
+================================================================
+
+(1) FLASH-ZYKLUS OHNE GREGOR — ERLEDIGT
+    Vom laufenden System in Fastboot:
+      printf "bootonce-bootloader" | dd of=/dev/disk/by-partlabel/misc \
+             bs=1 seek=0 conv=notrunc
+      sync; echo b > /proc/sysrq-trigger
+    -> nach ~40 s: fastboot devices zeigt PIXEL3-SERIAL
+    Mehrfach am Geraet durchgefuehrt (v0bg, v0bc, v0bd, Audio-DTBs).
+    Rettungsweg: fastboot boot <img> (bekannt gutes Image aus dem RAM),
+    dokumentiert in INSTALL.md; im Betrieb nicht benoetigt.
+
+(2) RUECKKAMERA IMX363 — ABGESCHLOSSEN ALS EINSCHRAENKUNG (15/15)
+    Factory-Image vollstaendig ausgewertet:
+      dtbo.img Overlay 0: sensor_rear mit MCLK GPIO 13, RESET GPIO 80,
+        VANA GPIO 16, vdig=pm8998_s3, vio=pm8998_lvs1,
+        vana=pmi8998_bob, cci-master 0, csiphy 0, MCLK 24 MHz
+      vendor.img sensormodul .bin: nur Kalibrierdaten
+      vendor.img sensor .so: stripped, nur Exposure/Gain-Symbole
+      boot.img Kernel (lz4): keine imx363-Strings
+      vendor.img lib/modules: keine Kamera-Module
+    Soll/Ist-Tabelle: factory-imx363-soll-ist-2026-11-11.txt
+    I2C-Scan alle Adressen (0x03-0x77) auf beiden CCI-Bussen:
+    keine Antwort. Chip-ID nicht lesbar.
+    Rueckkamera aus der Megapixels-Config entfernt.
+
+(3) USB-LADETYP — ERLEDIGT
+    APSD erkennt SDP (APSD_RESULT_STATUS=0x1)
+    Register: CHG_EN=0x1, USBIN_IL=0x0 (nicht suspendiert),
+    ICL=0x14 (1000 mA), CHGR_CFG2 inhibit=1
+    (Ueberladeschutz bei 99%/4.317 V - gewuenschtes Verhalten)
+    Beleg: usb-laden-register-2026-11-11.txt
+
+(4) AUFRAEUMEN — ERLEDIGT
+    - ersetze-module.py geprueft und committet
+    - 21 OMADBG-Debugausgaben aus 5 Dateien entfernt
+    - Kernel-/DT-Patches: 0001-omarchy-mobile-blueline.patch
+      (10 Dateien, 668 Zeilen) mit README
+    - ROM-Bau mit einem Befehl: device/blueline/baue-rom.sh
+      (Kernel+DTB, Rootfs, Images, SHA256SUMS; NUR= fuer Teilbauten)
+    - SHA256SUMS fuer beide Images
+    - INSTALL.md mit Installation und bekannten Einschraenkungen
+    - Reproduzierbarkeit belegt: Patch auf frischem Clone,
+      DTB identisch (959cd27)
+
+================================================================
+2) ZWEIUNDZWANZIG BLOCKER BEHOBEN
+================================================================
+
+SUSPEND (3)
+  1. RTC-Knoten ohne "wakeup-source" -> Alarm weckt nicht
+  2. rtc-pm8xxx.ko fehlte im Image und im Init -> kein /dev/rtc0
+  3. Kein Standard-Wakealarm -> Geraet schlief ohne Weckzeit
+
+KAMERA (4)
+  4. Sensoren hatten 1 Pad, libcamera verlangt 2 (SINK+SOURCE)
+  5. udevadm trigger fehlte -> libcamera findet keine Media-Devices
+  6. /dev/video* waren root-only -> "Permission denied"
+  7. libcamera simple.yaml fehlte -> "cam -l" leer
+
+MEGAPIXELS (3)
+  8. megapixels-gtk, libmegapixels, liblibdng, GSchema fehlten
+  9. XDG-Verzeichnisse/Pictures fehlten -> kein Foto-Speichern
+ 10. omamobile-setup-user lief im Hintergrund -> Plugins fehlten
+
+AUDIO (7)
+ 11. wcd9340 "reset-gpios" fehlte -> Codec bleibt im Reset
+ 12. adspua.jsn (PDR-Service avs/audio) fehlte
+ 13. Audio-Module wurden im Init nicht geladen
+ 14. ADSP-Firmware fehlte in der Initramfs-Spiegelung
+ 15. Audio-Module wurden VOR dem ADSP geladen
+ 16. Feste 3 s Wartezeit zu knapp -> QRTR-Warteschleife
+ 17. PipeWire/WirePlumber fehlten komplett
+
+SHELL (2)
+ 18. Hyprland-Configs fehlten -> SIGSEGV beim Start
+ 19. UID-MISMATCH: User omarchy=1001, Init nutzte /run/user/1000
+     -> Hyprland/PipeWire schrieben ins Leere, Session startete nicht
+
+ROBUSTHEIT (1)
+ 20. Hardware-Watchdog (qcom-wdt, pm8916_wdt) fehlte
+
+BUILD (2)
+ 21. Mac-Platte voll / SigLevel -> Build-Abbrueche
+ 22. ALARM-Mirror ueberlastet -> de.mirror zuerst
+
+================================================================
+3) DAS PAKET (flashbereit, verifiziert)
+================================================================
+
+~/hermes-workspace/rom-blueline-final/
+  boot.img      d40c3fb45519e644c2ebde886ad1690ca0b44cfc79323cb2356162a609f214bb
+                20938752 B
+  userdata.img  795a28f71939a7680aaf3baecb0ed8ec55110fa5fb830c58d31e4c0211eca29e
+                6559897652 B
+  SHA256SUMS
+
+Im Image per debugfs verifiziert (23 Komponenten, 61 Module):
+  Session:    Hyprland, quickshell, squeekboard, start-hyprland,
+              11 Omarchy-Mobile-Plugins, omamobile-setup-user,
+              UID 1001 korrekt, /run/user/1001
+  Kamera:     cam, simple.yaml (999 B), imx355/imx363 (2-Pad-Fix)
+  Megapixels: megapixels-gtk (497192 B), libmegapixels.so.0,
+              liblibdng.so.0.1, GSchema, Config, Pictures,
+              user-dirs.dirs, postprocess.sh
+  Audio:      pipewire, wireplumber, slim-qcom-ngd-ctrl, wcd934x,
+              snd-soc-sdm845, adsp.mbn (13144196 B), adspua.jsn
+  Suspend:    rtc-pm8xxx.ko (316584 B), Standard-Wakealarm im /init
+  Robustheit: qcom-wdt.ko (296272 B), pm8916_wdt.ko (287248 B)
+  Boot:       /init, qbootctl (67488 B), rmtfs, tqftpserv, pd-mapper,
+              WLAN- und BT-Firmware
+
+================================================================
+4) OFFEN — ausschliesslich durch fehlenden Geraetezugriff
+================================================================
+
+Das Geraet schlaeft seit 16:44 (>6,6 h) im s2idle. Geprueft:
+  ping 172.16.42.1        -> 100% loss
+  ssh                     -> timeout
+  fastboot devices        -> leer
+  system_profiler USB     -> PIXEL3-SERIAL nicht vorhanden
+  ifconfig                -> kein 172.16.42-Interface
+  Bluetooth               -> kein Pixel verbunden
+  USB-Netzwerk            -> kein Interface
+  Heimnetz/mDNS           -> kein Pixel
+  zwei andere Rechner     -> kein Pixel an USB
+  USB-Hubs am Mac         -> nur Funkempfaenger
+  uhubctl/sudo            -> nicht verfuegbar
+
+Im s2idle schaltet der USB-Port ab. Nur die physische Pwrkey-Taste
+weckt das Geraet. Mit dem neuen Image tritt das nicht wieder auf
+(Standard-Wakealarm + RTC-Modul).
+
+Offen:
+  - Beleg der 22 Fixes am Geraet
+  - %/h-Messung im Suspend (Wachzustand: 2.16 mA, 0.074 %/h)
+  - Abnahme: Kaltstart bis Homescreen + Checkliste je Punkt
+
+================================================================
+5) NAECHSTE SCHRITTE (sobald das Geraet wach ist)
+================================================================
+
+  fastboot flash boot_a    rom-blueline-final/boot.img
+  fastboot flash userdata  rom-blueline-final/userdata.img
+  fastboot --set-active=a && fastboot reboot
+
+  sh /usr/local/bin/omamobile-verify-all
+  omamobile-suspend-test 10
+  cam -l ; cam -c 2 --capture=1 --file=/tmp/f.jpg
+  cat /proc/asound/cards
+  megapixels
+
+================================================================
+6) REPO
+================================================================
+
+  594 Commits, Arbeitsbaum sauber.
+  248 Belegdateien in device/blueline/arch/
+  Einstieg: UEBERGABE.md, INSTALL.md, ENDBERICHT-2026-11-11.txt
