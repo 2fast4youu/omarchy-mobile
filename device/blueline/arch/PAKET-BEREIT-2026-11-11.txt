@@ -1,0 +1,33 @@
+ROM-Paket bereit fuer die Abnahme, 2026-11-11 16:53
+===================================================
+
+Verzeichnis: ~/hermes-workspace/rom-blueline-final/
+  boot.img       f5f3f806020fc1317825b50ed934038d76b72b7fc588fb18f4598e3ae5817dc8
+                 20938752 B - Kernel 7.1.0-rc1-sdm845 + Initramfs + DTB
+                 (mit Audio-Knoten: WCD9340, SLIMbus, Primary-MI2S,
+                  WCD-Reset GPIO54 output-high)
+  userdata.img   364aecabcd41c7b110f9225d9d39448b76addb47b347495959c44b9e5e333083
+                 8153733172 B - Arch-Rootfs (sparse, 33 Chunks)
+  SHA256SUMS     beide Hashes
+
+Gebaut mit: device/blueline/baue-rom.sh  (NUR=packen)
+Reproduzierbar aus dem Repo (Kernel-Patch 0001-omarchy-mobile-blueline.patch,
+316 Zeilen, 9 Dateien).
+
+FLASH-BEFEHLE (nur boot_a und userdata):
+  fastboot flash boot_a    ~/hermes-workspace/rom-blueline-final/boot.img
+  fastboot flash userdata  ~/hermes-workspace/rom-blueline-final/userdata.img
+  fastboot --set-active=a
+  fastboot reboot
+
+OHNE TASTENDRUCK in Fastboot (vom laufenden System):
+  printf "bootonce-bootloader" | dd of=/dev/disk/by-partlabel/misc \
+         bs=1 seek=0 conv=notrunc
+  sync; echo b > /proc/sysrq-trigger
+
+RETTUNGSWEG (falls das Bild nicht startet):
+  fastboot boot ~/hermes-workspace/rom-blueline-final/boot.img
+
+NACH DEM BOOT:
+  sh /usr/local/bin/omamobile-verify-all      (alle Punkte pruefen)
+  omamobile-suspend-test 10                   (RTC-Wakeup belegen)
