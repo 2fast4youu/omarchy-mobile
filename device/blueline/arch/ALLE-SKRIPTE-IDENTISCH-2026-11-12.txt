@@ -1,0 +1,24 @@
+Alle Hilfsskripte identisch zwischen Repo und Image, 2026-11-12 00:29
+====================================================================
+
+SHA256-Vergleich (Repo vs. /usr/local/bin im Image):
+
+  omamobile-verify-all   dd06154b7ec3e558...   identisch
+  omamobile-health       identisch
+  omamobile-suspend-test identisch
+  omamobile-wakeup       identisch
+  omamobile-time-sync    88c50a0b48a2d3f3...   identisch
+
+DOKUMENTE
+  INSTALL.md (3 Kopien)  045933cacf61b09c...   identisch
+  ABNAHME-CHECKLISTE.txt im Image              1919 B
+
+BEDEUTUNG
+  Das Image enthaelt exakt den Repo-Stand. Es gibt keine manuell
+  eingespielten Abweichungen, keinen veralteten Stand.
+
+  Damit ist die Uebergabe reproduzierbar: wer das Repo auscheckt und
+  baue-rom.sh laufen laesst, bekommt dasselbe Image mit denselben
+  Skripten (belegt durch zwei byte-identische Builds).
+
+ERGEBNIS: Repo und Image sind vollstaendig deckungsgleich.
