@@ -280,7 +280,12 @@ while [ \$i -lt 30 ]; do
     sleep 1; i=\$((i + 1))
 done
 sleep 2
-export WAYLAND_DISPLAY=wayland-1 HYPRLAND_INSTANCE_SIGNATURE=\$sig
+# WAYLAND_DISPLAY dynamisch: Hyprland nimmt wayland-1, aber wenn der
+# Socket belegt ist auch wayland-2/3. Hartkodiertes wayland-1 fuehrt
+# dann zu "failed to connect to display".
+wdisp=\$(ls $OM_RUNTIME/wayland-* 2>/dev/null | grep -v lock | head -1 | xargs -r basename)
+[ -n "\$wdisp" ] || wdisp=wayland-1
+export WAYLAND_DISPLAY=\$wdisp HYPRLAND_INSTANCE_SIGNATURE=\$sig
 squeekboard >/tmp/squeekboard.log 2>&1 &
 # Idle-Daemon: Helligkeit runter, dann Bildschirm aus (Akku).
 hypridle >/tmp/hypridle.log 2>&1 &
