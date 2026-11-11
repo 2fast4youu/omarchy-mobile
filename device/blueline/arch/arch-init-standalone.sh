@@ -127,6 +127,14 @@ done
 for m in rtc-pm8xxx; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
+# Hardware-Watchdog: startet das Geraet bei einem Kernel-Haenger neu,
+# statt stumm stehenzubleiben. Der PMIC-WDT laeuft nach dem Boot weiter.
+for m in qcom-wdt pm8916_wdt; do
+    [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
+done
+for w in /dev/watchdog*; do
+    [ -e "$w" ] && chmod 600 "$w" 2>/dev/null
+done
 for m in qcom-spmi-rradc qcom_smbx pmi8998_fg; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
