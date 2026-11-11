@@ -51,9 +51,15 @@ echo "omamobile: Arch-Wurzel bereit, sshd auf 172.16.42.1:22" > /dev/kmsg 2>/dev
 # der Compositor sieht keine Eingabe. Wichtig: die GANZE Sitzung laeuft unter
 # EINEM dbus-run-session, sonst kann die Shell die Tastatur nicht rufen
 # (QuickSettings nutzt busctl --user sm.puri.OSK0 SetVisible).
-mkdir -p /run/user/1000 /dev/input
-chown omarchy:omarchy /run/user/1000 2>/dev/null
-chmod 700 /run/user/1000 2>/dev/null
+# UID von omarchy DYNAMISCH ermitteln: useradd vergibt je nach Image
+# 1000 oder 1001. Ein hart kodiertes /run/user/1000 fuehrt sonst zu
+# einem falschen XDG_RUNTIME_DIR - Hyprland/PipeWire schreiben dann ins
+# Leere und die Session startet nicht.
+OM_UID=$(id -u omarchy 2>/dev/null || echo 1000)
+OM_RUNTIME=/run/user/$OM_UID
+mkdir -p "$OM_RUNTIME" /dev/input
+chown omarchy:omarchy "$OM_RUNTIME" 2>/dev/null
+chmod 700 "$OM_RUNTIME" 2>/dev/null
 [ -s /etc/machine-id ] || dbus-uuidgen > /etc/machine-id 2>/dev/null
 chown root:video /dev/dri/card0 /dev/dri/renderD128 2>/dev/null
 chmod 660 /dev/dri/card0 /dev/dri/renderD128 2>/dev/null
@@ -205,9 +211,9 @@ fi
 # (XDG_RUNTIME_DIR), nicht als Systemdienst. Sie werden hier fuer
 # omarchy gestartet, damit die Shell einen Sink/Source findet.
 if [ -x /usr/bin/pipewire ]; then
-    su - omarchy -c 'export XDG_RUNTIME_DIR=/run/user/1000; setsid nohup pipewire >/tmp/pipewire.log 2>&1 </dev/null &' 2>/dev/null
+    su - omarchy -c "export XDG_RUNTIME_DIR=$OM_RUNTIME; setsid nohup pipewire >/tmp/pipewire.log 2>&1 </dev/null &" 2>/dev/null
     sleep 2
-    su - omarchy -c 'export XDG_RUNTIME_DIR=/run/user/1000; setsid nohup wireplumber >/tmp/wireplumber.log 2>&1 </dev/null &' 2>/dev/null
+    su - omarchy -c "export XDG_RUNTIME_DIR=$OM_RUNTIME; setsid nohup wireplumber >/tmp/wireplumber.log 2>&1 </dev/null &" 2>/dev/null
 fi
 # UPower: die Shell (Quickshell.Services.UPower) liest den Akku darueber.
 [ -x /usr/lib/upowerd ] && /usr/lib/upowerd >/tmp/upowerd.log 2>&1 &
@@ -237,9 +243,9 @@ sleep 1
     [ "$_p" = "1" ] || kill "$_p" 2>/dev/null
 done ) &
 
-cat > /run/omamobile-session.sh <<'SITZUNG'
+cat > /run/omamobile-session.sh <<SITZUNG
 #!/bin/sh
-export XDG_RUNTIME_DIR=/run/user/1000 LIBSEAT_BACKEND=seatd LANG=en_US.UTF-8
+export XDG_RUNTIME_DIR=$OM_RUNTIME LIBSEAT_BACKEND=seatd LANG=en_US.UTF-8
 export http_proxy=http://172.16.42.2:3128 https_proxy=http://172.16.42.2:3128
 # Benutzer-Setup VOR dem Compositor: Plugins verlinken, Profil setzen,
 # Omarchy-Marker (z. B. "Learn Keybindings" nicht mehr zeigen).
@@ -251,8 +257,8 @@ timeout 30 omamobile-setup-user >/tmp/setup-user.log 2>&1 || true
 if [ ! -e /home/omarchy/.config/omarchy/plugins/omamobile.home ]; then
     mkdir -p /home/omarchy/.config/omarchy/plugins
     for p in /usr/share/omamobile/shell/plugins/*; do
-        [ -e "$p" ] || continue
-        ln -sfn "$p" "/home/omarchy/.config/omarchy/plugins/$(basename "$p")" 2>/dev/null
+        [ -e "\$p" ] || continue
+        ln -sfn "\$p" "/home/omarchy/.config/omarchy/plugins/\$(basename "\$p")" 2>/dev/null
     done
     chown -R omarchy:omarchy /home/omarchy/.config/omarchy 2>/dev/null
 fi
@@ -268,13 +274,13 @@ su - omarchy -c 'omarchy-done mark first-run-user' >/dev/null 2>&1 || true
 su - omarchy -c 'gsettings set org.gnome.desktop.input-sources sources "[('"'"'xkb'"'"','"'"'de'"'"')]"' >/dev/null 2>&1 || true
 start-hyprland >/tmp/hyprland.log 2>&1 &
 i=0
-while [ $i -lt 30 ]; do
-    sig=$(ls /run/user/1000/hypr/ 2>/dev/null | head -1)
-    [ -n "$sig" ] && break
-    sleep 1; i=$((i + 1))
+while [ \$i -lt 30 ]; do
+    sig=\$(ls $OM_RUNTIME/hypr/ 2>/dev/null | head -1)
+    [ -n "\$sig" ] && break
+    sleep 1; i=\$((i + 1))
 done
 sleep 2
-export WAYLAND_DISPLAY=wayland-1 HYPRLAND_INSTANCE_SIGNATURE=$sig
+export WAYLAND_DISPLAY=wayland-1 HYPRLAND_INSTANCE_SIGNATURE=\$sig
 squeekboard >/tmp/squeekboard.log 2>&1 &
 # Idle-Daemon: Helligkeit runter, dann Bildschirm aus (Akku).
 hypridle >/tmp/hypridle.log 2>&1 &
