@@ -1,0 +1,26 @@
+Runde 12: Megapixels-Fortschritt + Akku-Messung gestartet, 15:44
+=================================================================
+
+MEGAPIXELS:
+  Behoben: /dev/video* waren crw------- (root only) -> omarchy konnte
+  sie nicht oeffnen ("Could not open /dev/video0: Permission denied").
+  Fix: chmod 666 /dev/video* /dev/media* /dev/v4l-subdev*
+
+  Behoben: Config-Reihenfolge war Rear/Front/FrontAux -> Megapixels
+  nahm die kaputte Rueckkamera ("Exposure limit: 907").
+  Fix: Front/FrontAux/Rear.
+
+  Jetzt: "MPCamera: VIDIOC_STREAMON error 32, Broken pipe"
+  -> Frontkamera wird gewaehlt, aber der Stream startet nicht.
+  (Gleiche Ursache wie bei cam: libcamera/Sensor-Pad-Problem.)
+
+AKKU-MESSUNG (Punkt 3, laeuft):
+  /var/log/akku-messung.sh schreibt jede Minute
+  ts_utc cap status v_now i_now nach /var/log/akku-messung.log
+  Bisher: 99%, Discharging, 4.315 V, 1953-2441 uA
+  Laeuft im Hintergrund weiter (fuer %/h ueber mehrere Stunden).
+
+USB-LADEN (Punkt 3, belegt):
+  APSD erkennt SDP (APSD_RESULT_STATUS=0x1), Ladepfad-Register:
+  CHG_EN=0x1, USBIN_IL=0x0 (nicht suspendiert), ICL=0x14 (1000 mA),
+  CHGR_CFG2 inhibit=1 (Ueberladeschutz bei 99%/4.317 V).
