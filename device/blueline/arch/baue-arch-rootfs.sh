@@ -61,6 +61,10 @@ chmod 755 /tmp/arch/usr/local/bin/omamobile-suspend-test
 cp /om/omamobile-verify-all.sh /tmp/arch/usr/local/bin/omamobile-verify-all
 cp /om/omamobile-health.sh /tmp/arch/usr/local/bin/omamobile-health
 chmod 755 /tmp/arch/usr/local/bin/omamobile-verify-all /tmp/arch/usr/local/bin/omamobile-health
+# Abnahme-Checkliste mit auf das Geraet: sie wird am Telefon ausgefuellt.
+mkdir -p /tmp/arch/root
+cp /om/CHECKLISTE-ZUM-AUSFUELLEN-2026-11-11.txt /tmp/arch/root/ABNAHME-CHECKLISTE.txt 2>/dev/null || true
+cp /om/INSTALL.md /tmp/arch/root/INSTALL.md 2>/dev/null || true
 chmod 755 /tmp/arch/usr/local/bin/omamobile-time-sync
 mkdir -p /tmp/arch/usr/local/bin /tmp/arch/usr/local/lib/qbootctl
 cp /qbootctl /tmp/arch/usr/local/bin/qbootctl
