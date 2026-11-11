@@ -1,0 +1,28 @@
+Shell-Theme und Hintergrund verifiziert, 2026-11-11 23:26
+=========================================================
+
+HINTERGRUNDBILD
+  /usr/share/omarchy/themes/catppuccin/backgrounds/2-waves.png
+  1391152 B  -> im Image vorhanden
+
+INIT-ABLAUF (Session-Skript)
+  mkdir -p ~/.local/state/omarchy/current/theme
+  touch  ~/.local/state/omarchy/current/theme/foot.ini
+  cp     /usr/share/omarchy/themes/catppuccin/backgrounds/2-waves.png \
+         ~/.local/state/omarchy/current/background
+  chown -R omarchy:omarchy ~/.local/state/omarchy
+
+  Das Theme-Verzeichnis entsteht erst im Init (korrekt - es wird vor
+  dem Session-Start gebraucht, nicht im Image).
+
+SHELL-KETTE VOLLSTAENDIG
+  Binary:     Hyprland, quickshell, squeekboard, start-hyprland
+  Qt6/QML:    QtQuick, QtQml, QtCore, QtNetwork + Quickshell-Module
+              (Bluetooth, Hyprland, Io, Networking, Services, Wayland)
+  Configs:    ~/.config/hypr/ (10 Dateien), hypridle.conf
+  Plugins:    11 Quellen + 11 Symlinks + shell.json mit 10 Eintraegen
+  Theme:      Hintergrundbild im Image, Theme-Dir im Init
+  Runtime:    UID 1001, /run/user/1001, seatd, WAYLAND_DISPLAY dynamisch
+  OSK:        squeekboard mit eingebetteten Layouts, QWERTZ per gsettings
+
+ERGEBNIS: Alle Ebenen der Shell sind vorhanden und konsistent.
