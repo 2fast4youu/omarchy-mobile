@@ -302,9 +302,18 @@ index ec486ff02..8d51a634a 100644
  	return rc;
  }
 diff --git a/drivers/media/i2c/imx355.c b/drivers/media/i2c/imx355.c
-index 27a5c212a..467d55949 100644
+index 27a5c212a..a85fc5770 100644
 --- a/drivers/media/i2c/imx355.c
 +++ b/drivers/media/i2c/imx355.c
+@@ -109,7 +109,7 @@ struct imx355 {
+ 	struct clk *clk;
+ 
+ 	struct v4l2_subdev sd;
+-	struct media_pad pad;
++	struct media_pad pads[2];
+ 
+ 	struct v4l2_ctrl_handler ctrl_handler;
+ 	/* V4L2 Controls */
 @@ -1510,10 +1510,45 @@ static const struct v4l2_subdev_video_ops imx355_video_ops = {
  	.s_stream = imx355_set_stream,
  };
@@ -379,10 +388,37 @@ index 27a5c212a..467d55949 100644
  
  	ret = imx355_init_controls(imx355);
  	if (ret) {
+@@ -1808,9 +1856,14 @@ static int imx355_probe(struct i2c_client *client)
+ 	imx355->sd.entity.ops = &imx355_subdev_entity_ops;
+ 	imx355->sd.entity.function = MEDIA_ENT_F_CAM_SENSOR;
+ 
+-	/* Initialize source pad */
+-	imx355->pad.flags = MEDIA_PAD_FL_SOURCE;
+-	ret = media_entity_pads_init(&imx355->sd.entity, 1, &imx355->pad);
++	/*
++	 * Omarchy Mobile: libcamera 0.7.x expects one sink and one source
++	 * pad on a sensor. The sink pad is unused by the driver but keeps
++	 * the media graph compatible with libcamera's CameraSensorRaw.
++	 */
++	imx355->pads[0].flags = MEDIA_PAD_FL_SINK;
++	imx355->pads[1].flags = MEDIA_PAD_FL_SOURCE;
++	ret = media_entity_pads_init(&imx355->sd.entity, 2, imx355->pads);
+ 	if (ret) {
+ 		dev_err(imx355->dev, "failed to init entity pads: %d", ret);
+ 		goto error_handler_free;
 diff --git a/drivers/media/i2c/imx363.c b/drivers/media/i2c/imx363.c
-index d6adea64d..ead20e362 100644
+index d6adea64d..b8461d776 100644
 --- a/drivers/media/i2c/imx363.c
 +++ b/drivers/media/i2c/imx363.c
+@@ -589,7 +589,7 @@ static const struct imx363_mode supported_modes[] = {
+ 
+ struct imx363 {
+ 	struct v4l2_subdev sd;
+-	struct media_pad pad;
++	struct media_pad pads[2];
+ 	struct regmap *regmap;
+ 
+ 	struct v4l2_ctrl_handler ctrl_handler;
 @@ -1040,11 +1040,19 @@ static int imx363_power_on(struct device *dev)
  	struct imx363 *imx363 = to_imx363(sd);
  	int ret;
@@ -487,6 +523,25 @@ index d6adea64d..ead20e362 100644
  	if (IS_ERR(imx363->clk))
  		return dev_err_probe(&client->dev, PTR_ERR(imx363->clk),
  				     "error getting clock\n");
+@@ -1428,10 +1466,15 @@ static int imx363_probe(struct i2c_client *client)
+ 	imx363->sd.flags |= V4L2_SUBDEV_FL_HAS_DEVNODE;
+ 	imx363->sd.entity.function = MEDIA_ENT_F_CAM_SENSOR;
+ 
+-	/* Initialize source pad */
+-	imx363->pad.flags = MEDIA_PAD_FL_SOURCE;
++	/*
++	 * Omarchy Mobile: libcamera 0.7.x expects one sink and one source
++	 * pad on a sensor. The sink pad is unused by the driver but keeps
++	 * the media graph compatible with libcamera's CameraSensorRaw.
++	 */
++	imx363->pads[0].flags = MEDIA_PAD_FL_SINK;
++	imx363->pads[1].flags = MEDIA_PAD_FL_SOURCE;
+ 
+-	ret = media_entity_pads_init(&imx363->sd.entity, 1, &imx363->pad);
++	ret = media_entity_pads_init(&imx363->sd.entity, 2, imx363->pads);
+ 	if (ret)
+ 		goto error_handler_free;
+ 
 diff --git a/drivers/power/supply/pmi8998_fg.c b/drivers/power/supply/pmi8998_fg.c
 index 4bad62235..85cc7ac53 100644
 --- a/drivers/power/supply/pmi8998_fg.c

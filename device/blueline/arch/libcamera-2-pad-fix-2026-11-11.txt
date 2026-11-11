@@ -1,0 +1,35 @@
+libcamera-Pad-Fix: Sensoren bekommen 2 Pads (17:18)
+===================================================
+
+PROBLEM: libcamera 0.7.2 meldet
+  "CameraSensorRaw: unsupported number of sinks (0) or sources (1)"
+und startet keinen Stream (STREAMON error 32). Megapixels zeigt kein Bild.
+
+URSACHE: libcamera erwartet pro Sensor 1 SINK- und 1 SOURCE-Pad.
+Die mainline-Treiber imx355.c/imx363.c registrierten nur 1 SOURCE-Pad:
+    imx355->pad.flags = MEDIA_PAD_FL_SOURCE;
+    media_entity_pads_init(&imx355->sd.entity, 1, &imx355->pad);
+
+FIX (beide Treiber):
+    struct media_pad pads[2];          (vorher: struct media_pad pad;)
+    ...
+    pads[0].flags = MEDIA_PAD_FL_SINK;    <- neu, von libcamera erwartet
+    pads[1].flags = MEDIA_PAD_FL_SOURCE;
+    media_entity_pads_init(&sd.entity, 2, pads);
+
+Das Sink-Pad ist funktionslos (der Sensor liefert nur Daten), aber es
+macht den Media-Graph fuer libcamera 0.7.x kompatibel. Der Source-Pad
+behaelt Index 1; alle Links im DT zeigen weiter auf Pad 0 des
+Gegenuebers (csiphy), nicht auf den Sensor-Pad-Index.
+
+Vorbilder im mainline-Baum: ds90ub913.c, ds90ub953.c, mt9m114.c
+(alle mit pads[2] = SINK + SOURCE).
+
+BEIDE MODULE GEBAUT:
+  imx355.ko  459888 B
+  imx363.ko  454576 B
+  Kernel-Patch aktualisiert (10 Dateien).
+
+NAECHSTER SCHRITT AM GERAET:
+  Module laden, udev-trigger, cam -c 2 --capture=1 testen.
+  Erwartung: Stream startet, Megapixels zeigt ein Bild.
