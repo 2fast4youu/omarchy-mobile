@@ -192,6 +192,15 @@ chmod 666 /sys/class/backlight/*/brightness 2>/dev/null
 # schlafen (keine RTC). Der Power-Knopf (pm8941_pwrkey) und die PMIC-
 # Geraete wecken. Am Geraet belegt: suspend success=3, fail=0.
 [ -x /usr/local/bin/omamobile-wakeup ] && /usr/local/bin/omamobile-wakeup >/tmp/wakeup.log 2>&1
+# Sicherheitsnetz: einen RTC-Alarm eine Stunde in die Zukunft setzen.
+# Ohne Alarm schlaeft das Geraet im s2idle ohne Weckzeit und ist nicht
+# erreichbar (am Geraet belegt: >5 h ohne SSH/fastboot). Der Alarm wird
+# bei jedem Suspend-Zyklus vom Kernel neu programmiert; hier setzen wir
+# ihn einmal, damit nach einem Kaltstart immer ein Weckpunkt existiert.
+if [ -w /sys/class/rtc/rtc0/wakealarm ]; then
+    echo 0 > /sys/class/rtc/rtc0/wakealarm 2>/dev/null
+    echo "+3600" > /sys/class/rtc/rtc0/wakealarm 2>/dev/null
+fi
 # Audio-Server: PipeWire + WirePlumber laufen in der Nutzer-Session
 # (XDG_RUNTIME_DIR), nicht als Systemdienst. Sie werden hier fuer
 # omarchy gestartet, damit die Shell einen Sink/Source findet.
