@@ -226,7 +226,19 @@ export XDG_RUNTIME_DIR=/run/user/1000 LIBSEAT_BACKEND=seatd LANG=en_US.UTF-8
 export http_proxy=http://172.16.42.2:3128 https_proxy=http://172.16.42.2:3128
 # Benutzer-Setup VOR dem Compositor: Plugins verlinken, Profil setzen,
 # Omarchy-Marker (z. B. "Learn Keybindings" nicht mehr zeigen).
-( timeout 20 omamobile-setup-user >/tmp/setup-user.log 2>&1 ) &
+# SYNCHRON mit 30 s Timeout: laeuft es im Hintergrund weiter, startet
+# Quickshell ohne die omamobile-Plugins (nur omarchy-bar, kein
+# Homescreen/Dock - am Geraet belegt).
+timeout 30 omamobile-setup-user >/tmp/setup-user.log 2>&1 || true
+# Ergebnis pruefen: ohne die Plugin-Symlinks bleibt die Shell unvollstaendig.
+if [ ! -e /home/omarchy/.config/omarchy/plugins/omamobile.home ]; then
+    mkdir -p /home/omarchy/.config/omarchy/plugins
+    for p in /usr/share/omamobile/shell/plugins/*; do
+        [ -e "$p" ] || continue
+        ln -sfn "$p" "/home/omarchy/.config/omarchy/plugins/$(basename "$p")" 2>/dev/null
+    done
+    chown -R omarchy:omarchy /home/omarchy/.config/omarchy 2>/dev/null
+fi
 # Foot/Omarchy-Theme: das Include in ~/.config/foot/foot.ini zeigt auf
 # eine Theme-Datei, die ohne Theme-Anwendung fehlt.
 mkdir -p /home/omarchy/.local/state/omarchy/current/theme
