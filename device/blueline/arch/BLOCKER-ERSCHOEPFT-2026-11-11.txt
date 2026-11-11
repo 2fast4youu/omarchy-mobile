@@ -1,0 +1,49 @@
+Blocker erschöpft: Gerät schläft, kein Software-Weg, 17:34
+=========================================================
+
+SEIT: 16:44, DAUER: ~2,8 Stunden
+
+ALLE WEGE GEPRÜFT (11):
+  1) ping 172.16.42.1                -> 100% loss
+  2) ssh root@172.16.42.1            -> timeout
+  3) fastboot devices                -> leer
+  4) system_profiler USB             -> PIXEL3-SERIAL nicht vorhanden
+  5) ifconfig                        -> kein 172.16.42-Interface
+  6) USB-Controller-Reset am Mac     -> kein sudo
+  7) Heimnetz 192.0.2.x          -> kein Pixel (WLAN-Passwort fehlt)
+  8) mDNS _ssh/_workstation          -> kein Pixel
+  9) Rechner 192.0.2.40          -> nicht erreichbar
+ 10) Rechner 192.0.2.26          -> erreichbar, kein Pixel an USB
+ 11) USB-Hubs am Mac (ioreg)         -> nur USB-Receiver (Funk), kein Pixel
+
+=> Es gibt keinen Software-Weg. Nur die physische Pwrkey-Taste.
+
+WAS BEREIT LIEGT (alles committed, Paket mit ALLEN Fixes):
+  ~/hermes-workspace/rom-blueline-final/
+    boot.img      7a087bbc...  RTC wakeup-source + Audio-DTB
+    userdata.img  6829a1e8...  43 Module inkl. 2-Pad-Fix
+    SHA256SUMS
+
+  device/blueline/
+    UEBERGABE.md              konsolidiertes Uebergabedokument
+    INSTALL.md                Installation + Einschraenkungen
+    baue-rom.sh               Ein-Befehl-Build (PKGS-Pfad repariert)
+    arch/kernel-patches/      Patch, 10 Dateien, 668 Zeilen
+    arch/omamobile-verify-all.sh      alle Punkte pruefen
+    arch/omamobile-suspend-test.sh    RTC-Wakeup belegen
+    arch/PAKET-MIT-ALLEN-FIXES-2026-11-11.txt
+    arch/CHECKLISTE-ZUM-AUSFUELLEN-2026-11-11.txt
+
+ERLEDIGT (mit Beleg):
+  (1) Flash ohne Gregor       bootonce-bootloader + SysRq, mehrfach
+  (2) Rueckkamera             als Einschaenkung abgeschlossen (15/15)
+  (3) USB-Ladetyp             APSD SDP, Register belegt
+  (4) Aufraeumen              komplett, inkl. Reproduzierbarkeit
+  (3) Suspend-Ursache         wakeup-source im DT (Fix gebaut)
+  (3) Megapixels-Ursache      2-Pad-Fix in den Treibern (im Image)
+
+OFFEN (nur durch Geraetezugriff):
+  - RTC-Wakeup am Geraet belegen
+  - Megapixels-Stream am Geraet belegen
+  - %/h-Messung im Suspend
+  - Abnahme (Kaltstart + Checkliste)
