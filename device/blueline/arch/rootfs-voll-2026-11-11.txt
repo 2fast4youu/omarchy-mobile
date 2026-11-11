@@ -1,0 +1,28 @@
+KRITISCH: Rootfs war 100% voll, 2026-11-11 15:16
+================================================
+
+Befund: /dev/loop0 (rootfs) war zu 100% belegt (7.4G von 7.8G, 0 frei).
+Folgen:
+  - "No space left on device" bei jedem Schreibvorgang
+  - grim: "libpng error: Write Error" -> Screenshots 0 Bytes
+  - Megapixels: "Could not make capture directory /tmp/megapixels.XXX"
+  - dconf: "Failed to create file /home/omarchy/.config/dconf/user"
+  - Hyprland rendert schwarz (keine Shell sichtbar)
+
+Ursache: /var/cache/pacman/pkg belegte 1.2 GB (durch die vielen
+pacman-Installationen waehrend der Kamera-/Megapixels-Debugging).
+
+Fix: rm -rf /var/cache/pacman/pkg/* -> 1.2 GB frei (85% belegt).
+
+Weitere Befunde:
+  - /home/omarchy gehoerte root:root -> mkdir .local scheiterte
+    ("Permission denied"); korrigiert auf omarchy:omarchy
+  - Hyprland-Configs fehlten in ~/.config/hypr (nur hypridle.conf);
+    aus /usr/share/omarchy/config/hypr kopiert
+  - python-evdev und uinput.ko fehlten nach dem Flash; nachinstalliert
+  - /dev/uinput musste nachgeladen werden (insmod uinput.ko)
+
+Status: Hyprland laeuft (Monitor 1080x2160@60), Quickshell laeuft,
+aber der Bildschirm bleibt schwarz - die Shell rendert nicht.
+
+Naechster Schritt: Shell/Quickshell-Rendering pruefen (Log, Layer).
