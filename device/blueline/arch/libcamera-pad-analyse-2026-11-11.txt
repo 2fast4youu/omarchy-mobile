@@ -1,0 +1,43 @@
+libcamera-Pad-Problem: Analyse und Fix-Ansatz
+=============================================
+
+SYMPTOM (belegt):
+  CameraSensorRaw camera_sensor_raw.cpp:213 imx355 17-0010:
+  "unsupported number of sinks (0) or sources (1)"
+  -> Stream startet nicht (STREAMON error 32), Megapixels zeigt kein Bild.
+
+URSACHE:
+  libcamera 0.7.2 erwartet fuer einen Sensor genau 1 SINK-Pad + 1
+  SOURCE-Pad = 2 Pads.
+  Die mainline-Treiber imx355.c und imx363.c registrieren aber nur
+  1 Pad:
+      imx355->pad.flags = MEDIA_PAD_FL_SOURCE;
+      media_entity_pads_init(&imx355->sd.entity, 1, &imx355->pad);
+  (identisch in imx363.c)
+  Das ist im V4L2-Modell fuer Sensoren korrekt (reine Quelle), aber
+  libcamera 0.7.x ist hier strenger als 0.5/0.6.
+
+FIX-ANSATZ A (Treiber, invasiv):
+  struct media_pad pads[2] statt pad;
+  pads[0].flags = MEDIA_PAD_FL_SINK;   /* wird von libcamera erwartet */
+  pads[1].flags = MEDIA_PAD_FL_SOURCE;
+  media_entity_pads_init(&sd.entity, 2, pads);
+  Risiko: bricht den mainline-Standard, andere Nutzer (cam, v4l2-ctl)
+  sehen dann ein Sink-Pad ohne Funktion.
+
+FIX-ANSATZ B (libcamera-Version, sauber):
+  libcamera 0.5/0.6 verwenden, die 1-Pad-Sensoren akzeptiert.
+  Arch-Paket: libcamera 0.7.2-4; ein Downgrade auf 0.5.x waere noetig
+  (AUR oder eigenes Paket).
+
+FIX-ANSATZ C (libcamera-Patch):
+  In camera_sensor_raw.cpp die Pad-Pruefung lockern:
+    - if (entity->num_pads != 2) -> nur Warnung statt Fehler
+    - sink_pad optional machen
+  Danach neu bauen (libcamera 0.7.2 aus dem Arch-Quellpaket).
+
+EMPFEHLUNG: Ansatz B (Downgrade) ist am wenigsten invasiv und
+erhaelt den mainline-Treiber-Standard. Ansatz C ist der zweitbeste.
+
+STATUS: Analyse fertig. Umsetzung braucht das laufende Geraet
+(libcamera neu installieren und Stream testen).
