@@ -117,6 +117,11 @@ done
 # Akku: RRADC (PMI8998) -> Charger (smbx) -> Fuel-Gauge (pmi8998_fg).
 # Ohne den RRADC scheitert der Charger an "usbin_v", ohne den Charger
 # bleibt der Fuel-Gauge deferred.
+# RTC zuerst: ohne rtc-pm8xxx gibt es kein /sys/class/rtc/rtc0, und der
+# DT-Fix "wakeup-source" bleibt wirkungslos (kein RTC-Wakeup im Suspend).
+for m in rtc-pm8xxx; do
+    [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
+done
 for m in qcom-spmi-rradc qcom_smbx pmi8998_fg; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
