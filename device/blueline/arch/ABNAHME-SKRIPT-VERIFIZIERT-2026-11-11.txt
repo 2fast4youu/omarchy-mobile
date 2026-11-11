@@ -1,0 +1,30 @@
+Abnahme-Pruefskript vollstaendig verifiziert, 2026-11-11 23:56
+=============================================================
+
+/usr/local/bin/omamobile-verify-all  (3722 B, 43 Zeilen)
+Deckt jeden Punkt der Abnahme-Checkliste ab:
+
+  Display/Touch  -> Hyprland, quickshell, squeekboard (pgrep)
+  WLAN           -> wlan0, ath10k, nmcli device, wlfw
+  Audio          -> /proc/asound/cards, /dev/snd, slimbus, adsp
+  Akku           -> capacity, status, voltage_now, current_now,
+                    charge_full, charge_now, upower, powerprofilesctl
+  Suspend        -> /sys/power/suspend_stats/{success,fail},
+                    rtc0/wakealarm, rtc0/device/power/wakeup
+  Ladetyp        -> pmi8998-charger/usb_type, online
+  Kameras        -> cam -l, /dev/media*, /dev/video*
+  Megapixels     -> Binary, /usr/share/megapixels/config
+  Bluetooth      -> btmgmt info, bluetoothctl show
+  Modem/QRTR     -> remoteproc, rpmsg, qrtr-lookup
+  Thermik        -> thermal_zone (cpu0, cpu7, gpu-top, aoss0)
+  Speicher       -> df -h /
+  Fehler         -> dmesg panic/Oops/failed
+
+ZUSATZ-SKRIPTE IM IMAGE
+  omamobile-health        855 B  (Kurzstatus)
+  omamobile-suspend-test 1734 B  (RTC-Alarm + echo mem + Dauerpruefung)
+  omamobile-wakeup       (im Init aufgerufen)
+  omamobile-time-sync    (im Init aufgerufen)
+
+ERGEBNIS: Die Abnahme ist mit einem einzigen Aufruf durchfuehrbar:
+  omamobile-verify-all
