@@ -1,0 +1,44 @@
+Abnahme-Checkliste am Gerät (zum Ausfüllen, 2026-11-11)
+=======================================================
+
+Nach dem frischen Flash des Pakets aus ~/hermes-workspace/rom-blueline-final/
+und einem Kaltstart bis zum Homescreen:
+
+  sh /usr/local/bin/omamobile-verify-all > /tmp/abnahme.txt 2>&1
+
+Dann je Punkt den ehrlichen Status eintragen:
+
+[ ] DISPLAY      Soll: 1080x2160, DSI-1, Helligkeit >0
+                 Ist: ______________________________________
+
+[ ] TOUCH        Soll: stmfts (event3), UI reagiert auf Tippen
+                 Ist: ______________________________________
+
+[ ] WLAN         Soll: wlan0 verbunden mit HOME-WLAN (Passwort nötig!)
+                 Ist: ______________________________________
+
+[ ] AUDIO        Soll: /proc/asound/cards zeigt eine Karte
+                 Ist: (bekannt: "Failed to get logical address",
+                       keine Karte) _________________________
+
+[ ] AKKU         Soll: capacity/status/voltage_now/current_now plausibel,
+                      UPower percentage + state, Statusleiste-Symbol
+                 Ist: ______________________________________
+
+[ ] SUSPEND      Soll: omamobile-suspend-test 10 kommt nach ~10 min zurück
+                 Ist: ______________________________________
+
+[ ] FRONTKAMERAS Soll: cam -l zeigt 3 Kameras; Front liefert Frames
+                 Ist: (bekannt: 3 erkannt, Stream scheitert an
+                       libcamera-Pads) ______________________
+
+[ ] MEGAPIXELS   Soll: startet, UI sichtbar, Vorschau, Foto speicherbar
+                 Ist: (bekannt: startet, UI läuft, Stream offen) ____
+
+[ ] FLASH OHNE TASTEN  Soll: bootonce-bootloader + SysRq -> fastboot
+                 Ist: belegt (mehrfach) ______________________
+
+[ ] KALTSTART    Soll: von Power-on bis Homescreen ohne Eingriff
+                 Ist: ______________________________________
+
+SUITE GRÜN?  [ ] ja   [ ] nein, weil: ______________________________
