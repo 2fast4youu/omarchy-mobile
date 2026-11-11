@@ -66,6 +66,11 @@ mkdir -p /tmp/arch/home/omarchy/.config/hypr
 cp /om/hypridle/hypridle.conf /tmp/arch/home/omarchy/.config/hypr/hypridle.conf 2>/dev/null || true
 mkdir -p /tmp/arch/usr/share/megapixels/config
 cp /om/megapixels-config/*.conf /tmp/arch/usr/share/megapixels/config/ 2>/dev/null || true
+# libcamera "simple"-Pipeline-Config: das Arch-Paket bringt keine fuer
+# Qualcomm CAMSS mit. Ohne die Datei registriert libcamera den Handler,
+# matcht aber kein Media-Device -> "cam -l" bleibt leer.
+install -Dm644 /om/libcamera/simple.yaml \
+    /tmp/arch/usr/share/libcamera/pipeline/simple/simple.yaml
 # Megapixels-Binaries: wurden frueher nur manuell per scp installiert,
 # fehlten damit im Image. Jetzt aus den Build-Verzeichnissen einbauen.
 if [ -x /mega/megapixels/build/megapixels ]; then

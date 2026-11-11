@@ -1,0 +1,51 @@
+# Omarchy Mobile: libcamera "simple" pipeline for the Pixel 3 (blueline).
+#
+# The Arch libcamera package ships no pipeline configuration for the
+# Qualcomm CAMSS, so without this file libcamera registers the simple
+# handler but never matches a media device: "cam -l" stays empty even
+# though all three sensors are present in the media graph.
+#
+# The sensors are matched by their devicetree compatible strings; the
+# bridge (qcom-camss) is matched as well so the handler picks up
+# /dev/media0.
+version: 1
+
+algorithms:
+  - BlackLevel:
+  - Awb:
+  - Adjust:
+  - Agc:
+  - Demosaic:
+  - Saturation:
+  - Sharpness:
+  - Pfc:
+  - Gamma:
+
+converters:
+  - debayer:
+      debayer:
+        Enable: true
+        Colours: true
+
+compatible:
+  sony:
+    - imx355
+    - imx363
+  qcom:
+    - sdm845-camss
+
+mode:
+  - width: 820
+    height: 616
+    bitDepth: 10
+    packed: false
+
+  - width: 1280
+    height: 720
+    bitDepth: 10
+    packed: false
+
+  - width: 1920
+    height: 1080
+    bitDepth: 10
+    packed: false
