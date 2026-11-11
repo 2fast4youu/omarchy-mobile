@@ -1,0 +1,41 @@
+Audio: WCD-Reset-GPIO fehlte im DT (17:40)
+==========================================
+
+FUND: Der mainline-wcd934x-Treiber (drivers/mfd/wcd934x.c) macht im
+Probe diese Sequenz:
+
+  1. regulator_bulk_enable(vdd-buck, vdd-buck-sido, vdd-tx, vdd-rx, vdd-io)
+  2. usleep_range(600, 650)          /* Vout settle */
+  3. reset_gpio = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_LOW);
+  4. msleep(20);
+  5. gpiod_set_value(reset_gpio, 1); /* Reset HIGH = Codec laeuft */
+  6. msleep(20);
+  7. erst dann wcd934x_slim_status_up() -> SLIMbus-Zugriff (Chip-ID)
+
+Unser DT hatte am wcd9340-Knoten KEIN "reset-gpios" - nur
+interrupts-extended = <&tlmm 54>. Damit ist reset_gpio == NULL,
+gpiod_set_value(NULL, 1) ist ein No-Op, und der Codec bleibt im Reset.
+Genau das erklaert "Failed to get logical address": die SLIMbus-
+ADDR_QUERY wird gesendet, aber der Codec antwortet nicht, weil er noch
+im Reset haengt.
+
+FIX:
+  &wcd9340 {
+      reset-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
+      vdd-buck-supply = <&vreg_s4a_1p8>;
+      ...
+  };
+
+  GPIO 54 ist derselbe Pin wie der WCD-Interrupt (interrupts-extended
+  <&tlmm 54>), im Stock-DTBO heisst er qcom,wcd-rst-gpio-node. Der
+  pinctrl-State wcd_intr_default setzt ihn bereits auf output-high;
+  jetzt treibt der Treiber ihn zusaetzlich explizit.
+
+DTB gebaut: 114468 B (vorher 114444).
+Neues boot.img: d40c3fb45519e644c2ebde886ad1690ca0b44cfc79323cb2356162a609f214bb
+ROM-Paket aktualisiert.
+
+ERWARTUNG AM GERAET:
+  wcd934x-slim 217:250:1:0: WCD934x chip id major 0x..., minor 0x...
+  -> danach bindet snd-soc-sdm845 eine Karte, /proc/asound/cards zeigt
+     "Google Pixel 3".
