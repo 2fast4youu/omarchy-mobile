@@ -118,6 +118,12 @@ mkdir -p /tmp/arch/proc /tmp/arch/dev
 mount -t proc proc /tmp/arch/proc
 mount --bind /dev /tmp/arch/dev
 printf '\n[omarchy]\nServer = https://pkgs.omarchy.org/stable/$arch\nSigLevel = Optional TrustAll\n' >> /tmp/arch/etc/pacman.conf
+# Schnellere ALARM-Mirrors zuerst: der Standard-Mirror ist oft ueberlastet
+# und der Build bricht dann mit "download library error" ab.
+cat > /tmp/arch/etc/pacman.d/mirrorlist <<'MIRRORS'
+Server = http://de.mirror.archlinuxarm.org/$arch/$repo
+Server = http://mirror.archlinuxarm.org/$arch/$repo
+MIRRORS
 chroot /tmp/arch /bin/bash -euc '
   pacman-key --init >/dev/null 2>&1
   pacman-key --populate archlinuxarm >/dev/null 2>&1
