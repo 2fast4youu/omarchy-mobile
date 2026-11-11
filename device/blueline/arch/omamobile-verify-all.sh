@@ -43,6 +43,13 @@ echo "== kamera-pads"; for sd in /dev/v4l-subdev*; do
 done
 echo "== libcamera-config"; ls -l /usr/share/libcamera/pipeline/simple/simple.yaml 2>/dev/null
 echo "== megapixels-shell"; grep -c omamobile.home /home/omarchy/.config/omarchy/shell.json 2>/dev/null
+echo "== megapixels-config"; c=/usr/share/megapixels/config/google,blueline.conf
+if [ -f "$c" ]; then
+    printf 'Front='; grep -c '^Front:' "$c"
+    printf 'FrontAux='; grep -c '^FrontAux:' "$c"
+    printf 'Rear='; grep -c '^Rear' "$c" 2>/dev/null || echo 0
+    echo "(Rear=0 ist korrekt: IMX363 liefert keine Chip-ID)"
+fi
 echo "== media"; ls /dev/media* 2>/dev/null; ls /dev/video* 2>/dev/null | wc -l
 echo "== megapixels"; ls -l /usr/bin/megapixels 2>/dev/null | head -1; ls /usr/share/megapixels/config/ 2>/dev/null
 echo "== audio"; cat /proc/asound/cards 2>/dev/null | head -4; ls /dev/snd/ 2>/dev/null | head -4
