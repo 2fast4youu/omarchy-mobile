@@ -1,0 +1,48 @@
+Factory-Image IMX363: Soll/Ist-Tabelle, 2026-11-11 14:30
+=========================================================
+
+Quelle: ~/hermes-workspace/android-mainline/factory/sp1a/
+        image-blueline-sp1a.210812.016.c2.zip -> dtbo.img (Overlay 0)
+        + vendor.img -> lib64/camera/com.qti.sensormodule.metric_imx363.bin
+
+SOLL (Stock-DTBO, sensor_rear: qcom,cam-sensor@0):
+  cci-master           = 0
+  csiphy-sd-index      = 0
+  MCLK                 = GPIO 13 (CAMIF_MCLK0), camcc MCLK0, 24 MHz
+  RESET                = GPIO 80, ACTIVE_HIGH (gpio-req-tbl-flags[1]=0)
+  VANA-Enable          = GPIO 16, ACTIVE_HIGH (gpio-req-tbl-flags[2]=0)
+  cam_vdig             = pm8998_s3  (1.35 V, 0x14a140)
+  cam_vio              = pm8998_lvs1 (1.8 V)
+  cam_vana             = pmi8998_bob (3.3 V, 0x328980..0x36ee80)
+  cam_clk              = titan_top_gdsc
+  pinctrl-0            = cam_sensor_mclk0_active, cam_sensor_rear_active
+  cam_sensor_rear_active: pins="gpio80","gpio16"; function="gpio";
+                          bias-disable; drive-strength=<2>
+                          -> KEIN output-high! Der VANA-Pin wird NICHT
+                             vom Sensor-Treiber getrieben, sondern dient
+                             dem Regler-Core als ena_gpiod.
+  sensor-position      = roll 90, yaw 180
+
+IST (unser DT, sdm845-google-common.dtsi):
+  cci-master           = 0                      OK
+  csiphy               = 0 (camss port@0)       OK
+  MCLK                 = camcc MCLK0, 24 MHz    OK
+  RESET                = GPIO 80, ACTIVE_LOW    ABWEICHUNG (Stock: HIGH)
+  VANA                 = vreg_bob               OK (seit v0bb)
+  vdig                 = vreg_s3a_1p35          OK
+  vif                  = vreg_lvs1_1p8          OK
+  vana-gpios           = GPIO 16 (neu)          ABWEICHUNG (Stock hat
+                                                 kein vana-gpios)
+  pinctrl-State        = output-high            ABWEICHUNG (Stock: nur
+                                                 function=gpio, kein Level)
+
+ERKENNTNIS: Im Stock treibt der Sensor-Treiber den VANA-Pin NICHT.
+Er ist ein reines Enable-Signal fuer pmi8998_bob, das der Regulator-
+Core ueber ena_gpiod setzt. Unser Ansatz (Treiber treibt GPIO 16
+selbst) ist falsch - deshalb blieb der Sensor ohne Strom.
+
+NAECHSTER SCHRITT: vana-gpios und output-high entfernen; VANA wieder
+ueber einen regulator-fixed mit gpios=<&tlmm 16> abbilden (wie im
+Stock), damit der Regulator-Core den Pin treibt - aber mit dem
+Kernel-Fix gpiod_direction_output (v0bc), der den Pin wirklich als
+Output setzt.
