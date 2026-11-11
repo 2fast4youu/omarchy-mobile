@@ -188,6 +188,13 @@ MCLK0 = GPIO 13, RESET = GPIO 80 (ACTIVE_HIGH), VANA = GPIO 16,
 `vdig = pm8998_s3`, `vio = pm8998_lvs1`, `vana = pmi8998_bob`,
 CCI-Master 0, CSIPHY 0, MCLK 24 MHz.
 
+Ein I2C-Scan ueber alle Adressen (0x03-0x77) auf beiden CCI-Bussen
+blieb ohne Antwort - der Sensor ist auf keiner Adresse erreichbar.
+
+**Die Rueckkamera ist deshalb aus der Megapixels-Config entfernt**
+(`google,blueline.conf` enthaelt nur `Front` und `FrontAux`). Die
+beiden Frontkameras (2x imx355) funktionieren.
+
 ### libcamera 0.7.2 und Sensor-Pads
 
 libcamera erwartet pro Sensor **2 Pads** (SINK + SOURCE), die
