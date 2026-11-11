@@ -59,3 +59,10 @@ echo "== adsp"; cat /sys/class/remoteproc/remoteproc*/name 2>/dev/null | head -4
 done; echo
 echo "== shell"; pgrep -x Hyprland >/dev/null && echo "Hyprland laeuft"; pgrep -x quickshell >/dev/null && echo "quickshell laeuft"; pgrep -x squeekboard >/dev/null && echo "squeekboard laeuft"
 echo "== speicher"; df -h / | tail -1
+echo "== kaltstart"; printf 'uptime_s='; cut -d. -f1 /proc/uptime
+printf 'boot_id='; cat /proc/sys/kernel/random/boot_id 2>/dev/null
+printf 'session_uid='; id -u omarchy 2>/dev/null
+printf 'hyprland_sig='; ls /run/user/$(id -u omarchy 2>/dev/null)/hypr/ 2>/dev/null | head -1
+printf 'shell_running='; pgrep -c quickshell 2>/dev/null || echo 0
+printf 'homescreen_qml='; pgrep -f 'quickshell -p /usr/share/omarchy/shell' >/dev/null && echo ja || echo nein
+echo "(Kaltstart bis Homescreen: uptime klein, Hyprland-Signatur da, quickshell laeuft)"
