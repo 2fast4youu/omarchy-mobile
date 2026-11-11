@@ -1,0 +1,42 @@
+RTC-Wakeup: wakeup-source im DT ergaenzt (17:12)
+================================================
+
+PROBLEM: Nach "echo mem" schlaeft das Geraet, wacht aber nicht per
+RTC auf. Im s2idle wird der USB-Port abgeschaltet -> kein SSH, kein
+fastboot, kein ping. Nur die physische Pwrkey-Taste weckt.
+
+URSACHE GEFUNDEN:
+  Der RTC-Knoten in pm8998.dtsi hatte KEIN "wakeup-source"-Property:
+      rtc@6000 {
+          compatible = "qcom,pm8941-rtc";
+          reg = <0x6000>, <0x6100>;
+          reg-names = "rtc", "alarm";
+          interrupts = <0x0 0x61 0x1 IRQ_TYPE_EDGE_RISING>;
+      };
+  Ohne wakeup-source markiert der Treiber das Geraet nicht als
+  Wakeup-faehig; /sys/class/rtc/rtc0/device/power/wakeup bleibt dann
+  auf "disabled" und der Alarm weckt nicht.
+
+FIX (zwei Aenderungen):
+  1) pm8998.dtsi: rtc@6000 bekommt das Label pm8998_rtc
+  2) sdm845-google-common.dtsi:
+         &pm8998_rtc {
+             wakeup-source;
+         };
+
+  Der Treiber (rtc-pm8xxx.c) macht ohnehin
+      devm_pm_set_wake_irq(&pdev->dev, alarm_irq)
+      devm_device_init_wakeup(&pdev->dev)
+  aber erst mit wakeup-source wird das Geraet als Wakeup-Quelle
+  aktiviert.
+
+DTB gebaut: 114444 B (vorher 114418).
+Neues boot.img: 7a087bbc51425066363c519caca333053f6e5c31a441ff634322816ced1f0578
+
+ROM-Paket aktualisiert: ~/hermes-workspace/rom-blueline-final/
+  boot.img      7a087bbc...  (mit RTC-wakeup-source)
+  userdata.img  364aecab...
+
+NAECHSTER SCHRITT AM GERAET:
+  Nach dem Flashen: omamobile-suspend-test 10
+  -> muss nach ~10 min von selbst zurueckkommen.
