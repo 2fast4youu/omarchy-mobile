@@ -55,6 +55,8 @@ mkdir -p /tmp/arch/usr/local/bin
 cp /om/omamobile-time-sync /tmp/arch/usr/local/bin/omamobile-time-sync
 cp /om/omamobile-power-profile /tmp/arch/usr/local/bin/omamobile-power-profile
 cp /om/omamobile-wakeup.sh /tmp/arch/usr/local/bin/omamobile-wakeup
+cp /om/omamobile-suspend-test.sh /tmp/arch/usr/local/bin/omamobile-suspend-test
+chmod 755 /tmp/arch/usr/local/bin/omamobile-suspend-test
 chmod 755 /tmp/arch/usr/local/bin/omamobile-time-sync
 mkdir -p /tmp/arch/usr/local/bin /tmp/arch/usr/local/lib/qbootctl
 cp /qbootctl /tmp/arch/usr/local/bin/qbootctl
