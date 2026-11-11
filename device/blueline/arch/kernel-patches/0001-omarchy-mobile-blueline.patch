@@ -1,5 +1,18 @@
+diff --git a/arch/arm64/boot/dts/qcom/pm8998.dtsi b/arch/arm64/boot/dts/qcom/pm8998.dtsi
+index 3ecb33059..50b41942b 100644
+--- a/arch/arm64/boot/dts/qcom/pm8998.dtsi
++++ b/arch/arm64/boot/dts/qcom/pm8998.dtsi
+@@ -101,7 +101,7 @@ pm8998_adc_tm: adc-tm@3400 {
+ 			status = "disabled";
+ 		};
+ 
+-		rtc@6000 {
++		pm8998_rtc: rtc@6000 {
+ 			compatible = "qcom,pm8941-rtc";
+ 			reg = <0x6000>, <0x6100>;
+ 			reg-names = "rtc", "alarm";
 diff --git a/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi b/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
-index c7dae34aa..ba82f2d85 100644
+index c7dae34aa..17c172fea 100644
 --- a/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
 +++ b/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
 @@ -14,6 +14,7 @@
@@ -136,10 +149,19 @@ index c7dae34aa..ba82f2d85 100644
  				data-lanes = <1 2 3 4>;
  				link-frequencies = /bits/ 64 <360000000>;
  				remote-endpoint = <&camss_endpoint1>;
-@@ -717,12 +795,48 @@ &qup_uart9_tx {
+@@ -717,12 +795,57 @@ &qup_uart9_tx {
  	bias-disable;
  };
  
++/*
++ * Omarchy Mobile: the PMIC RTC must be a wakeup source, otherwise the
++ * device stays asleep after "echo mem" (USB is powered down in s2idle,
++ * so there is no SSH/fastboot way back).
++ */
++&pm8998_rtc {
++	wakeup-source;
++};
++
 +/*
 + * Omarchy Mobile: the mainline wcd934x driver wants these supply names
 + * (vdd-buck, vdd-buck-sido, vdd-tx, vdd-rx, vdd-io); the stock DT used
@@ -187,7 +209,7 @@ index c7dae34aa..ba82f2d85 100644
  
  	mm1-dai-link {
  		link-name = "MultiMedia1";
-@@ -731,10 +845,25 @@ cpu {
+@@ -731,10 +854,10 @@ cpu {
  		};
  	};
  
@@ -195,8 +217,25 @@ index c7dae34aa..ba82f2d85 100644
 -		link-name = "Speaker Playback";
 +	pri-mi2s-dai-link {
 +		link-name = "Primary MI2S Playback";
-+		cpu {
+ 		cpu {
+-			sound-dai = <&q6afedai QUATERNARY_TDM_RX_0>;
 +			sound-dai = <&q6afedai PRIMARY_MI2S_RX>;
+ 		};
+ 
+ 		platform {
+@@ -742,7 +865,22 @@ platform {
+ 		};
+ 
+ 		codec {
+-			sound-dai = <&cs35l36_codec1 0>, <&cs35l36_codec2 0>;
++			sound-dai = <&wcd9340 0>;
++		};
++	};
++
++	pri-mi2s-capture-dai-link {
++		link-name = "Primary MI2S Capture";
++		cpu {
++			sound-dai = <&q6afedai PRIMARY_MI2S_TX>;
 +		};
 +
 +		platform {
@@ -205,27 +244,10 @@ index c7dae34aa..ba82f2d85 100644
 +
 +		codec {
 +			sound-dai = <&wcd9340 0>;
-+		};
-+	};
-+
-+	pri-mi2s-capture-dai-link {
-+		link-name = "Primary MI2S Capture";
- 		cpu {
--			sound-dai = <&q6afedai QUATERNARY_TDM_RX_0>;
-+			sound-dai = <&q6afedai PRIMARY_MI2S_TX>;
- 		};
- 
- 		platform {
-@@ -742,7 +871,7 @@ platform {
- 		};
- 
- 		codec {
--			sound-dai = <&cs35l36_codec1 0>, <&cs35l36_codec2 0>;
-+			sound-dai = <&wcd9340 0>;
  		};
  	};
  };
-@@ -772,6 +901,21 @@ cam_front_avdd_default_pin: cam-avdd-default-pins {
+@@ -772,6 +910,21 @@ cam_front_avdd_default_pin: cam-avdd-default-pins {
  		bias-disable;
  	};
  
@@ -247,7 +269,7 @@ index c7dae34aa..ba82f2d85 100644
  	cam_front_aux_reset_default_pin: cam-front-aux-reset-default-pins {
  		pins = "gpio9";
  		function = "gpio";
-@@ -850,6 +994,12 @@ &uart6 {
+@@ -850,6 +1003,12 @@ &uart6 {
  	bluetooth {
  		compatible = "qcom,wcn3990-bt";
  
