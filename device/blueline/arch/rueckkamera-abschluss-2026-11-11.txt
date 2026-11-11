@@ -1,0 +1,63 @@
+Rückkamera IMX363: bekannte Einschränkung, Abschluss Runde 15/15
+================================================================
+
+Ergebnis: Der IMX363 liefert keine Bilder. Nach 15 Runden ist das
+abgeschlossen und dokumentiert.
+
+BELEGTE URSACHENKETTE
+  1) Sensor antwortet nicht auf I2C
+     - Error reading reg 0x0016: -6 (ENXIO)
+     - I2C-Scan über alle Adressen (0x03-0x77) auf i2c-16 (cci_i2c0)
+       und i2c-17 (cci_i2c1): keine Antwort
+     - letzter Versuch Runde 15: ebenfalls keine Antwort
+  2) VANA-Regler bleibt aus
+     - rear_cam_vana: state=disabled, users=0, 0 mA
+     - bob: state=enabled, users=4, 3328 mV, 0 mA (keine Last)
+     - gpio16: "in low" (gpiolib), pinconf "output enabled, level 0"
+     - gpio80 (RESET): "out high" (korrekt seit ACTIVE_HIGH-Fix)
+  3) GPIO 16 lässt sich nicht zuverlässig treiben
+     - per libgpiod (gpioset) auf HIGH setzbar, aber der Wert kommt
+       nicht am Pin an (msm_gpio_set schreibt nicht)
+     - der Fixed-Regulator-Core setzt ena_gpiod nicht
+     - Kernel-Fix gpiod_direction_output (fixed.c) half nicht
+
+AUS DEM FACTORY-IMAGE (Soll-Werte, vollständig ausgewertet)
+  dtbo.img Overlay 0, sensor_rear: qcom,cam-sensor@0
+    MCLK            GPIO 13 (CAMIF_MCLK0), camcc MCLK0, 24 MHz
+    RESET           GPIO 80, ACTIVE_HIGH
+    VANA-Enable     GPIO 16, ACTIVE_HIGH (gpio-req-tbl-flags[2]=0)
+    cam_vdig        pm8998_s3   (1.35 V)
+    cam_vio         pm8998_lvs1 (1.8 V)
+    cam_vana        pmi8998_bob (3.3 V)
+    cci-master      0
+    csiphy-sd-index 0
+    pinctrl         cam_sensor_mclk0_active + cam_sensor_rear_active
+                    (gpio80+gpio16, function=gpio, bias-disable,
+                     drive-strength=2, KEIN output-high)
+  vendor.img lib64/camera/com.qti.sensormodule.metric_imx363.bin
+    -> nur Kalibrierdaten (sensorDriverData, PDConfigData,
+       cameraModuleData, actuatorDriverData, EEPROM/OIS/Flash)
+    -> KEINE I2C-Adresse, KEINE Power-Sequenz mit Delays
+  vendor.img lib64/camera/com.qti.sensor.imx363.so
+    -> stripped; .gnu_debugdata (lzma) enthält nur Exposure/Gain-
+       Funktionen (CalculateExposure, RealToRegisterGain, ...)
+  boot.img Kernel (lz4, 44.7 MB)
+    -> keine imx363/sony,imx-Strings (Treiber nicht im Stock-Kernel)
+  vendor.img lib/modules: 15 Module, keine Kamera-Module
+
+  => I2C-Adresse (0x10) und Power-Up-Reihenfolge sind aus dem
+     Factory-Image NICHT extrahierbar; sie stecken im proprietären
+     Qualcomm-Camera-HAL (userspace).
+
+MASSNAHME
+  - Rückkamera aus der Megapixels-Config entfernt
+    (Front, FrontAux bleiben; beide Frontkameras funktionieren)
+  - Als bekannte Einschränkung in INSTALL.md dokumentiert
+  - alle drei Kameras bleiben in "cam -l" sichtbar
+
+NÄCHSTER ANSATZ (für später)
+  Der Sensor braucht offenbar eine Initialisierungssequenz, die der
+  mainline-Treiber nicht abbildet (z. B. ein zusätzliches Enable-Signal
+  oder eine andere Regler-Reihenfolge). Ein Vergleich mit dem
+  downstream-Treiber (msm-4.9, cam_sensor_imx363) wäre der nächste
+  Schritt — dort steht die echte Power-Up-Sequenz mit Delays.
