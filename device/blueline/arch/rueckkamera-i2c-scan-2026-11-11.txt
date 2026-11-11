@@ -1,0 +1,29 @@
+Rueckkamera: I2C-Scan ohne Antwort, Runde 4/15, 2026-11-11 14:52
+================================================================
+
+I2C-Scan ueber alle Adressen (0x03-0x77) auf beiden CCI-Bussen
+(i2c-16 = cci_i2c0 Rueckkamera, i2c-17 = cci_i2c1 Frontkameras),
+mit geladenem imx363-Treiber und allen Rails:
+  ERGEBNIS: keine Antwort auf beiden Bussen.
+
+Rail-Zustand:
+  bob:           state=enabled, users=4, 3328 mV, 0 mA
+  rear_cam_vana: state=disabled, users=0, 3300 mV, 0 mA
+  lvs1:          state=disabled, users=0, 1800 mV, 0 mA
+  gpio16: "in low" (gpiolib), pinmux "device rear-cam-vana-regulator
+           function gpio group gpio16"
+  gpio80: "out high" (RESET korrekt)
+
+Der imx363-Treiber meldet:
+  supply vana ok / vdig ok / vif ok
+  enable vana -> 0 (is_enabled=1)
+  clk=ok rate=24000000, clk_prepare_enable ret=0
+  Error reading reg 0x0016: -6 (ENXIO)
+
+Beobachtung waehrend des Probe: rear_cam_vana bleibt durchgehend
+"disabled" - regulator_enable() liefert 0 und is_enabled=1, aber der
+Regler wird nicht eingeschaltet und der GPIO-Level bleibt 0.
+
+REGEL: Ab hier nicht weiter an GPIO 16 arbeiten (Vorgabe). Die
+Rueckkamera wird bis Runde 15 weiterverfolgt, dann als bekannte
+Einschraenkung dokumentiert und aus der Megapixels-Config genommen.
