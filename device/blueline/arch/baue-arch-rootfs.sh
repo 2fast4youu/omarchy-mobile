@@ -170,15 +170,6 @@ cp "$IN" "$OUT" 2>/dev/null || exit 1
 EOP
   chmod 755 /home/omarchy/.config/megapixels/postprocess.sh
   chown -R omarchy:omarchy /home/omarchy/Pictures /home/omarchy/Videos /home/omarchy/Downloads /home/omarchy/.config
-  # Omarchy-Mobile-Plugins VORVERLINKEN: omamobile-setup-user macht das
-  # normalerweise, aber wenn es scheitert, startet Quickshell ohne
-  # Homescreen/Dock (am Geraet belegt). Hier schon im Image verlinken.
-  mkdir -p /home/omarchy/.config/omarchy/plugins
-  for _pl in /usr/share/omamobile/shell/plugins/*; do
-    [ -e "$_pl" ] || continue
-    ln -sfn "$_pl" "/home/omarchy/.config/omarchy/plugins/$(basename "$_pl")" 2>/dev/null
-  done
-  chown -R omarchy:omarchy /home/omarchy/.config/omarchy 2>/dev/null
   # WLAN-Profil vorbereiten: SSID und Land sind gesetzt, das Passwort
   # fehlt absichtlich (kein Klartext im Image). Nach dem Boot einmal
   #   nmcli --ask connection up HOME-WLAN
@@ -230,6 +221,16 @@ NMC
       tail -20 /var/log/omamobile/omarchy-patches.log 2>/dev/null || tail -20 /tmp/omarchy-patches.log
   fi
   rm -rf /tmp/stage-* /tmp/pkg-*.log /root/pkgs
+  # Omarchy-Mobile-Plugins VORVERLINKEN (nach der Paketinstallation!):
+  # omamobile-setup-user macht das normalerweise, aber wenn es scheitert,
+  # startet Quickshell ohne Homescreen/Dock (am Geraet belegt).
+  mkdir -p /home/omarchy/.config/omarchy/plugins
+  for _pl in /usr/share/omamobile/shell/plugins/*; do
+    [ -e "$_pl" ] || continue
+    ln -sfn "$_pl" "/home/omarchy/.config/omarchy/plugins/$(basename "$_pl")" 2>/dev/null
+  done
+  chown -R omarchy:omarchy /home/omarchy/.config/omarchy 2>/dev/null
+  echo "plugins verlinkt: $(ls /home/omarchy/.config/omarchy/plugins 2>/dev/null | wc -l)"
   ssh-keygen -A
   systemctl enable sshd 2>/dev/null || ln -sf /usr/lib/systemd/system/sshd.service \
     /etc/systemd/system/multi-user.target.wants/sshd.service
