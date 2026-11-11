@@ -1,0 +1,39 @@
+Berechtigungs-Kette vollstaendig verifiziert, 2026-11-11 21:20
+==============================================================
+
+USER
+  omarchy: UID 1001, GID 1001, Shell /bin/bash
+  Gruppen: input (992), video (983), seat (968)
+
+RUNTIME-VERZEICHNIS  (KRITISCHER FIX)
+  OM_UID=$(id -u omarchy)  -> 1001
+  OM_RUNTIME=/run/user/1001
+  mkdir + chown omarchy:omarchy + chmod 700
+  (vorher hart /run/user/1000 -> Hyprland/PipeWire schrieben ins Leere,
+   die Session startete nicht)
+
+GRAFIK
+  /dev/dri/card0, /dev/dri/renderD128: root:video 660
+  omarchy ist in der Gruppe video
+
+EINGABE
+  /dev/input/event*: root:input 660
+  omarchy ist in der Gruppe input
+
+KAMERA
+  /dev/video*, /dev/v4l-subdev*: 666 (im Init an zwei Stellen gesetzt)
+  /dev/media*: 666
+  /dev/dma_heap/*: 666
+
+SEAT
+  seatd -g seat laeuft; Gruppe seat enthaelt omarchy
+  LIBSEAT_BACKEND=seatd in der Session
+
+SESSION-KETTE
+  timeout 30 omamobile-setup-user  (synchron + Fallback fuer Plugins)
+  start-hyprland -> warten auf $OM_RUNTIME/hypr/SIG
+  squeekboard -> hypridle -> quickshell
+  PipeWire + WirePlumber als omarchy mit XDG_RUNTIME_DIR=$OM_RUNTIME
+
+ERGEBNIS: Alle Rechte und Gruppen stimmen. Die Session sollte jetzt
+starten und der Homescreen erscheinen.
