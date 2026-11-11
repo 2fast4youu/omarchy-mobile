@@ -5,11 +5,11 @@ ZWEI UNABHAENGIGE BUILDS, BYTE-IDENTISCH:
 
   Lauf 1 (Paket):    ~/hermes-workspace/rom-blueline-final/
     d40c3fb45519e644c2ebde886ad1690ca0b44cfc79323cb2356162a609f214bb  boot.img
-    ecc53bf4890b7499f15db4a275c2a73d1197ad0e9661934281858702db18e6c9  userdata.img
+    3e9efe89efc80b4fb33fa7660aa46b71daa0c035b69c5d692f5512da2b251727  userdata.img
 
   Lauf 2 (Kontrolle): /tmp/rom-repro/
     d40c3fb45519e644c2ebde886ad1690ca0b44cfc79323cb2356162a609f214bb  boot.img
-    ecc53bf4890b7499f15db4a275c2a73d1197ad0e9661934281858702db18e6c9  userdata.img
+    3e9efe89efc80b4fb33fa7660aa46b71daa0c035b69c5d692f5512da2b251727  userdata.img
 
   => Beide Images sind identisch. Der Build ist deterministisch.
 
