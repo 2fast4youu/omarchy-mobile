@@ -1,0 +1,20 @@
+DBus und Portal-Dienste verifiziert, 2026-11-11 23:46
+====================================================
+
+DBUS
+  /usr/bin/dbus-daemon         264624 B
+  /usr/bin/dbus-run-session     67536 B
+  System-Bus:  dbus-daemon --system -> /run/dbus/system_bus_socket
+               (im Init gestartet, bluetoothd/NetworkManager/upowerd/ppd
+                sprechen darueber)
+  Session-Bus: dbus-run-session -- /run/omamobile-session.sh
+               (eigene Session fuer Hyprland/Quickshell/Squeekboard)
+
+PORTAL
+  /usr/lib/xdg-desktop-portal      1774400 B
+  /usr/lib/xdg-desktop-portal-gtk   527016 B
+  -> Datei-Dialoge, Screenshots, Bildschirmfreigabe fuer die Shell
+
+ERGEBNIS: DBus (System + Session) und die Portal-Dienste sind
+vollstaendig. Die Shell kann ihre Dienste (UPower, MPRIS, Netzwerk,
+Bluetooth) ueber DBus erreichen.
