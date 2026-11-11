@@ -1,0 +1,38 @@
+Audio: ADSP + Codec + Reset OK, logische Adresse fehlt (Runde 21)
+=================================================================
+
+FORTSCHRITTE (alle belegt):
+  1) ADSP bootet: adsp.mbn aus Factory-MBN-Segmenten zusammengesetzt
+     (13148160 B, verifiziert), qcom_q6v5_pas geladen ->
+     "remote processor adsp is now up"
+  2) SLIMbus-Codec erscheint: /sys/bus/slimbus/devices/217:250:1:0
+  3) wcd934x-slim bindet (Regler-Namen im DT ergaenzt:
+     vdd-buck, vdd-buck-sido, vdd-tx, vdd-rx, vdd-io -> vreg_s4a_1p8,
+     enabled mit 7 Usern)
+  4) WCD-Reset GPIO 54: "out high" (pinctrl-State auf output-high
+     umgestellt; vorher bias-pull-down = Codec im Reset)
+
+BLOCKER: "Failed to get logical address"
+  slim_get_logical_addr() -> qcom_slim_ngd_get_laddr() sendet eine
+  SLIMbus ADDR_QUERY (mc=SLIM_USR_MC_ADDR_QUERY, la=SLIM_LA_MGR) an den
+  Codec. Der Codec antwortet nicht.
+
+  Damit fehlt die logische Adresse, der Codec geht nicht auf
+  SLIM_DEVICE_STATUS_UP, snd-soc-sdm845 bindet keine Karte und
+  /proc/asound/cards bleibt leer.
+
+MOEGLICHE URSACHEN (nicht mehr geprueft, Audio seit 5 Runden offen):
+  - Der Codec braucht eine laengere Power-Up-Sequenz (Stock:
+    qcom,cdc-mclk-clk-rate 9600000, extclk ueber rpmhcc LN_BB_CLK2;
+    mainline nutzt dieselbe Clock, aber die Reihenfolge
+    Regler -> Reset -> Clock -> SLIMbus-Query koennte abweichen)
+  - Der Codec braucht den WCD-SPI-Pfad (Stock-DTBO hat wcd_spi_0 mit
+    qcom,wcd-spi-v2); mainline wcd934x nutzt nur SLIMbus
+  - Der SLIMbus-Controller (qcom-ngd-ctrl) braucht die
+    QMI/GLINK-Verbindung zum ADSP, die erst nach PDR-Service-Lookup
+    steht (dmesg: "PDR: service lookup for avs/audio failed: -6" war
+    vor dem ADSP-Boot; nach dem Boot nicht erneut geprueft)
+
+REGEL: Audio steckt seit Runde 16 fest (>10 Runden). Wird als bekannte
+Einschraenkung dokumentiert; naechste Punkte: Akku-Messung auswerten,
+Abnahme mit frisch gebautem Paket.
