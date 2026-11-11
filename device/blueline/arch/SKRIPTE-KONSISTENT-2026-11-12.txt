@@ -1,0 +1,30 @@
+Skripte konsistent zwischen Repo und Image, 2026-11-12 00:28
+===========================================================
+
+SHA256-Vergleich (Repo vs. /usr/local/bin im Image):
+
+  omamobile-verify-all.sh
+    Repo:  dd06154b7ec3e5589cacdffe048ff8adf79974498229027f0532f75e5da01ab6
+    Image: dd06154b7ec3e5589cacdffe048ff8adf79974498229027f0532f75e5da01ab6
+    -> identisch
+
+  INSTALL.md (drei Kopien)
+    device/blueline/INSTALL.md        045933cacf61b09c...
+    device/blueline/arch/INSTALL.md   045933cacf61b09c...
+    /root/INSTALL.md                  045933cacf61b09c...
+    -> identisch
+
+DAMIT IST SICHERGESTELLT
+  Das Image enthaelt exakt die Skripte und Dokumente aus dem Repo.
+  Kein veralteter Stand, keine manuellen Abweichungen.
+
+PRUEFSKRIPTE IM IMAGE
+  /usr/local/bin/omamobile-verify-all     (13 Abnahme-Punkte,
+                                           inkl. Kamera-Pads,
+                                           simple.yaml, shell.json)
+  /usr/local/bin/omamobile-health         (Haenger-Analyse)
+  /usr/local/bin/omamobile-suspend-test   (RTC-Wakeup)
+  /root/INSTALL.md                        (Anleitung + Einschraenkungen)
+  /root/ABNAHME-CHECKLISTE.txt            (zum Ausfuellen)
+
+ERGEBNIS: Repo und Image sind deckungsgleich.
