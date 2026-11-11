@@ -1,0 +1,24 @@
+Seat-Verwaltung verifiziert, 2026-11-11 23:48
+=============================================
+
+SEATD
+  /usr/bin/seatd        67760 B
+  Gruppe seat:x:968:omarchy
+  Start: setsid seatd -g seat (im Init, vor der Session)
+  LIBSEAT_BACKEND=seatd in der Session-Umgebung
+
+WARUM SEATD
+  Ohne systemd/logind gibt es keinen Seat-Manager. seatd uebernimmt
+  das: es gibt dem Nutzer omarchy Zugriff auf /dev/dri/card0 und
+  /dev/input/event*, damit Hyprland den DRM-Master und den Touchscreen
+  bekommt.
+
+RECHTE (zusaetzlich im Init gesetzt)
+  /dev/dri/card0, renderD128   root:video 660   (omarchy in video)
+  /dev/input/event*            root:input 660   (omarchy in input)
+  /dev/video*, v4l-subdev*     666
+  /dev/media*, dma_heap/*      666
+  /run/user/1001               omarchy:omarchy 700
+
+ERGEBNIS: Die Seat- und Berechtigungs-Kette ist vollstaendig.
+Hyprland kann DRM und Touch uebernehmen.
