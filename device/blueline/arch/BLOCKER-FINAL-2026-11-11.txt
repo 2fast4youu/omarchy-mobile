@@ -1,0 +1,52 @@
+FINALER BLOCKER: Geraet schlaeft, alle Software-Wege ausgeschoepft
+=================================================================
+
+SEIT: 2026-11-11 16:44
+STAND: 17:10 (Runde 30), >1,5 Stunden
+
+ALLE GEPRUEFTEN WEGE ZUM WECKEN:
+  1) ping 172.16.42.1              -> 100% loss
+  2) ssh root@172.16.42.1          -> timeout
+  3) fastboot devices              -> leer
+  4) system_profiler USB           -> PIXEL3-SERIAL nicht vorhanden
+  5) ifconfig                      -> kein 172.16.42-Interface
+  6) USB-Controller-Reset am Mac   -> kein sudo
+  7) Heimnetz-Scan 192.0.2.x   -> kein Pixel (WLAN-Passwort fehlt)
+  8) mDNS _ssh._tcp / _workstation -> kein Pixel
+  9) Zweiter Rechner 192.0.2.40 -> nicht erreichbar
+ 10) Zweiter Rechner 192.0.2.26 -> erreichbar, aber KEIN Pixel
+     an USB (nur Bluetooth-Radio + xHCI-Controller)
+
+=> Es gibt KEINEN Software-Weg. Der einzige Weg ist die physische
+   Pwrkey-Taste am Geraet.
+
+WAS BEREIT LIEGT (alles committed):
+  ~/hermes-workspace/rom-blueline-final/
+    boot.img      f5f3f806...  (Audio-DTB + WCD-Reset-Fix)
+    userdata.img  364aecab...
+    SHA256SUMS
+
+  device/blueline/baue-rom.sh              Ein-Befehl-Build
+  device/blueline/INSTALL.md               Anleitung + Einschraenkungen
+  device/blueline/arch/kernel-patches/     0001-omarchy-mobile-blueline.patch
+  device/blueline/arch/omamobile-verify-all.sh       alle Punkte
+  device/blueline/arch/omamobile-suspend-test.sh     RTC-Wakeup
+  device/blueline/arch/PAKET-BEREIT-2026-11-11.txt   Flash-Befehle
+  device/blueline/arch/CHECKLISTE-ZUM-AUSFUELLEN-2026-11-11.txt
+  device/blueline/arch/ABGABE-STATUS-2026-11-11.txt
+  device/blueline/arch/libcamera-pad-analyse-2026-11-11.txt
+
+ERLEDIGTE AUFGABENPUNKTE:
+  (1) Flash ohne Gregor         ERLEDIGT (bootonce + SysRq, mehrfach)
+  (2) Rueckkamera               ABGESCHLOSSEN als Einschraenkung (15/15)
+  (3) USB-Ladetyp               ERLEDIGT (APSD SDP, Register belegt)
+  (4) Aufraeumen                ERLEDIGT (ersetze-module, OMADBG raus,
+                                Patchdateien, baue-rom.sh, SHA256,
+                                INSTALL.md)
+  (3) Megapixels-Ausloeser      URSACHE ANALYSIERT (libcamera-Pads),
+                                Fix-Ansaetze dokumentiert
+  (3) Suspend %/h               BLOCKIERT (Geraet schlaeft)
+  (5) Abnahme                   BLOCKIERT (Geraet schlaeft)
+
+REGEL: Punkt >10 Runden fest -> dokumentiert. Das ist erfuellt
+(Runden 22-30, Geraetezugriff).
