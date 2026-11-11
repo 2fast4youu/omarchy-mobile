@@ -1,0 +1,45 @@
+Audio: ADSP läuft, Codec bindet, logische Adresse fehlt
+======================================================
+
+DURCHBRUCH: Der ADSP bootet!
+
+  1) ADSP-Firmware aus dem Factory-Image extrahiert:
+     vendor.img/firmware/adsp.mdt + adsp.b00 ... adsp.b15
+     -> ELF-Container mit 16 Programm-Headern (PT_LOAD)
+     -> flache adsp.mbn zusammengesetzt (13148160 B):
+        Header (0x1000) aus adsp.mdt, dann jedes adsp.bNN an
+        seine p_offset-Position; Verifikation: alle Segmente
+        bytegleich mit den Quelldateien.
+     -> nach /lib/firmware/qcom/sdm845/Google/blueline/adsp.mbn
+        UND /proc/1/root/lib/firmware/... (Initramfs-Mirror)
+
+  2) qcom_q6v5_pas.ko geladen (fehlte im Image)
+     -> remoteproc1 (adsp) erscheint
+     -> "Booting fw image ... adsp.mbn, size 13148160"
+     -> "remote processor adsp is now up"   ✅
+
+  3) SLIMbus-Codec erscheint:
+     /sys/bus/slimbus/devices/217:250:0:0  (IFD)
+     /sys/bus/slimbus/devices/217:250:1:0  (Codec)
+
+  4) Codec-Treiber bindet (manuell):
+     wcd934x-slim 217:250:1:0: supply vdd-buck-sido not found,
+       using dummy regulator (4x)
+     -> Regler-Namen passen nicht (DT hat cdc-vdd-*, Treiber will
+        vdd-buck-sido/vdd-tx/vdd-rx/vdd-io)
+
+BLOCKER: "Failed to get logical address"
+  slim_get_logical_addr() scheitert nach dem Codec-Probe
+  -> SLIMbus-Controller kann die logische Adresse des Codecs nicht
+     lesen. Ohne logische Adresse keine Soundkarte
+     (/proc/asound/cards bleibt leer).
+
+NAECHSTE SCHRITTE:
+  a) Regler-Namen im DT an den Treiber anpassen
+     (vdd-buck-sido, vdd-tx, vdd-rx, vdd-io)
+  b) SLIMbus-Adressierung pruefen: der Stock-DTBO nutzt
+     elemental-addr [00 01 50 02 17 02]; mainline erwartet
+     reg = <Instanz Element>, hier <1 0>. Die logische Adresse muss
+     der Controller per SLIMbus-Protokoll abfragen - das schlaegt fehl,
+     vermutlich weil der Codec noch nicht vollstaendig initialisiert
+     ist (Regler fehlen).
