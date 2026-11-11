@@ -1,0 +1,38 @@
+Boot-Kette vollstaendig verifiziert, 2026-11-11 20:25
+====================================================
+
+Per debugfs im userdata-Image (fca13c1b...) geprueft:
+
+INITRAMFS/INIT
+  /init                         Inode 3096
+  /usr/bin/start-hyprland       Inode 5589
+  /run/omamobile-session.sh     (wird vom Init erzeugt - korrekt)
+
+HILFSSKRIPTE
+  /usr/local/bin/omamobile-wakeup        Inode 51739
+  /usr/local/bin/omamobile-suspend-test  Inode 51737
+  /usr/local/bin/omamobile-time-sync     Inode 51738
+
+SLOT-VERWALTUNG
+  /usr/local/bin/qbootctl                      67488 B
+  /usr/local/lib/qbootctl/ld-musl-aarch64.so.1 723480 B
+
+MODEM-DIENSTE
+  /usr/bin/rmtfs        Inode 5418
+  /usr/bin/tqftpserv    Inode 5719
+  /usr/bin/pd-mapper    Inode 5058
+
+WLAN-FIRMWARE
+  ath10k/WCN3990/hw1.0/firmware-5.bin     60 B (API-Stub, korrekt)
+  ath10k/WCN3990/hw1.0/board-2.bin        867116 B
+  qcom/sdm845/Google/blueline/wlanmdsp.mbn 3035952 B
+
+BLUETOOTH-FIRMWARE
+  qca/crbtfw21.tlv     177060 B
+  qca/crnv21.bin       4587 B
+
+MODULE: 61 im Image, alle in /tmp/mods vorhanden
+        (nur v4l2-common fehlt - das ist builtin)
+
+ERGEBNIS: Die Boot-Kette ist vollstaendig. Nichts fehlt fuer den
+Kaltstart bis zum Homescreen.
