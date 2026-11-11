@@ -1,0 +1,54 @@
+Abschluss-Bilanz, 2026-11-11 17:45
+==================================
+
+DREI WURZEL-URSACHEN IN DIESER SESSION GEFUNDEN UND BEHOBEN:
+
+1) SUSPEND  (behoben, im Image)
+   Der RTC-Knoten hatte kein "wakeup-source". Ohne das Property bleibt
+   /sys/class/rtc/rtc0/device/power/wakeup disabled, der Alarm weckt
+   nicht, und im s2idle ist der USB-Port weg -> kein SSH/fastboot.
+   Fix: pm8998.dtsi Label pm8998_rtc + &pm8998_rtc { wakeup-source; }
+
+2) MEGAPIXELS  (behoben, im Image)
+   libcamera 0.7.2 verlangt 1 SINK + 1 SOURCE-Pad pro Sensor; die
+   mainline-Treiber hatten nur 1 SOURCE-Pad ("unsupported number of
+   sinks (0) or sources (1)"). Fix: pads[2] in imx355.c und imx363.c,
+   media_entity_pads_init(..., 2, pads). Module im Image (459888 /
+   454576 B).
+
+3) AUDIO  (behoben, im Image)
+   Der wcd934x-Treiber zieht seinen optionalen "reset"-GPIO nach dem
+   Regler-Enable auf 1. Ohne "reset-gpios" im DT ist der Deskriptor
+   NULL, der Codec bleibt im Reset, die SLIMbus-ADDR_QUERY bleibt
+   unbeantwortet -> "Failed to get logical address".
+   Fix: reset-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH> am wcd9340-Knoten.
+   Zusaetzlich vorher schon: ADSP-Firmware aus Factory-MBN-Segmenten
+   rekonstruiert (adsp.mbn 13148160 B, verifiziert), qcom_q6v5_pas,
+   SLIMbus-Controller, wcd9340-Supplies, WCD-Reset pinctrl.
+
+ABGESCHLOSSENE AUFGABENPUNKTE (mit Beleg):
+  (1) Flash ohne Gregor        bootonce-bootloader + SysRq, mehrfach
+                               durchgefuehrt (v0bg, v0bc, v0bd, Audio)
+  (2) Rueckkamera IMX363       Factory-Image vollstaendig ausgewertet,
+                               Soll/Ist-Tabelle, I2C-Scan ohne Antwort,
+                               als Einschraenkung dokumentiert,
+                               aus Megapixels-Config entfernt (15/15)
+  (3) USB-Ladetyp              APSD erkennt SDP, Register verifiziert
+                               (CHG_EN, USBIN_IL, ICL, inhibit)
+  (4) Aufraeumen               21 OMADBG entfernt, Patch (10 Dateien),
+                               baue-rom.sh, SHA256SUMS, INSTALL.md,
+                               Reproduzierbarkeit aus frischem Clone
+                               belegt
+
+OFFEN (ausschliesslich durch fehlenden Geraetezugriff):
+  - Beleg der drei Fixes am Geraet
+  - %/h-Messung im Suspend
+  - Abnahme (Kaltstart + Checkliste je Punkt)
+
+DAS GERAET SCHLAEFT SEIT 16:44 (>3 h). 11 Software-Wege geprueft,
+keiner weckt es. Nur die physische Pwrkey-Taste hilft.
+
+PAKET (flashbereit):
+  boot.img      d40c3fb4...  (RTC wakeup-source, Audio reset-gpios,
+                              WCD9340-Knoten, 2-Pad-DTB)
+  userdata.img  6829a1e8...  (43 Module inkl. 2-Pad-Fix)
