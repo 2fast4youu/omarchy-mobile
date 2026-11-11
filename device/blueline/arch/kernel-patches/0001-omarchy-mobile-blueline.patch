@@ -12,7 +12,7 @@ index 3ecb33059..50b41942b 100644
  			reg = <0x6000>, <0x6100>;
  			reg-names = "rtc", "alarm";
 diff --git a/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi b/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
-index c7dae34aa..17c172fea 100644
+index c7dae34aa..bee6c1164 100644
 --- a/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
 +++ b/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
 @@ -14,6 +14,7 @@
@@ -149,7 +149,7 @@ index c7dae34aa..17c172fea 100644
  				data-lanes = <1 2 3 4>;
  				link-frequencies = /bits/ 64 <360000000>;
  				remote-endpoint = <&camss_endpoint1>;
-@@ -717,12 +795,57 @@ &qup_uart9_tx {
+@@ -717,12 +795,65 @@ &qup_uart9_tx {
  	bias-disable;
  };
  
@@ -185,6 +185,14 @@ index c7dae34aa..17c172fea 100644
 +};
 +
 +&wcd9340 {
++	/*
++	 * Omarchy Mobile: the mainline wcd934x driver pulls its optional
++	 * "reset" GPIO high after the rails are up. Without this property
++	 * reset_gpio is NULL and the codec never leaves reset, so the
++	 * SLIMbus address query stays unanswered.
++	 */
++	reset-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
++
 +	vdd-buck-supply = <&vreg_s4a_1p8>;
 +	vdd-buck-sido-supply = <&vreg_s4a_1p8>;
 +	vdd-tx-supply = <&vreg_s4a_1p8>;
@@ -209,7 +217,7 @@ index c7dae34aa..17c172fea 100644
  
  	mm1-dai-link {
  		link-name = "MultiMedia1";
-@@ -731,10 +854,10 @@ cpu {
+@@ -731,10 +862,10 @@ cpu {
  		};
  	};
  
@@ -223,7 +231,7 @@ index c7dae34aa..17c172fea 100644
  		};
  
  		platform {
-@@ -742,7 +865,22 @@ platform {
+@@ -742,7 +873,22 @@ platform {
  		};
  
  		codec {
@@ -247,7 +255,7 @@ index c7dae34aa..17c172fea 100644
  		};
  	};
  };
-@@ -772,6 +910,21 @@ cam_front_avdd_default_pin: cam-avdd-default-pins {
+@@ -772,6 +918,21 @@ cam_front_avdd_default_pin: cam-avdd-default-pins {
  		bias-disable;
  	};
  
@@ -269,7 +277,7 @@ index c7dae34aa..17c172fea 100644
  	cam_front_aux_reset_default_pin: cam-front-aux-reset-default-pins {
  		pins = "gpio9";
  		function = "gpio";
-@@ -850,6 +1003,12 @@ &uart6 {
+@@ -850,6 +1011,12 @@ &uart6 {
  	bluetooth {
  		compatible = "qcom,wcn3990-bt";
  
