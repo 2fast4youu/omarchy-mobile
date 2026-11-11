@@ -1,0 +1,49 @@
+SLIMbus-Adresse: DT stimmt, Query scheitert trotzdem (17:38)
+===========================================================
+
+ANALYSE der Elemental-Adresse:
+
+  Stock-DTBO:  elemental-addr = [00 01 50 02 17 02]
+  Mainline:    compatible = "slim217,250";  reg = <1 0>;
+
+  mainline baut die Adresse in of_register_slim_devices():
+      sscanf(compatible, "slim%x,%x", &manf_id, &prod_code)
+      e_addr.dev_index = reg[0];
+      e_addr.instance = reg[1];
+      e_addr.manf_id   = manf_id;
+      e_addr.prod_code = prod_code;
+
+  Dekodierung der Stock-Adresse (Little-Endian je Feld):
+      Byte 0: 00 -> instance   = 0
+      Byte 1: 01 -> dev_index  = 1
+      Byte 2: 50 -> prod_code LSB
+      Byte 3: 02 -> prod_code MSB  => 0x0250
+      Byte 4: 17 -> manf_id LSB
+      Byte 5: 02 -> manf_id MSB    => 0x0217
+
+  => instance=0, dev_index=1, prod=0x250, manf=0x217
+  => mainline "slim217,250" + reg=<1 0> ist IDENTISCH. Die Adresse
+     stimmt also - der Fehler liegt NICHT an einer falschen Adresse.
+
+WARUM SCHEITERT DIE QUERY DANN?
+
+  qcom_slim_ngd_get_laddr() sendet eine SLIMbus-Nachricht
+  (mt=DEST_REFERRED_USER, dt=DEST_LOGICALADDR, la=SLIM_LA_MGR,
+   mc=SLIM_USR_MC_ADDR_QUERY) ueber den NGD-Controller an den Codec.
+  Der Codec antwortet nicht.
+
+  Wahrscheinliche Ursachen (nicht mehr am Geraet geprueft):
+  1) Der NGD-Controller ist noch nicht bereit (ADSP-Handshake /
+     GLINK-Kanal). dmesg zeigte frueher
+     "PDR: service lookup for avs/audio failed: -6".
+  2) Der Codec braucht eine laengere Power-Up-Sequenz: Stock nutzt
+     qcom,cdc-mclk-clk-rate 9600000 ueber clock_audio_lnbb; mainline
+     nutzt rpmhcc RPMH_LN_BB_CLK2 (9.6 MHz). Die Reihenfolge
+     Regler -> Reset -> Clock -> Query koennte abweichen.
+  3) Der Stock-Codec-Knoten hat zusaetzlich qcom,wcd-spi-v2
+     (wcd_spi_0); mainline wcd934x nutzt nur SLIMbus.
+
+NAECHSTER SCHRITT (am Geraet):
+  - dmesg auf PDR/GLINK-Meldungen pruefen
+  - /sys/kernel/debug/slimbus/ ansehen (falls vorhanden)
+  - Regler-Reihenfolge im Treiber mit dem Stock vergleichen
