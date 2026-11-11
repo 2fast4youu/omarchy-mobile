@@ -137,6 +137,42 @@ sonst für chroot).
 
 ## 6. Bekannte Einschränkungen
 
+### Was in der Session vom 2026-11-11 repariert wurde
+
+Diese Blocker wurden gefunden und behoben (jeweils mit Belegdatei in
+`device/blueline/arch/`):
+
+| Blocker | Fix |
+|---|---|
+| RTC ohne `wakeup-source` | `&pm8998_rtc { wakeup-source; }` + Label in `pm8998.dtsi` |
+| `rtc-pm8xxx.ko` fehlte | Modul ins Image und in die Init-Modulliste |
+| Kein Standard-Wakealarm | `echo +3600 > /sys/class/rtc/rtc0/wakealarm` im Init |
+| Sensoren mit 1 Pad | `pads[2]` (SINK+SOURCE) in `imx355.c`/`imx363.c` |
+| Sensor-Mode auf SINK-Pad | `Pad: 1` in allen `Mode`-Befehlen der Megapixels-Config |
+| `udevadm trigger` fehlte | `SYSTEMD_IGNORE_CHROOT=1 udevadm trigger` im Init |
+| `/dev/video*` root-only | `chmod 666 /dev/video* /dev/v4l-subdev*` |
+| `simple.yaml` fehlte | Config mit `sony,imx355/imx363` + `qcom,sdm845-camss` |
+| Megapixels-Binaries fehlten | `megapixels-gtk`, `libmegapixels`, `liblibdng`, GSchema, Desktop-Eintrag |
+| XDG/Pictures fehlten | `~/.config/user-dirs.dirs`, `~/Pictures`, `postprocess.sh` |
+| `omamobile-setup-user` zu spät | synchron mit 30 s Timeout + Fallback |
+| `wcd9340` ohne `reset-gpios` | `reset-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>` |
+| `adspua.jsn` fehlte | aus dem Factory-Image extrahiert (PDR-Service `avs/audio`) |
+| Audio-Module nicht geladen | 14 Module in Abhängigkeitsreihenfolge im Init |
+| ADSP-Firmware nicht gespiegelt | `adsp.mbn`/`adspr.jsn`/`adspua.jsn` in der Init-Firmware-Liste |
+| Audio-Module vor ADSP | Reihenfolge ADSP → QRTR-Warteschleife → Audio |
+| PipeWire fehlte | `pipewire`/`wirepipe-pulse`/`wireplumber` + Start im Init |
+| Hyprland-Configs fehlten | aus `/usr/share/omarchy/config/hypr` ins Rootfs kopiert |
+| **UID-Mismatch** | `OM_UID=$(id -u omarchy)` statt hart `/run/user/1000` |
+| Plugin-Symlinks fehlten | im Rootfs **nach** der Paketinstallation verlinkt |
+| **`shell.json` fehlte** | `profile/shell.json` ins Rootfs + Prüfung im Init |
+| `WAYLAND_DISPLAY` hartkodiert | dynamisch aus `$OM_RUNTIME/wayland-*` |
+| Hardware-Watchdog fehlte | `qcom-wdt`, `pm8916_wdt` im Init |
+| Prüfskripte fehlten | `omamobile-verify-all`, `omamobile-health` im Image |
+
+**Wichtig:** Ohne `shell.json` lädt Quickshell **keine** omamobile-Plugins
+(`"plugins": []`) — dann fehlen Homescreen und Dock. Die Datei wird im
+Init geprüft und bei Bedarf wiederhergestellt.
+
 ### Rückkamera (IMX363) liefert keine Bilder
 
 Der Sensor antwortet nicht auf I2C (`Error reading reg 0x0016: -6`), die
