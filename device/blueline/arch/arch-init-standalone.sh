@@ -96,6 +96,9 @@ chmod 666 /dev/media* 2>/dev/null
 for _fw in qcom/sdm845/Google/blueline/mba.mbn \
            qcom/sdm845/Google/blueline/modem.mbn \
            qcom/sdm845/Google/blueline/wlanmdsp.mbn \
+           qcom/sdm845/Google/blueline/adsp.mbn \
+           qcom/sdm845/Google/blueline/adspr.jsn \
+           qcom/sdm845/Google/blueline/adspua.jsn \
            ath10k/WCN3990/hw1.0/firmware-5.bin \
            ath10k/WCN3990/hw1.0/board-2.bin \
            qca/crbtfw21.tlv qca/crnv21.bin; do
@@ -117,7 +120,16 @@ done
 for m in qcom-spmi-rradc qcom_smbx pmi8998_fg; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
-for m in qcom_sysmon reset-qcom-pdc qcom_q6v5 qcom_q6v5_mss; do
+for m in qcom_sysmon reset-qcom-pdc qcom_q6v5 qcom_q6v5_mss qcom_q6v5_pas; do
+    [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
+done
+# Audio: SLIMbus-Controller -> Codec -> Machine-Treiber. Der NGD-Controller
+# wartet auf den PDR-Service "avs/audio" (adspua.jsn), der Codec braucht
+# die Regler und den Reset-GPIO, erst dann bindet snd-soc-sdm845.
+for m in soundwire-bus regmap-slimbus regmap-sdw slim-qcom-ngd-ctrl \
+         snd-soc-rl6231 snd-soc-rt5663 snd-soc-qcom-sdw snd-soc-qcom-common \
+         snd-soc-wcd-common snd-soc-wcd-classh snd-soc-wcd-mbhc \
+         wcd934x snd-soc-wcd934x snd-soc-sdm845; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
 [ -x /usr/bin/rmtfs ] && /usr/bin/rmtfs >/tmp/rmtfs.log 2>&1 &
