@@ -1,0 +1,38 @@
+Audio: SLIMbus + Codec binden, ADSP-Firmware fehlt im Mainline-Format
+====================================================================
+
+ERREICHT (nach DT-Fix + Flash):
+  - DT: slim-ngd@171c0000 status="okay", sound compatible
+    "qcom,sdm845-sndcard", wcd9340-Codec-Knoten vorhanden
+  - SLIMbus-Controller gebunden:
+      /sys/bus/platform/devices/171c0000.slim-ngd/driver ->
+      qcom,slim-ngd-ctrl
+  - Alle Audio-Module geladen (snd_soc_sdm845, snd_soc_wcd934x,
+    wcd934x, snd_soc_wcd_mbhc, slim_qcom_ngd_ctrl, ...)
+
+BLOCKER 1: Codec erscheint nicht auf dem SLIMbus
+  /sys/bus/slimbus/devices/ ist leer.
+  dmesg: "PDR: service lookup for avs/audio failed: -6"
+  -> Der Audio-Dienst im ADSP (Audio DSP) ist nicht erreichbar.
+
+BLOCKER 2: ADSP-Firmware fehlt im Mainline-Format
+  /lib/firmware/qcom/sdm845/Google/blueline/ enthaelt:
+    a630_zap.mbn, mba.mbn, modem.mbn, modemr.jsn, modemuw.jsn,
+    wlanmdsp.mbn
+  -> KEIN adsp.mbn
+  remoteproc0 ist das Modem (4080000.remoteproc), nicht der ADSP.
+
+  Im Factory-Image (vendor.img) liegt die ADSP-Firmware im
+  Qualcomm-MBN-Format: adsp.mdt + adsp.b00 ... adsp.b15
+  (19 Dateien). Der Mainline-Treiber (qcom_q6v5_pas) erwartet eine
+  flache adsp.mbn.
+
+NAECHSTER SCHRITT:
+  MBN -> MBN-Flat konvertieren. Werkzeuge: pil-squasher (von
+  postmarketOS) oder das Qualcomm-Segment-Format selbst
+  zusammensetzen (mdt-Header + Segmente). Danach adsp.mbn nach
+  /lib/firmware/qcom/sdm845/Google/blueline/ legen, adsp_pas neu
+  binden und pruefen, ob der Codec auf dem SLIMbus erscheint.
+
+  Ohne ADSP gibt es keine Audio-Ausgabe: alle MI2S-Pfade laufen ueber
+  den Audio-DSP (q6afe/q6asm).
