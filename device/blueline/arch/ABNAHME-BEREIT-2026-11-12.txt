@@ -1,0 +1,39 @@
+Abnahme vollstaendig vorbereitet, 2026-11-12 00:55
+==================================================
+
+CHECKLISTE (auf dem Geraet: /root/ABNAHME-CHECKLISTE.txt)
+  Alle 10 Punkte vorhanden:
+    [ ] DISPLAY       [ ] TOUCH        [ ] WLAN
+    [ ] AUDIO         [ ] AKKU         [ ] SUSPEND
+    [ ] FRONTKAMERAS  [ ] MEGAPIXELS   [ ] FLASH
+    [ ] KALTSTART
+
+PRUEFSKRIPT (auf dem Geraet: /usr/local/bin/omamobile-verify-all, 0755)
+  Deckt jeden Checklisten-Punkt ab:
+    DISPLAY       -> Hyprland, quickshell, squeekboard (pgrep)
+    TOUCH         -> /dev/input/event*, stmfts
+    WLAN          -> wlan0, ath10k, nmcli device
+    AUDIO         -> /proc/asound/cards, /dev/snd, slimbus, adsp
+    AKKU          -> capacity/status/voltage/current, upower, ppd
+    SUSPEND       -> suspend_stats, rtc0/wakealarm, power/wakeup
+    FRONTKAMERAS  -> cam -l, kamera-pads (media-ctl), simple.yaml
+    MEGAPIXELS    -> Binary, Config (Front/FrontAux/Rear), shell.json
+    FLASH         -> (am Mac: bootonce-bootloader + fastboot)
+    KALTSTART     -> uptime, boot_id, Session-UID, Hyprland-Sig,
+                     quickshell-Lauf
+
+ZUSATZ-SKRIPTE
+  omamobile-health         Haenger-Analyse (pstore, dmesg, Prozesse)
+  omamobile-suspend-test   RTC-Alarm + echo mem + Dauerpruefung
+
+DOKUMENTE
+  /root/INSTALL.md               Anleitung + bekannte Einschraenkungen
+  /root/ABNAHME-CHECKLISTE.txt   10 Punkte zum Ausfuellen
+
+PAKET
+  boot.img      d40c3fb45519e644...  20938752 B
+  userdata.img  3e9efe89efc80b4f...  6559897652 B
+
+ERGEBNIS: Die Abnahme ist mit einem Befehl durchfuehrbar:
+  omamobile-verify-all
+Danach die Checkliste ausfuellen.
