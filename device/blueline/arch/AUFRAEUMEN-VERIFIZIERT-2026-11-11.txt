@@ -1,0 +1,51 @@
+Aufgabenpunkt (4) "Aufraeumen" vollstaendig verifiziert, 2026-11-12 00:16
+=======================================================================
+
+(4a) ersetze-module.py
+     Datei: device/blueline/firstlight/ersetze-module.py
+     Commits: e187f5b ("ersetzt auch Pfade ohne .ko"), e9687ee
+     Arbeitsbaum: sauber (git status leer)
+
+(4b) OMADBG-Debugausgaben entfernt
+     grep -rn "OMADBG" im gesamten Kernel-Baum (drivers/, fs/, arch/):
+     0 Treffer.
+     Entfernt wurden 21 Ausgaben aus 5 Dateien:
+       drivers/media/i2c/imx355.c, imx363.c
+       drivers/media/platform/qcom/camss/camss-vfe.c
+       drivers/gpu/drm/msm/dsi/phy/dsi_phy_10nm.c
+       drivers/power/supply/pmi8998_fg.c
+
+(4c) Kernel- und DT-Aenderungen als Patchdateien
+     device/blueline/arch/kernel-patches/0001-omarchy-mobile-blueline.patch
+     676 Zeilen, 10 Dateien, +352/-34
+     Auf frischem Clone verifiziert: git apply rc=0
+     Enthaelt: wakeup-source, pm8998_rtc-Label, reset-gpios,
+     pads[2] in imx355/imx363, Kamera-DT, pmi8998_fg CHARGE_*,
+     qcom_smbx APSD, fixed.c gpiod_direction_output,
+     fs/file.c O_ACCMODE, fs/notify/group.c fsnotify-Deadlock
+     README.md dokumentiert jede Aenderung.
+
+(4d) ROM mit einem Befehl reproduzierbar
+     NUR=alle|kernel|rootfs|packen AUSGABE=<dir> \
+       sh device/blueline/baue-rom.sh
+     Baut Kernel+DTB, Rootfs, boot.img, userdata.img, SHA256SUMS.
+     Alle Skripte syntax-geprueft (sh -n).
+
+(4e) SHA256 der Bilder
+     ~/hermes-workspace/rom-blueline-final/SHA256SUMS
+       d40c3fb4...  boot.img      20938752 B
+       5200fefe...  userdata.img  6559897652 B
+
+(4f) INSTALL.md
+     device/blueline/INSTALL.md, 253 Zeilen
+     Abschnitte: Was funktioniert, Bauen, Flashen, Ohne Tastendruck in
+     den Bootloader, Nach dem ersten Boot, Bekannte Einschraenkungen
+     (Rueckkamera, libcamera-Pads, Audio, Suspend, Bluetooth,
+     USB-Ladestrom, Rootfs-Groesse), Belege.
+     Zusaetzlich: Tabelle aller 24 Fixes vom 2026-11-11.
+     Liegt auch auf dem Geraet: /root/INSTALL.md (9714 B).
+
+(4g) Reproduzierbarkeit belegt
+     Patch auf frischem Clone angewendet, DTB identisch (Commit 959cd27).
+
+ERGEBNIS: Aufgabenpunkt (4) ist vollstaendig erledigt und belegt.
