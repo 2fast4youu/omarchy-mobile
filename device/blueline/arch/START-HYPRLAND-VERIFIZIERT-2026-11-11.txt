@@ -1,0 +1,36 @@
+start-hyprland und Session-Umgebung verifiziert, 2026-11-11 23:05
+=================================================================
+
+start-hyprland
+  ELF-Binary (C++, libhyprutils.so.13, libstdc++.so.6)
+  Startet Hyprland und wartet auf dessen Exit; pollt den State.
+  Braucht: XDG_RUNTIME_DIR, LIBSEAT_BACKEND=seatd, WAYLAND_DISPLAY,
+           HYPRLAND_INSTANCE_SIGNATURE
+
+SESSION-SKRIPT (/run/omamobile-session.sh, vom Init erzeugt)
+  export XDG_RUNTIME_DIR=$OM_RUNTIME      (dynamisch: /run/user/1001)
+  export LIBSEAT_BACKEND=seatd
+  export LANG=en_US.UTF-8
+  timeout 30 omamobile-setup-user          (synchron + Fallback)
+  Plugin-Symlinks pruefen/anlegen
+  Hyprland-Theme + Background anlegen
+  gsettings xkb=de                         (Squeekboard-Layout)
+  start-hyprland &                         (Hintergrund)
+  warten auf $OM_RUNTIME/hypr/<sig>        (max 30 s)
+  WAYLAND_DISPLAY dynamisch aus $OM_RUNTIME/wayland-*
+  HYPRLAND_INSTANCE_SIGNATURE=$sig
+  squeekboard &  hypridle &  quickshell -p /usr/share/omarchy/shell &
+  wait
+
+AUFRUF AUS DEM INIT
+  su - omarchy -c 'dbus-run-session -- /run/omamobile-session.sh' &
+  -> eigene DBus-Session fuer die Shell (sonst kann sie die Tastatur
+     nicht rufen)
+
+RECHTE
+  /run/user/1001  chown omarchy 700
+  /dev/dri/*      root:video 660   (omarchy in video)
+  /dev/input/*    root:input 660   (omarchy in input)
+  seatd -g seat                    (omarchy in seat)
+
+ERGEBNIS: Die Session-Umgebung ist vollstaendig und konsistent.
