@@ -1,0 +1,27 @@
+Kamera-Stand Runde 11/15, 2026-11-11 15:37
+===========================================
+
+3/3 Kameras werden von libcamera erkannt (cam -l).
+
+Aber bei der Aufnahme:
+  "CameraSensorRaw camera_sensor_raw.cpp:213 imx355 17-0010:
+   unsupported number of sinks (0) or sources (1)"
+
+Ursache: libcamera 0.7.2 erwartet fuer einen Sensor 2 Pads
+(SINK + SOURCE). Die mainline-Treiber imx355/imx363 haben aber
+genau 1 Pad (MEDIA_PAD_FL_SOURCE), was im V4L2-Modell fuer Sensoren
+korrekt ist. libcamera 0.7.x hat hier offenbar eine strengere
+Erwartung (CameraSensorRaw prueft num_sink_pads/num_source_pads).
+
+Zusaetzlich: der Sensor-Subdev meldet wechselnde Formate
+(1920x1080, 3280x2464, 820x616 je nach letztem Sitzungsversuch),
+und libcamera baut daraus 3280x2464-Frames, die der reserved-
+dma-heap nicht alloziieren kann.
+
+Damit ist die Kamera-Aufnahme ueber libcamera auf diesem Stand
+blockiert - nicht durch fehlende Hardware-Erkennung, sondern durch
+die Pad-Erwartung von libcamera 0.7.2.
+
+REGEL: 11 von 15 Runden verbraucht. Runde 12-15 fuer einen letzten
+Versuch (aeltere libcamera-Version oder Patch), danach Dokumentation
+als bekannte Einschraenkung.
