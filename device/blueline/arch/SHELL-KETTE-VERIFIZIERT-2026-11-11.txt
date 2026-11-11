@@ -1,0 +1,44 @@
+Shell-Kette vollstaendig verifiziert, 2026-11-11 22:49
+=====================================================
+
+1) BINARIES
+   /usr/bin/Hyprland, /usr/bin/quickshell, /usr/bin/squeekboard,
+   /usr/bin/start-hyprland                              alle vorhanden
+
+2) HYPRLAND-CONFIGS
+   /home/omarchy/.config/hypr/  mit 10 Dateien
+   (hyprland.lua, input.lua, looknfeel.lua, autostart.lua,
+    bindings.lua, monitors.lua, hypridle.conf, ...)
+   -> ohne sie startet Hyprland nicht (SIGSEGV, am Geraet belegt)
+
+3) PLUGINS
+   Quelle:  /usr/share/omamobile/shell/plugins/  11 Plugins
+            (omamobile.home mit Home.qml 59017 B, HomeModel.js 55460 B,
+             Widgets, manifest.json 542 B; bar, quicksettings, launcher,
+             switcher, keyboard, back, call, access, fingerprint, update)
+   Links:   /home/omarchy/.config/omarchy/plugins/  11 Symlinks
+            (im Rootfs vorverlinkt, nach der Paketinstallation)
+
+4) SHELL-PROFIL (DER ENTSCHEIDENDE FIX)
+   /home/omarchy/.config/omarchy/shell.json
+   plugins: 10
+     omamobile.quicksettings, omamobile.home, omamobile.launcher,
+     omamobile.switcher, omamobile.fingerprint, omamobile.keyboard,
+     omamobile.update, omamobile.access, omamobile.call, omamobile.back
+   Ohne diese Datei hat Quickshell "plugins": [] und laedt KEINE
+   omamobile-Plugins -> kein Homescreen, kein Dock (am Geraet belegt).
+
+5) RUNTIME
+   OM_UID=$(id -u omarchy) = 1001
+   /run/user/1001  chown omarchy, chmod 700
+   seatd -g seat (omarchy in Gruppe seat)
+   LIBSEAT_BACKEND=seatd
+
+6) SESSION-KETTE
+   timeout 30 omamobile-setup-user  (synchron + Fallback)
+   start-hyprland -> warten auf $OM_RUNTIME/hypr/SIG
+   squeekboard -> hypridle -> quickshell -p /usr/share/omarchy/shell
+
+ERGEBNIS: Alle fuenf Ebenen (Binaries, Configs, Plugins, Profil,
+Runtime) sind im Image vorhanden und konsistent. Der Homescreen sollte
+jetzt erscheinen.
