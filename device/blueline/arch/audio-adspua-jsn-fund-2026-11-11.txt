@@ -1,0 +1,51 @@
+Audio: adspua.jsn fehlte - das ist der PDR-Service (17:47)
+=========================================================
+
+DER FUND:
+
+  Aus dem Factory-Image extrahiert (vendor.img/firmware/):
+    adspr.jsn   403 B  sha256 4781dc93...
+    adspua.jsn  555 B  sha256 d6c6376f...
+
+  Inhalt von adspua.jsn:
+    {
+      "sr_version": { "major": 1, "minor": 1, "patch": 1 },
+      "sr_domain": {
+        "soc": "msm",
+        "domain": "adsp",
+        "subdomain": "audio_pd",        <- "msm/adsp/audio_pd"
+        "qmi_instance_id": 74
+      },
+      "sr_service": [
+        { "provider": "tms", "service": "servreg", ... },
+        { "provider": "avs", "service": "audio", ... }   <- "avs/audio"
+      ]
+    }
+
+  Das ist GENAU der Service, auf den qcom-ngd-ctrl wartet:
+    pdr_add_lookup(ctrl->pdr, "avs/audio", "msm/adsp/audio_pd");
+
+  Ohne adspua.jsn kennt der ADSP den Audio-PD nicht, meldet ihn nicht
+  per PDR an, der SLIMbus bleibt DOWN und die ADDR_QUERY bleibt
+  unbeantwortet -> "Failed to get logical address".
+
+WAS GEMACHT WURDE:
+  1) adsp.mbn (13148160 B, aus den MBN-Segmenten zusammengesetzt),
+     adspr.jsn und adspua.jsn nach
+     ~/hermes-workspace/firmware/qcom/sdm845/Google/blueline/ kopiert
+  2) baue-arch-rootfs.sh: Kopierliste erweitert:
+       for f in mba.mbn modem.mbn modemr.jsn modemuw.jsn wlanmdsp.mbn \
+                adsp.mbn adspr.jsn adspua.jsn; do ...
+     (adsp.mbn fehlte bisher komplett im Image!)
+
+ERWARTUNG NACH DEM FLASH:
+  dmesg: kein "PDR: service lookup for avs/audio failed" mehr
+  -> SLIMbus geht UP
+  -> wcd934x-slim liest die Chip-ID
+  -> snd-soc-sdm845 bindet eine Karte
+  -> /proc/asound/cards zeigt "Google Pixel 3"
+
+Hashes der Firmware:
+  adsp.mbn   2f73b75d4ecd46a57dd2682b31011291a8389ebdddc4e6e912218ba567be2adc
+  adspr.jsn  4781dc9312fa017b0e611c752dae2183c0f205af8300b28417a496dae511b0a5
+  adspua.jsn d6c6376f53e5449eb4f7b9e5a30679ebc2a9afaad28c13ff171f979e7b1af1f6

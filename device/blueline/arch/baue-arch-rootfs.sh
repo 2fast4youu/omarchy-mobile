@@ -81,7 +81,10 @@ done
 l=/modembin-lib/aarch64-linux-gnu/libqrtr.so.1
 [ -f "$l" ] && cp "$l" /tmp/arch/usr/lib/libqrtr.so.1 && chmod 755 /tmp/arch/usr/lib/libqrtr.so.1
 mkdir -p /tmp/arch/usr/lib/firmware/qcom/sdm845/Google/blueline
-for f in mba.mbn modem.mbn modemr.jsn modemuw.jsn wlanmdsp.mbn; do
+# adsp.mbn + adspr.jsn/adspua.jsn: der SLIMbus-Controller (qcom-ngd-ctrl)
+# wartet auf den PDR-Service "avs/audio"/"msm/adsp/audio_pd"; den meldet
+# der ADSP nur, wenn adspua.jsn mitgeladen wird.
+for f in mba.mbn modem.mbn modemr.jsn modemuw.jsn wlanmdsp.mbn adsp.mbn adspr.jsn adspua.jsn; do
     [ -f "/qcomfw/$f" ] && cp "/qcomfw/$f" /tmp/arch/usr/lib/firmware/qcom/sdm845/Google/blueline/
 done
 date -u +%Y-%m-%dT%H:%M:%SZ > /tmp/arch/etc/omamobile-buildtime
