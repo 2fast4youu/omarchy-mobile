@@ -1,0 +1,38 @@
+Pad-Kette der Kamera vollstaendig verifiziert, 2026-11-11 22:18
+===============================================================
+
+1) SENSOR-TREIBER (imx355.c, imx363.c)
+   pads[0].flags = MEDIA_PAD_FL_SINK
+   pads[1].flags = MEDIA_PAD_FL_SOURCE
+   media_entity_pads_init(&sd.entity, 2, pads)
+
+2) CAMSS-LINK-ERSTELLUNG (camss.c:4817-4831)
+   for (i = 0; i < sensor->num_pads; i++)
+       if (sensor->pads[i].flags & MEDIA_PAD_FL_SOURCE) break;
+   media_create_pad_link(sensor, i, input, MSM_CSIPHY_PAD_SINK,
+                         IMMUTABLE | ENABLED)
+   -> camss SUCHT den SOURCE-Pad dynamisch. Mit pads[1]=SOURCE
+      entsteht der Link sensor:1 -> csiphy:0. Korrekt.
+
+3) CAMSS-INTERNE LINKS (camss.c:4591, 4609)
+   csiphy[MSM_CSIPHY_PAD_SRC] -> csid[MSM_CSID_PAD_SINK]
+   csid[MSM_CSID_PAD_SRC]     -> vfe[...]
+   (feste Pad-Konstanten im Treiber)
+
+4) camss_find_sensor_pad (camss.c:4267)
+   startet bei entity->pads[0] (dem VFE/csiphy, nicht dem Sensor),
+   prueft SINK und folgt den Links rueckwaerts bis MEDIA_ENT_F_CAM_SENSOR.
+   Wird nur fuer g_skip_frames genutzt, nicht fuer den Link.
+
+5) LIBCAMERA (camera_sensor_raw.cpp)
+   verlangt num_sink_pads >= 1 UND num_source_pads >= 1.
+   Mit pads[0]=SINK und pads[1]=SOURCE erfuellt.
+
+6) MEGAPIXELS-CONFIG (google,blueline.conf)
+   Link csiphy2:1 -> csid0:0 -> vfe0_rdi0:0
+   Mode fuer ALLE Entities auf Pad 1 (SOURCE) gesetzt -
+   vorher Default 0 (SINK), dadurch landete das Format auf dem
+   falschen Pad und der Stream startete nicht.
+
+ERGEBNIS: Die Pad-Kette ist auf allen Ebenen konsistent. Der
+2-Pad-Fix im Treiber ist mit camss und libcamera kompatibel.
