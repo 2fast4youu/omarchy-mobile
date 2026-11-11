@@ -1,0 +1,39 @@
+Finale Verifikation, 2026-11-12 00:56
+=====================================
+
+REPO <-> IMAGE: alle Skripte und Dokumente SHA256-identisch
+
+  omamobile-verify-all    0fb5746263dd85db...  (inkl. Kaltstart-Pruefung)
+  omamobile-health        identisch
+  omamobile-suspend-test  identisch
+  omamobile-wakeup        identisch
+  omamobile-time-sync     identisch
+  INSTALL.md              045933cacf61b09c...
+  ABNAHME-CHECKLISTE.txt  identisch, 10 Punkte
+
+PAKET
+  boot.img      d40c3fb45519e644...  20938752 B
+  userdata.img  3e9efe89efc80b4f...  6559897652 B
+  Zwei unabhaengige Builds: byte-identisch.
+
+ABNAHME-PUNKTE (alle im Pruefskript)
+  DISPLAY, TOUCH, WLAN, AUDIO, AKKU, SUSPEND,
+  FRONTKAMERAS, MEGAPIXELS, FLASH, KALTSTART
+
+ABGESCHLOSSEN
+  (1) Flash-Zyklus ohne Gregor      VOLLSTAENDIG
+  (2) Rueckkamera IMX363            15/15, als Einschraenkung
+  (3) USB-Ladetyp                   ERLEDIGT
+  (4) Aufraeumen                    VOLLSTAENDIG
+  30 Blocker behoben, alle im Image verifiziert
+
+OFFEN — NUR PHYSISCH
+  (3) Megapixels-Foto, Suspend %/h
+  (5) Abnahme am Geraet
+  Geraet schlaeft seit 2026-11-11 16:44 im s2idle (>8 h).
+  11 Zugriffswege geprueft, alle negativ.
+  Pwrkey-Taste noetig.
+
+REPO
+  652 Commits, Arbeitsbaum sauber, 278 Belegdateien
+  Keine veralteten Hashes in der Dokumentation.
