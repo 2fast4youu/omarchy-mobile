@@ -133,6 +133,12 @@ cp "$IN" "$OUT" 2>/dev/null || exit 1
 EOP
   chmod 755 /home/omarchy/.config/megapixels/postprocess.sh
   chown -R omarchy:omarchy /home/omarchy/Pictures /home/omarchy/Videos /home/omarchy/Downloads /home/omarchy/.config
+  # Hyprland-Configs: ohne sie startet Hyprland nicht (SIGSEGV, am Geraet
+  # belegt). omamobile-setup-user legt sie normalerweise an, aber das
+  # laeuft erst im Init - hier vorab aus dem Omarchy-Paket kopieren.
+  mkdir -p /home/omarchy/.config/hypr
+  [ -d /usr/share/omarchy/config/hypr ] && cp -a /usr/share/omarchy/config/hypr/. /home/omarchy/.config/hypr/ 2>/dev/null
+  chown -R omarchy:omarchy /home/omarchy/.config/hypr
   for p in omamobile-apps omamobile-omarchy omamobile-shell; do
     [ -d /root/pkgs/$p ] || continue
     ( cd /root/pkgs/$p
