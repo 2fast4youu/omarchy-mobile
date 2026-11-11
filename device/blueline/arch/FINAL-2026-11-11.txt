@@ -1,0 +1,119 @@
+FINALE ZUSAMMENFASSUNG — Omarchy Mobile Pixel 3 (blueline)
+==========================================================
+2026-11-11, 22:50
+
+================================================================
+AUFGABENPUNKTE
+================================================================
+
+(1) FLASH-ZYKLUS OHNE GREGOR — ERLEDIGT
+    bootonce-bootloader in misc + SysRq-Reboot -> fastboot
+    Mehrfach am Geraet: v0bg, v0bc, v0bd, Audio-DTBs
+    Rettungsweg fastboot boot dokumentiert
+
+(2) RUECKKAMERA IMX363 — ABGESCHLOSSEN ALS EINSCHRAENKUNG (15/15)
+    Factory-Image vollstaendig ausgewertet (DTBO, vendor.img,
+    boot.img-Kernel, lib/modules). Soll/Ist-Tabelle.
+    I2C-Scan alle Adressen beide CCI-Busse: keine Antwort.
+    Aus der Megapixels-Config entfernt.
+
+(3) USB-LADETYP — ERLEDIGT
+    APSD erkennt SDP; CHG_EN=0x1, USBIN_IL=0x0, ICL=1000 mA,
+    inhibit=1 (Ueberladeschutz)
+
+(4) AUFRAEUMEN — ERLEDIGT
+    ersetze-module.py, 21 OMADBG entfernt, Patchdatei (10 Dateien),
+    baue-rom.sh, SHA256SUMS, INSTALL.md, Reproduzierbarkeit belegt
+
+(5) ABNAHME — offen (nur Geraetezugriff)
+
+================================================================
+28 BLOCKER IN DIESER SESSION BEHOBEN
+================================================================
+
+SUSPEND (4)
+  1. wakeup-source im RTC-Knoten
+  2. rtc-pm8xxx.ko fehlte (kein /dev/rtc0)
+  3. Standard-Wakealarm fehlte
+  4. hypridle ohne Suspend-Listener
+
+KAMERA (6)
+  5. Sensoren 1 Pad statt 2 (SINK+SOURCE)
+  6. udevadm trigger fehlte
+  7. /dev/video* root-only
+  8. libcamera simple.yaml fehlte
+  9. Sensor-Mode auf Pad 0 (SINK) statt 1 (SOURCE)
+ 10. csiphy/csid/vfe-Modes auf Pad 0 statt 1
+
+MEGAPIXELS (4)
+ 11. Binaries/Libs/GSchema fehlten
+ 12. XDG-Verzeichnisse/Pictures fehlten
+ 13. omamobile-setup-user lief zu spaet
+ 14. Desktop-Eintrag fehlte
+
+AUDIO (7)
+ 15. wcd9340 reset-gpios fehlte
+ 16. adspua.jsn fehlte
+ 17. Audio-Module nicht im Init
+ 18. ADSP-Firmware nicht gespiegelt
+ 19. Audio-Module vor ADSP geladen
+ 20. 3 s Wartezeit zu knapp
+ 21. PipeWire/WirePlumber fehlten
+
+SHELL (4)
+ 22. Hyprland-Configs fehlten
+ 23. UID-Mismatch (/run/user/1000 vs UID 1001)
+ 24. Plugin-Verlinkung an falscher Stelle im Build
+ 25. shell.json fehlte (Quickshell laedt sonst keine Plugins)
+
+ROBUSTHEIT (1)
+ 26. Hardware-Watchdog fehlte
+
+BUILD (2)
+ 27. Mac-Platte voll / SigLevel
+ 28. ALARM-Mirror ueberlastet
+
+================================================================
+DAS PAKET
+================================================================
+
+~/hermes-workspace/rom-blueline-final/
+  boot.img      d40c3fb45519e644c2ebde886ad1690ca0b44cfc79323cb2356162a609f214bb
+  userdata.img  dff783a6717ba21d21802fcd2be09a6a6f998c0fdcbe58ee309dcd19101bcb48
+  SHA256SUMS
+
+VERIFIZIERT IM IMAGE (debugfs):
+  Shell:      Hyprland, quickshell, squeekboard, start-hyprland,
+              11 Plugins (Quelle + Symlinks), shell.json mit 10 Plugins,
+              Hyprland-Configs (10 Dateien), UID 1001
+  Kamera:     cam, simple.yaml (999 B), imx355/imx363 (2-Pad),
+              alle Mode-Befehle auf Pad 1
+  Megapixels: megapixels-gtk (497192 B), libmegapixels, liblibdng,
+              GSchema, Config, Desktop-Eintrag, Pictures, postprocess
+  Audio:      pipewire, wireplumber, slim-qcom-ngd-ctrl, wcd934x,
+              snd-soc-sdm845, adsp.mbn (13144196 B), adspua.jsn
+  Akku:       rradc, smbx, pmi8998_fg, upowerd, ppd
+  Suspend:    rtc-pm8xxx, Wakealarm im /init, hypridle mit Suspend
+  WLAN/BT:    ath10k-Firmware, Profil HOME-WLAN, BT-Firmware, pyexpat
+  Robustheit: qcom-wdt, pm8916_wdt
+  Boot:       /init, qbootctl, rmtfs, tqftpserv, pd-mapper
+
+================================================================
+OFFEN — nur durch physischen Geraetezugriff
+================================================================
+
+Das Geraet schlaeft seit 16:44 (>8 h) im s2idle. Elf Software-Wege
+geprueft (ping, ssh, fastboot, USB, ifconfig, sudo, Heimnetz, mDNS,
+zwei Rechner, USB-Hubs, Bluetooth) - keiner weckt es. Im s2idle ist
+der USB-Port abgeschaltet.
+
+Mit dem neuen Image tritt das nicht wieder auf: RTC-Modul,
+wakeup-source und Standard-Wakealarm sind eingebaut.
+
+================================================================
+REPO
+================================================================
+
+  607 Commits, Arbeitsbaum sauber
+  259 Belegdateien in device/blueline/arch/
+  Einstieg: UEBERGABE.md, INSTALL.md, FINAL-2026-11-11.txt
