@@ -279,6 +279,10 @@ while [ \$i -lt 30 ]; do
     [ -n "\$sig" ] && break
     sleep 1; i=\$((i + 1))
 done
+# Wenn Hyprland nach 30 s nicht bereit ist, ist $sig leer - Quickshell
+# kann dann keine Hyprland-Verbindung aufbauen. Warnung ins Log, damit
+# der Fehler diagnostizierbar ist (Hyprland-Log: /tmp/hyprland.log).
+[ -n "\$sig" ] || echo "WARN: Hyprland-Signatur nach 30 s leer" > /dev/kmsg 2>/dev/null
 sleep 2
 # WAYLAND_DISPLAY dynamisch: Hyprland nimmt wayland-1, aber wenn der
 # Socket belegt ist auch wayland-2/3. Hartkodiertes wayland-1 fuehrt
