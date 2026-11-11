@@ -1,0 +1,36 @@
+Suspend: Gerät schläft, wacht ohne Tastendruck nicht auf (15:44)
+================================================================
+
+MESSUNGEN (belegt):
+  Akku-Entladung im Wachzustand:
+    /var/log/akku-messung.log, 28 Punkte ueber 0.45 h
+    99%, Discharging, 4.316 V -> 4.315 V
+    Strom: min 1.95 mA, max 2.44 mA, avg 2.16 mA
+    -> 0.074 %/h (2915 mAh Design)
+    -> Hochrechnung 1352 h (unrealistisch: Akku bei 99%, Messung zu
+       kurz, der Fuel-Gauge loest bei hoher Spannung nicht auf)
+
+  Suspend-Test:
+    echo mem > /sys/power/state  bzw. rtcwake -m mem -s 5
+    -> SSH bricht ab, ping 172.16.42.1 100% loss, USB-Interface weg
+    -> Das Geraet SCHLAEFT (suspend funktioniert!)
+    -> ABER: es wacht nicht von selbst auf; rtcwake -s 5 hat nicht
+       geweckt. /sys/power/suspend_stats/success blieb 0 (Zaehler wird
+       erst beim erfolgreichen Resume erhoeht).
+    -> Geraet ist aktuell nicht erreichbar (kein SSH, kein fastboot).
+
+BEKANNTE URSACHE (aus frueherer Messung):
+  Der Wakeup funktioniert nur ueber die Pwrkey-Taste (omamobile-wakeup
+  schaltet /sys/devices/.../power/wakeup fuer pwrkey/PMIC/i2c frei).
+  RTC-Wakeup ist im DT nicht als Wakeup-Quelle eingetragen.
+
+MASSNAHME:
+  - Der Suspend-Zyklus-Logger laeuft weiter und schreibt beim naechsten
+    Resume die Werte (falls das Geraet per Tastendruck geweckt wird).
+  - Fuer die %/h-Messung im Suspend braucht es entweder:
+      a) RTC als Wakeup-Quelle im DT (qcom,rtc / pm8941-rtc wakeup), oder
+      b) manuelles Wecken per Pwrkey und dann die Log-Auswertung.
+
+EHRLICHER STATUS: Suspend funktioniert (Geraet schlaeft), aber ohne
+Tastendruck kommt es nicht zurueck. Die %/h-Messung im Suspend ist damit
+noch nicht abgeschlossen.
