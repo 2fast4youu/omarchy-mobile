@@ -1,0 +1,25 @@
+v0bd: GPIO-Konflikt weg, Treiber treibt vana-GPIO, 2026-11-11 10:58
+===================================================================
+
+Nach v0bd-Flash + neuem imx363.ko (460912 B, mit vana_gpio):
+  dmesg: OMADBG supply bob ok / vdig ok / vif ok
+         OMADBG vana_gpio -> 1              <- Treiber SETZT den GPIO
+         OMADBG enable bob/vdig/vif -> 0 (is_enabled=1)
+         OMADBG clk=ok rate=24000000, clk_prepare_enable ret=0
+         Error reading reg 0x0016: -6
+  pinctrl-Konflikt: 0 (behoben durch v0bd)
+  pinmux pin 16: GPIO 3400000.pinctrl:568 (gemuxt)
+
+Aber:
+  /sys/kernel/debug/gpio: gpio16 "in low" (gpiolib) - der Pin wird
+  NICHT als Output gefuehrt, obwohl gpiod_set_value_cansleep(1)
+  aufgerufen wurde und pinctrl "out low func0" zeigt.
+  i2c-16 0x10: EBUSY
+
+Deutung: gpiolib fuehrt GPIO 16 als INPUT, waehrend der Treiber ihn
+per gpiod_set_value auf 1 setzt. Der Wert kommt nicht am Pin an. Das
+ist derselbe gpiolib/pinctrl-Widerspruch wie beim Fixed-Regulator.
+
+Naechster Ansatz: pinctrl-State mit explizitem output-high versehen
+(cam_rear_vana_default_pin: output-high statt nur function=gpio), damit
+der Pin schon beim Muxen als Output HIGH konfiguriert wird.
