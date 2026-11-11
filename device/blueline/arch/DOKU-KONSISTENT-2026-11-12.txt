@@ -1,0 +1,45 @@
+Dokumentation konsistent, 2026-11-12 00:27
+==========================================
+
+INSTALL.md — drei Kopien, byte-identisch:
+  device/blueline/INSTALL.md        045933cacf61b09c...
+  device/blueline/arch/INSTALL.md   045933cacf61b09c...
+  /root/INSTALL.md (im Image)       045933cacf61b09c...
+
+  Inhalt: 253 Zeilen, Abschnitte 1-7, Tabelle aller 24 Fixes vom
+  2026-11-11, bekannte Einschraenkungen (Rueckkamera, libcamera-Pads,
+  Audio, Suspend, Bluetooth, USB-Ladestrom, Rootfs-Groesse).
+
+UEBRIGE DOKUMENTE IM REPO
+  UEBERGABE.md                       (209 Zeilen, aktuelle Hashes)
+  UEBERGABE-FINAL-2026-11-12.txt     (Uebergabe, Flash, Abnahme)
+  BLOCKER-FINAL-2026-11-12.txt       (11 gepruefte Zugriffswege)
+  RUECKKAMERA-ABSCHLUSS-2026-11-12.txt
+  AUFRAEUMEN-VERIFIZIERT-2026-11-11.txt
+  PUNKT-1-VERIFIZIERT-2026-11-12.txt
+  reproduzierbarkeit-2026-11-12.txt
+  pad-kette-verifiziert-2026-11-11.txt
+  IMAGE-VERIFIKATION-2026-11-11.txt
+  BOOT-KETTE-VERIFIZIERT-2026-11-11.txt
+  BERECHTIGUNGEN-VERIFIZIERT-2026-11-11.txt
+  SHELL-KETTE-VERIFIZIERT-2026-11-11.txt
+  QUICKSHELL-VERIFIZIERT-2026-11-11.txt
+  SQUEEKBOARD-VERIFIZIERT-2026-11-11.txt
+  DBUS-PORTAL-VERIFIZIERT-2026-11-11.txt
+  SEAT-VERIFIZIERT-2026-11-11.txt
+  SETUP-USER-VERIFIZIERT-2026-11-11.txt
+  THEME-VERIFIZIERT-2026-11-11.txt
+  HARDWARE-KONFIG-VERIFIZIERT-2026-11-11.txt
+  BLUETOOTH-VERIFIZIERT-2026-11-11.txt
+  ABNAHME-SKRIPT-VERIFIZIERT-2026-11-11.txt
+  BUILD-SKRIPTE-VERIFIZIERT-2026-11-11.txt
+  ... und weitere
+
+AUF DEM GERAET
+  /root/INSTALL.md                9714 B
+  /root/ABNAHME-CHECKLISTE.txt    1919 B
+  /usr/local/bin/omamobile-verify-all
+  /usr/local/bin/omamobile-health
+  /usr/local/bin/omamobile-suspend-test
+
+ERGEBNIS: Die Dokumentation ist konsistent zwischen Repo und Image.
