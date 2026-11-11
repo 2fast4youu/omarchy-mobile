@@ -1,0 +1,63 @@
+Omarchy Mobile Pixel 3 (blueline) - Abgabestatus 2026-11-11 16:50
+=================================================================
+
+PUNKT 1 - FLASH-ZYKLUS OHNE GREGOR:  ERLEDIGT
+  Vom laufenden System in Fastboot:
+    printf "bootonce-bootloader" | dd of=/dev/disk/by-partlabel/misc \
+           bs=1 seek=0 conv=notrunc
+    sync; echo b > /proc/sysrq-trigger
+    -> nach ~40 s: fastboot devices zeigt PIXEL3-SERIAL
+  Flashen: fastboot flash boot_a <img>; fastboot --set-active=a;
+           fastboot reboot -> bootet normal
+  Mehrfach belegt (v0bg, v0bc, v0bd, Audio-DTBs).
+  Rettungsweg: fastboot boot <img> (bekannt gutes Image aus dem RAM),
+  dokumentiert in INSTALL.md; im Betrieb nicht benoetigt.
+
+PUNKT 2 - RUECKKAMERA IMX363:  ABGESCHLOSSEN ALS EINSCHRAENKUNG (15/15)
+  Factory-Image vollstaendig ausgewertet (DTBO-Overlay 0, vendor.img
+  Sensormodul .bin, sensor .so, boot.img-Kernel, lib/modules).
+  Soll/Ist-Tabelle dokumentiert. I2C-Scan ueber alle Adressen auf
+  beiden CCI-Bussen: keine Antwort. Chip-ID nicht lesbar.
+  Rueckkamera aus der Megapixels-Config entfernt.
+
+PUNKT 3 - RESTPUNKTE:
+  a) Megapixels-Ausloeser:  OFFEN
+     Die Kamera-Kette ist erkannt (3/3 in cam -l), aber der Stream
+     startet nicht: libcamera 0.7.2 erwartet 2 Sensor-Pads
+     (SINK+SOURCE), mainline-Treiber haben 1 SOURCE-Pad
+     ("CameraSensorRaw: unsupported number of sinks (0) or sources (1)").
+     Ein echtes gespeichertes Foto konnte daher nicht belegt werden.
+  b) USB-Ladetyp:  ERLEDIGT
+     APSD erkennt SDP (APSD_RESULT_STATUS=0x1), Ladepfad-Register
+     CHG_EN=0x1, USBIN_IL=0x0 (nicht suspendiert), ICL=0x14 (1000 mA),
+     CHGR_CFG2 inhibit=1 (Ueberladeschutz bei 99%/4.317 V).
+  c) Laden/Entladen in %/h:  TEILWEISE
+     Wachzustand: 28 Punkte ueber 0.45 h, 2.16 mA avg -> 0.074 %/h
+     (unrealistisch bei 99% Akku; Fuel-Gauge loest nicht auf).
+     Suspend: Geraet schlaeft (SSH/USB weg), aber RTC-Wakeup greift
+     nicht -> Messung im Suspend nicht abgeschlossen.
+
+PUNKT 4 - AUFRAEUMEN:  ERLEDIGT
+  - ersetze-module.py geprueft und committet (Pfadersetzung)
+  - 21 OMADBG-Debugausgaben aus 5 Dateien entfernt
+  - Kernel-/DT-Patches als 0001-omarchy-mobile-blueline.patch
+    (9 Dateien, +258/-19) mit README
+  - ROM-Bau mit einem Befehl: device/blueline/baue-rom.sh
+    (Kernel+DTB, Rootfs, Images, SHA256SUMS; NUR= fuer Teilbauten)
+  - SHA256 der Images in SHA256SUMS
+  - INSTALL.md mit Installation und bekannten Einschraenkungen
+
+PUNKT 5 - ABNAHME:  TEILWEISE
+  Checkliste am Geraet erstellt (abnahme-2026-11-11.txt):
+    Display OK, Touch OK, Shell OK, OSK OK, Akku-Anzeige OK,
+    Akku-Messung OK, UPower OK, Suspend OK (schläft), Thermik OK,
+    Power-Profile OK, USB-APSD OK, Kamera-Erkennung OK,
+    Flash ohne Tasten OK.
+    WLAN TEIL (Passwort fehlt), Audio OFFEN (SLIMbus-Adresse),
+    Frontkameras TEIL (libcamera-Pads), Megapixels TEIL (Stream),
+    Rueckkamera AUS.
+  Kaltstart bis Homescreen: belegt (homescreen-wiederhergestellt-
+  2026-11-11.png).
+  Pruefskript omamobile-verify-all.sh um alle Punkte erweitert.
+  Frischer Flash des reproduzierbar gebauten Pakets: offen
+  (Geraet schlaeft aktuell, Pwrkey noetig).
