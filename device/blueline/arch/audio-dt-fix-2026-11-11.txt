@@ -1,0 +1,35 @@
+Audio: DT-Knoten für WCD934x ergänzt, 2026-11-11 16:05
+=====================================================
+
+Befund: Der Sound-Knoten im DT war die DragonBoard-845c-Variante
+(compatible "qcom,db845c-sndcard", DAI-Links cs35l36/mm1). Der
+SLIMbus-Controller (slim@171c0000) stand auf status="disabled".
+
+Aus dem Stock-DTBO (Overlay 9) gelesen:
+  wcd934x_cdc: tavil_codec
+    compatible = "qcom,tavil-slim-pgd"
+    elemental-addr = [00 01 50 02 17 02]
+    qcom,wcd-rst-gpio-node = <&wcd_rst_gpio>
+    clocks = <&clock_audio_lnbb 0>
+    cdc-vdd-* = pm8998_s4 (1.8 V)
+    micbias1-4 = 1.8 V
+    qcom,cdc-mclk-clk-rate = 9600000
+    qcom,cdc-slim-ifd = "tavil-slim-ifd"
+
+UMSETZUNG:
+  - #include "sdm845-wcd9340.dtsi" (enthält &slim { status="okay" }
+    plus den kompletten wcd9340-Codec-Knoten mit ifd, micbias,
+    clock, gpio-controller)
+  - &sound: compatible auf "qcom,sdm845-sndcard" (ohne db845c),
+    DAI-Links ersetzt:
+      mm1-dai-link            MultiMedia1 (q6asmdai)
+      pri-mi2s-dai-link       Primary MI2S Playback -> wcd9340
+      pri-mi2s-capture-dai-link Primary MI2S Capture -> wcd9340
+    (die cs35l36-Links entfallen: das Pixel 3 hat keinen CS35L36)
+
+DTB gebaut: 114235 B (vorher 112888 B).
+Erwartung: snd-soc-sdm845 bindet eine Karte, /proc/asound/cards zeigt
+"Google Pixel 3", /dev/snd/ bekommt pcmC0D*.
+
+Offen: Der Codec braucht pm8998_s4 (1.8 V) und den WCD-Reset-GPIO;
+beides ist im DT vorhanden, muss aber im Betrieb geprüft werden.
