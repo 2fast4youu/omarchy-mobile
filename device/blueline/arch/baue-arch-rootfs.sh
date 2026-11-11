@@ -170,6 +170,15 @@ cp "$IN" "$OUT" 2>/dev/null || exit 1
 EOP
   chmod 755 /home/omarchy/.config/megapixels/postprocess.sh
   chown -R omarchy:omarchy /home/omarchy/Pictures /home/omarchy/Videos /home/omarchy/Downloads /home/omarchy/.config
+  # Omarchy-Mobile-Plugins VORVERLINKEN: omamobile-setup-user macht das
+  # normalerweise, aber wenn es scheitert, startet Quickshell ohne
+  # Homescreen/Dock (am Geraet belegt). Hier schon im Image verlinken.
+  mkdir -p /home/omarchy/.config/omarchy/plugins
+  for _pl in /usr/share/omamobile/shell/plugins/*; do
+    [ -e "$_pl" ] || continue
+    ln -sfn "$_pl" "/home/omarchy/.config/omarchy/plugins/$(basename "$_pl")" 2>/dev/null
+  done
+  chown -R omarchy:omarchy /home/omarchy/.config/omarchy 2>/dev/null
   # WLAN-Profil vorbereiten: SSID und Land sind gesetzt, das Passwort
   # fehlt absichtlich (kein Klartext im Image). Nach dem Boot einmal
   #   nmcli --ask connection up HOME-WLAN
