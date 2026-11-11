@@ -1,0 +1,39 @@
+Kameras wieder erkannt (3/3), 2026-11-11 15:33
+=============================================
+
+DURCHBRUCH: cause war eine LEERE udev-Datenbank.
+
+Symptom: "cam -l" -> "Available cameras:" (leer), obwohl alle 3
+Sensoren im Media-Graph waren (imx363 16-0010, imx355 17-0010,
+imx355 17-001a) und alle Subdevices existierten.
+
+Ursache: libcamera nutzt libudev mit
+udev_enumerate_add_match_is_initialized() - es sieht nur Devices,
+die in /run/udev/data/ initialisiert sind. Dort waren nur 14 Eintraege,
+media0 (c509:0) fehlte komplett.
+"udevadm trigger" scheiterte mit "Running in chroot, ignoring request",
+weil /proc/1/comm = "init" (nicht systemd).
+
+LOESUNG:
+  SYSTEMD_IGNORE_CHROOT=1 udevadm trigger
+  -> 441 Eintraege in /run/udev/data/
+  -> cam -l zeigt:
+       1: Internal back camera  (cci i2c-bus@0/camera@10)
+       2: Internal front camera (cci i2c-bus@1/camera@10)
+       3: Internal front camera (cci i2c-bus@1/camera@1a)
+
+Zusatz: imx355.ko musste manuell geladen werden (fehlte nach Boot).
+
+Offen bei der Aufnahme:
+  "dma-heap allocation failure for frame-0"
+  Ursache: libcamera waehlt den Sensor-Default 3280x2464 statt der
+  gewuenschten 820x616. Die simple.yaml (/usr/share/libcamera/pipeline/
+  simple/simple.yaml) wird NICHT angewendet - libcamera meldet
+  "The PixelArraySize property has been defaulted to 3280x2464" und
+  "The sensor kernel driver needs to be fixed".
+  Der imx355-Treiber HAT 820x616 als letzten supported_mode.
+  Naechster Schritt: Sensor-Default im Treiber auf 820x616 setzen
+  oder simple.yaml korrekt verdrahten.
+
+WICHTIG FUER DEN BUILD: SYSTEMD_IGNORE_CHROOT=1 udevadm trigger muss
+im Init laufen, sonst findet libcamera keine Kameras.
