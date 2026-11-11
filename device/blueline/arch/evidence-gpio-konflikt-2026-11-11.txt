@@ -1,0 +1,21 @@
+GPIO-16-Doppelrequest nach v0bc-Flash, 2026-11-11 10:51
+======================================================
+
+Nach dem v0bc-Flash (Kernel-Fix + DT vana->bob + vana-gpios):
+  sdm845-pinctrl: "pin GPIO_16 already requested by ; cannot claim
+                   for rear-cam-vana-regulator"
+  sdm845-pinctrl: "error -EINVAL: could not request pin 16 (GPIO_16)"
+  imx363 16-0010: "error -EINVAL: Error applying setting, reverse
+                   things back"
+  -> imx363-Probe scheitert am pinctrl-State (vana-gpios), weil der
+     rear-cam-vana-regulator denselben Pin haelt
+  -> cam -l: leer (Notifier bindet nicht)
+
+Ursache: ZWEI Knoten fordern GPIO 16 an:
+  1) rear_cam: vana-gpios = <&tlmm 16 ...>  (neu, v0bc)
+  2) rear-cam-vana-regulator: gpios = <&tlmm 16 ...>  (alt, obsolet
+     seit vana-supply auf vreg_bob zeigt)
+
+Fix (v0bd, gebaut): rear-cam-vana-regulator komplett entfernt und
+pinctrl-0 am Sensor auf cam_rear_reset_default_pin reduziert
+(kein Doppel-Request mehr). Boot v0bd = 70aba108..., Flash offen.
