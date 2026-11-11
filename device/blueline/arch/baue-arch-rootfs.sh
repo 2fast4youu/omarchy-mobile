@@ -231,6 +231,15 @@ NMC
   done
   chown -R omarchy:omarchy /home/omarchy/.config/omarchy 2>/dev/null
   echo "plugins verlinkt: $(ls /home/omarchy/.config/omarchy/plugins 2>/dev/null | wc -l)"
+  # Shell-Profil (shell.json) VORAB setzen: omamobile-setup-user kopiert es
+  # nur, wenn "omarchy-done ensure omamobile-shell-profile" greift. Ohne
+  # die Datei hat Quickshell "plugins": [] und laedt KEINE omamobile-
+  # Plugins -> kein Homescreen, kein Dock (am Geraet belegt).
+  if [ -f /usr/share/omamobile/shell/profile/shell.json ]; then
+    cp /usr/share/omamobile/shell/profile/shell.json /home/omarchy/.config/omarchy/shell.json
+    chown omarchy:omarchy /home/omarchy/.config/omarchy/shell.json
+    echo "shell.json gesetzt: $(python3 -c "import json;print(len(json.load(open('/home/omarchy/.config/omarchy/shell.json')).get('plugins',[])))" 2>/dev/null) Plugins"
+  fi
   ssh-keygen -A
   systemctl enable sshd 2>/dev/null || ln -sf /usr/lib/systemd/system/sshd.service \
     /etc/systemd/system/multi-user.target.wants/sshd.service
