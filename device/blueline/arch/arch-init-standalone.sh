@@ -184,6 +184,15 @@ chmod 666 /sys/class/backlight/*/brightness 2>/dev/null
 # Power-Profile (ppd) + Abbildung auf die CPU-Kappe.
 [ -x /usr/lib/power-profiles-daemon ] && DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket /usr/lib/power-profiles-daemon >/tmp/ppd.log 2>&1 &
 /usr/lib/systemd/systemd-udevd --daemon 2>/dev/null
+# udev-Datenbank aufbauen: libcamera sieht nur Devices, die in
+# /run/udev/data/ initialisiert sind (udev_enumerate_add_match_is_initialized).
+# Ohne diesen Trigger bleibt "cam -l" leer, obwohl alle Sensoren im
+# Media-Graph sind. Das System laeuft nicht unter systemd, deshalb haelt
+# udevadm sich sonst fuer chroot - daher SYSTEMD_IGNORE_CHROOT.
+mkdir -p /run/systemd/system /run/udev/data
+sleep 2
+SYSTEMD_IGNORE_CHROOT=1 udevadm trigger >/tmp/udev-trigger.log 2>&1
+sleep 2
 for d in /sys/class/input/event*/uevent; do echo add > "$d" 2>/dev/null; done
 chown root:input /dev/input/event* 2>/dev/null
 chmod 660 /dev/input/event* 2>/dev/null
