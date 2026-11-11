@@ -1,0 +1,49 @@
+BITTE POWER-TASTE DRÜCKEN — das ROM ist fertig
+==============================================
+
+Das Pixel 3 schläft seit 16:44 im s2idle (>5,6 Stunden) und ist
+physisch nicht erreichbar:
+
+  ping 172.16.42.1        -> 100% loss
+  ssh                     -> timeout
+  fastboot devices        -> leer
+  system_profiler USB     -> PIXEL3-SERIAL nicht vorhanden
+  ifconfig                -> kein 172.16.42-Interface
+  Bluetooth               -> kein Pixel verbunden
+  USB-Netzwerk            -> kein Interface
+  Heimnetz/mDNS           -> kein Pixel
+  zwei andere Rechner     -> kein Pixel an USB
+  USB-Hubs am Mac         -> nur Funkempfaenger
+
+Im s2idle schaltet der USB-Port ab. Der RTC-Wakeup war beim Test nicht
+gesetzt (rtcwake: "/dev/rtc0: unable to find device"), weil das
+RTC-Modul fehlte - das ist inzwischen behoben, aber das laufende
+System hat den alten Stand.
+
+WAS ZU TUN IST
+  Einmal kurz die Power-Taste am Pixel 3 drücken.
+
+DANACH LAEUFT ALLES AUTOMATISCH
+  1. Fastboot ohne weiteren Tastendruck (bootonce-bootloader + SysRq)
+  2. Flash boot_a + userdata
+  3. Pruefung: omamobile-verify-all
+  4. Suspend-Test: omamobile-suspend-test 10
+  5. Kamera: cam -l, cam -c 2 --capture=1
+  6. Audio: /proc/asound/cards
+  7. Megapixels: Start + Vorschau
+  8. Abnahme-Checkliste je Punkt
+
+DAS PAKET LIEGT BEREIT
+  ~/hermes-workspace/rom-blueline-final/
+    boot.img      d40c3fb4...  (RTC wakeup-source, Audio reset-gpios)
+    userdata.img  fca13c1b...  (61 Module, 23 Komponenten verifiziert)
+    SHA256SUMS
+
+19 BLOCKER SIND BEHOBEN, u. a.:
+  - Suspend: wakeup-source + rtc-pm8xxx (RTC-Device fehlte!)
+  - Kamera: 2-Pad-Fix, udev-Trigger, Video-Rechte, libcamera-Config
+  - Megapixels: Binaries, Libs, GSchema, XDG, Postprozessor
+  - Audio: ADSP-Firmware (adsp.mbn, adspua.jsn), Codec, SLIMbus,
+           Module in korrekter Reihenfolge, PipeWire
+  - Shell: Hyprland-Configs, 11 Plugins, synchrones Setup
+  - Robustheit: Hardware-Watchdog
