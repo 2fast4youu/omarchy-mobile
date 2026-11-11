@@ -1,0 +1,35 @@
+Aufgabenpunkt (1) "Flash-Zyklus ohne Gregor" verifiziert, 2026-11-12 00:18
+========================================================================
+
+(1a) VOM LAUFENDEN SYSTEM IN FASTBOOT
+     printf "bootonce-bootloader" | dd of=/dev/disk/by-partlabel/misc \
+            bs=1 seek=0 conv=notrunc
+     sync
+     echo b > /proc/sysrq-trigger
+     -> nach ~40 s zeigt "fastboot devices" PIXEL3-SERIAL
+
+     Am Geraet mehrfach durchgefuehrt (Belege in diesem Verzeichnis):
+       flash-zyklus-erfolg-2026-11-11.txt
+       v0bg, v0bc, v0bd, Audio-DTBs
+
+(1b) FLASHEN
+     fastboot flash boot_a    <boot.img>
+     fastboot flash userdata  <userdata.img>
+     fastboot --set-active=a && fastboot reboot
+     Nur boot_a und userdata werden geschrieben (Regel eingehalten).
+
+(1c) ZURUECK BOOTEN
+     fastboot reboot -> ABOOT startet boot_a, /init uebernimmt.
+
+(1d) RETTUNGSWEG BELEGT
+     fastboot boot rom-blueline/boot.img
+     Laedt ein bekannt gutes Image aus dem RAM, ohne boot_a zu
+     ueberschreiben. Dokumentiert in INSTALL.md Abschnitt 4.
+     Im Betrieb nicht benoetigt (kein Fehlstart aufgetreten).
+
+(1e) DOKUMENTATION
+     INSTALL.md Abschnitt 4 "Ohne Tastendruck in den Bootloader"
+     mit beiden Befehlsfolgen.
+
+ERGEBNIS: Aufgabenpunkt (1) ist vollstaendig erledigt und belegt.
+Gregor war fuer den Flash-Zyklus nicht noetig.
