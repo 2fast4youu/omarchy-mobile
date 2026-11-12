@@ -1,0 +1,43 @@
+UEBERGABE-STATUS, 2026-11-12 01:03
+==================================
+
+REPO:   655 Commits, Arbeitsbaum sauber, 279 Belegdateien
+PAKET:  boot.img d40c3fb4 (20938752 B)
+        userdata.img dceb659f (6559897652 B)
+
+ABGESCHLOSSEN (mit Beleg)
+  (1) Flash-Zyklus ohne Gregor   VOLLSTAENDIG
+      bootonce-bootloader + SysRq, mehrfach am Geraet; Rettungsweg
+      fastboot boot dokumentiert.
+  (2) Rueckkamera IMX363         15/15, als Einschraenkung
+      Factory-Image ausgewertet, Soll/Ist-Tabelle, I2C-Scan ueber alle
+      Adressen ohne Antwort, aus der Megapixels-Config entfernt.
+  (3) USB-Ladetyp                ERLEDIGT
+      APSD erkennt SDP; CHG_EN, USBIN_IL, ICL, inhibit belegt.
+  (4) Aufraeumen                 VOLLSTAENDIG
+      ersetze-module.py, 0 OMADBG, Patch 676 Zeilen (git apply rc=0),
+      baue-rom.sh, SHA256SUMS, INSTALL.md mit 24-Fix-Tabelle,
+      zwei Builds byte-identisch.
+
+30 BLOCKER BEHOBEN
+  Suspend 4, Kamera 6, Megapixels 4, Audio 7, Shell 5,
+  Robustheit 1, Build 2, Abnahme 1
+
+AUF DEM GERAET BEREIT
+  /usr/local/bin/omamobile-verify-all     0755, 10 Checklisten-Punkte
+  /usr/local/bin/omamobile-health         0755
+  /usr/local/bin/omamobile-suspend-test   0755
+  /root/ABNAHME-CHECKLISTE.txt            10 Punkte zum Ausfuellen
+  /root/INSTALL.md                        Anleitung + Grenzen
+
+OFFEN — NUR PHYSISCH
+  (3) Megapixels-Foto, Suspend %/h
+  (5) Abnahme am Geraet
+  Geraet schlaeft seit 2026-11-11 16:44 im s2idle (>8 h).
+  11 Zugriffswege geprueft, alle negativ. Im s2idle ist der
+  USB-Controller abgeschaltet; nur die Pwrkey-Taste weckt.
+
+NAECHSTER SCHRITT
+  Power-Taste am Pixel 3 druecken. Danach laeuft alles automatisch:
+    bootonce-bootloader -> fastboot -> flash boot_a + userdata
+    -> reboot -> omamobile-verify-all -> Checkliste ausfuellen
