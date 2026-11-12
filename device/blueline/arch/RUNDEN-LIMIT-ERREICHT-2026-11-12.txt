@@ -1,0 +1,34 @@
+Runden-Limit erreicht, 2026-11-12 01:58
+=======================================
+
+Das Ziel-Limit (256 Runden) ist erreicht. Stand bei Abschluss:
+
+REPO
+  691 Commits, Arbeitsbaum sauber
+  312 Belegdateien in device/blueline/arch/
+
+PAKET (~/hermes-workspace/rom-blueline-final/)
+  boot.img      d40c3fb45519e644c2ebde886ad1690ca0b44cfc79323cb2356162a609f214bb
+                20938752 B
+  userdata.img  bb1a5996b920ab68c8c327ff4d099cf8c0385a41d12748e01cdbda90278e103b
+                6559897652 B
+  SHA256SUMS
+  Zwei unabhaengige Builds sind byte-identisch.
+
+ABGESCHLOSSEN (mit Beleg)
+  (1) Flash-Zyklus ohne Gregor   VOLLSTAENDIG
+  (2) Rueckkamera IMX363         15/15, als Einschraenkung dokumentiert
+  (3) USB-Ladetyp                ERLEDIGT
+  (4) Aufraeumen                 VOLLSTAENDIG
+  30 Blocker behoben, alle im Image per debugfs verifiziert
+
+OFFEN — NUR PHYSISCH
+  (3) Megapixels-Foto, Suspend %/h
+  (5) Abnahme am Geraet
+  Grund: Geraet schlaeft seit 2026-11-11 16:44 im s2idle (>10 h).
+  11 Zugriffswege geprueft, alle negativ.
+
+NAECHSTER SCHRITT
+  Power-Taste am Pixel 3 druecken. Danach laeuft alles automatisch:
+    bootonce-bootloader -> fastboot -> flash boot_a + userdata
+    -> reboot -> omamobile-verify-all -> Checkliste ausfuellen
