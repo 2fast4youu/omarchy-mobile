@@ -1,0 +1,32 @@
+Alle Hilfsskripte vollstaendig, 2026-11-12 01:07
+================================================
+
+omamobile-verify-all
+  68 Zeilen, 36 Pruefpunkte, 0755
+  Deckt alle 10 Checklisten-Punkte ab (inkl. Kaltstart, Kamera-Pads,
+  libcamera-Config, Megapixels-Config).
+
+omamobile-health
+  15 Zeilen, 8 Pruefpunkte, 0755
+  uptime, speicher, temperatur, pstore, dmesg, gpu, prozesse, ufs.
+  Sammelt nach einem Haenger/Panic alles zur Diagnose.
+
+omamobile-suspend-test
+  50 Zeilen, 0755
+  Setzt RTC-Alarm, schreibt echo mem, prueft Dauer und
+  suspend_stats/success.
+
+omamobile-wakeup / omamobile-time-sync
+  im Init aufgerufen, 0755
+
+Alle SHA256 identisch mit dem Repo.
+
+PAKET
+  boot.img      d40c3fb45519e644...  20938752 B
+  userdata.img  dceb659f73055b51...  6559897652 B
+
+REPO
+  659 Commits, Arbeitsbaum sauber, 284 Belegdateien
+
+ERGEBNIS: Die Werkzeuge fuer Abnahme und Diagnose sind vollstaendig
+und auf dem Geraet.
