@@ -41,7 +41,8 @@ Ein Befehl baut `boot.img` und `userdata.img`:
 device/blueline/baue-rom.sh
 ```
 
-Ergebnis in `~/hermes-workspace/rom-blueline/` mit `SHA256SUMS`.
+Ergebnis in `~/hermes-workspace/rom-blueline/` mit `SHA256SUMS`
+(per `AUSGABE=<dir>` aenderbar).
 
 Teilbauten:
 
@@ -58,7 +59,7 @@ NUR=packen device/blueline/baue-rom.sh   # nur boot.img/userdata.img
 | Kernel-Baum (sdm845-Mainline) | `~/hermes-workspace/linux-sdm845` |
 | Kernel-Out | `~/hermes-workspace/pmos-kernel-out` |
 | ALARM-Tarball | `~/.cache/omamobile-rootfs/ArchLinuxARM-aarch64-latest.tar.gz` |
-| Omarchy-Pakete | `~/hermes-workspace/pkgs` |
+| Omarchy-Pakete | `packages/` im Repo |
 | Firmware | `~/hermes-workspace/firmware` |
 | Ramdisk | `~/hermes-workspace/images/fl-v0ag/ramdisk.gz` |
 | Referenz-Bootimage | `~/hermes-workspace/pmos-ref-build/ref/boot.img` |
