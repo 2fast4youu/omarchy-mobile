@@ -1,0 +1,29 @@
+Dokumentation korrekt im Image, 2026-11-12 01:16
+===============================================
+
+INSTALL.md im Image (/root/INSTALL.md, SHA256 a8536071)
+  Paket-Pfad:           "packages/ im Repo"     korrekt
+  Rueckkamera:          "aus der Megapixels-Config entfernt"  vorhanden
+  Fix-Tabelle:          24 Eintraege
+  Abschnitte:           1-7 vollstaendig
+  Zeilen:               253
+
+ALLE SKRIPTE IDENTISCH MIT DEM REPO
+  omamobile-verify-all   36 Pruefpunkte
+  omamobile-health        8 Pruefpunkte
+  omamobile-suspend-test  RTC-Alarm + echo mem
+  omamobile-wakeup / -time-sync
+
+CHECKLISTE
+  10 Punkte: DISPLAY, TOUCH, WLAN, AUDIO, AKKU, SUSPEND,
+  FRONTKAMERAS, MEGAPIXELS, FLASH, KALTSTART
+
+PAKET
+  boot.img      d40c3fb45519e644...  20938752 B
+  userdata.img  bb1a5996b920ab68...  6559897652 B
+
+REPO
+  665 Commits, Arbeitsbaum sauber, 287 Belegdateien
+  Keine veralteten Hashes.
+
+ERGEBNIS: Die Dokumentation im Image ist vollstaendig und korrekt.
