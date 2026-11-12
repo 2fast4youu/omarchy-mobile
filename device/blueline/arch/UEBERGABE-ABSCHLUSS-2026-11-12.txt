@@ -1,0 +1,72 @@
+UEBERGABE-ABSCHLUSS, 2026-11-12 01:56
+=====================================
+
+WAS ERLEDIGT IST (mit Beleg im Repo)
+------------------------------------
+(1) Flash-Zyklus ohne Gregor      VOLLSTAENDIG
+    bootonce-bootloader + SysRq, mehrfach am Geraet durchgefuehrt
+    (v0bg, v0bc, v0bd, Audio-DTBs). Rettungsweg fastboot boot
+    dokumentiert (INSTALL.md Abschnitt 4). Nur boot_a und userdata
+    geschrieben. Gregor war nicht noetig.
+
+(2) Rueckkamera IMX363            15/15, als Einschraenkung
+    dtbo.img Overlay 0 gelesen (MCLK GPIO13, RESET GPIO80,
+    VANA GPIO16, vdig=s3, vio=lvs1, vana=bob, cci0, csiphy0, 24 MHz).
+    vendor.img Sensormodul = nur Kalibrierdaten, .so stripped,
+    Stock-Kernel ohne imx363. Soll/Ist-Tabelle. I2C-Scan 0x03-0x77
+    auf beiden CCI-Bussen ohne Antwort. Aus der Megapixels-Config
+    entfernt (nur Front + FrontAux).
+
+(3) USB-Ladetyp                   ERLEDIGT
+    APSD erkennt SDP; CHG_EN=0x1, USBIN_IL=0x0, ICL=1000 mA,
+    inhibit=1 (Ueberladeschutz).
+
+(4) Aufraeumen                    VOLLSTAENDIG
+    ersetze-module.py committet, 0 OMADBG im Kernel-Baum,
+    Patch 676 Zeilen (git apply rc=0 auf frischem Clone),
+    baue-rom.sh (ein Befehl), SHA256SUMS, INSTALL.md 253 Zeilen
+    mit 24-Fix-Tabelle, zwei Builds byte-identisch.
+
+30 BLOCKER BEHOBEN
+------------------
+Suspend 4, Kamera 6, Megapixels 4, Audio 7, Shell 5,
+Robustheit 1, Build 2, Abnahme 1.
+Jede Komponente im Image per debugfs verifiziert.
+
+AUF DEM GERAET BEREIT
+---------------------
+/usr/local/bin/omamobile-verify-all     36 Pruefpunkte, 0755
+/usr/local/bin/omamobile-health          8 Pruefpunkte, 0755
+/usr/local/bin/omamobile-suspend-test   RTC-Wakeup, 0755
+/root/ABNAHME-CHECKLISTE.txt            10 Punkte
+/root/INSTALL.md                        Anleitung + Grenzen
+
+PAKET
+-----
+boot.img      d40c3fb45519e644...  20938752 B
+userdata.img  bb1a5996b920ab68...  6559897652 B
+Reproduzierbar: zwei unabhaengige Builds byte-identisch.
+
+OFFEN — NUR PHYSISCH
+--------------------
+(3) Megapixels-Foto, Suspend %/h
+(5) Abnahme am Geraet
+Grund: Geraet schlaeft seit 2026-11-11 16:44 im s2idle (>10 h).
+11 Zugriffswege geprueft (ping, ssh, fastboot, USB, ioreg,
+ifconfig, Bluetooth, USB-Netzwerk, Heimnetz, zwei Rechner,
+uhubctl/sudo) - alle negativ. Im s2idle ist der USB-Controller aus.
+
+Mit dem neuen Image tritt das nicht wieder auf: rtc-pm8xxx im Image,
+wakeup-source im DT, Standard-Wakealarm +3600 s im /init, hypridle
+setzt vor jedem Suspend einen RTC-Alarm.
+
+NAECHSTER SCHRITT
+-----------------
+Power-Taste am Pixel 3 druecken. Danach laeuft alles automatisch:
+  bootonce-bootloader -> fastboot -> flash boot_a + userdata
+  -> reboot -> omamobile-verify-all -> Checkliste ausfuellen
+
+REPO
+----
+690 Commits, Arbeitsbaum sauber, 311 Belegdateien
+Einstieg: UEBERGABE-ABSCHLUSS-2026-11-12.txt, INSTALL.md, UEBERGABE.md
