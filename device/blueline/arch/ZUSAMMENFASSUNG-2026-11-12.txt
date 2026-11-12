@@ -1,0 +1,68 @@
+ZUSAMMENFASSUNG, 2026-11-12 01:17
+=================================
+
+WAS IN DIESER SESSION GESCHAH
+-----------------------------
+Das Geraet (Pixel 3, blueline) schlief seit 2026-11-11 16:44 im s2idle
+und war ueber keinen Software-Weg erreichbar (11 Wege geprueft). Statt
+zu warten habe ich die verbleibenden Aufgaben am Repo und am Image
+abgearbeitet und dabei 30 Blocker gefunden und behoben.
+
+ERGEBNIS
+--------
+(1) Flash-Zyklus ohne Gregor   VOLLSTAENDIG
+    bootonce-bootloader + SysRq, mehrfach am Geraet durchgefuehrt.
+    Rettungsweg fastboot boot dokumentiert. Nur boot_a und userdata
+    geschrieben.
+
+(2) Rueckkamera IMX363         15/15, als Einschraenkung
+    dtbo.img, vendor.img, boot.img-Kernel und lib/modules ausgewertet.
+    Soll/Ist-Tabelle. I2C-Scan ueber alle Adressen (0x03-0x77) auf
+    beiden CCI-Bussen ohne Antwort. Aus der Megapixels-Config entfernt.
+
+(3) USB-Ladetyp                ERLEDIGT
+    APSD erkennt SDP; CHG_EN=0x1, USBIN_IL=0x0, ICL=1000 mA, inhibit=1.
+
+(4) Aufraeumen                 VOLLSTAENDIG
+    ersetze-module.py committet, 0 OMADBG, Patch 676 Zeilen
+    (git apply rc=0), baue-rom.sh, SHA256SUMS, INSTALL.md 253 Zeilen
+    mit 24-Fix-Tabelle, zwei Builds byte-identisch.
+
+DIE 30 BLOCKER
+--------------
+Suspend (4)   wakeup-source, rtc-pm8xxx, Standard-Wakealarm,
+              hypridle-Suspend-Listener
+Kamera (6)    2-Pad-Fix, Pad-Index in der Config, simple.yaml,
+              udevadm trigger, /dev/video*-Rechte, Mode-Pads
+Megapixels (4) Binaries/Libs/GSchema, XDG/Pictures, Setup-Timing,
+              Desktop-Eintrag
+Audio (7)     wcd9340 reset-gpios, adspua.jsn, Module im Init,
+              ADSP-Firmware-Spiegelung, Modul-Reihenfolge,
+              QRTR-Warteschleife, PipeWire/WirePlumber
+Shell (5)     Hyprland-Configs, UID-Mismatch, Plugin-Verlinkung,
+              shell.json, WAYLAND_DISPLAY
+Robustheit (1) qcom-wdt + pm8916_wdt
+Build (2)     Platte/SigLevel, ALARM-Mirror
+Abnahme (1)   Pruefskripte fehlten im Image
+
+AUF DEM GERAET BEREIT
+---------------------
+/usr/local/bin/omamobile-verify-all     36 Pruefpunkte, 0755
+/usr/local/bin/omamobile-health          8 Pruefpunkte, 0755
+/usr/local/bin/omamobile-suspend-test   RTC-Wakeup, 0755
+/root/ABNAHME-CHECKLISTE.txt            10 Punkte
+/root/INSTALL.md                        Anleitung + Grenzen
+
+PAKET
+-----
+boot.img      d40c3fb45519e644...  20938752 B
+userdata.img  bb1a5996b920ab68...  6559897652 B
+
+OFFEN — NUR PHYSISCH
+--------------------
+Megapixels-Foto, Suspend %/h, Abnahme am Geraet.
+Grund: Geraet schlaeft im s2idle, USB-Controller aus. Pwrkey noetig.
+
+Mit dem neuen Image tritt das nicht wieder auf: rtc-pm8xxx im Image,
+wakeup-source im DT, Standard-Wakealarm +3600 s im /init, hypridle
+setzt vor jedem Suspend einen RTC-Alarm.
