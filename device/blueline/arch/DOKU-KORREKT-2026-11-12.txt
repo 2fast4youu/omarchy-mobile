@@ -23,7 +23,7 @@ PAKET
   userdata.img  bb1a5996b920ab68...  6559897652 B
 
 REPO
-  665 Commits, Arbeitsbaum sauber, 287 Belegdateien
+  666 Commits, Arbeitsbaum sauber, 288 Belegdateien
   Keine veralteten Hashes.
 
 ERGEBNIS: Die Dokumentation im Image ist vollstaendig und korrekt.
