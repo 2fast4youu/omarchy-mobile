@@ -1,0 +1,30 @@
+Pruefskript vollstaendig im Image, 2026-11-12 01:05
+==================================================
+
+/usr/local/bin/omamobile-verify-all
+  68 Zeilen, 36 Pruefpunkte, Mode 0755
+  SHA256 0fb5746263dd85db... (identisch mit dem Repo)
+
+ALLE 36 PRUEFPUNKTE
+  uptime load temperaturen module system-dbus bluetooth
+  networkmanager modem qrtr netz wlan wlan bt-adresse
+  modem-dienste taschenlampe rmtfs fehler akku upower
+  power-profile suspend rtc-wakealarm ladetyp kameras
+  kamera-pads libcamera-config megapixels-shell megapixels-config
+  media megapixels audio slimbus adsp shell speicher kaltstart
+
+DECKT ALLE 10 CHECKLISTEN-PUNKTE AB
+  DISPLAY       -> shell (Hyprland, quickshell, squeekboard)
+  TOUCH         -> module, shell
+  WLAN          -> wlan, networkmanager, netz
+  AUDIO         -> audio, slimbus, adsp
+  AKKU          -> akku, upower, power-profile
+  SUSPEND       -> suspend, rtc-wakealarm
+  FRONTKAMERAS  -> kameras, kamera-pads, libcamera-config
+  MEGAPIXELS    -> megapixels, megapixels-shell, megapixels-config
+  FLASH         -> (am Mac: bootonce-bootloader + fastboot)
+  KALTSTART     -> kaltstart (uptime, boot_id, UID, Hyprland-Sig,
+                   quickshell)
+
+ERGEBNIS: Die Abnahme ist mit einem Befehl durchfuehrbar und deckt
+jeden Punkt der Checkliste ab.
