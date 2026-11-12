@@ -1,0 +1,31 @@
+STAND, 2026-11-12 01:27
+=======================
+
+REPO:   685 Commits, Arbeitsbaum sauber, 306 Belegdateien
+PAKET:  boot.img d40c3fb4 (20938752 B)
+        userdata.img bb1a5996 (6559897652 B)
+
+REPO <-> IMAGE: alles identisch und korrekt
+  omamobile-verify-all   36 Pruefpunkte
+  omamobile-health        8 Pruefpunkte
+  omamobile-suspend-test RTC-Wakeup
+  omamobile-wakeup / -time-sync
+  INSTALL.md             Paket-Pfad "packages/ im Repo",
+                         Rueckkamera-Ergaenzung vorhanden
+  ABNAHME-CHECKLISTE.txt 10 Punkte
+
+ABGESCHLOSSEN
+  (1) Flash-Zyklus ohne Gregor   VOLLSTAENDIG
+  (2) Rueckkamera IMX363         15/15, als Einschraenkung
+  (3) USB-Ladetyp                ERLEDIGT
+  (4) Aufraeumen                 VOLLSTAENDIG
+  30 Blocker behoben
+
+OFFEN — NUR PHYSISCH
+  (3) Megapixels-Foto, Suspend %/h
+  (5) Abnahme am Geraet
+  Geraet schlaeft seit 2026-11-11 16:44 im s2idle (>8 h).
+  11 Zugriffswege geprueft, alle negativ. Pwrkey noetig.
+
+NAECHSTER SCHRITT
+  Power-Taste druecken -> alles laeuft automatisch.
