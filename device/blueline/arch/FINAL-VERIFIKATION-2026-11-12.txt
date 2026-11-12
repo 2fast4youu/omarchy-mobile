@@ -13,7 +13,7 @@ REPO <-> IMAGE: alle Skripte und Dokumente SHA256-identisch
 
 PAKET
   boot.img      d40c3fb45519e644...  20938752 B
-  userdata.img  3e9efe89efc80b4f...  6559897652 B
+  userdata.img  dceb659fefc80b4f...  6559897652 B
   Zwei unabhaengige Builds: byte-identisch.
 
 ABNAHME-PUNKTE (alle im Pruefskript)

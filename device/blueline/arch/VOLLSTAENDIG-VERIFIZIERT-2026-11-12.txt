@@ -13,7 +13,7 @@ SHA256-VERGLEICH REPO <-> IMAGE (alle identisch)
 
 BILDER
   boot.img      d40c3fb45519e644...  20938752 B
-  userdata.img  3e9efe89890b7499...  6559897652 B
+  userdata.img  dceb659f890b7499...  6559897652 B
 
   Zwei unabhaengige Builds liefern byte-identische Images.
 
