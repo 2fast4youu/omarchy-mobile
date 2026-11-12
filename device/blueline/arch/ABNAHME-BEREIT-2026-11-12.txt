@@ -32,7 +32,7 @@ DOKUMENTE
 
 PAKET
   boot.img      d40c3fb45519e644...  20938752 B
-  userdata.img  dceb659fefc80b4f...  6559897652 B
+  userdata.img  bb1a5996efc80b4f...  6559897652 B
 
 ERGEBNIS: Die Abnahme ist mit einem Befehl durchfuehrbar:
   omamobile-verify-all

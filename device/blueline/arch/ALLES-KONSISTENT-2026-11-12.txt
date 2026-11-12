@@ -14,7 +14,7 @@ REPO <-> IMAGE: alle SHA256 identisch
 
 PAKET
   boot.img      d40c3fb45519e644...  20938752 B
-  userdata.img  dceb659f73055b51...  6559897652 B
+  userdata.img  bb1a599673055b51...  6559897652 B
   Zwei unabhaengige Builds: byte-identisch.
 
 ABGESCHLOSSEN

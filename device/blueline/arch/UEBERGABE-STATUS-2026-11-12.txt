@@ -3,7 +3,7 @@ UEBERGABE-STATUS, 2026-11-12 01:03
 
 REPO:   655 Commits, Arbeitsbaum sauber, 279 Belegdateien
 PAKET:  boot.img d40c3fb4 (20938752 B)
-        userdata.img dceb659f (6559897652 B)
+        userdata.img bb1a5996 (6559897652 B)
 
 ABGESCHLOSSEN (mit Beleg)
   (1) Flash-Zyklus ohne Gregor   VOLLSTAENDIG

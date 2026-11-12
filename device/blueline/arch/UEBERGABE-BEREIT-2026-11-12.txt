@@ -3,7 +3,7 @@ UEBERGABE BEREIT, 2026-11-12 01:08
 
 REPO:   660 Commits, Arbeitsbaum sauber, 285 Belegdateien
 PAKET:  boot.img d40c3fb4 (20938752 B)
-        userdata.img dceb659f (6559897652 B)
+        userdata.img bb1a5996 (6559897652 B)
 
 KONSISTENZ REPO <-> IMAGE (alle SHA256 identisch)
   omamobile-verify-all   36 Pruefpunkte
