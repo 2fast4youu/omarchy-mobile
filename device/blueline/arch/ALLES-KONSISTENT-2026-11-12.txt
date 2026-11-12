@@ -1,0 +1,33 @@
+Alles konsistent, 2026-11-12 01:04
+==================================
+
+REPO <-> IMAGE: alle SHA256 identisch
+
+  /usr/local/bin/omamobile-verify-all    0fb5746263dd85db...  (10 Punkte)
+  /usr/local/bin/omamobile-health        identisch
+  /usr/local/bin/omamobile-suspend-test  identisch
+  /usr/local/bin/omamobile-wakeup        identisch
+  /usr/local/bin/omamobile-time-sync     identisch
+  /root/INSTALL.md                       1e52d3f738d40853...
+                                         (mit Rueckkamera-Ergaenzung)
+  /root/ABNAHME-CHECKLISTE.txt           identisch, 10 Punkte
+
+PAKET
+  boot.img      d40c3fb45519e644...  20938752 B
+  userdata.img  dceb659f73055b51...  6559897652 B
+  Zwei unabhaengige Builds: byte-identisch.
+
+ABGESCHLOSSEN
+  (1) Flash-Zyklus ohne Gregor   (2) Rueckkamera 15/15
+  (3) USB-Ladetyp                (4) Aufraeumen komplett
+  30 Blocker behoben, alle im Image verifiziert
+
+OFFEN — NUR PHYSISCH
+  (3) Megapixels-Foto, Suspend %/h
+  (5) Abnahme am Geraet
+  Geraet schlaeft seit 2026-11-11 16:44 im s2idle (>8 h).
+  11 Zugriffswege geprueft, alle negativ. Pwrkey noetig.
+
+REPO
+  655 Commits, Arbeitsbaum sauber, 280 Belegdateien
+  Keine veralteten Hashes.
