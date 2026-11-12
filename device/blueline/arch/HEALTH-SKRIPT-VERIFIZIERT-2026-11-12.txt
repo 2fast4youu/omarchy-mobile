@@ -1,0 +1,26 @@
+Health-Skript verifiziert, 2026-11-12 01:06
+===========================================
+
+/usr/local/bin/omamobile-health
+  15 Zeilen, 8 Pruefpunkte, Mode 0755
+  SHA256 identisch mit dem Repo
+
+PRUEFPUNKTE
+  uptime      Uptime und Loadavg
+  speicher    free -m
+  temperatur  alle thermal_zone*/temp
+  pstore      /sys/fs/pstore (Panic-Daten nach Neustart)
+  dmesg       error/fail/hang/timeout/oom
+  gpu         adreno/dsi/msm-Meldungen
+  prozesse    Top-Prozesse nach CPU
+  ufs         /proc/partitions
+
+ZWECK
+  Wenn das Geraet haengt oder nach einem Neustart nicht hochkommt,
+  sammelt dieses Skript in einem Lauf alles, was zur Diagnose noetig
+  ist - inklusive der pstore-Daten eines vorangegangenen Panics.
+
+AUFRUF
+  omamobile-health > /tmp/health.txt
+
+ERGEBNIS: Das Diagnose-Skript ist vollstaendig und auf dem Geraet.
