@@ -10,6 +10,10 @@ git apply /pfad/zu/0001-omarchy-mobile-blueline.patch
 make ARCH=arm64 LLVM=1 O=/out -j$(nproc) Image.gz dtbs modules
 ```
 
+Die ROM-Kernelkonfiguration aktiviert `CONFIG_NFC_NXP_NCI=m` und
+`CONFIG_NFC_NXP_NCI_I2C=m` für den NXP-Controller. Die Standalone-Init lädt
+die passenden NFC-Module in Abhängigkeitsreihenfolge.
+
 ## Änderungen
 
 | Datei | Änderung | Grund |

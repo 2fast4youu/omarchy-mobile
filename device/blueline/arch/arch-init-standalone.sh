@@ -176,6 +176,9 @@ done
 for m in ipa rmnet; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
+for m in nfc nci nxp-nci nxp-nci_i2c; do
+    [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
+done
 sleep 2
 for m in q6core snd-q6dsp-common q6afe q6afe-dai q6afe-clocks \
          q6adm q6routing q6asm q6asm-dai soundwire-bus regmap-slimbus regmap-sdw slim-qcom-ngd-ctrl \
