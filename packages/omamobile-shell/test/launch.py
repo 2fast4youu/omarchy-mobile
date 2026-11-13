@@ -69,13 +69,14 @@ class Sandbox:
         os.makedirs(self.bin)
         os.makedirs(self.apps)
         self.write_exe("hyprctl", FAKE_HYPRCTL)
-        for name in ("uwsm-app", "xdg-open", "omarchy-agent-prompt"):
+        for name in ("uwsm-app", "gtk-launch", "xdg-open", "omarchy-agent-prompt"):
             self.write_exe(name, FAKE_LOGGER)
         self.write_exe("xdg-settings", "#!/bin/sh\n[ -n \"$FAKE_BROWSER\" ] && echo \"$FAKE_BROWSER\"\nexit 0\n")
         self.write_exe("xdg-mime", "#!/bin/sh\nexit 0\n")
         self.set_clients(self.clients)
         json.dump({"id": 1, "windows": self.active_windows}, open(os.path.join(self.root, "activeworkspace.json"), "w"))
         self.env = dict(os.environ)
+        self.env.pop("OMAMOBILE_STANDALONE_SESSION", None)
         self.env.update({
             "FAKE_ROOT": self.root,
             "FAKE_BROWSER": self.browser,
@@ -284,6 +285,22 @@ def a_new_app_gets_an_empty_workspace_through_an_exec_rule():
             # The command Hyprland's sh -c would run starts Omarchy's launch path.
             subprocess.run(["sh", "-c", args["cmd"]], env=s.env, check=True)
             assert s.wait_spawned() == [["uwsm-app", "--", "gtk-launch", "org.gnome.Nautilus.desktop"]], s.spawned()
+
+
+@test
+def a_standalone_session_launches_desktop_entries_without_uwsm():
+    with Sandbox([], active_windows=1) as s:
+        s.env["OMAMOBILE_STANDALONE_SESSION"] = "1"
+        s.desktop("org.gnome.Nautilus", Exec="nautilus")
+        out = s.run("app", "org.gnome.Nautilus")
+        assert out.returncode == 0, out.stderr
+        dispatch, launch = s.actions()
+        assert dispatch == ("dispatch", 'hl.dsp.focus({ workspace = "empty" })'), dispatch
+        assert launch[0] == "eval" and "gtk-launch org.gnome.Nautilus.desktop" in launch[1], launch
+        assert "uwsm-app" not in launch[1], launch
+        s.fail("eval")
+        assert s.run("app", "org.gnome.Nautilus").returncode == 0
+        assert s.wait_spawned() == [["gtk-launch", "org.gnome.Nautilus.desktop"]], s.spawned()
 
 
 @test

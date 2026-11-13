@@ -239,6 +239,7 @@ done ) &
 cat > /run/omamobile-session.sh <<SITZUNG
 #!/bin/sh
 export XDG_RUNTIME_DIR=$OM_RUNTIME LIBSEAT_BACKEND=seatd LANG=en_US.UTF-8
+export OMAMOBILE_STANDALONE_SESSION=1
 # Benutzer-Setup VOR dem Compositor: Plugins verlinken, Profil setzen,
 # Omarchy-Marker (z. B. "Learn Keybindings" nicht mehr zeigen).
 # SYNCHRON mit 30 s Timeout: laeuft es im Hintergrund weiter, startet

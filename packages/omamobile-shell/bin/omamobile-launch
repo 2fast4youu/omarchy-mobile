@@ -348,10 +348,12 @@ def cmd_app(args):
         if window and norm_address(window.get("address")):
             if focus_window(norm_address(window["address"])):
                 return 0
-    # Omarchy's own launch path (AppLibrary.launch): gtk-launch resolves the
-    # entry, in a scope under app-graphical.slice. The suffix keeps ids such
-    # as org.telegram.desktop resolving.
-    return 0 if launch(["uwsm-app", "--", "gtk-launch", app_id + ".desktop"]) else 1
+    # gtk-launch resolves desktop entries and their D-Bus activation. Omarchy
+    # normally starts it in a UWSM scope. A standalone session has no user manager.
+    argv = ["gtk-launch", app_id + ".desktop"]
+    if os.environ.get("OMAMOBILE_STANDALONE_SESSION") != "1":
+        argv = ["uwsm-app", "--"] + argv
+    return 0 if launch(argv) else 1
 
 
 def cmd_cmd(args):
