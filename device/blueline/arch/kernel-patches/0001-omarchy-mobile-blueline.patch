@@ -12,7 +12,7 @@ index 3ecb33059..50b41942b 100644
  			reg = <0x6000>, <0x6100>;
  			reg-names = "rtc", "alarm";
 diff --git a/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi b/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
-index c7dae34aa..575aa27ef 100644
+index c7dae34aa..b749ac79b 100644
 --- a/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
 +++ b/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
 @@ -11,9 +11,11 @@
@@ -97,14 +97,14 @@ index c7dae34aa..575aa27ef 100644
  		port@1 {
  			reg = <1>;
  
-@@ -456,6 +500,39 @@ &cci {
+@@ -456,6 +500,40 @@ &cci {
  	status = "okay";
  };
  
 +&cci_i2c0 {
-+	rear_cam: camera@10 {
++	rear_cam: camera@1a {
 +		compatible = "sony,imx363";
-+		reg = <0x10>;
++		reg = <0x1a>;
 +
 +		clocks = <&clock_camcc CAM_CC_MCLK0_CLK>;
 +		clock-names = "xclk";
@@ -112,9 +112,10 @@ index c7dae34aa..575aa27ef 100644
 +		assigned-clocks = <&clock_camcc CAM_CC_MCLK0_CLK>;
 +		assigned-clock-rates = <24000000>;
 +
-+		reset-gpios = <&tlmm 80 GPIO_ACTIVE_HIGH>;
++		reset-gpios = <&tlmm 80 GPIO_ACTIVE_LOW>;
 +
-+		pinctrl-0 = <&cam_rear_reset_default_pin>, <&cam_rear_vana_default_pin>;
++		pinctrl-0 = <&cam_rear_reset_default_pin &cam_rear_vana_default_pin
++			     &cam_mclk0_default>;
 +		pinctrl-names = "default";
 +
 +		vana-supply = <&camera_rear_vana>;
@@ -137,7 +138,7 @@ index c7dae34aa..575aa27ef 100644
  &cci_i2c1 {
  	/* actuator @0c */
  
-@@ -481,6 +558,7 @@ front_cam: camera@10 {
+@@ -481,6 +559,7 @@ front_cam: camera@10 {
  
  		port {
  			cam_front_endpoint: endpoint {
@@ -145,7 +146,7 @@ index c7dae34aa..575aa27ef 100644
  				data-lanes = <1 2 3 4>;
  				link-frequencies = /bits/ 64 <360000000>;
  				remote-endpoint = <&camss_endpoint2>;
-@@ -510,6 +588,7 @@ front_aux_cam: camera@1a {
+@@ -510,6 +589,7 @@ front_aux_cam: camera@1a {
  
  		port {
  			cam_aux_front_endpoint: endpoint {
@@ -153,7 +154,7 @@ index c7dae34aa..575aa27ef 100644
  				data-lanes = <1 2 3 4>;
  				link-frequencies = /bits/ 64 <360000000>;
  				remote-endpoint = <&camss_endpoint1>;
-@@ -565,6 +644,37 @@ nfc@28 {
+@@ -565,6 +645,37 @@ nfc@28 {
  	};
  };
  
@@ -191,7 +192,7 @@ index c7dae34aa..575aa27ef 100644
  &i2c12 {
  	/* Bottom spkr (right) CS35L36 @ 40 */
  	status="okay";
-@@ -697,6 +807,10 @@ &q6asmdai {
+@@ -697,6 +808,10 @@ &q6asmdai {
  	dai@0 {
  		reg = <MSM_FRONTEND_DAI_MULTIMEDIA1>;
  	};
@@ -202,7 +203,7 @@ index c7dae34aa..575aa27ef 100644
  };
  
  &qupv3_id_0 {
-@@ -717,12 +831,28 @@ &qup_uart9_tx {
+@@ -717,12 +832,28 @@ &qup_uart9_tx {
  	bias-disable;
  };
  
@@ -233,7 +234,7 @@ index c7dae34aa..575aa27ef 100644
  
  	mm1-dai-link {
  		link-name = "MultiMedia1";
-@@ -731,6 +861,14 @@ cpu {
+@@ -731,6 +862,14 @@ cpu {
  		};
  	};
  
@@ -248,7 +249,7 @@ index c7dae34aa..575aa27ef 100644
  	cs35l36-dai-link {
  		link-name = "Speaker Playback";
  		cpu {
-@@ -745,6 +883,26 @@ codec {
+@@ -745,6 +884,26 @@ codec {
  			sound-dai = <&cs35l36_codec1 0>, <&cs35l36_codec2 0>;
  		};
  	};
@@ -275,7 +276,7 @@ index c7dae34aa..575aa27ef 100644
  };
  
  &tlmm {
-@@ -772,6 +930,21 @@ cam_front_avdd_default_pin: cam-avdd-default-pins {
+@@ -772,6 +931,21 @@ cam_front_avdd_default_pin: cam-avdd-default-pins {
  		bias-disable;
  	};
  
@@ -297,7 +298,7 @@ index c7dae34aa..575aa27ef 100644
  	cam_front_aux_reset_default_pin: cam-front-aux-reset-default-pins {
  		pins = "gpio9";
  		function = "gpio";
-@@ -850,6 +1023,12 @@ &uart6 {
+@@ -850,6 +1024,12 @@ &uart6 {
  	bluetooth {
  		compatible = "qcom,wcn3990-bt";
  
@@ -310,7 +311,7 @@ index c7dae34aa..575aa27ef 100644
  		vddio-supply = <&vreg_pmu_io>;
  		vddxo-supply = <&vreg_pmu_xo>;
  		vddrf-supply = <&vreg_pmu_rf>;
-@@ -913,6 +1092,17 @@ &venus {
+@@ -913,6 +1093,17 @@ &venus {
  	status = "okay";
  };
  

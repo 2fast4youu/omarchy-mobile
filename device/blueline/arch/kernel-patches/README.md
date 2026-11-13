@@ -15,6 +15,7 @@ make ARCH=arm64 LLVM=1 O=/out -j$(nproc) Image.gz dtbs modules
 | Datei | Änderung | Grund |
 |---|---|---|
 | `arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi` | Touchscreen auf I²C2, Kameras, Bluetooth, Ramoops und Modem-Firmware. Lautsprecher über CS35L36 und QUAT_TDM, Mikrofone über WCD9340 und SLIMbus. | Der WCD9340-Reset liegt auf GPIO 64, der Interrupt auf GPIO 54. Der Codec nutzt RPMH LN_BB_CLK3. |
+| `arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi` | IMX363 auf CCI0 an `0x1a`, GPIO 80 als aktiv-low und MCLK0 auf GPIO 13. | Die Pixel-3-Werkskonfiguration speichert die 8-Bit-Adresse `0x34`. Mit allen drei Korrekturen lieferte die Rückkamera auf dem Testgerät Frames in 1920 × 1080 und 4032 × 3024. |
 | `arch/arm64/boot/dts/qcom/pm8998.dtsi` | Label für die RTC. | Der Geräteknoten markiert die RTC als Wakeup-Quelle. |
 | `drivers/media/i2c/imx363.c` | `xclk` optional, Regler optional, Chip-ID-Fehler toleriert (Notifier bindet trotzdem), Regler-Fehlerbehandlung | Rückkamera soll probe-en statt zu blockieren |
 | `drivers/media/i2c/imx355.c` | `cur_mode` = kleinster Mode (820×616), `get_selection` implementiert | libcamera braucht Crop-Rechtecke; sdm845-CAMSS kann keine 3280×2464-Frames |
@@ -29,6 +30,6 @@ Die Mikrofonbeschaltung basiert auf [David Heidelbergs Pixel-3-Audioserie v7](ht
 
 ## Bekannte Einschränkungen
 
-- **Rückkamera (IMX363)**: Chip-ID wird nicht gelesen (Sensor antwortet nicht auf I2C),
-  VANA-Regler bleibt `disabled`. Siehe `../rueckkamera-*.txt`.
+- **Rückkamera (IMX363)**: Megapixels verwendet 1920 × 1080. Autofokus,
+  Stabilisierung und Videoaufnahme stehen zur Abnahme aus.
 - **libcamera 0.7.2** erwartet SINK- und SOURCE-Pads. Die Sensor-Patches stellen beide bereit.
