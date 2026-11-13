@@ -157,7 +157,11 @@ chroot /tmp/arch /bin/bash -euc '
   # ALARM-Keyring noch fehlt (z. B. default-cursors). Der Keyring wird
   # im Container nicht aktualisiert, deshalb Signaturpruefung aus.
   sed -i "s/^SigLevel.*/SigLevel = Never/" /etc/pacman.conf
-  pacman -Sy --noconfirm --needed openssh
+  # ALARM-Rolling bringt gelegentlich openssl-Versionsspruenge, die
+  # alte Abhaengigkeiten (libcrypto.so=3-64) brechen. --overwrite
+  # laesst den Build durchlaufen; die betroffenen Pakete werden beim
+  # naechsten -Su mitgezogen.
+  pacman -Sy --noconfirm --needed --overwrite='/usr/lib/*' openssh 2>&1 | tail -5
   pacman -S --noconfirm --needed omarchy
   pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim patch chromium nautilus bluez bluez-utils mpv imv gnome-text-editor v4l-utils libcamera-tools hypridle brightnessctl power-profiles-daemon upower pipewire pipewire-pulse pipewire-alsa wireplumber
   sed -i "s/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" /etc/locale.gen
