@@ -1,0 +1,44 @@
+Touchscreen dauerhaft im Image, 2026-11-13 17:02
+================================================
+
+BELEG NACH FRISCHEM FLASH (ohne manuelles Eingreifen)
+-----------------------------------------------------
+  /dev/input/event3: stmfts
+  gpi: geladen (lsmod)
+  i2c2: 2-0049
+  Hyprland: "Touch: Touch Device at aaaaeecdedb0: stmfts"
+  Screenshot: device/blueline/arch/homescreen-touch-2026-11-13.png
+              (1080x2160, SHA 781b47ba...)
+
+DAS PAKET
+---------
+  boot.img      cddf27abb1981ca9a11db9fa59ab382e0ef8be8e67012e04f48d9867729c4810
+                20955136 B  (Kernel + DTB mit touchscreen@49)
+  userdata.img  afd1299a87483180535e9e140d5844067990145099af2cc3c941d30fec518a7b
+                6559897652 B  (Rootfs mit gpi.ko)
+
+DIE ZWEI URSACHEN
+-----------------
+1. DT-Knoten fehlte. Stock: st_fts@49 mit "st,fts". Mainline-Treiber
+   erwartet "st,stmfts5". Knoten aus sdm845-google-blueline.dts
+   uebernommen: i2c2, IRQ GPIO 125, Reset GPIO 99, mode-switch
+   GPIO 136, avdd vreg_l14a_1p8, vdd vreg_l19a_3p3, 1080x2160.
+
+2. gpi.ko fehlte im Image. i2c2 braucht gpi_dma0; ohne das Modul
+   "geni_i2c: Failed to get tx DMA ch" und i2c2 bleibt deferred.
+   Der Mount zeigte auf ~/hermes-workspace/images/fl-v0ba/gpi.ko,
+   ein LEERES VERZEICHNIS. Jetzt pmos-kernel-out/drivers/dma/qcom/gpi.ko.
+
+WARUM DER ERSTE VERSUCH HAENGEN BLIEB
+-------------------------------------
+Mit dem DT-Knoten, aber ohne gpi.ko, wartete der Kernel beim Boot
+dauerhaft auf i2c2 (sync_state pending). USB zeigte 0xD002, aber
+fastboot/adb/ssh antworteten nicht. Rettung: Power-Taste, dann
+fastboot flash boot_a <altes boot.img d40c3fb4> -> nach 32 s wieder da.
+
+NEBENBEI REPARIERT
+------------------
+  dsi_phy_10nm.c: zwei rumpflose for-Schleifen nach der
+  OMADBG-Entfernung (Kompilierfehler) - korrigiert.
+  BT-Firmware crbtfw21.tlv/crnv21.bin in ~/hermes-workspace/firmware/qca/
+  ergaenzt (der Kernel baut sie per CONFIG_EXTRA_FIRMWARE ein).
