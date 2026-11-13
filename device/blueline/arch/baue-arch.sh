@@ -24,7 +24,7 @@ docker run --rm --platform linux/arm64 --privileged \
   -v "$CACHE":/in:ro \
   -v "$HOME/hermes-workspace/firmware":/fw:ro \
   -v "$HIER/../../../packages":/pkgs:ro \
-  -v "$HOME/hermes-workspace/images/fl-v0ba/gpi.ko":/gpi.ko:ro \
+  -v "$HOME/hermes-workspace/pmos-kernel-out/drivers/dma/qcom/gpi.ko":/gpi.ko:ro \
   -v "$HOME/hermes-workspace/pmos-kernel-out/drivers/leds/flash/leds-qcom-flash.ko":/leds-qcom-flash.ko:ro \
   -v /tmp/mods:/mods:ro \
   -v /tmp/megapixels:/mega/megapixels:ro \

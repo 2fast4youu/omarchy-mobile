@@ -1,0 +1,57 @@
+Boot-Haenger, 2026-11-13 15:30
+==============================
+
+WAS PASSIERT IST
+----------------
+Nach dem Einbau des Touchscreen-Knotens in i2c2 haengt das Geraet beim
+Boot. Seit 15:03 (jetzt 15:30, 27 Minuten) gilt:
+  - USB: "Pixel 3 (blueline)" sichtbar, idProduct 0xD002 (ADB-Modus)
+  - fastboot devices: leer
+  - adb devices: leer
+  - ping 172.16.42.1: 100 % Verlust
+  - kein NCM-Interface
+
+Der Kernel kommt also bis zur USB-Initialisierung, aber weder der
+NCM-Gadget noch der ADB-Daemon noch Fastboot antworten.
+
+DIE AENDERUNG
+-------------
+In arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi wurde ein
+&i2c2-Block mit "touchscreen@49" eingetragen (compatible "st,stmfts5",
+IRQ GPIO 125, Reset GPIO 99, mode-switch GPIO 136, avdd l14a, vdd l19a).
+
+Der Knoten selbst ist syntaktisch korrekt (DTB kompiliert, 4 Treffer
+im DTB). Der Verdacht: i2c2 braucht gpi_dma0, und /opt/omamobile/gpi.ko
+fehlt im Image - der Mount in baue-arch.sh zeigte auf
+~/hermes-workspace/images/fl-v0ba/gpi.ko, das ein LEERES VERZEICHNIS
+ist statt einer Datei. Ohne gpi_dma0 kann der geni-i2c-Bus nicht
+proben, und der Boot haengt beim Warten auf die DMA-Kanaele.
+
+BEREITS KORRIGIERT (noch nicht geflasht)
+----------------------------------------
+baue-arch.sh mountet jetzt
+  ~/hermes-workspace/pmos-kernel-out/drivers/dma/qcom/gpi.ko
+statt des leeren Verzeichnisses.
+
+AUSSERDEM GEFUNDEN
+------------------
+- qcom_sysmon.ko, reset-qcom-pdc.ko, q6core.ko fehlten im Image
+  (jetzt in /tmp/mods, 62 Module)
+- rmtfs, tqftpserv, pd-mapper fehlten (jetzt im Image)
+- /home/omarchy gehoerte root:root (jetzt chown im Build)
+- dsi_phy_10nm.c hatte einen Syntaxfehler von der OMADBG-Entfernung
+  (repariert)
+- BT-Firmware crbtfw21.tlv/crnv21.bin fehlte in ~/hermes-workspace/firmware/qca
+  (jetzt da)
+
+RETTUNG
+-------
+Nur physisch moeglich: Power-Taste (Neustart) oder Power+Leiser
+(Fastboot). Danach:
+  fastboot flash boot_a <altes boot.img mit SHA d40c3fb4>
+oder
+  fastboot boot <altes boot.img>
+
+Das alte, funktionierende boot.img liegt in
+~/hermes-workspace/rom-blueline-final/boot.img (SHA d40c3fb4) und
+/tmp/rom-final/boot.img.
