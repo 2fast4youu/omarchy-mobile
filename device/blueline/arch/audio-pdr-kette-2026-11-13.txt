@@ -1,0 +1,62 @@
+Audio / PDR-Kette, 2026-11-13 13:12
+====================================
+
+WAS JETZT FUNKTIONIERT (am Geraet belegt)
+-----------------------------------------
+1. ADSP startet: remoteproc1 "adsp=running",
+   "Booting fw image qcom/sdm845/Google/blueline/adsp.mbn, size 13144196"
+2. QRTR laeuft: qrtr-lookup zeigt Services (Remote filesystem, TFTP,
+   SLIMbus control service, Service registry)
+3. APR-Dienste werden angelegt:
+   "qcom,apr ... Adding APR/GPR dev: aprsvc:service:4:3 ... 4:b"
+   /sys/bus/aprbus/devices/ enthaelt 7 Geraete
+4. qcom-q6core bindet an die APR-Dienste (/sys/bus/aprbus/drivers/qcom-q6core)
+5. SLIMbus-Controller: "SLIM SAT: Rcvd master capability",
+   "SLIM controller Registered"
+6. SLIMbus-Geraete vorhanden: 217:250:0:0 (IFD), 217:250:1:0 (Codec)
+7. WCD9340 Reset-GPIO ist gezogen: /sys/kernel/debug/gpio zeigt
+   "gpio54: out high func0 2mA pull down"
+8. Regler vreg_s4a_1p8 liefert 1,8 V
+
+DREI FEHLENDE TEILE GEFUNDEN UND BEHOBEN
+----------------------------------------
+a) qcom_sysmon.ko und reset-qcom-pdc.ko fehlten im Image.
+   Folge: "qcom_q6v5_pas: Unknown symbol qcom_q6v5_init (err -2)",
+   kein /sys/class/remoteproc/ -> ADSP startete nie.
+   Fix: beide Module ins Image (aus pmos-kernel-out).
+
+b) rmtfs, tqftpserv, pd-mapper fehlten komplett im Image.
+   Folge: kein PDR-Service, SLIMbus-Controller "QMI wait timeout".
+   Fix: rmtfs+tqftpserv aus Debian (arm64), pd-mapper aus
+   github.com/linux-msm/pd-mapper gebaut (musl, mit eigenem
+   Loader unter /usr/lib/pdmapper/, NICHT /lib/ld-musl-aarch64.so.1
+   ueberschreiben - das bricht insmod/rmmod/kmod).
+
+c) q6core.ko fehlte im Image.
+   Folge: /sys/bus/aprbus/drivers/ leer, kein Treiber an den
+   APR-Services.
+   Fix: q6core.ko aus pmos-kernel-out/sound/soc/qcom/qdsp6/ ins Image.
+
+VERBLEIBENDER BLOCKER
+---------------------
+wcd934x-slim 217:250:1:0: Failed to get logical address
+
+Der SLIMbus-Controller sendet SLIM_USR_MC_ADDR_QUERY (0xD), der Codec
+antwortet nicht. Reset-GPIO high, Versorgung 1,8 V, Bus-Master-Capability
+empfangen - aber keine ADDR_REPLY.
+
+Der mainline wcd934x.c hat KEINE Reset-GPIO-Logik (kein "reset_gpio"
+im Treiber); die DT-Property reset-gpios wird nur vom GPIO-Framework
+belegt, nicht vom Treiber getrieben. Beim Stock-Android macht das der
+wcd934x-core mit einer Power-Up-Sequenz (Reset low -> warten ->
+Reset high -> warten -> ADDR_QUERY).
+
+Naechster Ansatz: Reset-Sequenz manuell nachfahren (GPIO 54 low,
+200 ms, high, 20 ms) BEVOR der Codec-Treiber bindet, oder den
+Treiber um die Reset-Sequenz erweitern.
+
+Reproduzierbarkeit
+------------------
+Ein sauberer Neustart hilft NICHT: der SLIMbus-Controller laesst sich
+nach einem fehlgeschlagenen Probe nicht neu laden
+("Driver 'qcom,slim-ngd' is already registered, aborting").

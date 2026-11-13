@@ -113,9 +113,19 @@ if [ -f /gpi.ko ]; then
     cp /gpi.ko /tmp/arch/opt/omamobile/gpi.ko
     echo "== gpi.ko ins Image"
 fi
-for b in rmtfs tqftpserv pd-mapper; do
+for b in rmtfs tqftpserv pd-mapper qrtr-lookup; do
     [ -f "/modembin/$b" ] && cp "/modembin/$b" /tmp/arch/usr/bin/ && chmod 755 /tmp/arch/usr/bin/$b
 done
+# pd-mapper ist ein musl-Binary und braucht den musl-Loader + eigene Libs
+# in einem eigenen Verzeichnis (NICHT /lib/ld-musl-aarch64.so.1 ueberschreiben,
+# sonst brechen insmod/rmmod/kmod, die glibc nutzen).
+if [ -f /modembin/ld-musl-aarch64.so.1 ]; then
+    mkdir -p /tmp/arch/usr/lib/pdmapper
+    cp /modembin/ld-musl-aarch64.so.1 /tmp/arch/usr/lib/pdmapper/
+    cp /modembin/libqrtr-musl.so.1 /tmp/arch/usr/lib/pdmapper/libqrtr.so.1 2>/dev/null || true
+    cp /modembin/liblzma-musl.so.5 /tmp/arch/usr/lib/pdmapper/liblzma.so.5 2>/dev/null || true
+    chmod 755 /tmp/arch/usr/lib/pdmapper/*
+fi
 # libqrtr.so.1 aus dem Debian-qrtr-Paket (ALARM hat kein libqrtr-Paket)
 l=/modembin-lib/aarch64-linux-gnu/libqrtr.so.1
 [ -f "$l" ] && cp "$l" /tmp/arch/usr/lib/libqrtr.so.1 && chmod 755 /tmp/arch/usr/lib/libqrtr.so.1
