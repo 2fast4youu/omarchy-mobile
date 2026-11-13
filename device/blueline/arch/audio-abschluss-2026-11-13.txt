@@ -1,0 +1,61 @@
+Audio — Abschluss, 2026-11-13 14:00
+====================================
+
+WAS NACHWEISLICH LAEUFT (am Geraet belegt, nach frischem Flash)
+---------------------------------------------------------------
+  adsp=running                     (remoteproc1)
+  apr=7 Geraete                    (/sys/bus/aprbus/devices/)
+  slimbus=2 Geraete                (217:250:0:0 IFD, 217:250:1:0 Codec)
+  rmtfs, tqftpserv laufen          (im Init verankert)
+  pd-mapper laeuft                 (eigener musl-Loader)
+  WCD9340 Reset-GPIO 54 = out high
+  vreg_s4a_1p8 = 1,8 V
+
+DREI FEHLENDE TEILE GEFUNDEN UND INS IMAGE GEBAUT
+-------------------------------------------------
+1. qcom_sysmon.ko + reset-qcom-pdc.ko
+   Vorher: "qcom_q6v5_pas: Unknown symbol qcom_q6v5_init (err -2)",
+   kein /sys/class/remoteproc/ -> der ADSP startete nie.
+2. rmtfs + tqftpserv (Debian arm64) + pd-mapper (aus
+   github.com/linux-msm/pd-mapper gebaut)
+   Vorher: kein PDR-Service -> SLIMbus-Controller "QMI wait timeout".
+   pd-mapper braucht einen eigenen musl-Loader unter
+   /usr/lib/pdmapper/ - der System-Loader /lib/ld-musl-aarch64.so.1
+   darf NICHT ueberschrieben werden, sonst brechen insmod/rmmod/kmod.
+3. q6core.ko
+   Vorher: /sys/bus/aprbus/drivers/ leer, kein Treiber an den
+   APR-Services.
+
+VERBLEIBENDER BLOCKER (unveraendert)
+------------------------------------
+  wcd934x-slim 217:250:1:0: Failed to get logical address
+
+Der SLIMbus-Controller sendet SLIM_USR_MC_ADDR_QUERY (0xD); der Codec
+antwortet nicht (rbuf bleibt 0 -> -ENXIO in qcom_slim_ngd_get_laddr()).
+
+Der MFD-Treiber drivers/mfd/wcd934x.c macht die Reset-Sequenz korrekt
+(Supplies an, 600 us, Reset low, 20 ms, Reset high, 20 ms), und der
+Probe kommt bis zur Adressabfrage. Versorgung, Reset und Clock sind
+also in Ordnung.
+
+Geprueft und ausgeschlossen:
+  - SoundWire als Alternative: kein Controller im DT aktiv
+    (/sys/bus/soundwire/devices/ leer, keine sdw-master)
+  - Neuladen des SLIMbus-Controllers nach fehlgeschlagenem Probe:
+    "Driver 'qcom,slim-ngd' is already registered, aborting"
+    -> nur ein voller Neustart hilft, der Codec antwortet danach
+       aber genauso wenig
+  - Manuelle Reset-Sequenz per sysfs-GPIO: GPIO 54 ist bereits vom
+    Treiber belegt (out high), /sys/class/gpio/export nicht moeglich
+
+NAECHSTER ANSATZ (offen)
+------------------------
+Stock-Android-Referenz auswerten: im factory-image den wcd934x-Treiber
+und die Power-Up-Sequenz lesen (vendor.img /lib/modules), SLIM_ROOT_FREQ
+und MCLK-Konfiguration gegen den Stock-Wert pruefen.
+
+NEBENBEFUND, BEHOBEN
+--------------------
+/home/omarchy gehoerte root:root -> setup-user konnte ~/.local nicht
+anlegen ("Permission denied"), die Session startete nicht. Jetzt
+chown -R omarchy:omarchy /home/omarchy am Ende des Rootfs-Builds.

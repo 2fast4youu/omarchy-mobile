@@ -261,6 +261,12 @@ NMC
   if [ -f /usr/share/omamobile/shell/profile/shell.json ]; then
     cp /usr/share/omamobile/shell/profile/shell.json /home/omarchy/.config/omarchy/shell.json
     chown omarchy:omarchy /home/omarchy/.config/omarchy/shell.json
+  # /home/omarchy selbst gehoert dem Nutzer: sonst kann setup-user
+  # kein ~/.local anlegen ("Permission denied"), und die Session
+  # startet nicht (am Geraet belegt 2026-11-13).
+  chown -R omarchy:omarchy /home/omarchy 2>/dev/null || true
+  mkdir -p /home/omarchy/.local/state /home/omarchy/.local/share
+  chown -R omarchy:omarchy /home/omarchy/.local 2>/dev/null || true
     echo "shell.json gesetzt: $(python3 -c "import json;print(len(json.load(open('/home/omarchy/.config/omarchy/shell.json')).get('plugins',[])))" 2>/dev/null) Plugins"
   fi
   ssh-keygen -A
