@@ -1,0 +1,54 @@
+Touchscreen funktioniert, 2026-11-13 16:45
+==========================================
+
+BELEG AM GERAET
+---------------
+  /dev/input/event3: stmfts
+  dmesg: "input: stmfts as /devices/platform/soc@0/8c0000.geniqup/
+         888000.i2c/i2c-2/2-0049/input/input3"
+  hyprctl devices:
+    Touch:
+      Touch Device at aaab0d58ad10:
+        stmfts
+  Screenshot: /tmp/touch-ok2.png (1080x2160, SHA 00cb2cf4...)
+
+DIE URSACHE (zwei Teile)
+------------------------
+1. Der DT-Knoten fehlte.
+   Im Stock-DTBO heisst der Touchscreen st_fts@49 mit
+   compatible "st,fts". Der mainline-Treiber erwartet "st,stmfts5".
+   Der vollstaendige Knoten steht in
+   arch/arm64/boot/dts/qcom/sdm845-google-blueline.dts:
+     &i2c2, touchscreen@49, IRQ GPIO 125, Reset GPIO 99,
+     mode-switch GPIO 136, avdd vreg_l14a_1p8, vdd vreg_l19a_3p3,
+     1080x2160
+   Ohne den Knoten gab es nur pwrkey/resin/volume als input-Devices.
+
+2. gpi.ko fehlte im Image.
+   i2c2 (888000.i2c) braucht gpi_dma0. Ohne das Modul:
+     "geni_i2c: Failed to get tx DMA ch"
+     -> i2c2 bleibt "deferred probe pending", kein Touchscreen.
+   Der Mount in baue-arch.sh zeigte auf
+     ~/hermes-workspace/images/fl-v0ba/gpi.ko
+   und das ist ein LEERES VERZEICHNIS, nicht die Datei.
+   Jetzt: pmos-kernel-out/drivers/dma/qcom/gpi.ko
+
+NEBENBEI REPARIERT
+------------------
+  dsi_phy_10nm.c hatte nach der OMADBG-Entfernung zwei rumpflose
+  for-Schleifen (Kompilierfehler) - korrigiert.
+  BT-Firmware crbtfw21.tlv/crnv21.bin fehlte in
+  ~/hermes-workspace/firmware/qca/ - ergaenzt.
+
+BOOT-HAENGER (Ursache und Rettung)
+----------------------------------
+  Mit dem Touchscreen-DT, aber ohne gpi.ko, blieb das Geraet beim Boot
+  haengen (USB 0xD002, kein fastboot/adb/ssh, 1,5 h). Rettung:
+  Power-Taste, dann
+    fastboot flash boot_a ~/hermes-workspace/rom-blueline-final/boot.img
+  (SHA d40c3fb4). Danach bootete es in 32 s und der Homescreen lief.
+
+NAECHSTER SCHRITT
+-----------------
+  Rootfs mit dem korrigierten gpi.ko-Pfad neu bauen und flashen, damit
+  der Touchscreen ohne manuelles insmod kommt.
