@@ -66,10 +66,7 @@ mkdir -p /tmp/arch/root
 cp /om/CHECKLISTE-ZUM-AUSFUELLEN-2026-11-11.txt /tmp/arch/root/ABNAHME-CHECKLISTE.txt 2>/dev/null || true
 cp /om/INSTALL.md /tmp/arch/root/INSTALL.md 2>/dev/null || true
 chmod 755 /tmp/arch/usr/local/bin/omamobile-time-sync
-mkdir -p /tmp/arch/usr/local/bin /tmp/arch/usr/local/lib/qbootctl
-cp /qbootctl /tmp/arch/usr/local/bin/qbootctl
-cp /ld-musl-aarch64.so.1 /tmp/arch/usr/local/lib/qbootctl/ld-musl-aarch64.so.1
-chmod 755 /tmp/arch/usr/local/bin/qbootctl /tmp/arch/usr/local/lib/qbootctl/ld-musl-aarch64.so.1
+install -Dm755 /om/blueline-boot-success.py /tmp/arch/usr/local/bin/blueline-boot-success
 mkdir -p /tmp/arch/home/omarchy/.config/hypr
 cp /om/hypridle/hypridle.conf /tmp/arch/home/omarchy/.config/hypr/hypridle.conf 2>/dev/null || true
 mkdir -p /tmp/arch/usr/share/megapixels/config

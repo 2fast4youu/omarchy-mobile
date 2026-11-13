@@ -334,20 +334,7 @@ done
 su - omarchy -c 'dbus-run-session -- /run/omamobile-session.sh' >/dev/null 2>&1 &
 (
     sleep 15
-    # qbootctl otherwise enumerates slotted partitions on protected UFS LUNs.
-    # Restrict its view to the boot entries on the main LUN.
-    unshare -m sh -ec '
-        mount --make-rprivate /
-        a=$(readlink -f /dev/disk/by-partlabel/boot_a)
-        b=$(readlink -f /dev/disk/by-partlabel/boot_b)
-        [ "$a" = /dev/sda11 ] && [ "$b" = /dev/sda12 ]
-        [ "$(cat /sys/class/block/sda/ro)" = 0 ]
-        mount -t tmpfs -o mode=0755 tmpfs /dev/disk/by-partlabel
-        ln -s "$a" /dev/disk/by-partlabel/boot_a
-        ln -s "$b" /dev/disk/by-partlabel/boot_b
-        qb=/usr/local/lib/qbootctl
-        "$qb/ld-musl-aarch64.so.1" --library-path "$qb" /usr/local/bin/qbootctl -m
-    ' >/tmp/qbootctl-mark.log 2>&1
+    /usr/local/bin/blueline-boot-success >/tmp/qbootctl-mark.log 2>&1
 ) &
 echo "omamobile: Sitzung gestartet (dbus-run-session, Hyprland/Quickshell/Squeekboard)" > /dev/kmsg 2>/dev/null
 

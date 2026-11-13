@@ -64,8 +64,6 @@ docker run --rm --platform linux/arm64 --privileged \
   -v /tmp/modem-bin/usr/lib:/modembin-lib:ro \
   -v /tmp/modem-bin:/modembin-musl:ro \
   -v "$WS/pmos-ref-build/pmbootstrap-work/chroot_rootfs_google-blueline/usr/lib/firmware/qcom/sdm845/Google/blueline":/qcomfw:ro \
-  -v "$WS/pmos-ref-build/pmbootstrap-work/chroot_rootfs_google-blueline/usr/bin/qbootctl":/qbootctl:ro \
-  -v "$WS/pmos-ref-build/pmbootstrap-work/chroot_rootfs_google-blueline/lib/ld-musl-aarch64.so.1":/ld-musl-aarch64.so.1:ro \
   -v "$WS/omarchy-pkg/omarchy-4.0.6-1-aarch64.pkg.tar.zst":/omarchy-4.0.6.pkg.tar.zst:ro \
   -v "$WS/omarchy-pkg/omarchy-settings-4.0.6-1-aarch64.pkg.tar.zst":/omarchy-settings-4.0.6.pkg.tar.zst:ro \
   -v "$HIER":/om:ro \
