@@ -1,0 +1,12 @@
+diff --git a/src/io_pipeline.c b/src/io_pipeline.c
+index 0879923..5fe4431 100644
+--- a/src/io_pipeline.c
++++ b/src/io_pipeline.c
+@@ -407,6 +407,7 @@ on_frame(MPBuffer buffer, void *_data)
+ 
+                         if (image_is_blank) {
+                                 ++state_io.blank_frame_count;
++                                mp_camera_release_buffer(mpcamera, buffer.index);
+                                 return;
+                         }
+                 } else {

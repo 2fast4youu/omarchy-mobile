@@ -17,7 +17,7 @@ KOUT=${KOUT:-$WS/pmos-kernel-out}
 FW=${FW:-$WS/firmware}
 PKGS=${PKGS:-$HIER/../../../packages}
 : "${CAMERA_ARTIFACTS:?CAMERA_ARTIFACTS muss auf die Megapixels-Buildartefakte zeigen}"
-for f in megapixels-gtk libmegapixels.so.0.1 liblibdng.so.0.1 me.gapixels.Megapixels.gschema.xml; do
+for f in usr/bin/megapixels usr/lib/libmegapixels.so.1.1.0 usr/lib/libdng.so.1.2.0 usr/share/glib-2.0/schemas/me.gapixels.Megapixels.gschema.xml; do
     [ -s "$CAMERA_ARTIFACTS/$f" ] || { echo "fehlt: $CAMERA_ARTIFACTS/$f" >&2; exit 1; }
 done
 [ -s "$KOUT/drivers/dma/qcom/gpi.ko" ] || { echo "gpi.ko fehlt in $KOUT" >&2; exit 1; }

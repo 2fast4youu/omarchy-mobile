@@ -81,15 +81,17 @@ install -Dm644 /om/libcamera/simple.yaml \
     /tmp/arch/usr/share/libcamera/pipeline/simple/simple.yaml
 # Kamera-Artefakte und Launcher gemeinsam installieren. Fehlende Binaries
 # muessen den Build abbrechen, bevor ein unvollstaendiges Image entsteht.
-install -Dm755 /mega/megapixels-gtk /tmp/arch/usr/bin/megapixels
-install -Dm644 /mega/me.gapixels.Megapixels.gschema.xml \
+install -Dm755 /mega/usr/bin/megapixels /tmp/arch/usr/bin/megapixels
+install -Dm644 /mega/usr/share/glib-2.0/schemas/me.gapixels.Megapixels.gschema.xml \
     /tmp/arch/usr/share/glib-2.0/schemas/me.gapixels.Megapixels.gschema.xml
 install -Dm644 /om/megapixels-config/me.gapixels.Megapixels.desktop \
     /tmp/arch/usr/share/applications/me.gapixels.Megapixels.desktop
-install -Dm644 /mega/libmegapixels.so.0.1 /tmp/arch/usr/lib/libmegapixels.so.0.1
-install -Dm644 /mega/liblibdng.so.0.1 /tmp/arch/usr/lib/liblibdng.so.0.1
-ln -sfn libmegapixels.so.0.1 /tmp/arch/usr/lib/libmegapixels.so.0
-ln -sfn liblibdng.so.0.1 /tmp/arch/usr/lib/liblibdng.so.0
+install -Dm644 /mega/usr/lib/libmegapixels.so.1.1.0 /tmp/arch/usr/lib/libmegapixels.so.1.1.0
+install -Dm644 /mega/usr/lib/libdng.so.1.2.0 /tmp/arch/usr/lib/libdng.so.1.2.0
+ln -sfn libmegapixels.so.1.1.0 /tmp/arch/usr/lib/libmegapixels.so.1
+ln -sfn libdng.so.1.2.0 /tmp/arch/usr/lib/libdng.so.1
+install -Dm644 /om/megapixels-config/90-blueline.gschema.override \
+    /tmp/arch/usr/share/glib-2.0/schemas/90-blueline.gschema.override
 install -Dm644 /om/networkmanager/10-usb-rescue.conf \
     /tmp/arch/etc/NetworkManager/conf.d/10-usb-rescue.conf
 install -Dm644 /om/networkmanager/49-omamobile-wifi.rules \

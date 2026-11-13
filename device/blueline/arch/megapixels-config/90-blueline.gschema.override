@@ -1,0 +1,2 @@
+[me.gapixels.Megapixels]
+postprocessor='/usr/share/megapixels/postprocess.sh'
