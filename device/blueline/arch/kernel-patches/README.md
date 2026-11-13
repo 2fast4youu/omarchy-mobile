@@ -14,6 +14,10 @@ Die ROM-Kernelkonfiguration aktiviert `CONFIG_NFC_NXP_NCI=m` und
 `CONFIG_NFC_NXP_NCI_I2C=m` für den NXP-Controller. Die Standalone-Init lädt
 die passenden NFC-Module in Abhängigkeitsreihenfolge.
 
+`CONFIG_QCOM_MODEMSMEM=m` liefert die Plattformdaten in SMEM-Eintrag 134.
+Die Standalone-Init lädt `modemsmem` und `ipa`, bevor sie das Modem startet.
+Der GPL-Treiber stammt aus der Patchserie von Richard Acayan und David Heidelberg. [Linux-Kernel-Patch](https://lists.openwall.net/linux-kernel/2026/09/06/26)
+
 ## Änderungen
 
 | Datei | Änderung | Grund |

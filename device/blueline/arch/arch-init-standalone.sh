@@ -153,6 +153,14 @@ if [ -x /usr/lib/pdmapper/ld-musl-aarch64.so.1 ] && [ -x /usr/bin/pd-mapper ]; t
 elif [ -x /usr/bin/pd-mapper ]; then
     /usr/bin/pd-mapper >/tmp/pd-mapper.log 2>&1 &
 fi
+for m in modemsmem; do
+    [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
+done
+# IPA muss den Neustart-Notifier vor dem MSS-Start registrieren, damit es
+# beim ersten Modemstart die Stromversorgung des IPA-Controllers anfordert.
+for m in ipa rmnet; do
+    [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
+done
 sleep 2
 for r in /sys/class/remoteproc/remoteproc*; do
     [ -e "$r/state" ] && echo start > "$r/state" 2>/dev/null
@@ -172,9 +180,6 @@ while [ $_i -lt 20 ]; do
     fi
     sleep 1
     _i=$((_i + 1))
-done
-for m in ipa rmnet; do
-    [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
 for m in nfc nci nxp-nci nxp-nci_i2c; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
@@ -224,6 +229,7 @@ mkdir -p /run/systemd/system /run/udev/data
 SYSTEMD_IGNORE_CHROOT=1 /usr/lib/systemd/systemd-udevd --daemon 2>/dev/null
 SYSTEMD_IGNORE_CHROOT=1 udevadm trigger --action=add >/tmp/udev-trigger.log 2>&1
 SYSTEMD_IGNORE_CHROOT=1 udevadm settle --timeout=15 >>/tmp/udev-trigger.log 2>&1
+[ -x /usr/bin/ModemManager ] && /usr/bin/ModemManager --log-level=WARN >/tmp/ModemManager.log 2>&1 &
 [ -x /usr/bin/NetworkManager ] && /usr/bin/NetworkManager --no-daemon >/tmp/nm.log 2>&1 &
 chmod 666 /dev/video* /dev/v4l-subdev* /dev/media* /dev/dma_heap/* 2>/dev/null
 for d in /sys/class/input/event*/uevent; do echo add > "$d" 2>/dev/null; done

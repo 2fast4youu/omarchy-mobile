@@ -155,7 +155,7 @@ chroot /tmp/arch /bin/bash -euc '
   # naechsten -Su mitgezogen.
   pacman -Sy --noconfirm --needed --overwrite="/usr/lib/*" openssh
   pacman -S --noconfirm --needed omarchy
-  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim patch chromium nautilus bluez bluez-utils mpv imv gnome-text-editor v4l-utils libcamera-tools hypridle brightnessctl power-profiles-daemon upower pipewire pipewire-pulse pipewire-alsa wireplumber alsa-ucm-conf networkmanager wpa_supplicant zbar libconfig libraw imagemagick glib2 expat
+  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim patch chromium nautilus bluez bluez-utils mpv imv gnome-text-editor v4l-utils libcamera-tools hypridle brightnessctl power-profiles-daemon upower pipewire pipewire-pulse pipewire-alsa wireplumber alsa-ucm-conf networkmanager modemmanager wpa_supplicant zbar libconfig libraw imagemagick glib2 expat
   glib-compile-schemas --strict /usr/share/glib-2.0/schemas
   ldd -r /usr/bin/megapixels >/tmp/megapixels-ldd.log 2>&1
   camera_links=$(cat /tmp/megapixels-ldd.log)
