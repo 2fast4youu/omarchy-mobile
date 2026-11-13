@@ -1,0 +1,54 @@
+Audio-Stand, 2026-11-13 13:40
+=============================
+
+WAS JETZT NACHWEISLICH LAEUFT (am Geraet belegt)
+------------------------------------------------
+1. ADSP: remoteproc1 "adsp=running"
+2. QRTR: qrtr-lookup zeigt Services
+3. APR: 7 Geraete unter /sys/bus/aprbus/devices/
+   (aprsvc:service:4:3,4:4,4:7,4:8 und apr-service:4:9,4:a,4:b)
+4. q6core bindet: /sys/bus/aprbus/drivers/qcom-q6core
+5. SLIMbus-Controller: "SLIM SAT: Rcvd master capability",
+   "SLIM controller Registered"
+6. SLIMbus-Geraete: 217:250:0:0 (IFD), 217:250:1:0 (Codec)
+7. WCD9340: Reset-GPIO 54 ist "out high", vreg_s4a_1p8 = 1,8 V
+8. rmtfs, tqftpserv, pd-mapper laufen (im Init verankert)
+
+DREI FEHLENDE TEILE, JETZT IM IMAGE
+-----------------------------------
+a) qcom_sysmon.ko + reset-qcom-pdc.ko (vorher: "Unknown symbol
+   qcom_q6v5_init", kein /sys/class/remoteproc/, ADSP startete nie)
+b) rmtfs + tqftpserv (Debian arm64) und pd-mapper (aus
+   github.com/linux-msm/pd-mapper gebaut, eigener musl-Loader
+   unter /usr/lib/pdmapper/)
+c) q6core.ko (vorher fehlte der Treiber an den APR-Services)
+
+VERBLEIBENDER BLOCKER
+---------------------
+wcd934x-slim 217:250:1:0: Failed to get logical address
+
+Der SLIMbus-Controller sendet SLIM_USR_MC_ADDR_QUERY (0xD) an den
+Codec; der antwortet nicht (rbuf bleibt 0 -> -ENXIO in
+qcom_slim_ngd_get_laddr()).
+
+Der MFD-Treiber drivers/mfd/wcd934x.c macht die Reset-Sequenz
+korrekt (Supplies an, 600 us, Reset low, 20 ms, Reset high, 20 ms),
+und der Probe kommt bis zur Adressabfrage in
+wcd934x_codec_parse_data() -> slim_get_logical_addr().
+
+Das heisst: Versorgung, Reset und Clock sind in Ordnung. Der Codec
+antwortet trotzdem nicht auf dem SLIMbus. Moegliche Ursachen, die
+ohne Stock-Referenz nicht entscheidbar sind:
+  - Der Codec braucht eine laengere Wartezeit nach Reset
+  - Der Codec erwartet ein anderes MCLK (9.6 MHz vs. 24 MHz)
+  - Der SLIMbus-Root-Frequenz ist falsch (SLIM_ROOT_FREQ 24576000)
+  - Der Codec ist hardwaremaessig nicht bestueckt/defekt
+
+WAS ZU TUN IST (naechster Ansatz)
+---------------------------------
+1. Stock-Android-Referenz: im factory-image den wcd934x-Treiber und
+   die Power-Up-Sequenz auslesen (vendor.img /lib/modules).
+2. SLIM_ROOT_FREQ pruefen (24576000 im Treiber vs. DT).
+3. MCLK-Konfiguration pruefen (WCD934X_CODEC_RPM_CLK_MCLK_CFG).
+4. Alternativ: Audio ueber SoundWire statt SLIMbus versuchen
+   (der Codec hat beide Interfaces, siehe DT-Knoten soundwire@c85).
