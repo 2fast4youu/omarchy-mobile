@@ -95,6 +95,7 @@ chmod 666 /dev/video* /dev/v4l-subdev* 2>/dev/null
 for _fw in qcom/sdm845/Google/blueline/mba.mbn \
            qcom/sdm845/Google/blueline/modem.mbn \
            qcom/sdm845/Google/blueline/wlanmdsp.mbn \
+           qcom/sdm845/Google/blueline/ipa_fws.mbn \
            qcom/sdm845/Google/blueline/adsp.mbn \
            qcom/sdm845/Google/blueline/adspr.jsn \
            qcom/sdm845/Google/blueline/adspua.jsn \
@@ -171,6 +172,9 @@ while [ $_i -lt 20 ]; do
     fi
     sleep 1
     _i=$((_i + 1))
+done
+for m in ipa rmnet; do
+    [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
 sleep 2
 for m in q6core snd-q6dsp-common q6afe q6afe-dai q6afe-clocks \
