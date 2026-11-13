@@ -171,7 +171,7 @@ while [ $_i -lt 20 ]; do
     _i=$((_i + 1))
 done
 sleep 2
-for m in soundwire-bus regmap-slimbus regmap-sdw slim-qcom-ngd-ctrl \
+for m in q6core soundwire-bus regmap-slimbus regmap-sdw slim-qcom-ngd-ctrl \
          snd-soc-rl6231 snd-soc-rt5663 snd-soc-qcom-sdw snd-soc-qcom-common \
          snd-soc-wcd-common snd-soc-wcd-classh snd-soc-wcd-mbhc \
          wcd934x snd-soc-wcd934x snd-soc-sdm845; do
