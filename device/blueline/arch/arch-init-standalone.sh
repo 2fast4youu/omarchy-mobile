@@ -207,14 +207,6 @@ if [ -w /sys/class/rtc/rtc0/wakealarm ]; then
     echo 0 > /sys/class/rtc/rtc0/wakealarm 2>/dev/null
     echo "+3600" > /sys/class/rtc/rtc0/wakealarm 2>/dev/null
 fi
-# Audio-Server: PipeWire + WirePlumber laufen in der Nutzer-Session
-# (XDG_RUNTIME_DIR), nicht als Systemdienst. Sie werden hier fuer
-# omarchy gestartet, damit die Shell einen Sink/Source findet.
-if [ -x /usr/bin/pipewire ]; then
-    su - omarchy -c "export XDG_RUNTIME_DIR=$OM_RUNTIME; setsid nohup pipewire >/tmp/pipewire.log 2>&1 </dev/null &" 2>/dev/null
-    sleep 2
-    su - omarchy -c "export XDG_RUNTIME_DIR=$OM_RUNTIME; setsid nohup wireplumber >/tmp/wireplumber.log 2>&1 </dev/null &" 2>/dev/null
-fi
 # UPower: die Shell (Quickshell.Services.UPower) liest den Akku darueber.
 [ -x /usr/lib/upowerd ] && /usr/lib/upowerd >/tmp/upowerd.log 2>&1 &
 # Power-Profile (ppd) + Abbildung auf die CPU-Kappe.
@@ -299,6 +291,10 @@ wdisp=\$(ls $OM_RUNTIME/wayland-* 2>/dev/null | grep -v lock | head -1 | xargs -
 export WAYLAND_DISPLAY=\$wdisp HYPRLAND_INSTANCE_SIGNATURE=\$sig
 squeekboard >/tmp/squeekboard.log 2>&1 &
 # Idle-Daemon: Helligkeit runter, dann Bildschirm aus (Akku).
+# All audio services share the same user D-Bus session as the mobile shell.
+pipewire >/tmp/pipewire.log 2>&1 &
+wireplumber >/tmp/wireplumber.log 2>&1 &
+pipewire-pulse >/tmp/pipewire-pulse.log 2>&1 &
 hypridle >/tmp/hypridle.log 2>&1 &
 quickshell -p /usr/share/omarchy/shell >/tmp/quickshell.log 2>&1 &
 wait

@@ -156,15 +156,16 @@ chroot /tmp/arch /bin/bash -euc '
   # naechsten -Su mitgezogen.
   pacman -Sy --noconfirm --needed --overwrite="/usr/lib/*" openssh
   pacman -S --noconfirm --needed omarchy
-  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim patch chromium nautilus bluez bluez-utils mpv imv gnome-text-editor v4l-utils libcamera-tools hypridle brightnessctl power-profiles-daemon upower pipewire pipewire-pulse pipewire-alsa wireplumber networkmanager wpa_supplicant zbar libconfig libraw imagemagick glib2 expat
+  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim patch chromium nautilus bluez bluez-utils mpv imv gnome-text-editor v4l-utils libcamera-tools hypridle brightnessctl power-profiles-daemon upower pipewire pipewire-pulse pipewire-alsa wireplumber alsa-ucm-conf networkmanager wpa_supplicant zbar libconfig libraw imagemagick glib2 expat
   glib-compile-schemas --strict /usr/share/glib-2.0/schemas
   ldd -r /usr/bin/megapixels >/tmp/megapixels-ldd.log 2>&1
   camera_links=$(cat /tmp/megapixels-ldd.log)
   if printf "%s\n" "$camera_links" | grep -E "not found|undefined symbol"; then exit 1; fi
   sed -i "s/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" /etc/locale.gen
   locale-gen >/dev/null 2>&1
-  groupadd -f video; groupadd -f input; groupadd -f seat
-  id omarchy >/dev/null 2>&1 || useradd -m -G video,input,seat -s /bin/bash omarchy
+  groupadd -f video; groupadd -f input; groupadd -f seat; groupadd -f audio
+  id omarchy >/dev/null 2>&1 || useradd -m -G video,input,seat,audio -s /bin/bash omarchy
+  usermod -aG audio omarchy
   ln -sfn /proc/self/fd /dev/fd
   # XDG-Verzeichnisse + Megapixels-Postprozessor: ohne user-dirs.dirs
   # liefert g_get_user_special_dir(PICTURES) NULL, Megapixels kann keine
@@ -235,6 +236,10 @@ EOD
   systemctl enable sshd 2>/dev/null || ln -sf /usr/lib/systemd/system/sshd.service \
     /etc/systemd/system/multi-user.target.wants/sshd.service
 '
+install -Dm644 /om/alsa-ucm/Pixel3.conf /tmp/arch/usr/share/alsa/ucm2/Qualcomm/Pixel3/Pixel3.conf
+install -Dm644 /om/alsa-ucm/HiFi.conf /tmp/arch/usr/share/alsa/ucm2/Qualcomm/Pixel3/HiFi.conf
+install -d /tmp/arch/usr/share/alsa/ucm2/conf.d/sdm845
+ln -sfn ../../Qualcomm/Pixel3/Pixel3.conf "/tmp/arch/usr/share/alsa/ucm2/conf.d/sdm845/Pixel 3.conf"
 umount /tmp/arch/dev /tmp/arch/proc 2>/dev/null || true
 
 echo "== ext4"
