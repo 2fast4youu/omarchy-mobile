@@ -79,32 +79,23 @@ cp /om/megapixels-config/*.conf /tmp/arch/usr/share/megapixels/config/ 2>/dev/nu
 # matcht aber kein Media-Device -> "cam -l" bleibt leer.
 install -Dm644 /om/libcamera/simple.yaml \
     /tmp/arch/usr/share/libcamera/pipeline/simple/simple.yaml
-# Megapixels-Binaries: wurden frueher nur manuell per scp installiert,
-# fehlten damit im Image. Jetzt aus den Build-Verzeichnissen einbauen.
-if [ -x /mega/megapixels/build/megapixels ]; then
-    install -Dm755 /mega/megapixels/build/megapixels /tmp/arch/usr/bin/megapixels-gtk
-    ln -sfn megapixels-gtk /tmp/arch/usr/bin/megapixels
-    install -Dm644 /mega/megapixels/data/me.gapixels.Megapixels.gschema.xml \
-        /tmp/arch/usr/share/glib-2.0/schemas/me.gapixels.Megapixels.gschema.xml
-    # Desktop-Eintrag: ohne ihn erscheint Megapixels nicht im Launcher.
-    install -Dm644 /mega/megapixels/data/me.gapixels.Megapixels.desktop \
-        /tmp/arch/usr/share/applications/me.gapixels.Megapixels.desktop
-    # Ressourcen (Shader, UI-Dateien) fuer den GL-Pfad.
-    if [ -d /mega/megapixels/data ]; then
-        install -d /tmp/arch/usr/share/megapixels
-        cp -a /mega/megapixels/data/. /tmp/arch/usr/share/megapixels/ 2>/dev/null || true
-    fi
-fi
-if [ -f /mega/libmegapixels/build/libmegapixels.so ]; then
-    install -Dm644 /mega/libmegapixels/build/libmegapixels.so \
-        /tmp/arch/usr/lib/libmegapixels.so.0
-    ln -sfn libmegapixels.so.0 /tmp/arch/usr/lib/libmegapixels.so
-fi
-if [ -f /mega/libdng/build/libdng.so ]; then
-    install -Dm644 /mega/libdng/build/libdng.so /tmp/arch/usr/lib/liblibdng.so.0.1
-    ln -sfn liblibdng.so.0.1 /tmp/arch/usr/lib/libdng.so
-    ln -sfn liblibdng.so.0.1 /tmp/arch/usr/lib/liblibdng.so
-fi
+# Kamera-Artefakte und Launcher gemeinsam installieren. Fehlende Binaries
+# muessen den Build abbrechen, bevor ein unvollstaendiges Image entsteht.
+install -Dm755 /mega/megapixels-gtk /tmp/arch/usr/bin/megapixels
+install -Dm644 /mega/me.gapixels.Megapixels.gschema.xml \
+    /tmp/arch/usr/share/glib-2.0/schemas/me.gapixels.Megapixels.gschema.xml
+install -Dm644 /om/megapixels-config/me.gapixels.Megapixels.desktop \
+    /tmp/arch/usr/share/applications/me.gapixels.Megapixels.desktop
+install -Dm644 /mega/libmegapixels.so.0.1 /tmp/arch/usr/lib/libmegapixels.so.0.1
+install -Dm644 /mega/liblibdng.so.0.1 /tmp/arch/usr/lib/liblibdng.so.0.1
+ln -sfn libmegapixels.so.0.1 /tmp/arch/usr/lib/libmegapixels.so.0
+ln -sfn liblibdng.so.0.1 /tmp/arch/usr/lib/liblibdng.so.0
+install -Dm644 /om/networkmanager/10-usb-rescue.conf \
+    /tmp/arch/etc/NetworkManager/conf.d/10-usb-rescue.conf
+install -Dm644 /om/networkmanager/49-omamobile-wifi.rules \
+    /tmp/arch/etc/polkit-1/rules.d/49-omamobile-wifi.rules
+install -Dm755 /om/megapixels-config/postprocess.sh \
+    /tmp/arch/usr/share/megapixels/postprocess.sh
 mkdir -p /tmp/arch/opt/omamobile/mods
 [ -f /leds-qcom-flash.ko ] && cp /leds-qcom-flash.ko /tmp/arch/opt/omamobile/leds-qcom-flash.ko
 cp /mods/*.ko /tmp/arch/opt/omamobile/mods/ 2>/dev/null || true
@@ -157,14 +148,19 @@ chroot /tmp/arch /bin/bash -euc '
   # Omarchy Mobile: neue Pakete koennen einen Key mitbringen, der im
   # ALARM-Keyring noch fehlt (z. B. default-cursors). Der Keyring wird
   # im Container nicht aktualisiert, deshalb Signaturpruefung aus.
+  cp /etc/pacman.conf /tmp/pacman.conf.signed
   sed -i "s/^SigLevel.*/SigLevel = Never/" /etc/pacman.conf
   # ALARM-Rolling bringt gelegentlich openssl-Versionsspruenge, die
   # alte Abhaengigkeiten (libcrypto.so=3-64) brechen. --overwrite
   # laesst den Build durchlaufen; die betroffenen Pakete werden beim
   # naechsten -Su mitgezogen.
-  pacman -Sy --noconfirm --needed --overwrite='/usr/lib/*' openssh 2>&1 | tail -5
+  pacman -Sy --noconfirm --needed --overwrite="/usr/lib/*" openssh
   pacman -S --noconfirm --needed omarchy
-  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim patch chromium nautilus bluez bluez-utils mpv imv gnome-text-editor v4l-utils libcamera-tools hypridle brightnessctl power-profiles-daemon upower pipewire pipewire-pulse pipewire-alsa wireplumber
+  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim patch chromium nautilus bluez bluez-utils mpv imv gnome-text-editor v4l-utils libcamera-tools hypridle brightnessctl power-profiles-daemon upower pipewire pipewire-pulse pipewire-alsa wireplumber networkmanager wpa_supplicant zbar libconfig libraw imagemagick glib2 expat
+  glib-compile-schemas --strict /usr/share/glib-2.0/schemas
+  ldd -r /usr/bin/megapixels >/tmp/megapixels-ldd.log 2>&1
+  camera_links=$(cat /tmp/megapixels-ldd.log)
+  if printf "%s\n" "$camera_links" | grep -E "not found|undefined symbol"; then exit 1; fi
   sed -i "s/^#en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" /etc/locale.gen
   locale-gen >/dev/null 2>&1
   groupadd -f video; groupadd -f input; groupadd -f seat
@@ -184,43 +180,7 @@ XDG_MUSIC_DIR="$HOME/Music"
 XDG_PICTURES_DIR="$HOME/Pictures"
 XDG_VIDEOS_DIR="$HOME/Videos"
 EOD
-  mkdir -p /home/omarchy/.config/megapixels
-  cat > /home/omarchy/.config/megapixels/postprocess.sh <<"EOP"
-#!/bin/sh
-IN="$1"; OUT="$2"
-if command -v convert >/dev/null 2>&1; then convert "$IN" "$OUT" 2>/dev/null && exit 0; fi
-cp "$IN" "$OUT" 2>/dev/null || exit 1
-EOP
-  chmod 755 /home/omarchy/.config/megapixels/postprocess.sh
   chown -R omarchy:omarchy /home/omarchy/Pictures /home/omarchy/Videos /home/omarchy/Downloads /home/omarchy/.config
-  # WLAN-Profil vorbereiten: SSID und Land sind gesetzt, das Passwort
-  # fehlt absichtlich (kein Klartext im Image). Nach dem Boot einmal
-  #   nmcli --ask connection up HOME-WLAN
-  # und NetworkManager speichert das Passwort im Profil.
-  mkdir -p /etc/NetworkManager/system-connections
-  cat > /etc/NetworkManager/system-connections/HOME-WLAN.nmconnection <<'NMC'
-[connection]
-id=HOME-WLAN
-uuid=9b1c2f3a-4d5e-4f60-8a7b-1c2d3e4f5a6b
-type=wifi
-autoconnect=true
-autoconnect-priority=10
-
-[wifi]
-mode=infrastructure
-ssid=HOME-WLAN
-
-[wifi-security]
-auth-alg=open
-key-mgmt=wpa-psk
-
-[ipv4]
-method=auto
-
-[ipv6]
-method=auto
-NMC
-  chmod 600 /etc/NetworkManager/system-connections/HOME-WLAN.nmconnection
   # Hyprland-Configs: ohne sie startet Hyprland nicht (SIGSEGV, am Geraet
   # belegt). omamobile-setup-user legt sie normalerweise an, aber das
   # laeuft erst im Init - hier vorab aus dem Omarchy-Paket kopieren.
@@ -267,8 +227,10 @@ NMC
   chown -R omarchy:omarchy /home/omarchy 2>/dev/null || true
   mkdir -p /home/omarchy/.local/state /home/omarchy/.local/share
   chown -R omarchy:omarchy /home/omarchy/.local 2>/dev/null || true
-    echo "shell.json gesetzt: $(python3 -c "import json;print(len(json.load(open('/home/omarchy/.config/omarchy/shell.json')).get('plugins',[])))" 2>/dev/null) Plugins"
+    echo "shell.json gesetzt"
   fi
+  pacman -Scc --noconfirm >/dev/null
+  mv /tmp/pacman.conf.signed /etc/pacman.conf
   ssh-keygen -A
   systemctl enable sshd 2>/dev/null || ln -sf /usr/lib/systemd/system/sshd.service \
     /etc/systemd/system/multi-user.target.wants/sshd.service
@@ -276,8 +238,10 @@ NMC
 umount /tmp/arch/dev /tmp/arch/proc 2>/dev/null || true
 
 echo "== ext4"
-rm -f "$OUT/rootfs.ext4"
-truncate -s "${SIZE_GB}G" "$OUT/rootfs.ext4"
-mkfs.ext4 -F -q -L omamobile-root -d /tmp/arch "$OUT/rootfs.ext4"
+bild=$(mktemp "$OUT/.rootfs.XXXXXX")
+trap 'rm -f "$bild"' EXIT
+truncate -s "${SIZE_GB}G" "$bild"
+mkfs.ext4 -F -q -L omamobile-root -d /tmp/arch "$bild"
+mv -f "$bild" "$OUT/rootfs.ext4"
 sha256sum "$OUT/rootfs.ext4"
 echo "== fertig: $OUT/rootfs.ext4"

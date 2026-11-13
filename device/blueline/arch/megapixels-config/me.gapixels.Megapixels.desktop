@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Camera
+Name[de]=Kamera
+Exec=megapixels
+Icon=camera-photo
+Categories=AudioVideo;Photography;
+Terminal=false
+StartupNotify=true

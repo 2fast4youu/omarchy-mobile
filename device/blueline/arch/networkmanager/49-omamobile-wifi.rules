@@ -1,0 +1,14 @@
+// The standalone init has no logind session for the handset's primary user.
+polkit.addRule(function (action, subject) {
+    if (subject.user !== "omarchy") {
+        return;
+    }
+    switch (action.id) {
+    case "org.freedesktop.NetworkManager.enable-disable-wifi":
+    case "org.freedesktop.NetworkManager.network-control":
+    case "org.freedesktop.NetworkManager.wifi.scan":
+    case "org.freedesktop.NetworkManager.settings.modify.own":
+    case "org.freedesktop.NetworkManager.settings.modify.system":
+        return polkit.Result.YES;
+    }
+});

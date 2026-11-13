@@ -85,12 +85,13 @@ def schreibe(pfad_bild, pfad_sparse):
 
 
 def lies(pfad_sparse):
-    """Strom zuruecklesen: (Bytefolge, Zahl der DATA-Baelle, Zahl der DONT_CARE)."""
+    """Hash und Blockzahlen des rekonstruierten Images berechnen."""
     magic, major, minor, fgroesse, chgroesse, block, saecke, anzahl, pruef = \
         struct.unpack("<IHHHHIIII", open(pfad_sparse, "rb").read(28))
     assert magic == MAGIC and major == 1 and fgroesse == 28 and chgroesse == 12, \
         "Kopf nicht dicht: %s" % hex(magic)
-    daten = bytearray()
+    digest = hashlib.sha256()
+    nullen = bytes(BLOCK * SAECKE)
     daten_baelle = care = blocke = 0
     mit = open(pfad_sparse, "rb")
     mit.read(fgroesse)
@@ -102,19 +103,23 @@ def lies(pfad_sparse):
         if art == RAW:
             leib = mit.read(stueck * block)
             assert len(leib) == stueck * block, "DATA-Sack zu kurz"
-            daten += leib
+            digest.update(leib)
             daten_baelle += 1
             blocke += stueck
         elif art == DONTCARE:
             if stueck == 0:
                 break
-            daten += b"\0" * (stueck * block)
+            rest = stueck * block
+            while rest:
+                laenge = min(rest, len(nullen))
+                digest.update(nullen[:laenge])
+                rest -= laenge
             blocke += stueck
             care += 1
         else:
             raise SystemExit("unerwarteter Sacktyp %s" % hex(art))
     mit.close()
-    return bytes(daten), daten_baelle, care, blocke
+    return digest.hexdigest(), daten_baelle, care, blocke
 
 
 def anzahl_brocken(pfad_sparse):
@@ -124,16 +129,24 @@ def anzahl_brocken(pfad_sparse):
     return max(anzahl - 1, 0)
 
 
+def datei_sha256(pfad):
+    digest = hashlib.sha256()
+    with open(pfad, "rb") as datei:
+        for daten in iter(lambda: datei.read(1024 * 1024), b""):
+            digest.update(daten)
+    return digest.hexdigest()
+
+
 def haupt():
     if len(sys.argv) != 3:
         print("Gebrauch: baue-sparse.py BILD.EXT4 BILD.SPARSE")
         return 2
     bild, sparse = sys.argv[1], sys.argv[2]
     groesse = os.path.getsize(bild)
-    echt = hashlib.sha256(open(bild, "rb").read()).hexdigest()
+    echt = datei_sha256(bild)
     daten_brocken, loecher, daten_byte = schreibe(bild, sparse)
-    strom, daten_baelle, care, blocke = lies(sparse)
-    rueck = hashlib.sha256(strom).hexdigest()
+    rueck, daten_baelle, care, blocke = lies(sparse)
+    rueckgroesse = blocke * BLOCK
     print("_sparse_: %s, %d B — geschrieben werden %d DATA-Brocken = %d B, "
           "dazu %d DONT_CARE (Kopf kuendigt %d Saecke an, Abschluss ja)"
           % (os.path.basename(sparse), os.path.getsize(sparse), daten_brocken,
@@ -142,13 +155,13 @@ def haupt():
     print("Sitzungen bei max-download-size %d B: %d  (eine Sitzung ist das Ziel)"
           % (sitzung, 1 + (os.path.getsize(sparse) - 1) // sitzung))
     print("Rohbild %d B sha %s" % (groesse, echt[:16]))
-    print("zurueckgelesen %d B sha %s -> %s" % (len(strom), rueck[:16],
+    print("zurueckgelesen %d B sha %s -> %s" % (rueckgroesse, rueck[:16],
                                                 "dicht" if rueck == echt else "LOCH"))
-    if rueck != echt or len(strom) != groesse or blocke * BLOCK != groesse:
+    if rueck != echt or rueckgroesse != groesse:
         return 1
+    sparse_sha = datei_sha256(sparse)
     with open(sparse + ".sha256", "w", encoding="utf-8") as f:
-        f.write("%s  %s\n" % (hashlib.sha256(open(sparse, "rb").read()).hexdigest(),
-                              os.path.basename(sparse)))
+        f.write("%s  %s\n" % (sparse_sha, os.path.basename(sparse)))
     return 0
 
 

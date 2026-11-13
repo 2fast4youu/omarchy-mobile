@@ -16,7 +16,7 @@
 #     device/blueline/arch/kernel-patches/)
 #   - Omarchy-Pakete in $PKGS
 #
-# Alles ist wiederholbar: gleiche Eingaben -> gleiche SHA256.
+# Die SHA256-Pruefsummen beschreiben jeweils das erzeugte Image-Paar.
 set -eu
 
 HIER=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
@@ -31,7 +31,11 @@ AUSGABE=${AUSGABE:-$WS/rom-blueline}
 NUR=${NUR:-alle}
 ARCH=$HIER/arch
 FL=$HIER/firstlight
-IMAGE=$WS/images/arch-userdata
+IMAGE=${IMAGE:-$WS/images/arch-userdata}
+case "$NUR" in
+    alle|kernel|rootfs|packen) ;;
+    *) echo "Unbekannter Teilbau: $NUR" >&2; exit 2 ;;
+esac
 
 rot() { printf '\033[31m%s\033[0m\n' "$*" >&2; }
 gruen() { printf '\033[32m%s\033[0m\n' "$*"; }
@@ -45,19 +49,24 @@ pruefe() {
     [ "$fehlt" = 0 ] || { rot "Voraussetzungen fehlen - Abbruch."; exit 1; }
 }
 
-command -v docker >/dev/null || { rot "docker fehlt"; exit 1; }
+if [ "$NUR" != packen ]; then
+    command -v docker >/dev/null || { rot "docker fehlt"; exit 1; }
+fi
 mkdir -p "$AUSGABE"
 
 # ---------------------------------------------------------------- Kernel
 if [ "$NUR" = alle ] || [ "$NUR" = kernel ]; then
     schritt "Kernel + DTB bauen"
     pruefe "$KERNEL/Makefile" "$KOUT/.config"
-    # Patch anwenden, falls noch nicht geschehen.
-    if ! grep -q "Omarchy Mobile" "$KERNEL/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi" 2>/dev/null; then
-        ( cd "$KERNEL" && git apply "$ARCH/kernel-patches/0001-omarchy-mobile-blueline.patch" )
+    PATCH=$ARCH/kernel-patches/0001-omarchy-mobile-blueline.patch
+    if git -C "$KERNEL" apply --check "$PATCH" 2>/dev/null; then
+        git -C "$KERNEL" apply "$PATCH"
         gruen "Kernel-Patch angewendet"
-    else
+    elif git -C "$KERNEL" apply --reverse --check "$PATCH" 2>/dev/null; then
         gruen "Kernel-Patch bereits angewendet"
+    else
+        rot "Kernel-Baum passt nicht zum blueline-Patch."
+        exit 1
     fi
     docker run --rm \
         -v "$KERNEL":/k -v "$KOUT":/out -v "$FW":/fw:ro \
@@ -75,7 +84,7 @@ fi
 if [ "$NUR" = alle ] || [ "$NUR" = rootfs ]; then
     schritt "Arch-Rootfs bauen"
     pruefe "$CACHE/ArchLinuxARM-aarch64-latest.tar.gz" "$PKGS" "$WS/omarchy-pkg"
-    CACHE="$CACHE" FW="$FW" ZIEL="$IMAGE" \
+    WS="$WS" KOUT="$KOUT" PKGS="$PKGS" CACHE="$CACHE" FW="$FW" ZIEL="$IMAGE" \
         sh "$ARCH/baue-arch.sh"
     gruen "Rootfs gebaut: $(ls -l "$IMAGE/rootfs.ext4" | awk '{print $5}') Bytes"
 fi
@@ -88,7 +97,10 @@ if [ "$NUR" = alle ] || [ "$NUR" = packen ]; then
            "$FL/pack-v0.py"
     RAMDISK=${RAMDISK:-$WS/images/fl-v0ag/ramdisk.gz}
     pruefe "$RAMDISK"
-    python3 - "$KOUT" "$RAMDISK" /tmp/kernel-blob <<'PY'
+    kernel_blob=$(mktemp "$AUSGABE/.kernel-blob.XXXXXX")
+    vorlauf=$(mktemp "$IMAGE/.vorlauf.XXXXXX")
+    trap 'rm -f "$kernel_blob" "$vorlauf"' EXIT
+    python3 - "$KOUT" "$RAMDISK" "$kernel_blob" <<'PY'
 import sys
 out, ramdisk, ziel = sys.argv[1], sys.argv[2], sys.argv[3]
 g = open(out + "/arch/arm64/boot/Image.gz", "rb").read()
@@ -99,7 +111,7 @@ PY
     REF=${REF:-$WS/pmos-ref-build/ref/boot.img}
     pruefe "$REF"
     python3 "$FL/pack-v0.py" \
-        --kernel /tmp/kernel-blob --ramdisk "$RAMDISK" \
+        --kernel "$kernel_blob" --ramdisk "$RAMDISK" \
         --cmdline "console=ttyMSM0,115200n8 console=tty0 loglevel=8 printk.devkmsg=on panic=60 hung_task_panic=1 softlockup_panic=1 androidboot.hardware=qcom androidboot.board=blueline rdinit=/init" \
         --name "" --kernel-addr 0x8000 --ramdisk-addr 0x1000000 --tags-addr 0x1000 \
         --pagesize-field 0 --pagesize-align 4096 --reference "$REF" \
@@ -107,16 +119,12 @@ PY
 
     schritt "userdata-Image bauen (sparse)"
     pruefe "$IMAGE/rootfs.ext4"
-    rm -f "$IMAGE/rootfs-vorlauf.ext4"
-    ( dd if=/dev/zero bs=1m count=1 2>/dev/null; cat "$IMAGE/rootfs.ext4" ) > "$IMAGE/rootfs-vorlauf.ext4"
-    python3 "$FL/baue-sparse.py" "$IMAGE/rootfs-vorlauf.ext4" "$AUSGABE/userdata.img"
+    { dd if=/dev/zero bs=1048576 count=1 2>/dev/null && cat "$IMAGE/rootfs.ext4"; } > "$vorlauf"
+    python3 "$FL/baue-sparse.py" "$vorlauf" "$AUSGABE/userdata.img"
 fi
 
 # ---------------------------------------------------------------- Pruefen
-schritt "SHA256 und Groessen"
-( cd "$AUSGABE" && shasum -a 256 boot.img userdata.img > SHA256SUMS && cat SHA256SUMS )
-ls -l "$AUSGABE"
-gruen "\nFertig. Flashen:"
-echo "  fastboot flash boot_a    $AUSGABE/boot.img"
-echo "  fastboot flash userdata  $AUSGABE/userdata.img"
-echo "  fastboot --set-active=a && fastboot reboot"
+if [ "$NUR" = alle ] || [ "$NUR" = packen ]; then
+    schritt "SHA256 und Groessen"
+    ( cd "$AUSGABE" && shasum -a 256 boot.img userdata.img > SHA256SUMS && cat SHA256SUMS )
+fi

@@ -20,18 +20,6 @@ grep -q ' /dev/shm ' /proc/mounts 2>/dev/null || mount -t tmpfs -o mode=1777 tmp
 grep -q ' /run ' /proc/mounts 2>/dev/null || mount -t tmpfs -o mode=755 tmpfs /run 2>/dev/null
 hostname omamobile 2>/dev/null
 
-# Keine RTC: der Kernel startet auf 1970, und gpg haelt dann die
-# Paketsignaturen fuer Zukunftsdaten (pacman: "invalid or corrupted package
-# (PGP signature)"). Beim Boot die eingebackene Bauzeit setzen; sobald Netz da
-# ist, kann NTP nachziehen.
-if [ "$(date +%Y 2>/dev/null)" -lt 2020 ] 2>/dev/null; then
-    if [ -s /etc/omamobile-buildtime ]; then
-        date -u -s "$(cat /etc/omamobile-buildtime)" >/dev/null 2>&1
-    fi
-fi
-# Danach die echte Zeit holen, sobald usb0 steht (HTTP-Date-Header, kein NTP).
-[ -x /usr/local/bin/omamobile-time-sync ] && ( /usr/local/bin/omamobile-time-sync >/dev/null 2>&1 & )
-
 # Nur den Initramfs-Dropbear toeten: er haelt Port 22, und sein KEX scheitert
 # nach switch_root (sein /dev ist mit dem alten Root verschwunden). Die
 # Halteschleife des Boot-Images und der Getty bleiben unangetastet - ein
@@ -133,6 +121,14 @@ done
 for m in rtc-pm8xxx; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
+# Der PMIC-RTC-Treiber kann die Uhr bei der Registrierung auf 1970 stellen.
+# Erst danach die Bauzeit als Untergrenze setzen.
+build_time=$(cat /etc/omamobile-buildtime 2>/dev/null)
+build_epoch=$(date -u -d "$build_time" +%s 2>/dev/null)
+if [ -n "$build_time" ] && [ -n "$build_epoch" ] && [ "$(date -u +%s)" -lt "$build_epoch" ]; then
+    date -u -s "$build_time" >/dev/null 2>&1
+fi
+[ -x /usr/local/bin/omamobile-time-sync ] && /usr/local/bin/omamobile-time-sync >/tmp/time-sync.log 2>&1 &
 # Hardware-Watchdog: startet das Geraet bei einem Kernel-Haenger neu,
 # statt stumm stehenzubleiben. Der PMIC-WDT laeuft nach dem Boot weiter.
 for m in qcom-wdt pm8916_wdt; do
@@ -177,10 +173,11 @@ while [ $_i -lt 20 ]; do
     _i=$((_i + 1))
 done
 sleep 2
-for m in q6core soundwire-bus regmap-slimbus regmap-sdw slim-qcom-ngd-ctrl \
+for m in q6core snd-q6dsp-common q6afe q6afe-dai q6afe-clocks \
+         q6adm q6routing q6asm q6asm-dai soundwire-bus regmap-slimbus regmap-sdw slim-qcom-ngd-ctrl \
          snd-soc-rl6231 snd-soc-rt5663 snd-soc-qcom-sdw snd-soc-qcom-common \
          snd-soc-wcd-common snd-soc-wcd-classh snd-soc-wcd-mbhc \
-         wcd934x snd-soc-wcd934x snd-soc-sdm845; do
+         wcd934x snd-soc-wcd934x snd-soc-cs35l36 snd-soc-sdm845; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null
 done
 
@@ -193,11 +190,8 @@ for _i in 1 2 3 4 5 6 7 8 9 10; do
     [ -S /run/dbus/system_bus_socket ] && break
     sleep 0.5
 done
-# BlueZ und NetworkManager: eigene Daemons, weil diese Wurzel ohne
-# systemd laeuft. bluetoothd braucht hci0 (kommt mit der Firmware), NM
-# nimmt wlan0, sobald der WLAN-Stack steht.
+# BlueZ laeuft ohne systemd als eigener Daemon.
 [ -x /usr/lib/bluetooth/bluetoothd ] && /usr/lib/bluetooth/bluetoothd -n >/tmp/bluetoothd.log 2>&1 &
-[ -x /usr/bin/NetworkManager ] && /usr/bin/NetworkManager --no-daemon >/tmp/nm.log 2>&1 &
 # Helligkeit fuer den Sitzungsnutzer schreibbar (Idle-Daemon/Shell).
 chmod 666 /sys/class/backlight/*/brightness 2>/dev/null
 # Wakeup-Quellen fuer s2idle: ohne sie bleibt das Telefon nach "echo mem"
@@ -225,16 +219,13 @@ fi
 [ -x /usr/lib/upowerd ] && /usr/lib/upowerd >/tmp/upowerd.log 2>&1 &
 # Power-Profile (ppd) + Abbildung auf die CPU-Kappe.
 [ -x /usr/lib/power-profiles-daemon ] && DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket /usr/lib/power-profiles-daemon >/tmp/ppd.log 2>&1 &
-/usr/lib/systemd/systemd-udevd --daemon 2>/dev/null
-# udev-Datenbank aufbauen: libcamera sieht nur Devices, die in
-# /run/udev/data/ initialisiert sind (udev_enumerate_add_match_is_initialized).
-# Ohne diesen Trigger bleibt "cam -l" leer, obwohl alle Sensoren im
-# Media-Graph sind. Das System laeuft nicht unter systemd, deshalb haelt
-# udevadm sich sonst fuer chroot - daher SYSTEMD_IGNORE_CHROOT.
+# NetworkManager braucht initialisierte Netlinks, libcamera die Medienknoten.
+# Kalte udev-Ereignisse als add verarbeiten, bevor die Dienste enumerieren.
 mkdir -p /run/systemd/system /run/udev/data
-sleep 2
-SYSTEMD_IGNORE_CHROOT=1 udevadm trigger >/tmp/udev-trigger.log 2>&1
-sleep 2
+SYSTEMD_IGNORE_CHROOT=1 /usr/lib/systemd/systemd-udevd --daemon 2>/dev/null
+SYSTEMD_IGNORE_CHROOT=1 udevadm trigger --action=add >/tmp/udev-trigger.log 2>&1
+SYSTEMD_IGNORE_CHROOT=1 udevadm settle --timeout=15 >>/tmp/udev-trigger.log 2>&1
+[ -x /usr/bin/NetworkManager ] && /usr/bin/NetworkManager --no-daemon >/tmp/nm.log 2>&1 &
 chmod 666 /dev/video* /dev/v4l-subdev* /dev/media* /dev/dma_heap/* 2>/dev/null
 for d in /sys/class/input/event*/uevent; do echo add > "$d" 2>/dev/null; done
 chown root:input /dev/input/event* 2>/dev/null

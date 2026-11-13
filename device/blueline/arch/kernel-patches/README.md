@@ -1,6 +1,6 @@
 # Kernel-/DT-Patches für Omarchy Mobile auf dem Pixel 3 (blueline)
 
-Basis: `linux-sdm845` (7.1.0-rc1-sdm845), Zweig mit sdm845-Mainline-Support.
+Basis ist `linux-sdm845` (7.1.0-rc1-sdm845) bei `85f1df2a4ec71d7a91dd95a7a49f889d1595ffa8`.
 
 Anwenden im Kernel-Baum:
 
@@ -10,11 +10,12 @@ git apply /pfad/zu/0001-omarchy-mobile-blueline.patch
 make ARCH=arm64 LLVM=1 O=/out -j$(nproc) Image.gz dtbs modules
 ```
 
-## Inhalt (9 Dateien, +316/−25)
+## Änderungen
 
 | Datei | Änderung | Grund |
 |---|---|---|
-| `arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi` | Kamera-Knoten (`camss`-Ports, `cci_i2c0/1`-Sensoren), Bluetooth-`local-bd-address`, `ramoops`, `mss_pil`-Firmware, **Audio**: `sdm845-wcd9340.dtsi`-Include, `&sound` mit Primary-MI2S-DAI-Links zum WCD9340, `wcd9340`-Supplies (`vdd-buck*`, `vdd-tx/rx/io` → `vreg_s4a_1p8`), WCD-Reset GPIO 54 auf `output-high` | Kamera + BT + Pstore + Audio |
+| `arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi` | Touchscreen auf I²C2, Kameras, Bluetooth, Ramoops und Modem-Firmware. Lautsprecher über CS35L36 und QUAT_TDM, Mikrofone über WCD9340 und SLIMbus. | Der WCD9340-Reset liegt auf GPIO 64, der Interrupt auf GPIO 54. Der Codec nutzt RPMH LN_BB_CLK3. |
+| `arch/arm64/boot/dts/qcom/pm8998.dtsi` | Label für die RTC. | Der Geräteknoten markiert die RTC als Wakeup-Quelle. |
 | `drivers/media/i2c/imx363.c` | `xclk` optional, Regler optional, Chip-ID-Fehler toleriert (Notifier bindet trotzdem), Regler-Fehlerbehandlung | Rückkamera soll probe-en statt zu blockieren |
 | `drivers/media/i2c/imx355.c` | `cur_mode` = kleinster Mode (820×616), `get_selection` implementiert | libcamera braucht Crop-Rechtecke; sdm845-CAMSS kann keine 3280×2464-Frames |
 | `drivers/power/supply/pmi8998_fg.c` | `CHARGE_FULL`/`CHARGE_NOW`/`CHARGE_FULL_DESIGN` | UPower braucht `energy-full` für die Prozentanzeige |
@@ -24,9 +25,10 @@ make ARCH=arm64 LLVM=1 O=/out -j$(nproc) Image.gz dtbs modules
 | `fs/notify/group.c` | `fsnotify_wait_marks_destroyed()` deaktiviert | SRCU-Deadlock blockierte Suspend (quickshell in D-State) |
 | `drivers/gpu/drm/msm/dsi/phy/dsi_phy_10nm.c` | Debug-Ausgabe reduziert | Rauschen im Log |
 
+Die Mikrofonbeschaltung basiert auf [David Heidelbergs Pixel-3-Audioserie v7](https://lore.kernel.org/linux-sound/20261111-pixel3-audio-v7-0-ecf28efc5c33@ixit.cz/).
+
 ## Bekannte Einschränkungen
 
 - **Rückkamera (IMX363)**: Chip-ID wird nicht gelesen (Sensor antwortet nicht auf I2C),
   VANA-Regler bleibt `disabled`. Siehe `../rueckkamera-*.txt`.
-- **libcamera 0.7.2** erwartet 2 Pads pro Sensor (SINK+SOURCE), die mainline-Treiber
-  haben 1 SOURCE-Pad → `CameraSensorRaw: unsupported number of sinks (0) or sources (1)`.
+- **libcamera 0.7.2** erwartet SINK- und SOURCE-Pads. Die Sensor-Patches stellen beide bereit.

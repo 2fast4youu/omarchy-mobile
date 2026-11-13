@@ -12,10 +12,14 @@ index 3ecb33059..50b41942b 100644
  			reg = <0x6000>, <0x6100>;
  			reg-names = "rtc", "alarm";
 diff --git a/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi b/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
-index c7dae34aa..bee6c1164 100644
+index c7dae34aa..575aa27ef 100644
 --- a/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
 +++ b/arch/arm64/boot/dts/qcom/sdm845-google-common.dtsi
-@@ -14,6 +14,7 @@
+@@ -11,9 +11,11 @@
+ #include <dt-bindings/regulator/qcom,rpmh-regulator.h>
+ #include <dt-bindings/sound/qcom,q6afe.h>
+ #include <dt-bindings/sound/qcom,q6asm.h>
++#include <dt-bindings/sound/qcom,wcd934x.h>
  
  
  #include "sdm845.dtsi"
@@ -23,7 +27,7 @@ index c7dae34aa..bee6c1164 100644
  #include "pm8998.dtsi"
  #include "pmi8998.dtsi"
  
-@@ -91,6 +92,15 @@ spss_mem: spss@99B00000 {
+@@ -91,6 +93,15 @@ spss_mem: spss@99B00000 {
  			no-map;
  		};
  
@@ -39,7 +43,7 @@ index c7dae34aa..bee6c1164 100644
  		rmtfs_mem: rmtfs-region@f2700000 {
  			compatible = "qcom,rmtfs-mem";
  			reg = <0 0xf2700000 0 0x202000>;
-@@ -137,6 +147,22 @@ vreg_s4a_1p8: regulator-vreg-s4a-1p8 {
+@@ -137,6 +148,22 @@ vreg_s4a_1p8: regulator-vreg-s4a-1p8 {
  		vin-supply = <&vph_pwr>;
  	};
  
@@ -62,7 +66,7 @@ index c7dae34aa..bee6c1164 100644
  	camera_front_avdd: front-cam-avdd-regulator {
  		compatible = "regulator-fixed";
  		regulator-name = "front_cam_avdd";
-@@ -197,6 +223,13 @@ vreg_pmu_ch0: ldo3 {
+@@ -197,6 +224,13 @@ vreg_pmu_ch0: ldo3 {
  	};
  };
  
@@ -76,7 +80,7 @@ index c7dae34aa..bee6c1164 100644
  &adsp_pas {
  	firmware-name = "qcom/sdm845/Google/blueline/adsp.mbn";
  
-@@ -425,6 +458,16 @@ ports {
+@@ -425,6 +459,16 @@ ports {
  		#address-cells = <1>;
  		#size-cells = <0>;
  
@@ -93,7 +97,7 @@ index c7dae34aa..bee6c1164 100644
  		port@1 {
  			reg = <1>;
  
-@@ -456,6 +499,39 @@ &cci {
+@@ -456,6 +500,39 @@ &cci {
  	status = "okay";
  };
  
@@ -133,7 +137,7 @@ index c7dae34aa..bee6c1164 100644
  &cci_i2c1 {
  	/* actuator @0c */
  
-@@ -481,6 +557,7 @@ front_cam: camera@10 {
+@@ -481,6 +558,7 @@ front_cam: camera@10 {
  
  		port {
  			cam_front_endpoint: endpoint {
@@ -141,7 +145,7 @@ index c7dae34aa..bee6c1164 100644
  				data-lanes = <1 2 3 4>;
  				link-frequencies = /bits/ 64 <360000000>;
  				remote-endpoint = <&camss_endpoint2>;
-@@ -510,6 +587,7 @@ front_aux_cam: camera@1a {
+@@ -510,6 +588,7 @@ front_aux_cam: camera@1a {
  
  		port {
  			cam_aux_front_endpoint: endpoint {
@@ -149,7 +153,56 @@ index c7dae34aa..bee6c1164 100644
  				data-lanes = <1 2 3 4>;
  				link-frequencies = /bits/ 64 <360000000>;
  				remote-endpoint = <&camss_endpoint1>;
-@@ -717,12 +795,65 @@ &qup_uart9_tx {
+@@ -565,6 +644,37 @@ nfc@28 {
+ 	};
+ };
+ 
++&i2c2 {
++	clock-frequency = <1000000>;
++	status = "okay";
++
++	/*
++	 * Omarchy Mobile: Synaptics/ST touchscreen (st_fts@49 im Stock-DTBO).
++	 * Der mainline-Treiber heisst "st,stmfts5"; die GPIOs und Regler
++	 * stammen aus sdm845-google-blueline.dts (mainline).
++	 * Ohne diesen Knoten hat das Panel keinen Touch (am Geraet belegt
++	 * 2026-11-13: nur pwrkey/resin/volume als input-Devices).
++	 */
++	touchscreen@49 {
++		compatible = "st,stmfts5";
++		reg = <0x49>;
++
++		pinctrl-0 = <&touchscreen_irq_n>, <&touchscreen_reset>;
++		pinctrl-names = "default";
++
++		interrupts-extended = <&tlmm 125 IRQ_TYPE_LEVEL_LOW>;
++
++		mode-switch-gpios = <&tlmm 136 GPIO_ACTIVE_HIGH>;
++		reset-gpios = <&tlmm 99 GPIO_ACTIVE_LOW>;
++
++		avdd-supply = <&vreg_l14a_1p8>;
++		vdd-supply = <&vreg_l19a_3p3>;
++
++		touchscreen-size-x = <1080>;
++		touchscreen-size-y = <2160>;
++	};
++};
++
+ &i2c12 {
+ 	/* Bottom spkr (right) CS35L36 @ 40 */
+ 	status="okay";
+@@ -697,6 +807,10 @@ &q6asmdai {
+ 	dai@0 {
+ 		reg = <MSM_FRONTEND_DAI_MULTIMEDIA1>;
+ 	};
++
++	dai@1 {
++		reg = <MSM_FRONTEND_DAI_MULTIMEDIA2>;
++	};
+ };
+ 
+ &qupv3_id_0 {
+@@ -717,12 +831,28 @@ &qup_uart9_tx {
  	bias-disable;
  };
  
@@ -162,100 +215,67 @@ index c7dae34aa..bee6c1164 100644
 +	wakeup-source;
 +};
 +
-+/*
-+ * Omarchy Mobile: the mainline wcd934x driver wants these supply names
-+ * (vdd-buck, vdd-buck-sido, vdd-tx, vdd-rx, vdd-io); the stock DT used
-+ * cdc-vdd-* names. All rails come from pm8998_s4 (1.8 V).
-+ */
-+/*
-+ * Omarchy Mobile: the WCD934x reset line (gpio54) is active-low; the
-+ * generic sdm845-wcd9340.dtsi pins it with bias-pull-down, which holds
-+ * the codec in reset. Drive it high so the codec can answer the
-+ * SLIMbus address query.
-+ */
-+&tlmm {
-+	wcd_intr_default: wcd-intr-default-state {
-+		pins = "gpio54";
-+		function = "gpio";
-+
-+		output-high;
-+		bias-disable;
-+		drive-strength = <2>;
-+	};
-+};
-+
-+&wcd9340 {
-+	/*
-+	 * Omarchy Mobile: the mainline wcd934x driver pulls its optional
-+	 * "reset" GPIO high after the rails are up. Without this property
-+	 * reset_gpio is NULL and the codec never leaves reset, so the
-+	 * SLIMbus address query stays unanswered.
-+	 */
-+	reset-gpios = <&tlmm 54 GPIO_ACTIVE_HIGH>;
-+
-+	vdd-buck-supply = <&vreg_s4a_1p8>;
-+	vdd-buck-sido-supply = <&vreg_s4a_1p8>;
-+	vdd-tx-supply = <&vreg_s4a_1p8>;
-+	vdd-rx-supply = <&vreg_s4a_1p8>;
-+	vdd-io-supply = <&vreg_s4a_1p8>;
-+};
-+
-+/*
-+ * Omarchy Mobile: Pixel 3 (blueline) audio.
-+ * The stock device uses a WCD934x (Tavil) codec on SLIMbus, not the
-+ * DragonBoard's CS35L36 amplifiers. The codec node comes from
-+ * sdm845-wcd9340.dtsi (which also enables &slim).
-+ */
  &sound {
 -	compatible = "qcom,db845c-sndcard", "qcom,sdm845-sndcard";
 +	compatible = "qcom,sdm845-sndcard";
-+	model = "Google Pixel 3";
  	pinctrl-0 = <&quat_mi2s_active
  			&quat_mi2s_sd0_active &quat_mi2s_sd1_active>;
  	pinctrl-names = "default";
 -	model = "Google Pixel 3";
++	model = "Pixel 3";
++
++	audio-routing = "DMIC0", "MCLK", /* Top mic */
++			"DMIC0", "MIC BIAS1",
++			"DMIC3", "MCLK", /* Top-edge mic */
++			"DMIC3", "MIC BIAS3",
++			"DMIC4", "MCLK", /* Bottom mic */
++			"DMIC4", "MIC BIAS4";
  
  	mm1-dai-link {
  		link-name = "MultiMedia1";
-@@ -731,10 +862,10 @@ cpu {
+@@ -731,6 +861,14 @@ cpu {
  		};
  	};
  
--	cs35l36-dai-link {
--		link-name = "Speaker Playback";
-+	pri-mi2s-dai-link {
-+		link-name = "Primary MI2S Playback";
- 		cpu {
--			sound-dai = <&q6afedai QUATERNARY_TDM_RX_0>;
-+			sound-dai = <&q6afedai PRIMARY_MI2S_RX>;
- 		};
- 
- 		platform {
-@@ -742,7 +873,22 @@ platform {
- 		};
- 
- 		codec {
--			sound-dai = <&cs35l36_codec1 0>, <&cs35l36_codec2 0>;
-+			sound-dai = <&wcd9340 0>;
++	mm2-dai-link {
++		link-name = "MultiMedia2";
++
++		cpu {
++			sound-dai = <&q6asmdai MSM_FRONTEND_DAI_MULTIMEDIA2>;
 +		};
 +	};
 +
-+	pri-mi2s-capture-dai-link {
-+		link-name = "Primary MI2S Capture";
+ 	cs35l36-dai-link {
+ 		link-name = "Speaker Playback";
+ 		cpu {
+@@ -745,6 +883,26 @@ codec {
+ 			sound-dai = <&cs35l36_codec1 0>, <&cs35l36_codec2 0>;
+ 		};
+ 	};
++
++	slimcap-dai-link {
++		link-name = "SLIM Capture 1";
++
++		codec {
++			sound-dai = <&wcd9340 AIF1_CAP>;
++		};
++
 +		cpu {
-+			sound-dai = <&q6afedai PRIMARY_MI2S_TX>;
++			sound-dai = <&q6afedai SLIMBUS_0_TX>;
 +		};
 +
 +		platform {
 +			sound-dai = <&q6routing>;
 +		};
++	};
++};
 +
-+		codec {
-+			sound-dai = <&wcd9340 0>;
- 		};
- 	};
++&swm {
++	status = "disabled";
  };
-@@ -772,6 +918,21 @@ cam_front_avdd_default_pin: cam-avdd-default-pins {
+ 
+ &tlmm {
+@@ -772,6 +930,21 @@ cam_front_avdd_default_pin: cam-avdd-default-pins {
  		bias-disable;
  	};
  
@@ -277,7 +297,7 @@ index c7dae34aa..bee6c1164 100644
  	cam_front_aux_reset_default_pin: cam-front-aux-reset-default-pins {
  		pins = "gpio9";
  		function = "gpio";
-@@ -850,6 +1011,12 @@ &uart6 {
+@@ -850,6 +1023,12 @@ &uart6 {
  	bluetooth {
  		compatible = "qcom,wcn3990-bt";
  
@@ -290,21 +310,36 @@ index c7dae34aa..bee6c1164 100644
  		vddio-supply = <&vreg_pmu_io>;
  		vddxo-supply = <&vreg_pmu_xo>;
  		vddrf-supply = <&vreg_pmu_rf>;
+@@ -913,6 +1092,17 @@ &venus {
+ 	status = "okay";
+ };
+ 
++&wcd9340 {
++	/* PM8998 LN_BB_CLK2 feeds the Pixel Visual Core on this board */
++	clocks = <&rpmhcc RPMH_LN_BB_CLK3>;
++	reset-gpios = <&tlmm 64 GPIO_ACTIVE_HIGH>;
++	vdd-buck-supply = <&vreg_s4a_1p8>;
++	vdd-buck-sido-supply = <&vreg_s4a_1p8>;
++	vdd-tx-supply = <&vreg_s4a_1p8>;
++	vdd-rx-supply = <&vreg_s4a_1p8>;
++	vdd-io-supply = <&vreg_s4a_1p8>;
++};
++
+ &wifi {
+ 	vdd-0.8-cx-mx-supply = <&vreg_l5a_0p8>;
+ 	vdd-1.8-xo-supply = <&vreg_pmu_xo>;
 diff --git a/drivers/gpu/drm/msm/dsi/phy/dsi_phy_10nm.c b/drivers/gpu/drm/msm/dsi/phy/dsi_phy_10nm.c
-index ec486ff02..8d51a634a 100644
+index ec486ff02..f8dfefd63 100644
 --- a/drivers/gpu/drm/msm/dsi/phy/dsi_phy_10nm.c
 +++ b/drivers/gpu/drm/msm/dsi/phy/dsi_phy_10nm.c
-@@ -291,9 +291,13 @@ static int dsi_pll_10nm_lock_status(struct dsi_pll_10nm *pll)
+@@ -291,9 +291,10 @@ static int dsi_pll_10nm_lock_status(struct dsi_pll_10nm *pll)
  				       ((status & BIT(0)) > 0),
  				       delay_us,
  				       timeout_us);
 -	if (rc)
 +	if (rc) {
-+		int i;
  		DRM_DEV_ERROR(dev, "DSI PLL(%d) lock failed, status=0x%08x\n",
  			      pll->phy->id, status);
-+		for (i = 0; i < 0x70; i += 4)
-+		for (i = 0; i < 0x24; i += 4)
 +	}
  
  	return rc;
