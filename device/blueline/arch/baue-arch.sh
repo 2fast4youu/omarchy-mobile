@@ -32,6 +32,7 @@ docker run --rm --platform linux/arm64 --privileged \
   -v /tmp/libdng:/mega/libdng:ro \
   -v /tmp/modem-bin/usr/bin:/modembin:ro \
   -v /tmp/modem-bin/usr/lib:/modembin-lib:ro \
+  -v /tmp/modem-bin:/modembin-musl:ro \
   -v "/Users/gregor/hermes-workspace/pmos-ref-build/pmbootstrap-work/chroot_rootfs_google-blueline/usr/lib/firmware/qcom/sdm845/Google/blueline":/qcomfw:ro \
   -v "/Users/gregor/hermes-workspace/pmos-ref-build/pmbootstrap-work/chroot_rootfs_google-blueline/usr/bin/qbootctl":/qbootctl:ro \
   -v "/Users/gregor/hermes-workspace/pmos-ref-build/pmbootstrap-work/chroot_rootfs_google-blueline/lib/ld-musl-aarch64.so.1":/ld-musl-aarch64.so.1:ro \

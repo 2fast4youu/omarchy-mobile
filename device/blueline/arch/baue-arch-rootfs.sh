@@ -119,12 +119,13 @@ done
 # pd-mapper ist ein musl-Binary und braucht den musl-Loader + eigene Libs
 # in einem eigenen Verzeichnis (NICHT /lib/ld-musl-aarch64.so.1 ueberschreiben,
 # sonst brechen insmod/rmmod/kmod, die glibc nutzen).
-if [ -f /modembin/ld-musl-aarch64.so.1 ]; then
+if [ -f /modembin-musl/ld-musl-aarch64.so.1 ]; then
     mkdir -p /tmp/arch/usr/lib/pdmapper
-    cp /modembin/ld-musl-aarch64.so.1 /tmp/arch/usr/lib/pdmapper/
-    cp /modembin/libqrtr-musl.so.1 /tmp/arch/usr/lib/pdmapper/libqrtr.so.1 2>/dev/null || true
-    cp /modembin/liblzma-musl.so.5 /tmp/arch/usr/lib/pdmapper/liblzma.so.5 2>/dev/null || true
-    chmod 755 /tmp/arch/usr/lib/pdmapper/*
+    cp /modembin-musl/ld-musl-aarch64.so.1 /tmp/arch/usr/lib/pdmapper/
+    cp /modembin-musl/libqrtr-musl.so.1 /tmp/arch/usr/lib/pdmapper/libqrtr.so.1 2>/dev/null || true
+    cp /modembin-musl/liblzma-musl.so.5 /tmp/arch/usr/lib/pdmapper/liblzma.so.5 2>/dev/null || true
+    chmod 755 /tmp/arch/usr/lib/pdmapper/* 2>/dev/null || true
+    echo "== pd-mapper musl-Libs installiert"
 fi
 # libqrtr.so.1 aus dem Debian-qrtr-Paket (ALARM hat kein libqrtr-Paket)
 l=/modembin-lib/aarch64-linux-gnu/libqrtr.so.1
