@@ -331,6 +331,14 @@ for n in ssd misc keystore frp system_a system_b product_a product_b vendor_a ve
     i=$((i + 1))
     ln -sfn /dev/sda$i /dev/disk/by-partlabel/$n
 done
+# Use part of the available userdata space for apps and package updates.
+if [ "$(findmnt -no SOURCE,FSTYPE /)" = "/dev/loop0 ext4" ] &&
+   [ "$(losetup -n -O BACK-FILE,OFFSET /dev/loop0 | xargs)" = "/dev/sda21 1048576" ] &&
+   [ "$(cat /sys/class/block/sda21/ro)" = 0 ] &&
+   [ "$(blockdev --getsize64 /dev/loop0)" -gt 21474836480 ] &&
+   [ "$(stat -f -c %b /)" -lt 5000000 ]; then
+    resize2fs /dev/loop0 20G >/tmp/omamobile-resize.log 2>&1
+fi
 su - omarchy -c 'dbus-run-session -- /run/omamobile-session.sh' >/dev/null 2>&1 &
 (
     sleep 15
