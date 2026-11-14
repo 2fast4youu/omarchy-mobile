@@ -342,7 +342,7 @@ hypridle >/tmp/hypridle.log 2>&1 &
 QS_DISABLE_FILE_WATCHER=1 quickshell -p /usr/share/omarchy/shell >/tmp/quickshell.log 2>&1 &
 if [ -e /proc/device-tree/smp2p-slpi/sleepstate/qcom,entry-name ] && [ -r /usr/local/libexec/blueline-autorotate.py ]; then
     mkdir -p "\${XDG_STATE_HOME:-\$HOME/.local/state}/omamobile"
-    python3 /usr/local/libexec/blueline-autorotate.py --monitor DSI-1 >/tmp/blueline-autorotate.log 2>&1 &
+    python3 /usr/local/libexec/blueline-autorotate.py --monitor DSI-1 --rotation-offset 2 >/tmp/blueline-autorotate.log 2>&1 &
 fi
 wait
 SITZUNG

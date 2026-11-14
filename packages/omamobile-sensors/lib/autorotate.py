@@ -159,6 +159,7 @@ class Rotator:
         t = TRANSFORMS.get(orientation)
         if t is None:
             return
+        t = (t + self.args.rotation_offset) % len(TRANSFORMS)
         self.wanted = t
         if shell_locked(self.args.dry_run):
             if self.current != 0:
@@ -196,6 +197,8 @@ class Rotator:
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--monitor', help='the output to rotate (default: the first one)')
+    ap.add_argument('--rotation-offset', type=int, choices=range(4), default=0,
+                    help='clockwise quarter-turns to correct the sensor mounting')
     ap.add_argument('--dry-run', action='store_true', help='log the hyprctl calls instead of making them')
     ap.add_argument('--session', action='store_true', help='use the session bus (testing)')
     a = ap.parse_args(argv)
