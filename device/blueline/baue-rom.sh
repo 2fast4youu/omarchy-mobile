@@ -99,8 +99,7 @@ if [ "$NUR" = alle ] || [ "$NUR" = packen ]; then
     pruefe "$RAMDISK"
     kernel_blob=$(mktemp "$AUSGABE/.kernel-blob.XXXXXX")
     packed_ramdisk=$(mktemp "$AUSGABE/.ramdisk.XXXXXX")
-    vorlauf=$(mktemp "$IMAGE/.vorlauf.XXXXXX")
-    trap 'rm -f "$kernel_blob" "$packed_ramdisk" "$vorlauf"' EXIT
+    trap 'rm -f "$kernel_blob" "$packed_ramdisk"' EXIT
     python3 - "$KOUT" "$kernel_blob" <<'PY'
 import sys
 out, ziel = sys.argv[1:]
@@ -121,8 +120,7 @@ PY
 
     schritt "userdata-Image bauen (sparse)"
     pruefe "$IMAGE/rootfs.ext4"
-    { dd if=/dev/zero bs=1048576 count=1 2>/dev/null && cat "$IMAGE/rootfs.ext4"; } > "$vorlauf"
-    python3 "$FL/baue-sparse.py" "$vorlauf" "$AUSGABE/userdata.img"
+    python3 "$FL/baue-sparse.py" --prefix-bytes 1048576 "$IMAGE/rootfs.ext4" "$AUSGABE/userdata.img"
 fi
 
 # ---------------------------------------------------------------- Pruefen

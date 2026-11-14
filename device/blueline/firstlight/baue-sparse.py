@@ -16,6 +16,7 @@ Nach dem Schreiben wird zurueckgelesen und die Bytefolge des rekonstruierten
 Stroms gegen die sha256 des Rohbilds gerechnet. Ein Sparse-Image, das nicht
 dicht zurueckkommt, wird nicht flashed.
 """
+import argparse
 import hashlib
 import os
 import struct
@@ -34,7 +35,7 @@ BLOCK = 4096
 SAECKE = 4096
 
 
-def schreibe(pfad_bild, pfad_sparse):
+def schreibe(pfad_bild, pfad_sparse, vorlauf=0):
     """Bilder mit vollen Brocken, einem Reststueck und Loechern fuer Nullserien.
 
     Zwei Gruende, beide gemessen. Erstens: ein Bild von 1 MiB Vorlauf + 1 GiB ist
@@ -52,7 +53,7 @@ def schreibe(pfad_bild, pfad_sparse):
     Loecher mit Nullen und vergleicht gegen das Rohbild — was das wirklich belegt,
     ist die Summe der DATA-Brocken. Beides wird ausgegeben.
     """
-    groesse = os.path.getsize(pfad_bild)
+    groesse = vorlauf + os.path.getsize(pfad_bild)
     if groesse % BLOCK:
         raise SystemExit("Bildgroesse %d ist kein Vielfaches von %d" % (groesse, BLOCK))
     saecke = groesse // BLOCK
@@ -63,7 +64,9 @@ def schreibe(pfad_bild, pfad_sparse):
     Z.write(struct.pack("<IHHHHIIII", MAGIC, 1, 0, 28, 12, BLOCK, saecke,
                         brocken + 1, 0))
     for nr in range(brocken):
-        leib = mit.read(BLOCK * SAECKE)
+        null_byte = min(vorlauf, BLOCK * SAECKE)
+        leib = bytes(null_byte) + mit.read(BLOCK * SAECKE - null_byte)
+        vorlauf -= null_byte
         if not leib or len(leib) % BLOCK:
             raise SystemExit("Brocken %d hat %d Byte" % (nr, len(leib)))
         if leib.strip(b"\0") == b"":
@@ -129,8 +132,12 @@ def anzahl_brocken(pfad_sparse):
     return max(anzahl - 1, 0)
 
 
-def datei_sha256(pfad):
+def datei_sha256(pfad, vorlauf=0):
     digest = hashlib.sha256()
+    while vorlauf:
+        null_byte = min(vorlauf, 1024 * 1024)
+        digest.update(bytes(null_byte))
+        vorlauf -= null_byte
     with open(pfad, "rb") as datei:
         for daten in iter(lambda: datei.read(1024 * 1024), b""):
             digest.update(daten)
@@ -138,13 +145,18 @@ def datei_sha256(pfad):
 
 
 def haupt():
-    if len(sys.argv) != 3:
-        print("Gebrauch: baue-sparse.py BILD.EXT4 BILD.SPARSE")
-        return 2
-    bild, sparse = sys.argv[1], sys.argv[2]
-    groesse = os.path.getsize(bild)
-    echt = datei_sha256(bild)
-    daten_brocken, loecher, daten_byte = schreibe(bild, sparse)
+    parser = argparse.ArgumentParser(description="Pack an Android sparse image.")
+    parser.add_argument("bild")
+    parser.add_argument("sparse")
+    parser.add_argument("--prefix-bytes", type=int, default=0,
+                        help="prepend this many zero bytes before the input image")
+    args = parser.parse_args()
+    bild, sparse, vorlauf = args.bild, args.sparse, args.prefix_bytes
+    if vorlauf < 0 or vorlauf % BLOCK:
+        parser.error("--prefix-bytes must be a non-negative multiple of 4096")
+    groesse = vorlauf + os.path.getsize(bild)
+    echt = datei_sha256(bild, vorlauf)
+    daten_brocken, loecher, daten_byte = schreibe(bild, sparse, vorlauf)
     rueck, daten_baelle, care, blocke = lies(sparse)
     rueckgroesse = blocke * BLOCK
     print("_sparse_: %s, %d B — geschrieben werden %d DATA-Brocken = %d B, "
