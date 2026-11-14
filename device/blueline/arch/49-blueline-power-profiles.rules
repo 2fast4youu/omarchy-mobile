@@ -1,0 +1,8 @@
+// SPDX-License-Identifier: MIT
+// The standalone session has no logind 'active' status.
+polkit.addRule(function(action, subject) {
+    if (action.id === "org.freedesktop.UPower.PowerProfiles.switch-profile" &&
+        subject.user === "omarchy") {
+        return polkit.Result.YES;
+    }
+});

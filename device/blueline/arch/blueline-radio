@@ -1,0 +1,105 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: MIT
+set -euo pipefail
+export LC_ALL=C
+
+state=${XDG_STATE_HOME:-$HOME/.local/state}/omamobile/blueline-airplane
+modem_device() { nmcli -t -f DEVICE,TYPE device status | awk -F: '$2=="gsm" && !found++ {print $1}'; }
+modem_register() {
+    mmcli --timeout=3 -m any -J |
+        jq -r '.modem["3gpp"]["registration-state"] // "unknown"'
+}
+radio_state() {
+    local value
+    value=$(nmcli radio "$1")
+    if [[ $value == enabled ]]; then echo on; else echo off; fi
+}
+bluetooth_state() {
+    rfkill -rn -o TYPE,SOFT | awk '$1=="bluetooth" {print $2; exit}'
+}
+restore() {
+    local wifi bluetooth wwan
+    read -r wifi bluetooth wwan <"$state"
+    nmcli radio wwan "$wwan" || return
+    nmcli radio wifi "$wifi" || return
+    case $bluetooth in
+        unblocked) rfkill unblock bluetooth || return ;;
+        blocked) rfkill block bluetooth || return ;;
+    esac
+    rm -f "$state"
+}
+airplane_on() {
+    local wifi bluetooth wwan
+    if [[ ! -f $state ]]; then
+        wifi=$(radio_state wifi)
+        bluetooth=$(bluetooth_state)
+        wwan=$(radio_state wwan)
+        mkdir -p "${state%/*}"
+        local pending
+        pending=$(mktemp "$state.XXXXXX")
+        printf '%s %s %s\n' "$wifi" "${bluetooth:-absent}" "$wwan" >"$pending"
+        mv "$pending" "$state"
+    fi
+    if nmcli radio wwan off && nmcli radio wifi off; then
+        [[ -z $(bluetooth_state) ]] || rfkill block bluetooth || { restore; return 1; }
+    else
+        restore
+        return 1
+    fi
+}
+probe() {
+    /usr/bin/sh "$1" | sed -E '/^(airplane|data|data_status)=/d'
+    if [[ -f $state ]] && [[ $(radio_state wwan) == off ]]; then
+        echo airplane=on
+    else
+        echo airplane=off
+    fi
+    local device
+    device=$(modem_device)
+    if [[ -z $device ]]; then
+        echo data=none
+        return
+    fi
+    if nmcli -g GENERAL.STATE device show "$device" | grep -qE '^100([[:space:]]|$)'; then
+        echo data=on
+        return
+    fi
+    echo data=off
+    if [[ $(radio_state wwan) == off ]]; then
+        echo 'data_status=Radio off'
+        return
+    fi
+    case $(modem_register || true) in
+        emergency-only) echo 'data_status=Emergency calls only' ;;
+        searching) echo 'data_status=Searching' ;;
+        home|roaming) ;;
+        *) echo 'data_status=No network' ;;
+    esac
+}
+mobile_data() {
+    local device
+    device=$(modem_device)
+    [[ -n $device ]] || return 1
+    if [[ $1 == off ]]; then
+        nmcli --wait 10 device disconnect "$device"
+        return
+    fi
+    [[ $(radio_state wwan) == on ]] || return 1
+    case $(modem_register) in
+        home|roaming) nmcli --wait 20 device connect "$device" ;;
+        *) return 1 ;;
+    esac
+}
+case "${1:-}" in
+    probe) probe "$2" ;;
+    action)
+        [[ $4 == on || $4 == off ]] || exit 2
+        case "$3:$4" in
+            airplane:on) airplane_on ;;
+            airplane:off) if [[ -f $state ]]; then restore; fi ;;
+            mobile-data:*) mobile_data "$4" ;;
+            *) exec /usr/bin/sh "$2" "$3" "$4" ;;
+        esac
+        ;;
+    *) exit 2 ;;
+esac

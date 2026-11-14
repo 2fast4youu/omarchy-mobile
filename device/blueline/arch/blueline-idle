@@ -1,0 +1,45 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: MIT
+set -euo pipefail
+
+inhibit=${XDG_STATE_HOME:-$HOME/.local/state}/omarchy/indicators/stay-awake
+state=${XDG_RUNTIME_DIR:?}/blueline-idle
+backlight() { brightnessctl --class=backlight "$@"; }
+dpms() { hyprctl dispatch "hl.dsp.dpms({ action = \"$1\" })" >/dev/null; }
+
+case "${1:-}" in
+    dim)
+        [[ ! -e $inhibit ]] || exit 0
+        level=$(backlight get)
+        target=$(( $(backlight max) / 10 ))
+        if (( level > target )); then
+            mkdir -p "$state"
+            if [[ ! -e $state/brightness ]]; then
+                printf '%s %s\n' "$level" "$target" >"$state/brightness"
+            fi
+            backlight --quiet set "$target"
+        fi
+        ;;
+    undim)
+        if [[ -r $state/brightness ]]; then
+            read -r level target <"$state/brightness"
+            if [[ $(backlight get) == "$target" ]]; then
+                backlight --quiet set "$level"
+            fi
+            rm -f "$state/brightness"
+        fi
+        ;;
+    display-off)
+        [[ ! -e $inhibit ]] || exit 0
+        mkdir -p "$state"
+        dpms disable
+        touch "$state/display-off"
+        ;;
+    display-on)
+        if [[ -e $state/display-off ]]; then
+            dpms enable
+            rm -f "$state/display-off"
+        fi
+        ;;
+    *) exit 2 ;;
+esac

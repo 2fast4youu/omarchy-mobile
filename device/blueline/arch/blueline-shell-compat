@@ -25,7 +25,13 @@ pending_location_status = ('readonly property string status: !available ? "No GN
                            ' : !enabled ? "Off" : running ? "In use" : "On"')
 changes = ((old_write, new_write), (old_read, new_read),
            (location_refresh, safe_location_refresh), (location_guard, safe_location_guard),
-           (optimistic_location, confirmed_location), (location_status, pending_location_status))
+           (optimistic_location, confirmed_location), (location_status, pending_location_status),
+           ('["sh", root.scriptPath("tile-state.sh")]',
+            '["/usr/local/libexec/blueline-radio", "probe", root.scriptPath("tile-state.sh")]'),
+           ('["sh", scriptPath("tile-action.sh"), job[0], job[1]]',
+            '["/usr/local/libexec/blueline-radio", "action", scriptPath("tile-action.sh"), job[0], job[1]]'),
+           ('!enabled ? "Off" : (root.probed.data_status || "On")',
+            '(root.probed.data_status || (enabled ? "On" : "Off"))'))
 for before, after in changes:
     if before not in source and after in source:
         continue

@@ -5,6 +5,7 @@ polkit.addRule(function (action, subject) {
     }
     switch (action.id) {
     case "org.freedesktop.NetworkManager.enable-disable-wifi":
+    case "org.freedesktop.NetworkManager.enable-disable-wwan":
     case "org.freedesktop.NetworkManager.network-control":
     case "org.freedesktop.NetworkManager.wifi.scan":
     case "org.freedesktop.NetworkManager.settings.modify.own":

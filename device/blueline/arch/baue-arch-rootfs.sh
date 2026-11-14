@@ -56,9 +56,12 @@ install -m755 /om/uwsm-app /tmp/arch/usr/local/bin/uwsm-app
 install -m755 /om/blueline-update /tmp/arch/usr/local/bin/blueline-update
 install -m755 /om/omamobile-gnss /tmp/arch/usr/local/bin/omamobile-gnss
 install -m755 /om/omamobile-rotation /tmp/arch/usr/local/bin/omamobile-rotation
+install -Dm755 /om/blueline-idle /tmp/arch/usr/local/libexec/blueline-idle
+install -Dm755 /om/blueline-radio /tmp/arch/usr/local/libexec/blueline-radio
 install -Dm755 /om/blueline-sensors /tmp/arch/usr/local/libexec/blueline-sensors
 install -Dm644 /om/90-blueline-ssc.rules /tmp/arch/etc/udev/rules.d/90-blueline-ssc.rules
 install -Dm644 /om/49-blueline-sensors.rules /tmp/arch/etc/polkit-1/rules.d/49-blueline-sensors.rules
+install -Dm644 /om/49-blueline-power-profiles.rules /tmp/arch/etc/polkit-1/rules.d/49-blueline-power-profiles.rules
 install -Dm644 /pkgs/omamobile-sensors/lib/autorotate.py /tmp/arch/usr/local/libexec/blueline-autorotate.py
 if [ -d /sensors/usr ]; then
     cp -a /sensors/usr/. /tmp/arch/usr/
@@ -170,7 +173,7 @@ chroot /tmp/arch /bin/bash -euc '
   # naechsten -Su mitgezogen.
   pacman -Sy --noconfirm --needed --overwrite="/usr/lib/*" openssh
   pacman -S --noconfirm --needed omarchy
-  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim patch chromium nautilus bluez bluez-utils mpv imv gnome-text-editor v4l-utils libcamera-tools hypridle hyprsunset brightnessctl power-profiles-daemon upower pipewire pipewire-pulse pipewire-alsa wireplumber alsa-ucm-conf networkmanager modemmanager wpa_supplicant zbar libconfig libraw imagemagick glib2 expat
+  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim wl-clipboard slurp tesseract-data-eng omasnap libnotify patch chromium nautilus bluez bluez-utils mpv imv gnome-text-editor v4l-utils libcamera-tools hypridle hyprsunset brightnessctl power-profiles-daemon upower pipewire pipewire-pulse pipewire-alsa wireplumber alsa-ucm-conf networkmanager modemmanager wpa_supplicant zbar libconfig libraw imagemagick glib2 expat
   glib-compile-schemas --strict /usr/share/glib-2.0/schemas
   if [ -x /usr/local/libexec/blueline-hexagonrpcd ]; then
     pacman -S --noconfirm --needed iio-sensor-proxy
@@ -182,7 +185,8 @@ chroot /tmp/arch /bin/bash -euc '
   locale-gen >/dev/null 2>&1
   groupadd -f video; groupadd -f input; groupadd -f seat; groupadd -f audio
   id omarchy >/dev/null 2>&1 || useradd -m -G video,input,seat,audio -s /bin/bash omarchy
-  usermod -aG audio omarchy
+  groupadd -f rfkill
+  usermod -aG audio,rfkill omarchy
   ln -sfn /proc/self/fd /dev/fd
   # XDG-Verzeichnisse + Megapixels-Postprozessor: ohne user-dirs.dirs
   # liefert g_get_user_special_dir(PICTURES) NULL, Megapixels kann keine
