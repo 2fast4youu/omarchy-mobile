@@ -33,6 +33,21 @@ for before, after in changes:
         sys.exit(f"Pixel 3: could not locate the quick settings command in {path}: {before}")
     source = source.replace(before, after)
 
+def replace_rotation_command(source, start, end, command):
+    position = source.index(start, source.index("id: rotationLock")) + len(start)
+    finish = source.index(end, position)
+    return source[:position] + command + source[finish:]
+
+
+source = replace_rotation_command(
+    source, "rotationWrite.command = ", "\n      rotationWrite.running",
+    '["omamobile-rotation", enabled ? "unlock" : "lock"]',
+)
+source = replace_rotation_command(
+    source, "id: rotationRead", "\n    stdout:",
+    '\n    command: ["omamobile-rotation", "status"]',
+)
+
 if source != original:
     with tempfile.NamedTemporaryFile(mode="w", dir=path.parent, delete=False) as temporary:
         temporary.write(source)

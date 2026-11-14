@@ -55,6 +55,14 @@ mkdir -p /tmp/arch/usr/local/bin
 install -m755 /om/uwsm-app /tmp/arch/usr/local/bin/uwsm-app
 install -m755 /om/blueline-update /tmp/arch/usr/local/bin/blueline-update
 install -m755 /om/omamobile-gnss /tmp/arch/usr/local/bin/omamobile-gnss
+install -m755 /om/omamobile-rotation /tmp/arch/usr/local/bin/omamobile-rotation
+install -Dm755 /om/blueline-sensors /tmp/arch/usr/local/libexec/blueline-sensors
+install -Dm644 /om/90-blueline-ssc.rules /tmp/arch/etc/udev/rules.d/90-blueline-ssc.rules
+install -Dm644 /om/49-blueline-sensors.rules /tmp/arch/etc/polkit-1/rules.d/49-blueline-sensors.rules
+install -Dm644 /pkgs/omamobile-sensors/lib/autorotate.py /tmp/arch/usr/local/libexec/blueline-autorotate.py
+if [ -d /sensors/usr ]; then
+    cp -a /sensors/usr/. /tmp/arch/usr/
+fi
 install -Dm755 /om/blueline-gnss-control /tmp/arch/usr/local/libexec/blueline-gnss-control
 install -Dm440 /om/blueline-gnss.sudoers /tmp/arch/etc/sudoers.d/49-blueline-gnss
 install -m755 /om/blueline-shell-compat /tmp/arch/usr/local/bin/blueline-shell-compat
@@ -164,6 +172,9 @@ chroot /tmp/arch /bin/bash -euc '
   pacman -S --noconfirm --needed omarchy
   pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim patch chromium nautilus bluez bluez-utils mpv imv gnome-text-editor v4l-utils libcamera-tools hypridle hyprsunset brightnessctl power-profiles-daemon upower pipewire pipewire-pulse pipewire-alsa wireplumber alsa-ucm-conf networkmanager modemmanager wpa_supplicant zbar libconfig libraw imagemagick glib2 expat
   glib-compile-schemas --strict /usr/share/glib-2.0/schemas
+  if [ -x /usr/local/libexec/blueline-hexagonrpcd ]; then
+    pacman -S --noconfirm --needed iio-sensor-proxy
+  fi
   ldd -r /usr/bin/megapixels >/tmp/megapixels-ldd.log 2>&1
   camera_links=$(cat /tmp/megapixels-ldd.log)
   if printf "%s\n" "$camera_links" | grep -E "not found|undefined symbol"; then exit 1; fi

@@ -24,6 +24,7 @@ REPO=$(CDPATH= cd -- "$HIER/../.." && pwd)
 WS=${WS:-$HOME/hermes-workspace}
 KERNEL=${KERNEL:-$WS/linux-sdm845}
 KOUT=${KOUT:-$WS/pmos-kernel-out}
+BLUELINE_DTB=${BLUELINE_DTB:-$KOUT/arch/arm64/boot/dts/qcom/sdm845-google-blueline.dtb}
 CACHE=${CACHE:-$HOME/.cache/omamobile-rootfs}
 PKGS=${PKGS:-$REPO/packages}
 FW=${FW:-$WS/firmware}
@@ -93,18 +94,32 @@ fi
 if [ "$NUR" = alle ] || [ "$NUR" = packen ]; then
     schritt "Boot-Image packen (Kernel + Initramfs + DTB)"
     pruefe "$KOUT/arch/arm64/boot/Image.gz" \
-           "$KOUT/arch/arm64/boot/dts/qcom/sdm845-google-blueline.dtb" \
+           "$BLUELINE_DTB" \
            "$FL/pack-v0.py"
     RAMDISK=${RAMDISK:-$WS/images/fl-v0ag/ramdisk.gz}
     pruefe "$RAMDISK"
     kernel_blob=$(mktemp "$AUSGABE/.kernel-blob.XXXXXX")
+    packed_ramdisk=
+    sensor_dtb=
+    trap 'rm -f "$kernel_blob" ${packed_ramdisk:+"$packed_ramdisk"} ${sensor_dtb:+"$sensor_dtb"}' EXIT
     packed_ramdisk=$(mktemp "$AUSGABE/.ramdisk.XXXXXX")
-    trap 'rm -f "$kernel_blob" "$packed_ramdisk"' EXIT
-    python3 - "$KOUT" "$kernel_blob" <<'PY'
+    dtb=$BLUELINE_DTB
+    if [ -n "${SENSOR_ARTIFACTS:-}" ]; then
+        sensor_dtb=$(mktemp "$AUSGABE/.sensor-dtb.XXXXXX")
+        cp "$dtb" "$sensor_dtb"
+        slpi=/soc@0/remoteproc@5c00000
+        fdtput -t s "$sensor_dtb" "$slpi" status okay
+        fdtput -t s "$sensor_dtb" "$slpi" firmware-name qcom/sdm845/Google/blueline/slpi.mbn
+        fdtput -p -c "$sensor_dtb" /smp2p-slpi/sleepstate
+        fdtput -t s "$sensor_dtb" /smp2p-slpi/sleepstate qcom,entry-name sleepstate
+        fdtput -t i "$sensor_dtb" /smp2p-slpi/sleepstate '#qcom,smem-state-cells' 1
+        dtb=$sensor_dtb
+    fi
+    python3 - "$KOUT" "$dtb" "$kernel_blob" <<'PY'
 import sys
-out, ziel = sys.argv[1:]
+out, dtb, ziel = sys.argv[1:]
 g = open(out + "/arch/arm64/boot/Image.gz", "rb").read()
-d = open(out + "/arch/arm64/boot/dts/qcom/sdm845-google-blueline.dtb", "rb").read()
+d = open(dtb, "rb").read()
 open(ziel, "wb").write(g + d)
 print("Kernel-Blob: %d Bytes (Image.gz %d + DTB %d)" % (len(g) + len(d), len(g), len(d)))
 PY

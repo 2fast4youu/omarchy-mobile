@@ -232,6 +232,9 @@ SYSTEMD_IGNORE_CHROOT=1 udevadm trigger --action=add >/tmp/udev-trigger.log 2>&1
 SYSTEMD_IGNORE_CHROOT=1 udevadm settle --timeout=15 >>/tmp/udev-trigger.log 2>&1
 [ -x /usr/bin/ModemManager ] && /usr/bin/ModemManager --log-level=WARN >/tmp/ModemManager.log 2>&1 &
 [ -x /usr/bin/NetworkManager ] && /usr/bin/NetworkManager --no-daemon >/tmp/nm.log 2>&1 &
+if [ -e /proc/device-tree/smp2p-slpi/sleepstate/qcom,entry-name ]; then
+    [ -e /opt/omamobile/mods/fastrpc.ko ] && /usr/local/libexec/blueline-sensors >/tmp/blueline-sensors.log 2>&1 &
+fi
 chmod 666 /dev/video* /dev/v4l-subdev* /dev/media* /dev/dma_heap/* 2>/dev/null
 for d in /sys/class/input/event*/uevent; do echo add > "$d" 2>/dev/null; done
 chown root:input /dev/input/event* 2>/dev/null
@@ -337,6 +340,10 @@ wireplumber >/tmp/wireplumber.log 2>&1 &
 pipewire-pulse >/tmp/pipewire-pulse.log 2>&1 &
 hypridle >/tmp/hypridle.log 2>&1 &
 QS_DISABLE_FILE_WATCHER=1 quickshell -p /usr/share/omarchy/shell >/tmp/quickshell.log 2>&1 &
+if [ -e /proc/device-tree/smp2p-slpi/sleepstate/qcom,entry-name ] && [ -r /usr/local/libexec/blueline-autorotate.py ]; then
+    mkdir -p "\${XDG_STATE_HOME:-\$HOME/.local/state}/omamobile"
+    python3 /usr/local/libexec/blueline-autorotate.py --monitor DSI-1 >/tmp/blueline-autorotate.log 2>&1 &
+fi
 wait
 SITZUNG
 chmod 755 /run/omamobile-session.sh

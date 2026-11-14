@@ -51,7 +51,10 @@ for group in re.findall(r"for m in (.*?); do", init.read_text(), re.S):
             shutil.copyfile(modules[name], dest / name)
         elif name.replace("-", "_") not in built_in:
             print("Module not built (check kernel config): " + name, file=sys.stderr)
+if "fastrpc.ko" in modules:
+    shutil.copyfile(modules["fastrpc.ko"], dest / "fastrpc.ko")
 PYMOD
+SENSOR_ARTIFACTS=${SENSOR_ARTIFACTS:-$moddir}
 docker run --rm --platform linux/arm64 --privileged \
   -v "$CACHE":/in:ro \
   -v "$FW":/fw:ro \
@@ -60,6 +63,7 @@ docker run --rm --platform linux/arm64 --privileged \
   -v "$KOUT/drivers/leds/flash/leds-qcom-flash.ko":/leds-qcom-flash.ko:ro \
   -v "$moddir":/mods:ro \
   -v "$CAMERA_ARTIFACTS":/mega:ro \
+  -v "$SENSOR_ARTIFACTS":/sensors:ro \
   -v /tmp/modem-bin/usr/bin:/modembin:ro \
   -v /tmp/modem-bin/usr/lib:/modembin-lib:ro \
   -v /tmp/modem-bin:/modembin-musl:ro \

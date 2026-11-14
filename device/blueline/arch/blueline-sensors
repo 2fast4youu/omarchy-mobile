@@ -1,0 +1,51 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+set -euo pipefail
+
+grep -zqx sleepstate /proc/device-tree/smp2p-slpi/sleepstate/qcom,entry-name
+assets=/usr/share/blueline-sensors
+firmware=qcom/sdm845/Google/blueline/slpi.mbn
+rpc=/usr/local/libexec/blueline-hexagonrpcd
+runtime=/run/blueline-sensors
+test -x "$rpc" && test -x /usr/lib/iio-sensor-proxy
+umask 077
+install -d "$runtime"/{sensors,sensors/persist/registry,socinfo}
+ln -sfn "$assets/config" "$runtime/sensors/config"
+ln -sfn "$assets/dsp" "$runtime/dsp"
+ln -sfn "$assets/sns_reg_config" "$runtime/sensors/sns_reg.conf"
+ln -sfn "$assets/sns_reg_config" "$runtime/sensors/persist/sns_reg_config"
+printf 'OEM\n' > "$runtime/socinfo/hw_platform"
+printf 'Unknown\n' > "$runtime/socinfo/platform_subtype"
+cat /sys/kernel/debug/qcom_socinfo/hardware_platform_subtype > "$runtime/socinfo/platform_subtype_id"
+cat /sys/kernel/debug/qcom_socinfo/platform_version > "$runtime/socinfo/platform_version"
+cp /sys/devices/soc0/{soc_id,revision} "$runtime/socinfo/"
+for file in file1 file2 sns_reg_version; do
+    printf '1\n' > "$runtime/sensors/persist/$file"
+done
+
+slpi=
+for node in /sys/class/remoteproc/*; do
+    if [[ -r $node/name && $(<"$node/name") == slpi ]]; then
+        slpi=$node
+        break
+    fi
+done
+test -n "$slpi"
+install -Dm644 "/usr/lib/firmware/$firmware" "/proc/1/root/lib/firmware/$firmware"
+grep -q '^fastrpc ' /proc/modules || insmod /opt/omamobile/mods/fastrpc.ko
+[[ $(<"$slpi/state") == running ]] || echo start > "$slpi/state"
+for _ in {1..30}; do
+    [[ -e /dev/fastrpc-sdsp ]] && break
+    sleep 0.25
+done
+test -e /dev/fastrpc-sdsp
+SYSTEMD_IGNORE_CHROOT=1 udevadm settle --timeout=5
+
+"$rpc" -f /dev/fastrpc-sdsp -d sdsp -s -R "$runtime" &
+listener=$!
+proxy=
+trap 'kill "$listener" ${proxy:+"$proxy"} 2>/dev/null || true' EXIT
+trap 'exit 0' INT TERM
+/usr/lib/iio-sensor-proxy &
+proxy=$!
+wait -n "$listener" "$proxy"
