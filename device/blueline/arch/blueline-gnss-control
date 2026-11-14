@@ -1,0 +1,27 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: MIT
+# Privileged entry point for the two GNSS operations permitted by sudoers.
+set -euo pipefail
+export LC_ALL=C PATH=/usr/bin
+[[ $# = 1 && $EUID = 0 ]] || exit 2
+case "$1" in
+    on|off) ;;
+    *) exit 2 ;;
+esac
+modems=$(/usr/bin/mmcli --timeout=4 -L -K)
+modem=$(awk '$1 ~ /^modem-list\.value\[/ {print $NF; exit}' <<< "$modems")
+[[ $modem =~ ^/org/freedesktop/ModemManager1/Modem/[0-9]+$ ]] || exit 1
+exec 9>/run/blueline-gnss.lock
+flock -w 15 9
+status=$(/usr/bin/mmcli --timeout=4 -m "$modem" --location-status -K)
+options=()
+for source in gps-nmea gps-raw; do
+    if grep -Eq "^modem.location.enabled.value\[[0-9]+\][[:space:]]+: $source$" <<< "$status"; then
+        [[ $1 != off ]] || options+=("--location-disable-$source")
+    else
+        [[ $1 != on ]] || options+=("--location-enable-$source")
+    fi
+done
+if ((${#options[@]})); then
+    /usr/bin/mmcli --timeout=12 -m "$modem" "${options[@]}"
+fi

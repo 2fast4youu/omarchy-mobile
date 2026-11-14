@@ -1,0 +1,38 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: MIT
+# Pixel 3 uses the modem's native QMI location sources.
+set -euo pipefail
+export LC_ALL=C
+
+modems=$(mmcli --timeout=4 -L -K)
+modem=$(awk '$1 ~ /^modem-list\.value\[/ {print $NF; exit}' <<< "$modems")
+status=
+if [[ -n $modem ]]; then
+    status=$(mmcli --timeout=4 -m "$modem" --location-status -K)
+fi
+if grep -Eq '^modem.location.capabilities.value\[[0-9]+\][[:space:]]+: gps-nmea$' <<< "$status"; then
+    installed=true
+else
+    installed=false
+fi
+if grep -Eq '^modem.location.enabled.value\[[0-9]+\][[:space:]]+: gps-nmea$' <<< "$status"; then
+    location=on
+else
+    location=off
+fi
+
+case "${1:-}" in
+    status)
+        running=no
+        if [[ $location == on ]]; then running=yes; fi
+        printf '{"installed":%s,"location":"%s","running":"%s"}\n' "$installed" "$location" "$running"
+        ;;
+    on|off)
+        [[ $installed == true ]] || exit 1
+        exec /usr/bin/sudo -n /usr/local/libexec/blueline-gnss-control "$1"
+        ;;
+    *)
+        echo "Usage: omamobile-gnss {status|on|off}" >&2
+        exit 2
+        ;;
+esac

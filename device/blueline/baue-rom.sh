@@ -98,11 +98,12 @@ if [ "$NUR" = alle ] || [ "$NUR" = packen ]; then
     RAMDISK=${RAMDISK:-$WS/images/fl-v0ag/ramdisk.gz}
     pruefe "$RAMDISK"
     kernel_blob=$(mktemp "$AUSGABE/.kernel-blob.XXXXXX")
+    packed_ramdisk=$(mktemp "$AUSGABE/.ramdisk.XXXXXX")
     vorlauf=$(mktemp "$IMAGE/.vorlauf.XXXXXX")
-    trap 'rm -f "$kernel_blob" "$vorlauf"' EXIT
-    python3 - "$KOUT" "$RAMDISK" "$kernel_blob" <<'PY'
+    trap 'rm -f "$kernel_blob" "$packed_ramdisk" "$vorlauf"' EXIT
+    python3 - "$KOUT" "$kernel_blob" <<'PY'
 import sys
-out, ramdisk, ziel = sys.argv[1], sys.argv[2], sys.argv[3]
+out, ziel = sys.argv[1:]
 g = open(out + "/arch/arm64/boot/Image.gz", "rb").read()
 d = open(out + "/arch/arm64/boot/dts/qcom/sdm845-google-blueline.dtb", "rb").read()
 open(ziel, "wb").write(g + d)
@@ -110,8 +111,9 @@ print("Kernel-Blob: %d Bytes (Image.gz %d + DTB %d)" % (len(g) + len(d), len(g),
 PY
     REF=${REF:-$WS/pmos-ref-build/ref/boot.img}
     pruefe "$REF"
+    python3 "$FL/blueline-park-init.py" "$RAMDISK" "$packed_ramdisk"
     python3 "$FL/pack-v0.py" \
-        --kernel "$kernel_blob" --ramdisk "$RAMDISK" \
+        --kernel "$kernel_blob" --ramdisk "$packed_ramdisk" \
         --cmdline "console=ttyMSM0,115200n8 console=tty0 loglevel=8 printk.devkmsg=on panic=60 hung_task_panic=1 softlockup_panic=1 androidboot.hardware=qcom androidboot.board=blueline rdinit=/init" \
         --name "" --kernel-addr 0x8000 --ramdisk-addr 0x1000000 --tags-addr 0x1000 \
         --pagesize-field 0 --pagesize-align 4096 --reference "$REF" \

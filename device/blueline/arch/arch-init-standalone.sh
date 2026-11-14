@@ -305,22 +305,29 @@ fi
 # die GNOME-xkb-Einstellung; ohne sie bleibt die OSK leer).
 su - omarchy -c 'gsettings set org.gnome.desktop.input-sources sources "[('"'"'xkb'"'"','"'"'de'"'"')]"' >/dev/null 2>&1 || true
 start-hyprland >/tmp/hyprland.log 2>&1 &
+# Hyprland creates its control socket before the Wayland display exists.
+# Start the clients only after both sockets are available.
 i=0
-while [ \$i -lt 30 ]; do
-    sig=\$(ls $OM_RUNTIME/hypr/ 2>/dev/null | head -1)
-    [ -n "\$sig" ] && break
+while [ \$i -lt 60 ]; do
+    sig=
+    for instance in "$OM_RUNTIME"/hypr/*; do
+        [ -S "\$instance/.socket.sock" ] || continue
+        sig=\${instance##*/}
+        break
+    done
+    wdisp=
+    for socket in "$OM_RUNTIME"/wayland-*; do
+        [ -S "\$socket" ] || continue
+        wdisp=\${socket##*/}
+        break
+    done
+    [ -n "\$sig" ] && [ -n "\$wdisp" ] && break
     sleep 1; i=\$((i + 1))
 done
-# Wenn Hyprland nach 30 s nicht bereit ist, ist $sig leer - Quickshell
-# kann dann keine Hyprland-Verbindung aufbauen. Warnung ins Log, damit
-# der Fehler diagnostizierbar ist (Hyprland-Log: /tmp/hyprland.log).
-[ -n "\$sig" ] || echo "WARN: Hyprland-Signatur nach 30 s leer" > /dev/kmsg 2>/dev/null
-sleep 2
-# WAYLAND_DISPLAY dynamisch: Hyprland nimmt wayland-1, aber wenn der
-# Socket belegt ist auch wayland-2/3. Hartkodiertes wayland-1 fuehrt
-# dann zu "failed to connect to display".
-wdisp=\$(ls $OM_RUNTIME/wayland-* 2>/dev/null | grep -v lock | head -1 | xargs -r basename)
-[ -n "\$wdisp" ] || wdisp=wayland-1
+if [ -z "\$sig" ] || [ -z "\$wdisp" ]; then
+    echo "Hyprland did not create its Wayland and control sockets" >&2
+    exit 1
+fi
 export WAYLAND_DISPLAY=\$wdisp HYPRLAND_INSTANCE_SIGNATURE=\$sig
 squeekboard >/tmp/squeekboard.log 2>&1 &
 # Idle-Daemon: Helligkeit runter, dann Bildschirm aus (Akku).
@@ -356,15 +363,17 @@ for cf in /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq; do
 done
 
 mkdir -p /dev/disk/by-partlabel
-i=0
-for n in ssd misc keystore frp system_a system_b product_a product_b vendor_a vendor_b boot_a boot_b modem_a modem_b apdp_a apdp_b msadp_a msadp_b klog metadata userdata; do
-    i=$((i + 1))
-    ln -sfn /dev/sda$i /dev/disk/by-partlabel/$n
+for entry in /sys/class/block/sd*[0-9]/uevent; do
+    part=${entry%/uevent}
+    label=$(sed -n 's/^PARTNAME=//p' "$entry")
+    case "$label" in
+        boot_a|boot_b|misc|userdata) ln -sfn "/dev/${part##*/}" "/dev/disk/by-partlabel/$label" ;;
+    esac
 done
 # Use part of the available userdata space for apps and package updates.
 if [ "$(findmnt -no SOURCE,FSTYPE /)" = "/dev/loop0 ext4" ] &&
-   [ "$(losetup -n -O BACK-FILE,OFFSET /dev/loop0 | xargs)" = "/dev/sda21 1048576" ] &&
-   [ "$(cat /sys/class/block/sda21/ro)" = 0 ] &&
+   [ "$(losetup -n -O BACK-FILE,OFFSET /dev/loop0 | xargs)" = "$(readlink -f /dev/disk/by-partlabel/userdata) 1048576" ] &&
+   [ "$(blockdev --getro /dev/disk/by-partlabel/userdata)" = 0 ] &&
    [ "$(blockdev --getsize64 /dev/loop0)" -gt 21474836480 ] &&
    [ "$(stat -f -c %b /)" -lt 5000000 ]; then
     resize2fs /dev/loop0 20G >/tmp/omamobile-resize.log 2>&1

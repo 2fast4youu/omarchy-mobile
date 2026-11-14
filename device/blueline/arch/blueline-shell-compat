@@ -1,0 +1,41 @@
+#!/usr/bin/python3
+# SPDX-License-Identifier: MIT
+"""Adjust signed Omarchy Mobile shell files after installation on the Pixel 3."""
+from pathlib import Path
+import os
+import sys
+import tempfile
+
+path = Path(sys.argv[1] if len(sys.argv) > 1 else
+            "/usr/share/omamobile/shell/plugins/omamobile.quicksettings/QuickSettings.qml")
+original = source = path.read_text()
+old_write = '["brightnessctl", "--device=white:torch", "--quiet", "set", enabled ? "0" : "100%"]'
+old_read = '["brightnessctl", "--device=white:torch", "--machine-readable", "info"]'
+new_write = '["brightnessctl", "--device=white:flash", "--quiet", "set", enabled ? "0" : "25%"]'
+new_read = '["brightnessctl", "--device=white:flash", "--machine-readable", "info"]'
+location_refresh = "if (!locationRead.running) locationRead.running = true"
+safe_location_refresh = "if (!locationWrite.running && !locationRead.running) locationRead.running = true"
+location_guard = "if (!available || locationWrite.running) return"
+safe_location_guard = "if (!available || locationWrite.running || locationRead.running) return"
+optimistic_location = "      enabled = !enabled\n      locationWrite.running = true"
+confirmed_location = "      locationWrite.running = true"
+location_status = 'readonly property string status: !available ? "No GNSS" : !enabled ? "Off" : running ? "In use" : "On"'
+pending_location_status = ('readonly property string status: !available ? "No GNSS"'
+                           ' : locationWrite.running ? (enabled ? "Stopping…" : "Starting…")'
+                           ' : !enabled ? "Off" : running ? "In use" : "On"')
+changes = ((old_write, new_write), (old_read, new_read),
+           (location_refresh, safe_location_refresh), (location_guard, safe_location_guard),
+           (optimistic_location, confirmed_location), (location_status, pending_location_status))
+for before, after in changes:
+    if before not in source and after in source:
+        continue
+    if source.count(before) != 1:
+        sys.exit(f"Pixel 3: could not locate the quick settings command in {path}: {before}")
+    source = source.replace(before, after)
+
+if source != original:
+    with tempfile.NamedTemporaryFile(mode="w", dir=path.parent, delete=False) as temporary:
+        temporary.write(source)
+        pending = Path(temporary.name)
+    pending.chmod(path.stat().st_mode & 0o777)
+    os.replace(pending, path)

@@ -54,6 +54,11 @@ printf '/dev/loop0 / ext4 defaults 0 1\n' > /tmp/arch/etc/fstab
 mkdir -p /tmp/arch/usr/local/bin
 install -m755 /om/uwsm-app /tmp/arch/usr/local/bin/uwsm-app
 install -m755 /om/blueline-update /tmp/arch/usr/local/bin/blueline-update
+install -m755 /om/omamobile-gnss /tmp/arch/usr/local/bin/omamobile-gnss
+install -Dm755 /om/blueline-gnss-control /tmp/arch/usr/local/libexec/blueline-gnss-control
+install -Dm440 /om/blueline-gnss.sudoers /tmp/arch/etc/sudoers.d/49-blueline-gnss
+install -m755 /om/blueline-shell-compat /tmp/arch/usr/local/bin/blueline-shell-compat
+install -Dm644 /om/96-blueline-shell.hook /tmp/arch/etc/pacman.d/hooks/96-blueline-shell.hook
 cp /om/omamobile-time-sync /tmp/arch/usr/local/bin/omamobile-time-sync
 cp /om/omamobile-power-profile /tmp/arch/usr/local/bin/omamobile-power-profile
 cp /om/omamobile-wakeup.sh /tmp/arch/usr/local/bin/omamobile-wakeup
@@ -157,7 +162,7 @@ chroot /tmp/arch /bin/bash -euc '
   # naechsten -Su mitgezogen.
   pacman -Sy --noconfirm --needed --overwrite="/usr/lib/*" openssh
   pacman -S --noconfirm --needed omarchy
-  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim patch chromium nautilus bluez bluez-utils mpv imv gnome-text-editor v4l-utils libcamera-tools hypridle brightnessctl power-profiles-daemon upower pipewire pipewire-pulse pipewire-alsa wireplumber alsa-ucm-conf networkmanager modemmanager wpa_supplicant zbar libconfig libraw imagemagick glib2 expat
+  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim patch chromium nautilus bluez bluez-utils mpv imv gnome-text-editor v4l-utils libcamera-tools hypridle hyprsunset brightnessctl power-profiles-daemon upower pipewire pipewire-pulse pipewire-alsa wireplumber alsa-ucm-conf networkmanager modemmanager wpa_supplicant zbar libconfig libraw imagemagick glib2 expat
   glib-compile-schemas --strict /usr/share/glib-2.0/schemas
   ldd -r /usr/bin/megapixels >/tmp/megapixels-ldd.log 2>&1
   camera_links=$(cat /tmp/megapixels-ldd.log)
@@ -201,6 +206,7 @@ EOD
       fi )
   done
   pacman -U --noconfirm /tmp/omarchy-settings-4.0.6.pkg.tar.zst /tmp/omarchy-4.0.6.pkg.tar.zst >/tmp/omarchy-pin.log 2>&1 || { echo "WARN: Omarchy 4.0.6 nicht installiert"; tail -8 /tmp/omarchy-pin.log; }
+  /usr/local/bin/blueline-shell-compat
   if ! omamobile-omarchy-patches apply >/tmp/omarchy-patches.log 2>&1; then
       echo "WARN: Omarchy-Patches nicht angewendet:"
       tail -20 /var/log/omamobile/omarchy-patches.log 2>/dev/null || tail -20 /tmp/omarchy-patches.log

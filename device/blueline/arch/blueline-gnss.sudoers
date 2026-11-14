@@ -1,0 +1,1 @@
+omarchy ALL=(root) NOPASSWD: /usr/local/libexec/blueline-gnss-control on, /usr/local/libexec/blueline-gnss-control off

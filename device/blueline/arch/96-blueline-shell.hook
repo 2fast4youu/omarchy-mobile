@@ -1,0 +1,10 @@
+[Trigger]
+Operation = Install
+Operation = Upgrade
+Type = Package
+Target = omamobile-shell
+
+[Action]
+Description = Adapting Omarchy Mobile quick settings for the Pixel 3
+When = PostTransaction
+Exec = /usr/local/bin/blueline-shell-compat

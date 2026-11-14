@@ -57,12 +57,18 @@ def main():
     cmdline = Path("/proc/cmdline").read_text().split()
     if b"google,blueline" not in compatible or "androidboot.slot_suffix=_a" not in cmdline:
         raise ValueError("expected Pixel 3 booted from slot A")
-    base = Path("/sys/class/block/sda")
+    userdata = Path("/dev/disk/by-partlabel/userdata").resolve(strict=True)
+    part = Path("/sys/class/block", userdata.name).resolve(strict=True)
+    if ("PARTNAME=userdata" not in (part / "uevent").read_text().splitlines()
+            or (part / "partition").read_text().strip() != "21"
+            or (part / "start").read_text().strip() != "16547840"):
+        raise ValueError("unexpected userdata layout")
+    base = part.parent
     if ((base / "ro").read_text().strip() != "0"
             or int((base / "queue/logical_block_size").read_text()) != SECTOR):
         raise ValueError("main UFS device is not writable with 4 KiB sectors")
     for index, name in ((11, "boot_a"), (12, "boot_b")):
-        part = Path(f"/sys/class/block/sda{index}")
+        part = base / f"{base.name}{index}"
         if (f"PARTNAME={name}" not in (part / "uevent").read_text().splitlines()
                 or (part / "ro").read_text().strip() != "1"):
             raise ValueError(f"unexpected or writable {name} partition")
@@ -70,7 +76,7 @@ def main():
     if remainder or sectors < 8:
         raise ValueError("invalid UFS size")
 
-    fd = os.open("/dev/sda", os.O_RDWR)
+    fd = os.open(Path("/dev", base.name), os.O_RDWR)
     try:
         primary = prepare(fd, sectors - 1, False)
         backup = prepare(fd, sectors - 1, True)
