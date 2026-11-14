@@ -1,0 +1,10 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# Desktop-entry and terminal launchers expect UWSM in a systemd user session.
+# The Pixel 3 starts Hyprland and the user D-Bus session directly.
+if [ "${OMAMOBILE_STANDALONE_SESSION:-}" = 1 ] && [ "${1:-}" = -- ]; then
+    shift
+    [ "$#" -gt 0 ] || exit 2
+    exec "$@"
+fi
+exec /usr/bin/uwsm-app "$@"

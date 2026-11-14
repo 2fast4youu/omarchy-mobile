@@ -18,6 +18,7 @@ chmod 1777 /tmp /dev/shm 2>/dev/null
 grep -q ' /dev/pts ' /proc/mounts 2>/dev/null || mount -t devpts devpts /dev/pts 2>/dev/null
 grep -q ' /dev/shm ' /proc/mounts 2>/dev/null || mount -t tmpfs -o mode=1777 tmpfs /dev/shm 2>/dev/null
 grep -q ' /run ' /proc/mounts 2>/dev/null || mount -t tmpfs -o mode=755 tmpfs /run 2>/dev/null
+install -d -m 755 /run/lock
 hostname omamobile 2>/dev/null
 
 # Nur den Initramfs-Dropbear toeten: er haelt Port 22, und sein KEX scheitert
@@ -30,7 +31,7 @@ pkill -f '^dropbear' 2>/dev/null
 sleep 1
 
 /usr/bin/ssh-keygen -A 2>/dev/null
-/usr/sbin/sshd -o UsePAM=no 2>/dev/null
+/usr/sbin/sshd -o UsePAM=no -o PasswordAuthentication=no -o KbdInteractiveAuthentication=no 2>/dev/null
 echo "omamobile: Arch-Wurzel bereit, sshd auf 172.16.42.1:22" > /dev/kmsg 2>/dev/null
 
 
@@ -249,6 +250,7 @@ cat > /run/omamobile-session.sh <<SITZUNG
 #!/bin/sh
 export XDG_RUNTIME_DIR=$OM_RUNTIME LIBSEAT_BACKEND=seatd LANG=en_US.UTF-8
 export OMAMOBILE_STANDALONE_SESSION=1
+export PATH=/usr/local/bin:/usr/bin
 # Benutzer-Setup VOR dem Compositor: Plugins verlinken, Profil setzen,
 # Omarchy-Marker (z. B. "Learn Keybindings" nicht mehr zeigen).
 # SYNCHRON mit 30 s Timeout: laeuft es im Hintergrund weiter, startet
@@ -281,6 +283,24 @@ mkdir -p /home/omarchy/.local/state/omarchy/current/theme
 [ -f /home/omarchy/.local/state/omarchy/current/background ] || cp /usr/share/omarchy/themes/catppuccin/backgrounds/2-waves.png /home/omarchy/.local/state/omarchy/current/background 2>/dev/null || true
 chown -R omarchy:omarchy /home/omarchy/.local/state/omarchy 2>/dev/null
 su - omarchy -c 'omarchy-done mark first-run-user' >/dev/null 2>&1 || true
+# Until there is a local password, leave the idle lock unarmed. The
+# display's independent idle timers still run.
+if [ "\$(passwd -S omarchy 2>/dev/null | cut -d ' ' -f 2)" = L ]; then
+    python3 - <<'PY'
+from pathlib import Path
+import json
+import os
+
+path = Path.home() / ".config/omarchy/shell.json"
+config = json.loads(path.read_text())
+idle = config.setdefault("idle", {})
+if idle.get("lock", 0) > 0:
+    idle["lock"] = 0
+    temporary = path.with_suffix(".json.blueline")
+    temporary.write_text(json.dumps(config, indent=2) + "\n")
+    os.replace(temporary, path)
+PY
+fi
 # Deutsches Tastatur-Layout fuer die Bildschirmtastatur (Squeekboard liest
 # die GNOME-xkb-Einstellung; ohne sie bleibt die OSK leer).
 su - omarchy -c 'gsettings set org.gnome.desktop.input-sources sources "[('"'"'xkb'"'"','"'"'de'"'"')]"' >/dev/null 2>&1 || true
@@ -309,7 +329,7 @@ pipewire >/tmp/pipewire.log 2>&1 &
 wireplumber >/tmp/wireplumber.log 2>&1 &
 pipewire-pulse >/tmp/pipewire-pulse.log 2>&1 &
 hypridle >/tmp/hypridle.log 2>&1 &
-quickshell -p /usr/share/omarchy/shell >/tmp/quickshell.log 2>&1 &
+QS_DISABLE_FILE_WATCHER=1 quickshell -p /usr/share/omarchy/shell >/tmp/quickshell.log 2>&1 &
 wait
 SITZUNG
 chmod 755 /run/omamobile-session.sh

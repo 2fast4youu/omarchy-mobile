@@ -52,6 +52,8 @@ chmod 755 /tmp/arch/init
 : > /tmp/arch/etc/machine-id
 printf '/dev/loop0 / ext4 defaults 0 1\n' > /tmp/arch/etc/fstab
 mkdir -p /tmp/arch/usr/local/bin
+install -m755 /om/uwsm-app /tmp/arch/usr/local/bin/uwsm-app
+install -m755 /om/blueline-update /tmp/arch/usr/local/bin/blueline-update
 cp /om/omamobile-time-sync /tmp/arch/usr/local/bin/omamobile-time-sync
 cp /om/omamobile-power-profile /tmp/arch/usr/local/bin/omamobile-power-profile
 cp /om/omamobile-wakeup.sh /tmp/arch/usr/local/bin/omamobile-wakeup

@@ -1,0 +1,34 @@
+#!/bin/bash
+# SPDX-License-Identifier: MIT
+# The Pixel 3 standalone session uses the native package transaction and
+# patch hooks. Run from the root maintenance console or its USB SSH session.
+set -euo pipefail
+export LC_ALL=C
+
+if (( EUID != 0 )) || ! grep -zqx google,blueline /proc/device-tree/compatible; then
+    echo "Run blueline-update from the Pixel 3 root maintenance console." >&2
+    exit 1
+fi
+if [[ $# -gt 0 ]]; then
+    echo "Usage: blueline-update" >&2
+    exit 2
+fi
+exec 9>/run/lock/blueline-update
+if ! flock -n 9; then
+    echo "An update is already running." >&2
+    exit 1
+fi
+omamobile-update check --offline
+pacman -Sy
+plan=$(pacman -Sup --noconfirm --print-format '%n')
+if grep -Eq '^(linux|linux-(omamobile.*|aarch64.*|lts.*|zen.*|hardened.*|rt.*|omarchy.*|rpi.*|t2.*)|omamobile-(device-.*|boot-update|firstboot|fingerprint)|limine.*|grub|efibootmgr|sbctl|snapper.*|mkinitcpio.*|dracut|booster|ukify|systemd-ukify|fwupd)$' <<< "$plan"; then
+    echo "The update plan includes boot or device packages outside the Pixel 3 port." >&2
+    exit 1
+fi
+if [[ -z $plan ]]; then
+    echo "The system packages are up to date."
+    exit 0
+fi
+OMARCHY_UPDATE_PACMAN=1 pacman -Su --noconfirm
+omamobile-omarchy-patches apply
+echo "Restart the Pixel 3 after the update to load the new system packages."
