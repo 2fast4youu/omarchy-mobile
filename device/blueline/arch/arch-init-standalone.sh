@@ -380,12 +380,20 @@ for entry in /sys/class/block/sd*[0-9]/uevent; do
     esac
 done
 # Use part of the available userdata space for apps and package updates.
+root_target_gib=32
+root_target_bytes=$((root_target_gib * 1024 * 1024 * 1024))
 if [ "$(findmnt -no SOURCE,FSTYPE /)" = "/dev/loop0 ext4" ] &&
    [ "$(losetup -n -O BACK-FILE,OFFSET /dev/loop0 | xargs)" = "$(readlink -f /dev/disk/by-partlabel/userdata) 1048576" ] &&
    [ "$(blockdev --getro /dev/disk/by-partlabel/userdata)" = 0 ] &&
-   [ "$(blockdev --getsize64 /dev/loop0)" -gt 21474836480 ] &&
-   [ "$(stat -f -c %b /)" -lt 5000000 ]; then
-    resize2fs /dev/loop0 20G >/tmp/omamobile-resize.log 2>&1
+   [ "$(blockdev --getsize64 /dev/loop0)" -ge "$root_target_bytes" ]; then
+    root_size=$(LC_ALL=C tune2fs -l /dev/loop0 2>/dev/null | awk -F: '
+        /^Block count:/ { blocks = $2 }
+        /^Block size:/ { size = $2 }
+        END { printf "%.0f\n", blocks * size }
+    ')
+    if [ "$root_size" -gt 0 ] && [ "$root_size" -lt "$root_target_bytes" ]; then
+        resize2fs /dev/loop0 "${root_target_gib}G" >/tmp/omamobile-resize.log 2>&1
+    fi
 fi
 su - omarchy -c 'dbus-run-session -- /run/omamobile-session.sh' >/dev/null 2>&1 &
 (
