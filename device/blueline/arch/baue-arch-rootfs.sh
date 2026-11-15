@@ -265,6 +265,7 @@ EOD
   systemctl enable sshd 2>/dev/null || ln -sf /usr/lib/systemd/system/sshd.service \
     /etc/systemd/system/multi-user.target.wants/sshd.service
 '
+sed -i 's/^#Class = 0x000100$/Class = 0x00020c/' /tmp/arch/etc/bluetooth/main.conf
 install -Dm644 /om/alsa-ucm/Pixel3.conf /tmp/arch/usr/share/alsa/ucm2/Qualcomm/Pixel3/Pixel3.conf
 install -Dm644 /om/alsa-ucm/HiFi.conf /tmp/arch/usr/share/alsa/ucm2/Qualcomm/Pixel3/HiFi.conf
 install -d /tmp/arch/usr/share/alsa/ucm2/conf.d/sdm845
