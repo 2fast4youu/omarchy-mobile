@@ -8,6 +8,7 @@ polkit.addRule(function (action, subject) {
     case "org.freedesktop.NetworkManager.enable-disable-wwan":
     case "org.freedesktop.NetworkManager.network-control":
     case "org.freedesktop.NetworkManager.wifi.scan":
+    case "org.freedesktop.NetworkManager.wifi.share.protected":
     case "org.freedesktop.NetworkManager.settings.modify.own":
     case "org.freedesktop.NetworkManager.settings.modify.system":
         return polkit.Result.YES;
