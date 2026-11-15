@@ -54,6 +54,8 @@ printf '/dev/loop0 / ext4 defaults 0 1\n' > /tmp/arch/etc/fstab
 mkdir -p /tmp/arch/usr/local/bin
 install -m755 /om/uwsm-app /tmp/arch/usr/local/bin/uwsm-app
 install -m755 /om/blueline-update /tmp/arch/usr/local/bin/blueline-update
+install -Dm755 /om/blueline-hermes-cli /tmp/arch/usr/local/bin/omarchy-install-hermes-cli
+install -Dm644 /om/org.omamobile.Hermes.desktop /tmp/arch/usr/local/share/applications/org.omamobile.Hermes.desktop
 install -m755 /om/omamobile-gnss /tmp/arch/usr/local/bin/omamobile-gnss
 install -m755 /om/omamobile-rotation /tmp/arch/usr/local/bin/omamobile-rotation
 install -Dm755 /om/blueline-idle /tmp/arch/usr/local/libexec/blueline-idle

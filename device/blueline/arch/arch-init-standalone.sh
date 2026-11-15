@@ -253,13 +253,14 @@ cat > /run/omamobile-session.sh <<SITZUNG
 #!/bin/sh
 export XDG_RUNTIME_DIR=$OM_RUNTIME LIBSEAT_BACKEND=seatd LANG=en_US.UTF-8
 export OMAMOBILE_STANDALONE_SESSION=1
-export PATH=/usr/local/bin:/usr/bin
+export PATH=/usr/local/bin:/usr/bin:"\$HOME/.local/bin"
 # Benutzer-Setup VOR dem Compositor: Plugins verlinken, Profil setzen,
 # Omarchy-Marker (z. B. "Learn Keybindings" nicht mehr zeigen).
 # SYNCHRON mit 30 s Timeout: laeuft es im Hintergrund weiter, startet
 # Quickshell ohne die omamobile-Plugins (nur omarchy-bar, kein
 # Homescreen/Dock - am Geraet belegt).
 timeout 30 omamobile-setup-user >/tmp/setup-user.log 2>&1 || true
+[ ! -x /usr/local/bin/omarchy-install-hermes-cli ] || /usr/local/bin/omarchy-install-hermes-cli --menu
 # Ergebnis pruefen: ohne die Plugin-Symlinks bleibt die Shell unvollstaendig.
 if [ ! -e /home/omarchy/.config/omarchy/plugins/omamobile.home ]; then
     mkdir -p /home/omarchy/.config/omarchy/plugins

@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+[Desktop Entry]
+Type=Application
+Name=Hermes Agent
+Comment=Open Hermes Agent in the terminal
+Exec=foot --app-id=org.omamobile.Hermes /usr/local/bin/omarchy-install-hermes-cli --launch
+TryExec=foot
+Icon=utilities-terminal
+Terminal=false
+StartupWMClass=org.omamobile.Hermes
+Categories=Development;
+Keywords=AI;agent;coding;assistant;

@@ -1,0 +1,60 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: MIT
+set -euo pipefail
+
+launcher=$HOME/.local/bin/hermes
+commit=3b421578588243f920886e6fe79a6faa87ea026e
+checksum=abf338605dae6dd28d101673ac6aed7995c955745db46d47676bc591a7957209
+url=https://raw.githubusercontent.com/NousResearch/hermes-agent/v0.23.1/scripts/install.sh
+
+installed() {
+    [[ -f $launcher && -x $launcher ]] &&
+        timeout 20 "$launcher" chat --help >/dev/null 2>&1
+}
+
+install_agent() {
+    if (( EUID == 0 )); then
+        echo 'Run the Hermes installer from the handset session.' >&2
+        return 1
+    fi
+    local lock_dir=${XDG_CACHE_HOME:-$HOME/.cache}/omamobile
+    mkdir -p "$lock_dir"
+    exec 9>"$lock_dir/hermes-install.lock"
+    flock 9
+    if installed; then return; fi
+
+    local installer
+    installer=$(mktemp)
+    trap 'rm -f -- "$installer"' RETURN
+    curl --proto '=https' -fsSL --retry 2 --connect-timeout 10 --max-time 60 \
+        "$url" -o "$installer" || return 1
+    printf '%s  %s\n' "$checksum" "$installer" | sha256sum -c - || return 1
+    HERMES_WEB_BUILD_LIGHT=1 nice -n 10 bash "$installer" \
+        --non-interactive --skip-browser --skip-computer-use --commit "$commit" || return 1
+    installed
+}
+
+case "${1:-}" in
+    --check) installed ;;
+    --now) install_agent ;;
+    --launch)
+        install_agent
+        exec 9>&-
+        if [[ $PWD == "$HOME" && -d $HOME/Work ]]; then cd "$HOME/Work"; fi
+        exec "$launcher"
+        ;;
+    --menu)
+        extension=${XDG_CONFIG_HOME:-$HOME/.config}/omarchy/extensions/omarchy-menu.jsonc
+        if [[ -f $extension && ! -L $extension ]] &&
+            grep -Fq '// Omarchy Mobile: no aarch64 build of Hermes' "$extension"; then
+            # Keep the key so omamobile-setup-user does not add the override again.
+            if ! grep -Fq '"setup.default.agent.hermes"' "$extension"; then
+                sed -i '/^[[:space:]]*\/\/ Omarchy Mobile: no aarch64 build of Hermes[[:space:]]*$/a\  "setup.default.agent.hermes": {"when": "false"},' "$extension"
+            fi
+            sed -i -e 's@// Omarchy Mobile: no aarch64 build of Hermes@// Pixel 3: native Hermes CLI available, desktop installer hidden@' \
+                -e 's/"setup\.default\.agent\.hermes": {"when": "false"}/"setup.default.agent.hermes": {"when": "true"}/' \
+                "$extension"
+        fi
+        ;;
+    *) exec /usr/bin/omarchy-install-hermes-cli "$@" ;;
+esac
