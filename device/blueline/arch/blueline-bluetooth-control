@@ -1,13 +1,19 @@
 #!/usr/bin/python3
 # SPDX-License-Identifier: MIT
 import argparse
+from contextlib import suppress
 import fcntl
 import json
 import os
 from pathlib import Path
+import pty
+import selectors
+import signal
 import socket
+import struct
 import subprocess
 import sys
+import termios
 import threading
 
 import dbus
@@ -63,6 +69,52 @@ def configured_peer():
         return None
 
 
+def terminal(connection, authorized):
+    master, slave = pty.openpty()
+    try:
+        try:
+            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 32, 80, 0, 0))
+            shell = subprocess.Popen(["/usr/bin/setsid", "--ctty", "/usr/bin/bash", "-i"],
+                                     stdin=slave, stdout=slave, stderr=slave, cwd=Path.home(),
+                                     env={**os.environ, "TERM": "dumb", "NO_COLOR": "1"})
+        finally:
+            os.close(slave)
+        try:
+            connection.settimeout(10)
+            connection.sendall(b'{"ok":true}\n')
+            with selectors.DefaultSelector() as selector:
+                selector.register(connection, selectors.EVENT_READ)
+                selector.register(master, selectors.EVENT_READ)
+                while authorized():
+                    for key, _ in selector.select(timeout=1):
+                        if key.fileobj is connection:
+                            pending = memoryview(connection.recv(8192))
+                            if not pending:
+                                return
+                            while pending:
+                                pending = pending[os.write(master, pending):]
+                        else:
+                            output = os.read(master, 8192)
+                            if not output:
+                                return
+                            connection.sendall(output)
+        except OSError:
+            # An exited shell ends its PTY with EIO, and a disconnected client
+            # ends the RFCOMM write. Both terminate this session.
+            pass
+        finally:
+            if shell.poll() is None:
+                with suppress(ProcessLookupError):
+                    os.killpg(shell.pid, signal.SIGHUP)
+                try:
+                    shell.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    shell.kill()
+                    shell.wait()
+    finally:
+        os.close(master)
+
+
 def communicate(connection, authorized=lambda: True):
     with connection, connection.makefile("rb") as reader:
         connection.settimeout(180)
@@ -77,7 +129,11 @@ def communicate(connection, authorized=lambda: True):
                 connection.sendall(b'{"ok":false,"error":"Steuerung am Pixel deaktiviert"}\n')
                 return
             try:
-                answer = {"ok": True, **act(json.loads(line.decode("utf-8")))}
+                request = json.loads(line.decode("utf-8"))
+                if isinstance(request, dict) and request.get("action") == "terminal":
+                    terminal(connection, authorized)
+                    return
+                answer = {"ok": True, **act(request)}
             except (ValueError, UnicodeError) as error:
                 answer = {"ok": False, "error": str(error)}
             except (OSError, subprocess.SubprocessError):

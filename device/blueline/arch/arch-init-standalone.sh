@@ -57,7 +57,7 @@ chmod 660 /dev/dri/card0 /dev/dri/renderD128 2>/dev/null
 [ -e /sys/class/leds/white:flash/brightness ] && chmod 666 /sys/class/leds/white:flash/brightness 2>/dev/null
 # Hardware-Module (aus dem Kernel-Out mitgebaut): BT-Kette, WLAN-Kette,
 # jeweils in Abhaengigkeitsreihenfolge; Doppelladungen sind harmlos.
-for m in rfkill ecc ecdh_generic bluetooth btqca btbcm hci_uart rfcomm \
+for m in rfkill ecc ecdh_generic bluetooth btqca btbcm hci_uart rfcomm bnep \
          cfg80211 mac80211 ath ath10k_core qcom_pil_info qcom_glink_smem \
          qcom_common qrtr qrtr-smd pwrseq-qcom-wcn ath10k_snoc; do
     [ -e /opt/omamobile/mods/$m.ko ] && insmod /opt/omamobile/mods/$m.ko 2>/dev/null

@@ -9,13 +9,19 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
+import android.text.InputFilter;
+import android.text.InputType;
+import android.view.View;
 import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
@@ -24,8 +30,9 @@ import android.widget.TextView;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -41,79 +48,110 @@ public final class MainActivity extends Activity {
     private static final int BLUE = 0xff2b4fa5;
     private static final int CONNECTED = 0xff166b56;
     private static final int PERMISSION = 1;
-    private final ExecutorService worker = Executors.newSingleThreadExecutor();
+    private static final int HISTORY_LIMIT = 48_000;
+    private final ExecutorService reader = Executors.newSingleThreadExecutor();
+    private final ExecutorService writer = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
-    private final List<Button> actions = new ArrayList<>();
+    private final StringBuilder pending = new StringBuilder();
+    private final StringBuilder history = new StringBuilder();
+    private boolean outputScheduled;
+    private int pendingGeneration;
+    private int escapeState;
 
-    private LinearLayout page;
     private TextView state;
     private Button connection;
-    private Button lamp;
-    private EditText prompt;
+    private Button send;
+    private Button interrupt;
+    private TextView terminal;
+    private ScrollView outputScroll;
+    private EditText input;
     private volatile BluetoothSocket socket;
-    private BufferedReader input;
+    private volatile int generation;
+    private boolean connecting;
     private boolean ready;
-    private boolean busy;
-    private boolean lampOn;
-    private String peerName;
 
     @Override public void onCreate(Bundle savedState) {
         super.onCreate(savedState);
-        ScrollView scroll = new ScrollView(this);
-        scroll.setFillViewport(true);
-        page = new LinearLayout(this);
+        LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
-        page.setBackgroundColor(0xffffffff);
-        page.setPadding(dp(22), dp(20), dp(22), dp(20));
+        page.setBackgroundColor(0xfff8fbff);
+        page.setPadding(dp(18), dp(14), dp(18), dp(12));
         if (Build.VERSION.SDK_INT >= 30) {
             page.setOnApplyWindowInsetsListener((view, insets) -> {
                 var bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
-                view.setPadding(dp(22) + bars.left, dp(20) + bars.top,
-                        dp(22) + bars.right, dp(20) + bars.bottom);
+                var keyboard = insets.getInsets(WindowInsets.Type.ime());
+                view.setPadding(dp(18) + bars.left, dp(14) + bars.top, dp(18) + bars.right,
+                        dp(12) + Math.max(bars.bottom, keyboard.bottom));
                 return insets;
             });
         }
-        scroll.addView(page);
-        setContentView(scroll);
+        setContentView(page);
+        if (Build.VERSION.SDK_INT >= 30) {
+            WindowInsetsController bars = getWindow().getInsetsController();
+            int darkIcons = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                    | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+            if (bars != null) bars.setSystemBarsAppearance(darkIcons, darkIcons);
+        }
 
-        label("Pixel-Steuerung", 28, INK, true, 0);
-        state = label("Wähle dein gekoppeltes Pixel 3.", 15, MUTED, false, 7);
-        state.setAccessibilityLiveRegion(TextView.ACCESSIBILITY_LIVE_REGION_POLITE);
-        connection = button("Pixel auswählen", true, 8);
+        TextView title = new TextView(this);
+        title.setText("Pixel-Konsole");
+        title.setTextSize(27);
+        title.setTextColor(INK);
+        title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        page.addView(title);
+        state = new TextView(this);
+        state.setText("Wähle dein gekoppeltes Pixel.");
+        state.setTextSize(14);
+        state.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
+        page.addView(state);
+        connection = button("Pixel auswählen", true);
+        page.addView(connection);
         connection.setOnClickListener(view -> {
-            if (ready) {
-                disconnect();
-                message("Verbindung getrennt.");
-            } else {
-                choosePixel();
-            }
+            if (ready || connecting) stop("Verbindung getrennt.");
+            else choosePixel();
         });
 
-        label("Geräteaktionen", 18, INK, true, 24);
-        lamp = actionButton("Taschenlampe einschalten", 6);
-        lamp.setOnClickListener(view -> send(object("action", "torch", "enabled", !lampOn)));
-        actionButton("Kamera öffnen", 3).setOnClickListener(view -> send(object("action", "open", "app", "camera")));
-        actionButton("Dateien öffnen", 3).setOnClickListener(view -> send(object("action", "open", "app", "files")));
+        outputScroll = new ScrollView(this);
+        outputScroll.setFillViewport(true);
+        outputScroll.setBackgroundColor(INK);
+        LinearLayout.LayoutParams outputParams = new LinearLayout.LayoutParams(-1, 0, 1);
+        outputParams.topMargin = dp(8);
+        page.addView(outputScroll, outputParams);
+        terminal = new TextView(this);
+        terminal.setTypeface(Typeface.MONOSPACE);
+        terminal.setTextSize(13);
+        terminal.setTextColor(0xffe4edff);
+        terminal.setPadding(dp(12), dp(9), dp(12), dp(9));
+        terminal.setTextIsSelectable(true);
+        terminal.setText("Die Ausgabe vom Pixel erscheint hier.");
+        outputScroll.addView(terminal);
 
-        label("Hermes", 18, INK, true, 23);
-        prompt = new EditText(this);
-        prompt.setHint("Auftrag für Hermes auf dem Pixel");
-        prompt.setTextColor(INK);
-        prompt.setHintTextColor(MUTED);
-        prompt.setTextSize(16);
-        prompt.setMinLines(2);
-        prompt.setMaxLines(4);
-        prompt.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        prompt.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(1500)});
-        add(prompt, 6);
-        actionButton("Auftrag ans Pixel senden", 6).setOnClickListener(view -> {
-            String text = prompt.getText().toString().trim();
-            if (text.isEmpty()) {
-                prompt.setError("Gib einen Auftrag ein.");
-                return;
-            }
-            send(object("action", "hermes", "prompt", text));
+        input = new EditText(this);
+        input.setSingleLine(true);
+        input.setTextColor(INK);
+        input.setHintTextColor(MUTED);
+        input.setHint("Befehl für das Pixel");
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        input.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
+        input.setFilters(new InputFilter[]{new InputFilter.LengthFilter(4096)});
+        input.setImeOptions(EditorInfo.IME_ACTION_SEND);
+        input.setOnEditorActionListener((view, action, event) -> {
+            if (action != EditorInfo.IME_ACTION_SEND) return false;
+            sendLine();
+            return true;
         });
+        page.addView(input);
+
+        LinearLayout buttons = new LinearLayout(this);
+        buttons.setOrientation(LinearLayout.HORIZONTAL);
+        page.addView(buttons);
+        send = button("Senden", true);
+        send.setOnClickListener(view -> sendLine());
+        buttons.addView(send, new LinearLayout.LayoutParams(0, -2, 1));
+        interrupt = button("Strg+C", false);
+        interrupt.setContentDescription("Laufenden Befehl abbrechen");
+        interrupt.setOnClickListener(view -> transmit(new byte[]{3}));
+        buttons.addView(interrupt);
         render();
     }
 
@@ -123,18 +161,21 @@ public final class MainActivity extends Activity {
             requestPermissions(new String[]{Manifest.permission.BLUETOOTH_CONNECT}, PERMISSION);
             return;
         }
-        BluetoothAdapter adapter = getSystemService(BluetoothManager.class).getAdapter();
+        BluetoothManager manager = getSystemService(BluetoothManager.class);
+        BluetoothAdapter adapter = manager == null ? null : manager.getAdapter();
         if (adapter == null) {
-            message("Dieses Handy hat keinen Bluetooth-Adapter.");
+            state.setText("Bluetooth ist auf diesem Handy nicht verfügbar.");
             return;
         }
         if (!adapter.isEnabled()) {
-            bluetoothSettings("Schalte Bluetooth auf diesem Handy ein.");
+            state.setText("Schalte Bluetooth auf diesem Handy ein.");
+            openSettings();
             return;
         }
         List<BluetoothDevice> devices = new ArrayList<>(adapter.getBondedDevices());
         if (devices.isEmpty()) {
-            bluetoothSettings("Kopple das Pixel 3 in den Bluetooth-Einstellungen.");
+            state.setText("Kopple das Pixel in den Bluetooth-Einstellungen.");
+            openSettings();
             return;
         }
         String[] names = devices.stream().map(this::deviceName).toArray(String[]::new);
@@ -146,11 +187,9 @@ public final class MainActivity extends Activity {
 
     @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] results) {
         super.onRequestPermissionsResult(request, permissions, results);
-        if (request == PERMISSION && results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
-            choosePixel();
-        } else if (request == PERMISSION) {
-            message("Erlaube in den App-Einstellungen den Zugriff auf Geräte in der Nähe.");
-        }
+        if (request != PERMISSION) return;
+        if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) choosePixel();
+        else state.setText("Erlaube in den App-Einstellungen den Zugriff auf Geräte in der Nähe.");
     }
 
     private String deviceName(BluetoothDevice device) {
@@ -159,148 +198,184 @@ public final class MainActivity extends Activity {
     }
 
     private void connect(BluetoothDevice device) {
-        peerName = deviceName(device);
-        message("Verbinde mit " + peerName + " …");
-        operate(() -> {
-            BluetoothSocket newSocket = device.createRfcommSocketToServiceRecord(SERVICE);
-            socket = newSocket;
-            newSocket.connect();
-            input = new BufferedReader(new InputStreamReader(newSocket.getInputStream(), StandardCharsets.UTF_8));
-            return exchange(object("action", "status", null, null));
-        }, true);
-    }
-
-    private void send(JSONObject request) {
-        if (!ready || busy) return;
-        message("Sende ans Pixel …");
-        operate(() -> exchange(request), false);
-    }
-
-    private JSONObject exchange(JSONObject request) throws IOException, JSONException {
-        BluetoothSocket connection = socket;
-        if (connection == null) throw new IOException("No Bluetooth connection");
-        connection.getOutputStream().write((request + "\n").getBytes(StandardCharsets.UTF_8));
-        connection.getOutputStream().flush();
-        String line = input.readLine();
-        if (line == null) throw new IOException("Bluetooth connection closed");
-        return new JSONObject(line);
-    }
-
-    private void operate(Exchange work, boolean connecting) {
-        busy = true;
+        String name = deviceName(device);
+        int current = ++generation;
+        connecting = true;
+        synchronized (pending) {
+            pending.setLength(0);
+            pendingGeneration = current;
+        }
+        history.setLength(0);
+        escapeState = 0;
+        terminal.setText("");
+        state.setText("Verbinde mit " + name + " …");
         render();
-        Runnable abort = this::closeSocket;
-        main.postDelayed(abort, 20_000);
-        worker.execute(() -> {
+        Runnable expiry = () -> {
+            if (generation == current && connecting) stop("Die Bluetooth-Verbindung hat zu lange gedauert.");
+        };
+        main.postDelayed(expiry, 20_000);
+        reader.execute(() -> openSession(device, name, current, expiry));
+    }
+
+    private synchronized boolean register(BluetoothSocket candidate, int current) {
+        if (generation != current) return false;
+        socket = candidate;
+        return true;
+    }
+
+    private void openSession(BluetoothDevice device, String name, int current, Runnable expiry) {
+        boolean opened = false;
+        try (BluetoothSocket candidate = device.createRfcommSocketToServiceRecord(SERVICE)) {
+            if (!register(candidate, current)) return;
+            candidate.connect();
+            candidate.getOutputStream().write("{\"action\":\"terminal\"}\n".getBytes(StandardCharsets.UTF_8));
+            candidate.getOutputStream().flush();
+            InputStream stream = candidate.getInputStream();
+            JSONObject reply = new JSONObject(readReply(stream));
+            if (!reply.optBoolean("ok")) throw new IOException("Terminal unavailable");
+            opened = true;
+            main.post(() -> {
+                if (generation != current) return;
+                main.removeCallbacks(expiry);
+                connecting = false;
+                ready = true;
+                state.setText("Verbunden mit " + name);
+                render();
+                input.requestFocus();
+            });
+            InputStreamReader text = new InputStreamReader(stream, StandardCharsets.UTF_8);
+            char[] buffer = new char[4096];
+            int length;
+            while ((length = text.read(buffer)) != -1 && generation == current) {
+                queueOutput(buffer, length, current);
+            }
+        } catch (IOException | JSONException | SecurityException failure) {
+            // The paired device can refuse access or the link can close while the terminal is open.
+        } finally {
+            String message = opened ? "Die Pixelsitzung wurde beendet."
+                    : "Verbindung fehlgeschlagen. Prüfe die Freigabe am Pixel.";
+            main.post(() -> {
+                main.removeCallbacks(expiry);
+                if (generation == current) stop(message);
+            });
+        }
+    }
+
+    private static String readReply(InputStream stream) throws IOException {
+        ByteArrayOutputStream reply = new ByteArrayOutputStream();
+        for (int i = 0; i < 4096; i++) {
+            int value = stream.read();
+            if (value == '\n') return new String(reply.toByteArray(), StandardCharsets.UTF_8);
+            if (value < 0) break;
+            reply.write(value);
+        }
+        throw new IOException("No terminal reply");
+    }
+
+    private void sendLine() {
+        if (!ready) return;
+        String command = input.getText().toString() + "\n";
+        transmit(command.getBytes(StandardCharsets.UTF_8));
+        input.setText("");
+    }
+
+    private void transmit(byte[] message) {
+        BluetoothSocket current = socket;
+        if (!ready || current == null) return;
+        writer.execute(() -> {
             try {
-                JSONObject reply = work.run();
+                current.getOutputStream().write(message);
+                current.getOutputStream().flush();
+            } catch (IOException failure) {
                 main.post(() -> {
-                    main.removeCallbacks(abort);
-                    if (isDestroyed()) return;
-                    busy = false;
-                    ready = !connecting || reply.optBoolean("ok");
-                    if (!ready) closeSocket();
-                    lampOn = reply.optBoolean("torch", lampOn);
-                    String result = reply.has("torch") && !connecting
-                            ? (lampOn ? "Taschenlampe ist an." : "Taschenlampe ist aus.")
-                            : "Verbunden mit " + peerName;
-                    message(reply.optBoolean("ok") ? reply.optString("message", result)
-                            : reply.optString("error", "Das Pixel hat die Aktion abgelehnt."));
-                    render();
-                });
-            } catch (IOException | JSONException | SecurityException failure) {
-                closeSocket();
-                main.post(() -> {
-                    main.removeCallbacks(abort);
-                    if (isDestroyed()) return;
-                    busy = false;
-                    ready = false;
-                    message(connecting ? "Verbindung fehlgeschlagen. Gib dieses Handy am Pixel frei."
-                            : "Bluetooth-Verbindung verloren. Wähle das Pixel erneut.");
-                    render();
+                    if (socket == current) stop("Die Bluetooth-Verbindung wurde getrennt.");
                 });
             }
         });
     }
 
-    private void closeSocket() {
-        BluetoothSocket old = socket;
-        socket = null;
-        if (old != null) {
-            try { old.close(); } catch (IOException ignored) { }
+    private void queueOutput(char[] bytes, int length, int current) {
+        synchronized (pending) {
+            if (generation != current) return;
+            pendingGeneration = current;
+            pending.append(bytes, 0, length);
+            if (pending.length() > HISTORY_LIMIT) pending.delete(0, pending.length() - HISTORY_LIMIT);
+            if (outputScheduled) return;
+            outputScheduled = true;
         }
+        main.post(() -> {
+            String text;
+            int owner;
+            synchronized (pending) {
+                text = pending.toString();
+                owner = pendingGeneration;
+                pending.setLength(0);
+                outputScheduled = false;
+            }
+            if (owner == generation) appendOutput(text);
+        });
     }
 
-    private void disconnect() {
-        closeSocket();
+    private void appendOutput(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            switch (escapeState) {
+                case 1: escapeState = ch == '[' ? 2 : ch == ']' ? 3 : 0; break;
+                case 2: if (ch >= '@' && ch <= '~') escapeState = 0; break;
+                case 3: if (ch == '\u0007') escapeState = 0; else if (ch == '\u001b') escapeState = 4; break;
+                case 4: escapeState = ch == '\\' ? 0 : 3; break;
+                default:
+                    if (ch == '\u001b') escapeState = 1;
+                    else if (ch == '\n' || ch == '\t' || !Character.isISOControl(ch)) history.append(ch);
+            }
+        }
+        if (history.length() > HISTORY_LIMIT) history.delete(0, history.length() - HISTORY_LIMIT);
+        terminal.setText(history);
+        outputScroll.post(() -> outputScroll.scrollTo(0, terminal.getHeight()));
+    }
+
+    private synchronized void stop(String message) {
+        generation++;
+        BluetoothSocket previous = socket;
+        socket = null;
+        if (previous != null) {
+            try { previous.close(); } catch (IOException ignored) { }
+        }
+        connecting = false;
         ready = false;
+        state.setText(message);
         render();
     }
 
     private void render() {
-        connection.setText(ready ? "Verbindung trennen" : "Pixel auswählen");
-        connection.setEnabled(!busy);
-        lamp.setText(lampOn ? "Taschenlampe ausschalten" : "Taschenlampe einschalten");
-        for (Button button : actions) button.setEnabled(ready && !busy);
+        connection.setText(connecting ? "Verbindung abbrechen" : ready ? "Verbindung trennen" : "Pixel auswählen");
         state.setTextColor(ready ? CONNECTED : MUTED);
+        input.setEnabled(ready);
+        send.setEnabled(ready);
+        interrupt.setEnabled(ready);
     }
 
-    private void message(String text) { state.setText(text); }
     private void openSettings() { startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS)); }
-    private void bluetoothSettings(String text) { message(text); openSettings(); }
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
 
-    private TextView label(String text, int size, int color, boolean bold, int margin) {
-        TextView view = new TextView(this);
-        view.setText(text);
-        view.setTextSize(size);
-        view.setTextColor(color);
-        if (bold) view.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        add(view, margin);
-        return view;
-    }
-
-    private Button button(String text, boolean primary, int margin) {
+    private Button button(String label, boolean primary) {
         Button button = new Button(this);
-        button.setText(text);
+        button.setText(label);
         button.setAllCaps(false);
         button.setMinimumHeight(dp(48));
         if (primary) {
-            button.setBackgroundTintList(android.content.res.ColorStateList.valueOf(BLUE));
-            button.setTextColor(0xffffffff);
+            int[][] enabled = {new int[]{-android.R.attr.state_enabled}, new int[0]};
+            button.setBackgroundTintList(new ColorStateList(enabled, new int[]{0xffe3ebf7, BLUE}));
+            button.setTextColor(new ColorStateList(enabled, new int[]{MUTED, 0xffffffff}));
         }
-        add(button, margin);
         return button;
-    }
-
-    private Button actionButton(String text, int margin) {
-        Button button = button(text, false, margin);
-        actions.add(button);
-        return button;
-    }
-
-    private void add(android.view.View view, int margin) {
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
-        params.topMargin = dp(margin);
-        page.addView(view, params);
-    }
-
-    private static JSONObject object(String key, Object value, String secondKey, Object secondValue) {
-        try {
-            JSONObject result = new JSONObject().put(key, value);
-            if (secondKey != null) result.put(secondKey, secondValue);
-            return result;
-        } catch (JSONException impossible) {
-            throw new IllegalArgumentException(impossible);
-        }
     }
 
     @Override protected void onDestroy() {
-        closeSocket();
-        worker.shutdownNow();
+        stop("Verbindung getrennt.");
+        reader.shutdownNow();
+        writer.shutdownNow();
         main.removeCallbacksAndMessages(null);
         super.onDestroy();
     }
-
-    private interface Exchange { JSONObject run() throws IOException, JSONException; }
 }
