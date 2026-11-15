@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+[Desktop Entry]
+Type=Application
+Name=Bluetooth Control Setup
+Name[de]=Bluetooth-Steuerung einrichten
+Exec=foot --app-id=org.omamobile.BluetoothControl /usr/local/bin/blueline-bluetooth-control setup
+TryExec=foot
+Icon=preferences-system-bluetooth
+Terminal=false
+StartupWMClass=org.omamobile.BluetoothControl
+Categories=Settings;
