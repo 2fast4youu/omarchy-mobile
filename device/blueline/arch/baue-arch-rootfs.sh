@@ -56,8 +56,12 @@ install -m755 /om/uwsm-app /tmp/arch/usr/local/bin/uwsm-app
 install -m755 /om/blueline-update /tmp/arch/usr/local/bin/blueline-update
 install -Dm755 /om/blueline-hermes-cli /tmp/arch/usr/local/bin/omarchy-install-hermes-cli
 install -Dm644 /om/org.omamobile.Hermes.desktop /tmp/arch/usr/local/share/applications/org.omamobile.Hermes.desktop
+install -Dm755 /om/hermes-offline /tmp/arch/usr/local/bin/hermes-offline
+install -Dm644 /om/org.omamobile.HermesOffline.desktop /tmp/arch/usr/local/share/applications/org.omamobile.HermesOffline.desktop
 install -Dm755 /om/blueline-bluetooth-control /tmp/arch/usr/local/bin/blueline-bluetooth-control
 install -Dm644 /om/org.omamobile.BluetoothControl.desktop /tmp/arch/usr/local/share/applications/org.omamobile.BluetoothControl.desktop
+install -Dm644 /om/org.omamobile.BluetoothInternet.desktop /tmp/arch/usr/local/share/applications/org.omamobile.BluetoothInternet.desktop
+install -Dm644 /om/80-blueline-phone-roles.conf /tmp/arch/etc/wireplumber/wireplumber.conf.d/80-blueline-phone-roles.conf
 install -Dm755 /om/blueline-camera-profile /tmp/arch/usr/local/libexec/blueline-camera-profile
 install -Dm644 /om/omacam-lenses.toml /tmp/arch/usr/local/share/omamobile/blueline/omacam/lenses.toml
 install -Dm644 /om/omacam-defaults.toml /tmp/arch/usr/local/share/omamobile/blueline/omacam/defaults.toml
@@ -265,7 +269,7 @@ EOD
   systemctl enable sshd 2>/dev/null || ln -sf /usr/lib/systemd/system/sshd.service \
     /etc/systemd/system/multi-user.target.wants/sshd.service
 '
-sed -i 's/^#Class = 0x000100$/Class = 0x00020c/' /tmp/arch/etc/bluetooth/main.conf
+sed -i 's/^#Class = 0x000100$/Class = 0x00011c/' /tmp/arch/etc/bluetooth/main.conf
 install -Dm644 /om/alsa-ucm/Pixel3.conf /tmp/arch/usr/share/alsa/ucm2/Qualcomm/Pixel3/Pixel3.conf
 install -Dm644 /om/alsa-ucm/HiFi.conf /tmp/arch/usr/share/alsa/ucm2/Qualcomm/Pixel3/HiFi.conf
 install -d /tmp/arch/usr/share/alsa/ucm2/conf.d/sdm845

@@ -15,6 +15,7 @@ import subprocess
 import sys
 import termios
 import threading
+import uuid
 
 import dbus
 import dbus.service
@@ -192,28 +193,84 @@ class Profile(dbus.service.Object):
         self.loop.quit()
 
 
-def allow_controller(bus):
+def choose_peer(bus):
     objects = dbus.Interface(bus.get_object(BLUEZ, "/"), "org.freedesktop.DBus.ObjectManager")
     devices = [interfaces[DEVICE] for interfaces in objects.GetManagedObjects().values()
                if DEVICE in interfaces and interfaces[DEVICE].get("Bonded")]
     if not devices:
-        raise SystemExit("Kopple zuerst das Steuergerät in den Bluetooth-Einstellungen des Pixels.")
+        raise SystemExit("Kopple zuerst das andere Gerät in den Bluetooth-Einstellungen des Pixels.")
     for index, device in enumerate(devices, 1):
         print(f"{index}. {device['Alias']}")
-    chosen = input("Nummer des Steuergeräts eingeben: ").strip()
+    chosen = input("Nummer des Geräts eingeben: ").strip()
     if not chosen.isdecimal() or not 1 <= int(chosen) <= len(devices):
         raise SystemExit("Wähle die Nummer des gekoppelten Steuergeräts.")
+    return str(devices[int(chosen) - 1]["Address"]).upper()
+
+
+def allow_controller(bus):
+    peer = choose_peer(bus)
     CONFIG.parent.mkdir(parents=True, exist_ok=True)
     temporary = CONFIG.with_suffix(".next")
-    temporary.write_text(str(devices[int(chosen) - 1]["Address"]).upper() + "\n", encoding="ascii")
+    temporary.write_text(peer + "\n", encoding="ascii")
     temporary.chmod(0o600)
     temporary.replace(CONFIG)
     print("Das gewählte Gerät darf jetzt Aktionen auslösen.")
 
 
+def nmcli(*args):
+    try:
+        result = subprocess.run(["nmcli", "--wait", "25", "--terse", "--escape", "no", *args],
+                                capture_output=True, text=True, timeout=28)
+    except subprocess.TimeoutExpired:
+        raise SystemExit("NetworkManager hat nicht rechtzeitig geantwortet.") from None
+    if result.returncode:
+        errors = result.stderr.strip().splitlines()
+        raise SystemExit(errors[0] if errors else "Die Bluetooth-Verbindung konnte nicht geändert werden.")
+    return result.stdout.strip()
+
+
+def bluetooth_internet(bus):
+    print("Wähle das gekoppelte Handy, das mobile Daten per Bluetooth freigibt.")
+    peer = choose_peer(bus)
+    profile = None
+    for connection in nmcli("--fields", "TYPE,UUID", "connection", "show").splitlines():
+        kind, _, candidate = connection.partition(":")
+        if kind != "bluetooth":
+            continue
+        details = nmcli("--get-values", "bluetooth.type,bluetooth.bdaddr", "connection", "show", "uuid", candidate)
+        if details.splitlines() == ["panu", peer]:
+            profile = candidate
+            break
+
+    action = input("1. Verbinden und automatisch nutzen\n2. Trennen\nAuswahl: ").strip()
+    active = nmcli("--fields", "UUID", "connection", "show", "--active").splitlines()
+    if action == "2":
+        if profile:
+            nmcli("connection", "modify", "uuid", profile, "connection.autoconnect", "no")
+            if profile in active:
+                nmcli("connection", "down", "uuid", profile)
+        print("Bluetooth-Internet ist aus.")
+        return
+    if action != "1":
+        raise SystemExit("Wähle 1 oder 2.")
+    if profile is None:
+        profile = str(uuid.uuid4())
+        nmcli("connection", "add", "type", "bluetooth", "ifname", "*", "con-name", "Bluetooth-Internet",
+              "connection.uuid", profile,
+              "bluetooth.type", "panu", "bluetooth.bdaddr", peer, "connection.autoconnect", "no",
+              "ipv4.route-metric", "700", "ipv6.route-metric", "700")
+    if profile not in active:
+        try:
+            nmcli("connection", "up", "uuid", profile)
+        except SystemExit as error:
+            raise SystemExit(f"{error}\nPrüfe mobile Daten und Bluetooth-Tethering am anderen Gerät.") from None
+    nmcli("connection", "modify", "uuid", profile, "connection.autoconnect", "yes")
+    print("Bluetooth-Internet ist verbunden. WLAN hat Vorrang.")
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=("allow", "serve", "probe", "setup", "disable"))
+    parser.add_argument("mode", choices=("allow", "serve", "probe", "setup", "disable", "internet"))
     args = parser.parse_args()
     if os.geteuid() == 0:
         raise SystemExit("Starte die Bluetooth-Steuerung aus der Pixel-Sitzung.")
@@ -222,6 +279,13 @@ def main():
         return
     DBusGMainLoop(set_as_default=True)
     bus = dbus.SystemBus()
+    if args.mode == "internet":
+        try:
+            bluetooth_internet(bus)
+        finally:
+            if sys.stdin.isatty():
+                input("Enter zum Schließen.")
+        return
     if args.mode in {"allow", "setup"}:
         allow_controller(bus)
         if args.mode == "setup":

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+[Desktop Entry]
+Type=Application
+Name=Bluetooth Internet
+Name[de]=Bluetooth-Internet
+Exec=foot --app-id=org.omamobile.BluetoothInternet /usr/local/bin/blueline-bluetooth-control internet
+TryExec=foot
+Icon=preferences-system-bluetooth
+Terminal=false
+StartupWMClass=org.omamobile.BluetoothInternet
+Categories=Network;Settings;

@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+[Desktop Entry]
+Type=Application
+Name=Hermes Offline
+Comment=Run Hermes with a model on this Pixel
+Comment[de]=Hermes mit einem Modell auf diesem Pixel starten
+Exec=foot --app-id=org.omamobile.HermesOffline /usr/local/bin/hermes-offline
+TryExec=foot
+Icon=utilities-terminal
+Terminal=false
+StartupWMClass=org.omamobile.HermesOffline
+Categories=Development;
+Keywords=AI;agent;assistant;

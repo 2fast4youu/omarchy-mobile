@@ -1,0 +1,116 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: MIT
+set -euo pipefail
+umask 077
+
+if (( EUID == 0 )); then
+    echo 'Hermes Offline als normaler Benutzer starten.' >&2
+    exit 1
+fi
+
+base=${XDG_DATA_HOME:-$HOME/.local/share}/blueline-inference
+profile=$HOME/.hermes/profiles/blueline-offline
+launcher=$HOME/.local/bin/hermes
+release=b11671
+server=$base/$release/llama-server
+model=$base/qwen3.5-0.8b.gguf
+alias=qwen3.5-0.8b-pixel
+endpoint=http://127.0.0.1:11439
+scratch=
+server_pid=
+
+cleanup() {
+    if [[ -n $server_pid ]]; then
+        kill "$server_pid" 2>/dev/null || true
+        wait "$server_pid" 2>/dev/null || true
+    fi
+    if [[ -n $scratch ]]; then rm -rf -- "$scratch"; fi
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+trap 'exit 129' HUP
+
+mkdir -p "$base"
+exec 9>"$base/session.lock"
+if ! flock -n 9; then
+    echo 'Hermes Offline läuft bereits. Verwende die offene Sitzung oder beende sie.' >&2
+    exit 1
+fi
+
+download() {
+    local url=$1 checksum=$2 destination=$3
+    curl --proto '=https' --proto-redir '=https' -fL --retry 2 --connect-timeout 10 --max-time 1200 \
+        "$url" -o "$destination"
+    printf '%s  %s\n' "$checksum" "$destination" | sha256sum --check --status
+}
+
+/usr/local/bin/omarchy-install-hermes-cli --now
+if [[ ! -x $server || ! -s $model ]]; then
+    echo 'Erster Start: Modell und Laufzeit werden über das Internet geladen (rund 550 MB).'
+    scratch=$(mktemp -d "$base/.install-XXXXXXXX")
+    if [[ ! -x $server ]]; then
+        download "https://github.com/ggml-org/llama.cpp/releases/download/$release/llama-$release-bin-ubuntu-arm64.tar.gz" \
+            18709d3ae6152d486e8c4ef1f6768a15918a57a1ecf331315e0964d69b838525 "$scratch/llama.tar.gz"
+        tar -xzf "$scratch/llama.tar.gz" -C "$scratch"
+        test -x "$scratch/llama-$release/llama-server"
+        mv -T "$scratch/llama-$release" "$base/$release"
+    fi
+    if [[ ! -s $model ]]; then
+        download https://huggingface.co/unsloth/Qwen3.5-0.8B-GGUF/resolve/6ab461498e2023f6e3c1baea90a8f0fe38ab64d0/Qwen3.5-0.8B-UD-Q4_K_XL.gguf \
+            3177ebd67afe4438374da19e690bc1b98756f7e0fea9240e1be404336156a7b5 "$scratch/model.gguf"
+        mv -fT "$scratch/model.gguf" "$model"
+    fi
+    rm -rf -- "$scratch"
+    scratch=
+fi
+
+if [[ ! -d $profile ]]; then
+    mkdir -p "$(dirname "$profile")"
+    scratch=$(mktemp -d "$(dirname "$profile")/.blueline-offline-XXXXXXXX")
+    cat >"$scratch/config.yaml" <<YAML
+model:
+  default: $alias
+  provider: custom
+  base_url: $endpoint/v1
+  api_key: blueline-loopback
+  context_length: 65536
+agent:
+  max_turns: 5
+  tool_use_enforcement: false
+  execution_guidance: false
+  task_completion_guidance: false
+  parallel_tool_call_guidance: false
+platform_toolsets:
+  cli: [file]
+terminal:
+  backend: local
+gateway:
+  standalone: true
+YAML
+    printf '%s\n' 'You are Hermes on this Pixel. Use the available tools for the task. Reply in the user’s language.' >"$scratch/SOUL.md"
+    mv -T "$scratch" "$profile"
+    scratch=
+fi
+
+scratch=$(mktemp -d "${XDG_RUNTIME_DIR:-/tmp}/blueline-inference-XXXXXXXX")
+echo 'Lokales Modell startet. Der erste Hermes-Auftrag kann mehrere Minuten dauern.'
+nice -n 8 taskset -c 4-7 "$server" --model "$model" --alias "$alias" \
+    --host 127.0.0.1 --port 11439 --api-key blueline-loopback --ctx-size 65536 --parallel 1 \
+    --threads 4 --threads-batch 4 --batch-size 256 --ubatch-size 128 \
+    --flash-attn on --cache-type-k q4_0 --cache-type-v q4_0 --n-gpu-layers 0 \
+    --no-warmup --no-webui --jinja --reasoning-budget 0 --temp 0.2 --cache-ram 0 \
+    --sleep-idle-seconds 120 >"$scratch/server.log" 2>&1 9>&- &
+server_pid=$!
+for attempt in {1..60}; do
+    if ! kill -0 "$server_pid" 2>/dev/null; then break; fi
+    if curl -fsS --max-time 1 -H 'Authorization: Bearer blueline-loopback' "$endpoint/health" >/dev/null 2>&1; then
+        if [[ $PWD == "$HOME" && -d $HOME/Work ]]; then cd "$HOME/Work"; fi
+        HERMES_HOME="$profile" "$launcher" "$@" 9>&-
+        exit
+    fi
+    sleep .5
+done
+echo 'Das lokale Modell konnte nicht gestartet werden.' >&2
+tail -8 "$scratch/server.log" >&2
+exit 1
