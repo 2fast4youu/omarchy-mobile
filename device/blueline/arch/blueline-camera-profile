@@ -1,0 +1,12 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+set -eu
+
+profile=/usr/local/share/omamobile/blueline/omacam
+config=${XDG_CONFIG_HOME:-$HOME/.config}/omacam
+mkdir -p "$config"
+
+if [ ! -e "$config/lenses.toml" ] && [ ! -L "$config/lenses.toml" ]; then
+    ln -s "$profile/lenses.toml" "$config/lenses.toml"
+fi
+cp --update=none "$profile/defaults.toml" "$config/settings.toml"

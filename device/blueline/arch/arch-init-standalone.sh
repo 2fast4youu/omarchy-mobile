@@ -261,6 +261,7 @@ export PATH=/usr/local/bin:/usr/bin:"\$HOME/.local/bin"
 # Homescreen/Dock - am Geraet belegt).
 timeout 30 omamobile-setup-user >/tmp/setup-user.log 2>&1 || true
 [ ! -x /usr/local/bin/omarchy-install-hermes-cli ] || /usr/local/bin/omarchy-install-hermes-cli --menu
+[ ! -x /usr/local/libexec/blueline-camera-profile ] || /usr/local/libexec/blueline-camera-profile
 # Ergebnis pruefen: ohne die Plugin-Symlinks bleibt die Shell unvollstaendig.
 if [ ! -e /home/omarchy/.config/omarchy/plugins/omamobile.home ]; then
     mkdir -p /home/omarchy/.config/omarchy/plugins

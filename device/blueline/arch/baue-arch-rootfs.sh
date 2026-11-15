@@ -56,6 +56,9 @@ install -m755 /om/uwsm-app /tmp/arch/usr/local/bin/uwsm-app
 install -m755 /om/blueline-update /tmp/arch/usr/local/bin/blueline-update
 install -Dm755 /om/blueline-hermes-cli /tmp/arch/usr/local/bin/omarchy-install-hermes-cli
 install -Dm644 /om/org.omamobile.Hermes.desktop /tmp/arch/usr/local/share/applications/org.omamobile.Hermes.desktop
+install -Dm755 /om/blueline-camera-profile /tmp/arch/usr/local/libexec/blueline-camera-profile
+install -Dm644 /om/omacam-lenses.toml /tmp/arch/usr/local/share/omamobile/blueline/omacam/lenses.toml
+install -Dm644 /om/omacam-defaults.toml /tmp/arch/usr/local/share/omamobile/blueline/omacam/defaults.toml
 install -m755 /om/omamobile-gnss /tmp/arch/usr/local/bin/omamobile-gnss
 install -m755 /om/omamobile-rotation /tmp/arch/usr/local/bin/omamobile-rotation
 install -Dm755 /om/blueline-idle /tmp/arch/usr/local/libexec/blueline-idle
