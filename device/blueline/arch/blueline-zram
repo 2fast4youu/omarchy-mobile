@@ -1,0 +1,19 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+set -eu
+
+device=/dev/zram0
+sysfs=/sys/block/zram0
+[ -b "$device" ] && [ -w "$sysfs/disksize" ] || exit 0
+if awk -v path="$device" '$1 == path {found=1} END {exit !found}' /proc/swaps; then
+    exit 0
+fi
+if [ "$(cat "$sysfs/disksize")" != 0 ]; then exit 0; fi
+test "$(lsblk --raw --noheadings --nodeps --output MAJ:MIN "$device")" = "$(cat "$sysfs/dev")"
+
+trap 'echo 1 >"$sysfs/reset"' EXIT
+echo 1073741824 >"$sysfs/disksize"
+echo 402653184 >"$sysfs/mem_limit"
+mkswap --quiet "$device"
+swapon --priority 100 "$device"
+trap - EXIT

@@ -62,6 +62,7 @@ install -Dm755 /om/blueline-bluetooth-control /tmp/arch/usr/local/bin/blueline-b
 install -Dm644 /om/org.omamobile.BluetoothControl.desktop /tmp/arch/usr/local/share/applications/org.omamobile.BluetoothControl.desktop
 install -Dm644 /om/org.omamobile.BluetoothInternet.desktop /tmp/arch/usr/local/share/applications/org.omamobile.BluetoothInternet.desktop
 install -Dm644 /om/80-blueline-phone-roles.conf /tmp/arch/etc/wireplumber/wireplumber.conf.d/80-blueline-phone-roles.conf
+install -Dm755 /om/blueline-zram /tmp/arch/usr/local/libexec/blueline-zram
 install -Dm755 /om/blueline-camera-profile /tmp/arch/usr/local/libexec/blueline-camera-profile
 install -Dm644 /om/omacam-lenses.toml /tmp/arch/usr/local/share/omamobile/blueline/omacam/lenses.toml
 install -Dm644 /om/omacam-defaults.toml /tmp/arch/usr/local/share/omamobile/blueline/omacam/defaults.toml
