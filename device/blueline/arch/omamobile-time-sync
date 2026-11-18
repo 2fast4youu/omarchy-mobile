@@ -1,17 +1,39 @@
 #!/bin/sh
-# Setzt die Uhr aus dem HTTP-Date-Header. Das Pixel 3 hat keine RTC; die
-# eingebackene Bauzeit (/etc/omamobile-buildtime) ist nur die Untergrenze.
-# Der Mac-Proxy auf usb0 liefert die aktuelle Zeit, ohne NTP.
+# Setzt die Uhr aus dem HTTP-Date-Header (das Pixel 3 hat keine nutzbare
+# RTC, und ohne systemd gibt es keinen NTP-Dienst). Reihenfolge:
+#   1. Mac-Proxy auf usb0 (Entwicklung am Kabel)
+#   2. direkt ueber WLAN / Bluetooth-Tethering
+# Wartet bis zu zehn Minuten auf ein Netz und sichert die Zeit danach in
+# /var/lib/omamobile/clock (blueline-powerd haelt sie aktuell).
 set -u
 proxy=${OMAMOBILE_PROXY:-172.16.42.2:3128}
+clock_file=/var/lib/omamobile/clock
+
+http_date() {
+    curl -sI --max-time 4 "$@" 2>/dev/null | sed -n 's/^[Dd]ate: //p' | tr -d '\r' | head -1
+}
+
+try_sync() {
+    for src in "--proxy http://$proxy http://example.com" \
+               "http://ping.omacom.io/nm-check.txt" \
+               "http://example.com"; do
+        # shellcheck disable=SC2086
+        d=$(http_date $src)
+        if [ -n "$d" ] && date -u -s "$d" >/dev/null 2>&1; then
+            mkdir -p "${clock_file%/*}"
+            date -u +%s >"$clock_file"
+            echo "Uhr gesetzt ueber: $src ($d)"
+            return 0
+        fi
+    done
+    return 1
+}
+
 i=0
-while [ $i -lt 20 ]; do
-    d=$(curl -sI --max-time 3 --proxy "http://$proxy" http://example.com 2>/dev/null |
-        sed -n 's/^[Dd]ate: //p' | head -1)
-    if [ -n "$d" ]; then
-        date -u -s "$d" >/dev/null 2>&1 && exit 0
-    fi
+while [ $i -lt 60 ]; do
+    try_sync && exit 0
     i=$((i + 1))
-    sleep 3
+    if [ $i -lt 20 ]; then sleep 3; else sleep 15; fi
 done
+echo "Keine Zeitquelle erreichbar" >&2
 exit 1

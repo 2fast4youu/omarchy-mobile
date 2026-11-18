@@ -1,0 +1,175 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: MIT
+#
+# Energieverwaltung fuer das Pixel 3 (sdm845) in der Standalone-Sitzung.
+#
+# power-profiles-daemon hat auf sdm845 nur den Platzhalter-Treiber; die
+# Profil-Kachel aenderte deshalb bisher nichts an der CPU. Dieser Dienst
+# setzt die Taktobergrenzen je Cluster aus Profil und Bildschirmzustand:
+#
+#   Profil        Bildschirm an        Bildschirm aus
+#   performance   1,77 / 2,65 GHz      1,77 / 2,65 GHz
+#   balanced      1,77 / 2,48 GHz      1,23 / 1,21 GHz
+#   power-saver   1,23 / 1,46 GHz      1,23 / 1,21 GHz
+#
+# (kleiner Cluster cpu0-3 / grosser Cluster cpu4-7). Laeuft bei
+# ausgeschaltetem Bildschirm ein lokales Modell (llama-server von
+# hermes-offline), bleibt der grosse Cluster bei 1,96 GHz, damit
+# Agentenauftraege im Hintergrund nicht doppelt so lange dauern.
+#
+# Der Dienst wartet mit dem eingebauten read -t auf einer FIFO statt mit
+# sleep: im Leerlauf startet er keine Prozesse. Profilwechsel kommen ueber
+# dbus-monitor sofort an, der Bildschirmzustand wird jede Sekunde aus
+# DRM gelesen. Nebenbei sichert er die Uhrzeit alle 30 Minuten, damit das
+# Pixel nach einem Neustart nicht auf die Bauzeit zurueckfaellt.
+#
+#   blueline-powerd          Dienst starten (root, aus /init)
+#   blueline-powerd status   aktuellen Zustand anzeigen
+#   blueline-powerd kick     sofort neu bewerten
+set -u
+
+run=/run/blueline-power
+fifo=$run/kick
+clock_file=/var/lib/omamobile/clock
+dpms_file=
+for f in /sys/class/drm/card*-DSI-1/dpms; do [[ -r $f ]] && dpms_file=$f; done
+
+little=(/sys/devices/system/cpu/cpufreq/policy0)
+big=(/sys/devices/system/cpu/cpufreq/policy4)
+
+case "${1:-serve}" in
+    status)
+        cat "$run/state" 2>/dev/null || echo "blueline-powerd laeuft nicht"
+        for p in "${little[@]}" "${big[@]}"; do
+            echo "${p##*/}: max $(<"$p/scaling_max_freq") aktuell $(<"$p/scaling_cur_freq")"
+        done
+        exit 0 ;;
+    kick)
+        [[ -p $fifo ]] && { echo k >"$fifo"; } 2>/dev/null
+        exit 0 ;;
+    serve) ;;
+    *) echo "Aufruf: blueline-powerd [serve|status|kick]" >&2; exit 2 ;;
+esac
+
+[[ $(id -u) == 0 ]] || { echo "blueline-powerd braucht root" >&2; exit 1; }
+
+mkdir -p "$run" "${clock_file%/*}"
+rm -f "$fifo"
+mkfifo -m 622 "$fifo"
+exec 3<>"$fifo"
+
+# Speicher: zram ist der einzige Swap; ohne Read-Ahead und mit hoeherer
+# swappiness lagert der Kernel kalte Seiten frueher komprimiert aus und
+# haelt mehr Seitencache fuer App-Starts. Weniger Writeback-Wecker.
+sysctl -q -w vm.swappiness=100 vm.page-cluster=0 \
+    vm.dirty_writeback_centisecs=1500 2>/dev/null
+# Kurze Leerlauf-Wecker der Workqueues auf bereits wache Kerne legen.
+[[ $(</sys/module/workqueue/parameters/power_efficient) == Y ]] ||
+    echo Y >/sys/module/workqueue/parameters/power_efficient 2>/dev/null
+
+export DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket
+profile=balanced
+read_profile() {
+    local out
+    out=$(dbus-send --system --print-reply=literal \
+        --dest=org.freedesktop.UPower.PowerProfiles \
+        /org/freedesktop/UPower/PowerProfiles \
+        org.freedesktop.DBus.Properties.Get \
+        string:org.freedesktop.UPower.PowerProfiles string:ActiveProfile 2>/dev/null)
+    out=${out##* }
+    case "$out" in performance|balanced|power-saver) profile=$out ;; esac
+}
+
+watch_profiles() {
+    while :; do
+        dbus-monitor --system \
+            "type='signal',interface='org.freedesktop.DBus.Properties',path='/org/freedesktop/UPower/PowerProfiles'" 2>/dev/null |
+            while read -r line; do
+                [[ $line == *ActiveProfile* ]] && echo p >"$fifo"
+            done
+        sleep 10
+    done
+}
+
+screen_on() {
+    local s=On
+    [[ -n $dpms_file ]] && read -r s <"$dpms_file"
+    [[ $s == On ]]
+}
+
+agent_busy=0
+check_agent() {
+    agent_busy=0
+    pgrep -x llama-server >/dev/null 2>&1 && agent_busy=1
+}
+
+set_cap() {
+    local pol=$1 cap=$2 f
+    f=$pol/scaling_max_freq
+    [[ -w $f ]] || return 0
+    [[ $(<"$f") == "$cap" ]] || echo "$cap" >"$f" 2>/dev/null
+}
+
+applied=
+apply() {
+    local on=$1 l b mode
+    if [[ $profile == performance ]]; then
+        l=1766400 b=2649600 mode="performance"
+    elif (( on )); then
+        if [[ $profile == power-saver ]]; then
+            l=1228800 b=1459200 mode="power-saver"
+        else
+            l=1766400 b=2476800 mode="balanced"
+        fi
+    elif (( agent_busy )); then
+        l=1228800 b=1996800 mode="$profile, Bildschirm aus, Agent aktiv"
+    else
+        l=1228800 b=1209600 mode="$profile, Bildschirm aus"
+    fi
+    [[ $applied == "$l/$b" ]] && return 0
+    for p in "${little[@]}"; do set_cap "$p" "$l"; done
+    for p in "${big[@]}"; do set_cap "$p" "$b"; done
+    applied="$l/$b"
+    printf 'modus=%s\nklein=%s\ngross=%s\n' "$mode" "$l" "$b" >"$run/state"
+}
+
+save_clock() {
+    # Nur nach plausibler Uhr speichern (nach 2026-01-01).
+    (( EPOCHSECONDS > 1767225600 )) || return 0
+    printf '%s\n' "$EPOCHSECONDS" >"$clock_file.tmp" && mv -f "$clock_file.tmp" "$clock_file"
+}
+
+# ppd startet parallel; kurz auf den Bus warten.
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+    [[ -S /run/dbus/system_bus_socket ]] && break
+    read -r -t 1 -u 3 _ || true
+done
+read_profile
+watch_profiles &
+watcher=$!
+# Beim Beenden den Profil-Beobachter samt dbus-monitor mitnehmen.
+trap 'pkill -P "$watcher" 2>/dev/null; kill "$watcher" 2>/dev/null; exit 0' TERM INT
+echo $$ >"$run/pid"
+
+last_on=-1
+tick=0
+next_clock=$((EPOCHSECONDS + 600))
+while :; do
+    if screen_on; then on=1; else on=0; fi
+    if (( on != last_on )); then
+        (( on )) || check_agent
+        apply "$on"
+        last_on=$on
+        tick=0
+    elif (( ! on && ++tick >= 15 )); then
+        check_agent; apply 0; tick=0
+    fi
+    if (( EPOCHSECONDS >= next_clock )); then
+        save_clock; next_clock=$((EPOCHSECONDS + 1800))
+    fi
+    if read -r -t 1 -u 3 msg; then
+        [[ $msg == p* ]] && read_profile
+        applied=
+        last_on=-1
+    fi
+done

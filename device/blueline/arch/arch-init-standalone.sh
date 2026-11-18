@@ -131,6 +131,13 @@ build_epoch=$(date -u -d "$build_time" +%s 2>/dev/null)
 if [ -n "$build_time" ] && [ -n "$build_epoch" ] && [ "$(date -u +%s)" -lt "$build_epoch" ]; then
     date -u -s "$build_time" >/dev/null 2>&1
 fi
+# Zuletzt gesicherte Uhrzeit (blueline-powerd/omamobile-time-sync) ist
+# naeher an der Wahrheit als die Bauzeit.
+saved_epoch=$(cat /var/lib/omamobile/clock 2>/dev/null)
+case "$saved_epoch" in
+    ''|*[!0-9]*) ;;
+    *) [ "$(date -u +%s)" -lt "$saved_epoch" ] && date -u -s "@$saved_epoch" >/dev/null 2>&1 ;;
+esac
 [ -x /usr/local/bin/omamobile-time-sync ] && /usr/local/bin/omamobile-time-sync >/tmp/time-sync.log 2>&1 &
 # Hardware-Watchdog: startet das Geraet bei einem Kernel-Haenger neu,
 # statt stumm stehenzubleiben. Der PMIC-WDT laeuft nach dem Boot weiter.
@@ -233,6 +240,9 @@ SYSTEMD_IGNORE_CHROOT=1 udevadm trigger --action=add >/tmp/udev-trigger.log 2>&1
 SYSTEMD_IGNORE_CHROOT=1 udevadm settle --timeout=15 >>/tmp/udev-trigger.log 2>&1
 [ -x /usr/bin/ModemManager ] && /usr/bin/ModemManager --log-level=WARN >/tmp/ModemManager.log 2>&1 &
 [ -x /usr/bin/NetworkManager ] && /usr/bin/NetworkManager --no-daemon >/tmp/nm.log 2>&1 &
+# Taktgrenzen aus Energieprofil und Bildschirmzustand (ersetzt die feste
+# 1,8-GHz-Kappe weiter unten, sobald der Systembus laeuft).
+[ -x /usr/local/bin/blueline-powerd ] && setsid /usr/local/bin/blueline-powerd >/tmp/blueline-powerd.log 2>&1 &
 if [ -e /proc/device-tree/smp2p-slpi/sleepstate/qcom,entry-name ]; then
     [ -e /opt/omamobile/mods/fastrpc.ko ] && /usr/local/libexec/blueline-sensors >/tmp/blueline-sensors.log 2>&1 &
 fi
@@ -370,10 +380,14 @@ done
 # wird das Geraet 78-84 Grad C warm. 1,8 GHz (volle OPP, kein Deckel -
 # die Waerme kommt von den Ramdisk-Schleifen, nicht von der Frequenz)
 # und 40 % Helligkeit halten es bei ~62 Grad C (gemessen).
-for cf in /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq; do
-    [ -e "$cf" ] || continue
-    echo 1800000 > "$cf" 2>/dev/null
-done
+# Mit blueline-powerd setzt der Dienst die Grenzen; die feste Kappe bleibt
+# nur als Rueckfall ohne ihn.
+if [ ! -x /usr/local/bin/blueline-powerd ]; then
+    for cf in /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq; do
+        [ -e "$cf" ] || continue
+        echo 1800000 > "$cf" 2>/dev/null
+    done
+fi
 
 mkdir -p /dev/disk/by-partlabel
 for entry in /sys/class/block/sd*[0-9]/uevent; do

@@ -34,11 +34,13 @@ case "${1:-}" in
         mkdir -p "$state"
         dpms disable
         touch "$state/display-off"
+        /usr/local/bin/blueline-powerd kick 2>/dev/null || true
         ;;
     display-on)
         if [[ -e $state/display-off ]]; then
             dpms enable
             rm -f "$state/display-off"
+            /usr/local/bin/blueline-powerd kick 2>/dev/null || true
         fi
         ;;
     *) exit 2 ;;

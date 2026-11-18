@@ -84,6 +84,8 @@ install -m755 /om/blueline-shell-compat /tmp/arch/usr/local/bin/blueline-shell-c
 install -Dm644 /om/96-blueline-shell.hook /tmp/arch/etc/pacman.d/hooks/96-blueline-shell.hook
 cp /om/omamobile-time-sync /tmp/arch/usr/local/bin/omamobile-time-sync
 cp /om/omamobile-power-profile /tmp/arch/usr/local/bin/omamobile-power-profile
+chmod 755 /tmp/arch/usr/local/bin/omamobile-power-profile
+install -Dm755 /om/blueline-powerd /tmp/arch/usr/local/bin/blueline-powerd
 cp /om/omamobile-wakeup.sh /tmp/arch/usr/local/bin/omamobile-wakeup
 cp /om/omamobile-suspend-test.sh /tmp/arch/usr/local/bin/omamobile-suspend-test
 chmod 755 /tmp/arch/usr/local/bin/omamobile-suspend-test
@@ -121,6 +123,8 @@ install -Dm644 /om/megapixels-config/90-blueline.gschema.override \
     /tmp/arch/usr/share/glib-2.0/schemas/90-blueline.gschema.override
 install -Dm644 /om/networkmanager/10-usb-rescue.conf \
     /tmp/arch/etc/NetworkManager/conf.d/10-usb-rescue.conf
+install -Dm644 /om/networkmanager/60-blueline-wifi-powersave.conf \
+    /tmp/arch/etc/NetworkManager/conf.d/60-blueline-wifi-powersave.conf
 install -Dm644 /om/networkmanager/49-omamobile-wifi.rules \
     /tmp/arch/etc/polkit-1/rules.d/49-omamobile-wifi.rules
 install -Dm755 /om/megapixels-config/postprocess.sh \

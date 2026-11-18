@@ -1,17 +1,7 @@
 #!/bin/sh
-# Bildet das UPower-Power-Profile (power-profiles-daemon) auf die
-# CPU-Kappung ab. ppd selbst hat auf sdm845 keinen echten Platform-Treiber
-# ("PlatformDriver: placeholder"), deshalb uebersetzt dieses Skript das
-# Profil in scaling_max_freq.
-#   power-saver -> 1.2 GHz, balanced -> 1.8 GHz, performance -> Maximum
-export DBUS_SYSTEM_BUS_ADDRESS=unix:path=/run/dbus/system_bus_socket
-prof=$(powerprofilesctl get 2>/dev/null)
-case "$prof" in
-    power-saver) cap=1200000 ;;
-    performance) cap=2649600 ;;
-    *)           cap=1800000 ;;
-esac
-for f in /sys/devices/system/cpu/cpu*/cpufreq/scaling_max_freq; do
-    [ -e "$f" ] && echo "$cap" > "$f" 2>/dev/null
-done
-echo "profil=$prof kappe=$cap"
+# Die Taktgrenzen je Profil setzt blueline-powerd (Profil + Bildschirm).
+# Dieser Aufruf bleibt fuer bestehende Skripte: er stoesst eine sofortige
+# Neubewertung an und zeigt den Zustand.
+/usr/local/bin/blueline-powerd kick
+sleep 1
+exec /usr/local/bin/blueline-powerd status
