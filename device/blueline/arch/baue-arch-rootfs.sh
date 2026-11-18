@@ -123,8 +123,6 @@ install -Dm644 /om/megapixels-config/90-blueline.gschema.override \
     /tmp/arch/usr/share/glib-2.0/schemas/90-blueline.gschema.override
 install -Dm644 /om/networkmanager/10-usb-rescue.conf \
     /tmp/arch/etc/NetworkManager/conf.d/10-usb-rescue.conf
-install -Dm644 /om/networkmanager/60-blueline-wifi-powersave.conf \
-    /tmp/arch/etc/NetworkManager/conf.d/60-blueline-wifi-powersave.conf
 install -Dm644 /om/networkmanager/49-omamobile-wifi.rules \
     /tmp/arch/etc/polkit-1/rules.d/49-omamobile-wifi.rules
 install -Dm755 /om/megapixels-config/postprocess.sh \
@@ -189,7 +187,7 @@ chroot /tmp/arch /bin/bash -euc '
   # naechsten -Su mitgezogen.
   pacman -Sy --noconfirm --needed --overwrite="/usr/lib/*" openssh
   pacman -S --noconfirm --needed omarchy
-  pacman -S --noconfirm --needed squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim wl-clipboard slurp tesseract-data-eng omasnap libnotify patch chromium nautilus bluez bluez-utils mpv imv gnome-text-editor v4l-utils libcamera-tools hypridle hyprsunset brightnessctl power-profiles-daemon upower pipewire pipewire-pulse pipewire-alsa wireplumber alsa-ucm-conf networkmanager modemmanager wpa_supplicant zbar libconfig libraw imagemagick glib2 expat
+  pacman -S --noconfirm --needed socat iw wireless-regdb noto-fonts noto-fonts-emoji woff2-font-awesome pamixer alsa-utils less unzip inetutils whois fzf ripgrep fd bat eza zoxide starship tmux qrencode bluez-tools gvfs-smb bash-completion squeekboard foot libbsd inotify-tools python-dbus python-gobject wf-recorder grim wl-clipboard slurp tesseract-data-eng omasnap libnotify patch chromium nautilus bluez bluez-utils mpv imv gnome-text-editor v4l-utils libcamera-tools hypridle hyprsunset brightnessctl power-profiles-daemon upower pipewire pipewire-pulse pipewire-alsa wireplumber alsa-ucm-conf networkmanager modemmanager wpa_supplicant zbar libconfig libraw imagemagick glib2 expat
   glib-compile-schemas --strict /usr/share/glib-2.0/schemas
   if [ -x /usr/local/libexec/blueline-hexagonrpcd ]; then
     pacman -S --noconfirm --needed iio-sensor-proxy

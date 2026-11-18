@@ -16,6 +16,7 @@
 # ausgeschaltetem Bildschirm ein lokales Modell (llama-server von
 # hermes-offline), bleibt der grosse Cluster bei 1,96 GHz, damit
 # Agentenauftraege im Hintergrund nicht doppelt so lange dauern.
+# Bei dunklem Bildschirm schaltet er ausserdem WLAN-Stromsparen ein.
 #
 # Der Dienst wartet mit dem eingebauten read -t auf einer FIFO statt mit
 # sleep: im Leerlauf startet er keine Prozesse. Profilwechsel kommen ueber
@@ -126,11 +127,26 @@ apply() {
     else
         l=1228800 b=1209600 mode="$profile, Bildschirm aus"
     fi
+    set_wifi_ps "$on"
     [[ $applied == "$l/$b" ]] && return 0
     for p in "${little[@]}"; do set_cap "$p" "$l"; done
     for p in "${big[@]}"; do set_cap "$p" "$b"; done
     applied="$l/$b"
-    printf 'modus=%s\nklein=%s\ngross=%s\n' "$mode" "$l" "$b" >"$run/state"
+    printf 'modus=%s\nklein=%s\ngross=%s\nwlan_stromsparen=%s\n' "$mode" "$l" "$b" "$wifi_ps" >"$run/state"
+}
+
+# WLAN-Stromsparen nur bei dunklem Bildschirm: am WCN3990 hebt es die
+# Latenz von ~12 ms auf ~200 ms (gemessen), das stoert bei SSH und
+# Bedienung, spart aber im Leerlauf. NetworkManager setzt es auf diesem
+# Chip nicht, deshalb direkt ueber nl80211 (iw). Nur bei Wechsel.
+wifi_ps=
+set_wifi_ps() {
+    local want=on
+    (( $1 )) && want=off
+    [[ $wifi_ps == "$want" ]] && return 0
+    command -v iw >/dev/null 2>&1 || return 0
+    [[ -e /sys/class/net/wlan0 ]] || return 0
+    iw dev wlan0 set power_save "$want" 2>/dev/null && wifi_ps=$want
 }
 
 save_clock() {
@@ -162,7 +178,8 @@ while :; do
         last_on=$on
         tick=0
     elif (( ! on && ++tick >= 15 )); then
-        check_agent; apply 0; tick=0
+        # Nach einem WLAN-Neuaufbau steht Stromsparen wieder auf aus.
+        check_agent; wifi_ps=; applied=; apply 0; tick=0
     fi
     if (( EPOCHSECONDS >= next_clock )); then
         save_clock; next_clock=$((EPOCHSECONDS + 1800))
