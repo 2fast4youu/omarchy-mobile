@@ -88,6 +88,7 @@ chmod 755 /tmp/arch/usr/local/bin/omamobile-power-profile
 install -Dm755 /om/blueline-powerd /tmp/arch/usr/local/bin/blueline-powerd
 install -Dm755 /om/omarchy-system-lock /tmp/arch/usr/local/bin/omarchy-system-lock
 install -Dm755 /om/blueline-set-pin /tmp/arch/usr/local/libexec/blueline-set-pin
+install -Dm755 /om/pixel-agent /tmp/arch/usr/local/bin/pixel-agent
 cp /om/omamobile-wakeup.sh /tmp/arch/usr/local/bin/omamobile-wakeup
 cp /om/omamobile-suspend-test.sh /tmp/arch/usr/local/bin/omamobile-suspend-test
 chmod 755 /tmp/arch/usr/local/bin/omamobile-suspend-test

@@ -13,3 +13,11 @@ Die Android-App benötigt SDK-Plattform 35, Build Tools 36.0.0 und JDK 17. Setze
 Die App hat zwei Reiter. **Agent** schickt Aufträge an Hermes auf dem Pixel und zeigt jede Antwort als eigene Karte. Die Chips oben wählen den Anbieter: **Automatisch** (Modell vom Mac per USB, sonst die eigene API), **Antigravity** (nur die eigene API) oder **Offline** (kleines Modell auf dem Pixel). Während ein Auftrag läuft, beantwortet das Eingabefeld Rückfragen von Hermes und ■ bricht ab. Schnellaktionen zeigen Status, Akku und WLAN, schalten die Taschenlampe und den Bildschirm und prüfen, welche Modellzugänge erreichbar sind. Langes Drücken auf eine Antwort kopiert sie. **Konsole** bleibt die freie Shell.
 
 Die App verbindet sich beim Start mit dem zuletzt gewählten Pixel. Langes Drücken auf **Verbinden** wählt ein anderes. Die Shell läuft ohne Echo und Zeileneditor; Aufträge und Schnellaktionen werden zwischen zwei Markierungen (0x1E) gesetzt, damit ihre Ausgabe getrennt vom Konsolenstrom ankommt.
+
+## Version 0.6: Gespräche und Slash-Befehle
+
+Hermes merkt sich das Gespräch: jeder Auftrag setzt die zuletzt verwendete Sitzung fort, bis `/neu` ein neues Gespräch beginnt. **Gespräche** (Chip oben oder `/gespraeche`) listet die letzten 20 Sitzungen des Pixels, auch dort begonnene, und wechselt zu einer davon. `/name TITEL` benennt das aktuelle Gespräch.
+
+Tippt man `/`, schlägt die App passende Befehle vor: `/hilfe`, `/neu`, `/gespraeche`, `/name`, `/modell auto|api|offline`, `/status`, `/akku`, `/wlan`, `/agenten`, `/licht`, `/bildschirm`, `/hell 0–100`, `/laut 0–100`, `/sperren`, `/sh BEFEHL` und `/stopp`.
+
+Am Pixel übernimmt `pixel-agent` den Aufruf: Ohne erreichbaren Mac-Tunnel geht „Automatisch“ direkt über den Anbieter `antigravity`, scheitert Hermes ohne Ausgabe, steht der Grund in der Karte (etwa „API ausgelastet (429)“). Die Sitzungsliste liest `pixel-agent sessions` nur lesend aus `~/.hermes/state.db`. Bricht der erste Verbindungsversuch ab, weil das Pixel die vorige Sitzung noch hält, versucht die App es nach drei Sekunden erneut. Aufträge laufen auch bei ausgeschaltetem Pixel-Bildschirm.

@@ -1,0 +1,126 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: MIT
+#
+# Ein Hermes-Auftrag fuer die Pixel-Konsole (Bluetooth-App).
+#
+#   pixel-agent ROUTE SESSION PROMPT...
+#
+# ROUTE    auto     Modell vom Mac (USB-Tunnel 127.0.0.1:11234), sonst der
+#                   Anbieter "antigravity"; ohne Tunnel direkt die API statt
+#                   erst zwei vergeblicher Verbindungsversuche
+#          api      nur der Anbieter "antigravity"
+#          offline  hermes-offline (Modell auf dem Pixel)
+# SESSION  Hermes-Sitzung zum Fortsetzen, oder "-" fuer ein neues Gespraech
+#
+# Gibt die Antwort aus und zum Schluss eine Zeile 0x1E 'I' <Sitzung>, mit der
+# die App das Gespraech fortsetzt. Scheitert Hermes ohne Ausgabe, steht der
+# Grund aus dem Hermes-Fehlerprotokoll verstaendlich da.
+set -u
+
+hermes=$HOME/.local/bin/hermes
+
+# pixel-agent sessions: die letzten Gespraeche als Zeilen
+#   0x1E 'L' ID <TAB> Vorschau <TAB> zuletzt aktiv
+if [[ ${1:-} == sessions ]]; then
+    # Direkt aus Hermes' Datenbank (nur lesend): die Tabelle von
+    # "hermes sessions list" wechselt ihr Spaltenlayout und kuerzt IDs auf
+    # Terminalbreite.
+    exec python3 - "${2:-20}" <<'PYEOF'
+import sqlite3, sys, time, os
+limit = max(1, min(100, int(sys.argv[1]) if sys.argv[1].isdigit() else 20))
+db = os.path.expanduser("~/.hermes/state.db")
+con = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=5)
+rows = con.execute("""
+    SELECT s.id,
+           COALESCE(NULLIF(TRIM(s.title), ''),
+                    (SELECT m.content FROM messages m
+                     WHERE m.session_id = s.id AND m.role = 'user'
+                     ORDER BY m.id LIMIT 1), ''),
+           COALESCE(s.last_activity_at, s.started_at, 0)
+    FROM sessions s
+    WHERE COALESCE(s.archived, 0) = 0 AND COALESCE(s.hidden, 0) = 0
+      AND s.parent_session_id IS NULL AND COALESCE(s.message_count, 0) > 0
+    ORDER BY 3 DESC LIMIT ?""", (limit,)).fetchall()
+now = time.time()
+def age(t):
+    try:
+        t = float(t)
+    except (TypeError, ValueError):
+        return ""
+    if t > 1e12:
+        t /= 1000
+    d = max(0, now - t)
+    for size, unit in ((86400, "d"), (3600, "h"), (60, "min")):
+        if d >= size:
+            return f"vor {int(d // size)} {unit}"
+    return "gerade eben"
+for sid, text, last in rows:
+    title = " ".join(str(text or "").split())[:60] or "(ohne Titel)"
+    print(f"\x1eL{sid}\t{title}\t{age(last)}", flush=True)
+PYEOF
+fi
+# pixel-agent rename ID TITEL
+if [[ ${1:-} == rename ]]; then
+    [[ ${2:-} =~ ^[A-Za-z0-9._:-]+$ && -n ${3:-} ]] || { echo "Aufruf: rename ID TITEL"; exit 2; }
+    id=$2; shift 2
+    "$hermes" sessions rename "$id" "$*" >/dev/null 2>&1 && echo "Umbenannt in: $*"
+    exit
+fi
+
+route=${1:-auto}
+session=${2:--}
+shift 2 2>/dev/null || true
+prompt="$*"
+if [[ -z $prompt ]]; then
+    echo "Kein Auftrag angegeben."
+    exit 2
+fi
+
+errors=$HOME/.hermes/logs/errors.log
+args=(chat -Q)
+[[ $session != - && $session =~ ^[A-Za-z0-9._:-]+$ ]] && args+=(--resume "$session")
+
+case "$route" in
+    offline)
+        cmd=(/usr/local/bin/hermes-offline "${args[@]}" --query "$prompt") ;;
+    api)
+        cmd=("$hermes" "${args[@]}" --provider antigravity --query "$prompt") ;;
+    *)
+        if curl -s -o /dev/null --max-time 1 http://127.0.0.1:11234/v1/models; then
+            cmd=("$hermes" "${args[@]}" --query "$prompt")
+        else
+            cmd=("$hermes" "${args[@]}" --provider antigravity --query "$prompt")
+        fi ;;
+esac
+
+before=$(wc -l <"$errors" 2>/dev/null || echo 0)
+output=$(mktemp)
+trap 'rm -f "$output"' EXIT
+
+"${cmd[@]}" 2>&1 | tee "$output" | awk '
+    /^session_id: / { next }
+    /^↻ Resumed session / { next }
+    /^Model restored from session: / { next }
+    { print; fflush() }'
+rc=${PIPESTATUS[0]}
+
+id=$(sed -n 's/^session_id: \([A-Za-z0-9._:-]*\).*/\1/p' "$output" | tail -1)
+answer=$(grep -vE '^(session_id: |↻ Resumed session |Model restored from session: )' "$output" | tr -d '[:space:]')
+
+if (( rc != 0 )) && [[ -z $answer ]]; then
+    fresh=$(tail -n +"$((before + 1))" "$errors" 2>/dev/null | tail -200)
+    if grep -q '429' <<<"$fresh"; then
+        echo "Die API ist gerade ausgelastet (429). Bitte gleich noch einmal versuchen."
+    elif grep -qE '401|Schlüssel|Unauthorized' <<<"$fresh"; then
+        echo "Die API hat den Schlüssel abgelehnt. Am Pixel: hermes-schluessel"
+    elif grep -qE 'Connection error|APIConnectionError|Timeout' <<<"$fresh"; then
+        echo "Kein Modell erreichbar: Mac-Tunnel aus und die API antwortet nicht."
+    elif (( rc == 130 )); then
+        echo "Abgebrochen."
+    else
+        echo "Hermes wurde mit Fehler $rc beendet."
+        grep -E 'Error|error' <<<"$fresh" | tail -1 | cut -c1-200
+    fi
+fi
+[[ -n $id ]] && printf '\036I%s\n' "$id"
+exit "$rc"
