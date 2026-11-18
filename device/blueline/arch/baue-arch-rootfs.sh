@@ -275,6 +275,8 @@ EOD
     /etc/systemd/system/multi-user.target.wants/sshd.service
 '
 sed -i 's/^#Class = 0x000100$/Class = 0x00011c/' /tmp/arch/etc/bluetooth/main.conf
+# Eindeutiger Name in der Bluetooth-Liste des Handys (sonst "BlueZ 5.88").
+sed -i 's/^#Name = BlueZ$/Name = Pixel 3 Omarchy/' /tmp/arch/etc/bluetooth/main.conf
 install -Dm644 /om/alsa-ucm/Pixel3.conf /tmp/arch/usr/share/alsa/ucm2/Qualcomm/Pixel3/Pixel3.conf
 install -Dm644 /om/alsa-ucm/HiFi.conf /tmp/arch/usr/share/alsa/ucm2/Qualcomm/Pixel3/HiFi.conf
 install -d /tmp/arch/usr/share/alsa/ucm2/conf.d/sdm845

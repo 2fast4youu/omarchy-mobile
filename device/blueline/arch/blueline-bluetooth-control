@@ -24,6 +24,7 @@ from gi.repository import GLib
 
 
 UUID = "8a1e65d9-812b-4c53-8936-e8ea3f67050f"
+RFCOMM_CHANNEL = 22
 PROFILE = "/org/omamobile/BluetoothControl"
 BLUEZ = "org.bluez"
 DEVICE = "org.bluez.Device1"
@@ -307,7 +308,11 @@ def main():
     loop = GLib.MainLoop()
     profile = Profile(bus, loop)
     manager = dbus.Interface(bus.get_object(BLUEZ, "/org/bluez"), "org.bluez.ProfileManager1")
+    # Ohne "Channel" traegt BlueZ nur L2CAP ohne RFCOMM-Kanal in den
+    # SDP-Eintrag ein; Android findet den Dienst dann, kann aber nicht
+    # verbinden (am Oppo gemessen). Kanal 22 ist auf dem Pixel frei.
     manager.RegisterProfile(PROFILE, UUID, {"Name": "Omarchy Pixel-Steuerung", "Role": "server",
+                                           "Channel": dbus.UInt16(RFCOMM_CHANNEL),
                                            "RequireAuthentication": dbus.Boolean(True)})
     print("Bluetooth-Steuerung ist bereit.", flush=True)
     if args.mode == "serve":
