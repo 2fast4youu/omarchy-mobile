@@ -438,6 +438,12 @@ if [ "$(findmnt -no SOURCE,FSTYPE /)" = "/dev/loop0 ext4" ] &&
         resize2fs /dev/loop0 "${root_target_gib}G" >/tmp/omamobile-resize.log 2>&1
     fi
 fi
+# Ohne Passwort/PIN darf nichts sperren: die Sperre liesse sich nicht oeffnen
+# (siehe /usr/local/bin/omarchy-system-lock).
+rm -f /run/omamobile-no-password
+case "$(passwd -S omarchy 2>/dev/null | cut -d ' ' -f 2)" in
+    L|NP) : > /run/omamobile-no-password ;;
+esac
 su - omarchy -c 'dbus-run-session -- /run/omamobile-session.sh' >/dev/null 2>&1 &
 (
     sleep 15

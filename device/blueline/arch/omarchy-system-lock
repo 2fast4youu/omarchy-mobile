@@ -1,0 +1,10 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+# Pixel 3: Solange der Benutzer kein Passwort und keine PIN hat, laesst sich
+# die Omarchy-Sperre nicht mehr oeffnen (PAM lehnt jede Eingabe ab). Die
+# Ein/Aus-Taste und Doppeltippen (omamobile-keys) sperren ueber diesen
+# Befehl; ohne PIN schaltet die Taste deshalb nur den Bildschirm ab.
+# /init legt die Marke beim Start an, wenn das Konto kein Passwort hat.
+# Nach dem Einrichten einer PIN gilt die Sperre ab dem naechsten Start.
+[ -e /run/omamobile-no-password ] && exit 0
+exec /usr/bin/omarchy-system-lock "$@"
