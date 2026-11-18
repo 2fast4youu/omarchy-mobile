@@ -1,0 +1,29 @@
+#!/usr/bin/bash
+# SPDX-License-Identifier: MIT
+# Erste PIN fuer den Sitzungsbenutzer auf dem Pixel 3. omamobile-set-pin
+# ruft passwd als Benutzer auf; das fragt nach dem aktuellen Passwort, das
+# ein frisch eingerichtetes Konto (Feld "!") nicht hat. Dieser Dialog laeuft
+# als root, setzt die PIN mit "passwd omarchy" und schreibt danach dieselben
+# Einstellungen wie omamobile-set-pin (Zahlenfeld, Sperre nach dem Start).
+set -u
+user=omarchy
+echo "PIN für das Pixel einrichten"
+echo
+echo "Die PIN entsperrt das Handy und gilt auch für sudo."
+echo "Nur Ziffern, mindestens 4. Sie wird beim Tippen nicht angezeigt."
+echo
+until passwd "$user"; do
+    echo
+    gum confirm "Noch einmal versuchen?" || exit 1
+done
+runuser -u "$user" -- bash -c '
+    mkdir -p ~/.config/omamobile ~/.local/state/omarchy/toggles
+    printf "pin\n" > ~/.config/omamobile/credential
+    touch ~/.local/state/omarchy/toggles/lock-keypad ~/.local/state/omarchy/toggles/lock-on-start
+    rm -f ~/.local/state/omarchy/toggles/credential-password
+'
+rm -f /run/omamobile-no-password
+echo
+echo "PIN gesetzt. Die Ein/Aus-Taste sperrt ab jetzt das Handy."
+echo
+read -r -p "Enter zum Schließen" _

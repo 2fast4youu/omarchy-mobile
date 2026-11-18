@@ -360,10 +360,13 @@ keep() {
         sleep 3
     done
 }
-# Hyprland startet Squeekboard zusaetzlich ueber autostart.lua
-# (omamobile-setup-user); ein zweites Exemplar beendet sich sofort. Deshalb
-# nur nachstarten, wenn keines laeuft.
+# Hyprland startet Squeekboard selbst ueber autostart.lua
+# (omamobile-setup-user). Starteten beide gleichzeitig, griffen zwei
+# Exemplare nach der Input-Method-Schnittstelle: blieb das falsche uebrig,
+# kam die Tastatur bei keinem Textfeld mehr (am Geraet gesehen). Deshalb
+# erst nach Hyprlands Start pruefen und nur nachstarten, wenn keines laeuft.
 (
+    sleep 20
     while :; do
         pgrep -x -u omarchy squeekboard >/dev/null 2>&1 || squeekboard
         sleep 5
