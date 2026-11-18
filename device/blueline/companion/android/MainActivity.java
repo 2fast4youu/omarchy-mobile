@@ -261,7 +261,7 @@ public final class MainActivity extends Activity {
         });
         stopButton = roundButton("■", ERROR);
         stopButton.setContentDescription("Laufenden Auftrag abbrechen");
-        stopButton.setOnClickListener(view -> transmit(new byte[]{3}));
+        stopButton.setOnClickListener(view -> cancelRunning());
         LinearLayout.LayoutParams stopParams = new LinearLayout.LayoutParams(dp(46), dp(46));
         stopParams.leftMargin = dp(8);
         bar.addView(stopButton, stopParams);
@@ -402,12 +402,15 @@ public final class MainActivity extends Activity {
             slash(text);
             return;
         }
-        bubble(text, true);
         if (running > 0) {
-            // Rueckfrage des laufenden Auftrags beantworten
-            transmit((line + "\n").getBytes(StandardCharsets.UTF_8));
+            // Laufende Auftraege bekommen keine Eingaben (pixel-agent liest
+            // nicht von der Tastatur); der Text bleibt fuer danach stehen.
+            input.setText(text);
+            input.setSelection(input.getText().length());
+            toast("Es läuft noch ein Auftrag – ■ bricht ab");
             return;
         }
+        bubble(text, true);
         String command = "pixel-agent " + ROUTES[provider] + " " + (sessionId == null ? "-" : sessionId)
                 + " " + quote(line);
         runBlock(PROVIDERS[provider] + (sessionId == null ? "" : " · Gespräch"), command, true);
@@ -447,7 +450,7 @@ public final class MainActivity extends Activity {
                 listSessions();
                 return;
             case "/stopp": case "/stop":
-                transmit(new byte[]{3});
+                cancelRunning();
                 return;
             default:
         }
@@ -494,6 +497,24 @@ public final class MainActivity extends Activity {
         } catch (NumberFormatException e) {
             return -1;
         }
+    }
+
+    // Strg+C an die Shell; kommt danach keine Endmarkierung, gibt die App den
+    // Auftrag nach vier Sekunden trotzdem frei.
+    private void cancelRunning() {
+        transmit(new byte[]{3});
+        if (running == 0) return;
+        int current = generation;
+        main.postDelayed(() -> {
+            if (generation == current && running > 0) {
+                listing = false;
+                handleMark('E', "130");
+                running = 0;
+                inBlock = false;
+                transmit("\n".getBytes(StandardCharsets.UTF_8));
+                render();
+            }
+        }, 4000);
     }
 
     private void listSessions() {

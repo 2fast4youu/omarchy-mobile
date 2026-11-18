@@ -97,7 +97,10 @@ before=$(wc -l <"$errors" 2>/dev/null || echo 0)
 output=$(mktemp)
 trap 'rm -f "$output"' EXIT
 
-"${cmd[@]}" 2>&1 | tee "$output" | awk '
+# Ohne Terminal-Eingabe kann Hermes nicht in einer Rueckfrage (etwa der
+# Freigabe eines Befehls) haengen bleiben; die App kann solche Auswahlfelder
+# nicht darstellen. Nach zehn Minuten wird abgebrochen.
+timeout --kill-after=10 600 "${cmd[@]}" </dev/null 2>&1 | tee "$output" | awk '
     /^session_id: / { next }
     /^↻ Resumed session / { next }
     /^Model restored from session: / { next }
@@ -115,6 +118,8 @@ if (( rc != 0 )) && [[ -z $answer ]]; then
         echo "Die API hat den Schlüssel abgelehnt. Am Pixel: hermes-schluessel"
     elif grep -qE 'Connection error|APIConnectionError|Timeout' <<<"$fresh"; then
         echo "Kein Modell erreichbar: Mac-Tunnel aus und die API antwortet nicht."
+    elif (( rc == 124 || rc == 137 )); then
+        echo "Nach zehn Minuten ohne Ergebnis abgebrochen."
     elif (( rc == 130 )); then
         echo "Abgebrochen."
     else
