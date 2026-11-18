@@ -22,10 +22,12 @@ import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.inputmethod.EditorInfo;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -61,6 +63,8 @@ public final class MainActivity extends Activity {
     private TextView state;
     private Button connection;
     private Button send;
+    private Button ask;
+    private Spinner provider;
     private Button interrupt;
     private TextView terminal;
     private ScrollView outputScroll;
@@ -126,12 +130,23 @@ public final class MainActivity extends Activity {
         terminal.setText("Die Ausgabe vom Pixel erscheint hier.");
         outputScroll.addView(terminal);
 
+        provider = new Spinner(this);
+        ArrayAdapter<String> providers = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
+                new String[]{"Agent: automatisch (Mac, sonst Antigravity)", "Agent: Antigravity", "Agent: offline am Pixel"});
+        providers.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        provider.setAdapter(providers);
+        provider.setContentDescription("Anbieter für den Agenten");
+        LinearLayout.LayoutParams providerParams = new LinearLayout.LayoutParams(-1, -2);
+        providerParams.topMargin = dp(6);
+        page.addView(provider, providerParams);
+
         input = new EditText(this);
-        input.setSingleLine(true);
+        input.setSingleLine(false);
+        input.setMaxLines(4);
         input.setTextColor(INK);
         input.setHintTextColor(MUTED);
-        input.setHint("Befehl für das Pixel");
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
+        input.setHint("Auftrag für den Agenten oder Befehl");
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         input.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
         input.setFilters(new InputFilter[]{new InputFilter.LengthFilter(4096)});
         input.setImeOptions(EditorInfo.IME_ACTION_SEND);
@@ -145,9 +160,12 @@ public final class MainActivity extends Activity {
         LinearLayout buttons = new LinearLayout(this);
         buttons.setOrientation(LinearLayout.HORIZONTAL);
         page.addView(buttons);
-        send = button("Senden", true);
+        ask = button("Agent fragen", true);
+        ask.setOnClickListener(view -> askAgent());
+        buttons.addView(ask, new LinearLayout.LayoutParams(0, -2, 1));
+        send = button("Als Befehl", false);
         send.setOnClickListener(view -> sendLine());
-        buttons.addView(send, new LinearLayout.LayoutParams(0, -2, 1));
+        buttons.addView(send);
         interrupt = button("Strg+C", false);
         interrupt.setContentDescription("Laufenden Befehl abbrechen");
         interrupt.setOnClickListener(view -> transmit(new byte[]{3}));
@@ -272,9 +290,28 @@ public final class MainActivity extends Activity {
         throw new IOException("No terminal reply");
     }
 
+    // Ein Auftrag wird als Hermes-Aufruf in die Pixel-Shell geschrieben; die
+    // Antwort kommt wie jede Ausgabe zurueck, Rueckfragen beantwortet das
+    // Eingabefeld, Strg+C bricht ab.
+    private void askAgent() {
+        if (!ready) return;
+        String prompt = input.getText().toString().replace('\r', ' ').replace('\n', ' ').trim();
+        if (prompt.isEmpty()) return;
+        String quoted = "'" + prompt.replace("'", "'\\''") + "'";
+        String command;
+        switch (provider.getSelectedItemPosition()) {
+            case 1: command = "hermes chat -Q --provider antigravity --query " + quoted; break;
+            case 2: command = "hermes-offline chat -Q --query " + quoted; break;
+            default: command = "hermes chat -Q --query " + quoted;
+        }
+        appendOutput("\n» " + prompt + "\n");
+        transmit((command + "\n").getBytes(StandardCharsets.UTF_8));
+        input.setText("");
+    }
+
     private void sendLine() {
         if (!ready) return;
-        String command = input.getText().toString() + "\n";
+        String command = input.getText().toString().replace('\n', ' ') + "\n";
         transmit(command.getBytes(StandardCharsets.UTF_8));
         input.setText("");
     }
@@ -352,6 +389,8 @@ public final class MainActivity extends Activity {
         state.setTextColor(ready ? CONNECTED : MUTED);
         input.setEnabled(ready);
         send.setEnabled(ready);
+        ask.setEnabled(ready);
+        provider.setEnabled(ready);
         interrupt.setEnabled(ready);
     }
 
