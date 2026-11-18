@@ -7,10 +7,13 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothSocket;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.content.res.ColorStateList;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,17 +21,19 @@ import android.os.Looper;
 import android.provider.Settings;
 import android.text.InputFilter;
 import android.text.InputType;
+import android.view.Gravity;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.inputmethod.EditorInfo;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
-import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -43,29 +48,65 @@ import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Pixel-Konsole: steuert das Pixel 3 mit Omarchy Mobile ueber das
+ * authentifizierte RFCOMM-Terminal von blueline-bluetooth-control.
+ *
+ * Agent-Auftraege und Schnellaktionen laufen in derselben Shell. Jede wird
+ * zwischen zwei Markierungen (0x1E 'S' ... 0x1E 'E' Rueckgabewert) gesetzt,
+ * so landet ihre Ausgabe in einer eigenen Sprechblase statt im Konsolenstrom.
+ */
 public final class MainActivity extends Activity {
     private static final UUID SERVICE = UUID.fromString("8a1e65d9-812b-4c53-8936-e8ea3f67050f");
-    private static final int INK = 0xff11192b;
-    private static final int MUTED = 0xff51627b;
-    private static final int BLUE = 0xff2b4fa5;
-    private static final int CONNECTED = 0xff166b56;
+    private static final int BG = 0xff0f1420;
+    private static final int SURFACE = 0xff182031;
+    private static final int SURFACE_HIGH = 0xff222c42;
+    private static final int TEXT = 0xffe8eefc;
+    private static final int MUTED = 0xff8a97b2;
+    private static final int ACCENT = 0xff7aa2ff;
+    private static final int ACCENT_DARK = 0xff2b4fa5;
+    private static final int OK = 0xff4cc38a;
+    private static final int WARN = 0xffe0a84f;
+    private static final int ERROR = 0xffef6f6f;
     private static final int PERMISSION = 1;
     private static final int HISTORY_LIMIT = 48_000;
+    private static final char MARK = '\u001e';
+    private static final String[] PROVIDERS = {"Automatisch", "Antigravity", "Offline"};
+    private static final String[] PROVIDER_HINTS = {
+        "Mac per USB, sonst deine API", "Deine API im Internet", "Kleines Modell am Pixel"};
+
     private final ExecutorService reader = Executors.newSingleThreadExecutor();
     private final ExecutorService writer = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
     private final StringBuilder pending = new StringBuilder();
-    private final StringBuilder history = new StringBuilder();
+    private final StringBuilder console = new StringBuilder();
+    private final List<TextView> providerChips = new ArrayList<>();
+    private final List<View> needsConnection = new ArrayList<>();
     private boolean outputScheduled;
     private int pendingGeneration;
-    private int escapeState;
 
+    // Parser-Zustand fuer den Ausgabestrom
+    private int escapeState;
+    private int markState;          // 0 normal, 1 nach MARK, 2 in Markierungszeile
+    private char markKind;
+    private final StringBuilder markLine = new StringBuilder();
+    private boolean inBlock;
+    private StringBuilder blockText;
+    private TextView blockView;
+    private TextView blockMeta;
+
+    private SharedPreferences prefs;
     private TextView state;
+    private View stateDot;
     private Button connection;
     private Button send;
-    private Button ask;
-    private Spinner provider;
-    private Button interrupt;
+    private Button stopButton;
+    private TextView tabAgent;
+    private TextView tabConsole;
+    private View agentPane;
+    private View consolePane;
+    private LinearLayout chat;
+    private ScrollView chatScroll;
     private TextView terminal;
     private ScrollView outputScroll;
     private EditText input;
@@ -73,131 +114,304 @@ public final class MainActivity extends Activity {
     private volatile int generation;
     private boolean connecting;
     private boolean ready;
+    private boolean agentTab = true;
+    private int provider;
+    private int running;
 
     @Override public void onCreate(Bundle savedState) {
         super.onCreate(savedState);
+        prefs = getSharedPreferences("pixel", MODE_PRIVATE);
+        provider = Math.max(0, Math.min(PROVIDERS.length - 1, prefs.getInt("provider", 0)));
+        getWindow().setStatusBarColor(BG);
+        getWindow().setNavigationBarColor(BG);
+
         LinearLayout page = new LinearLayout(this);
         page.setOrientation(LinearLayout.VERTICAL);
-        page.setBackgroundColor(0xfff8fbff);
-        page.setPadding(dp(18), dp(14), dp(18), dp(12));
+        page.setBackgroundColor(BG);
+        page.setPadding(dp(16), dp(12), dp(16), dp(10));
         if (Build.VERSION.SDK_INT >= 30) {
             page.setOnApplyWindowInsetsListener((view, insets) -> {
                 var bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
                 var keyboard = insets.getInsets(WindowInsets.Type.ime());
-                view.setPadding(dp(18) + bars.left, dp(14) + bars.top, dp(18) + bars.right,
-                        dp(12) + Math.max(bars.bottom, keyboard.bottom));
+                view.setPadding(dp(16) + bars.left, dp(12) + bars.top, dp(16) + bars.right,
+                        dp(10) + Math.max(bars.bottom, keyboard.bottom));
                 return insets;
             });
         }
         setContentView(page);
         if (Build.VERSION.SDK_INT >= 30) {
             WindowInsetsController bars = getWindow().getInsetsController();
-            int darkIcons = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                    | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
-            if (bars != null) bars.setSystemBarsAppearance(darkIcons, darkIcons);
+            if (bars != null) bars.setSystemBarsAppearance(0, WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                    | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS);
         }
 
-        TextView title = new TextView(this);
-        title.setText("Pixel-Konsole");
-        title.setTextSize(27);
-        title.setTextColor(INK);
+        // Kopf: Titel, Verbindungsstatus, Verbinden-Knopf
+        LinearLayout header = new LinearLayout(this);
+        header.setGravity(Gravity.CENTER_VERTICAL);
+        page.addView(header);
+        LinearLayout titles = new LinearLayout(this);
+        titles.setOrientation(LinearLayout.VERTICAL);
+        header.addView(titles, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView title = text("Pixel-Konsole", 24, TEXT);
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
-        page.addView(title);
-        state = new TextView(this);
-        state.setText("Wähle dein gekoppeltes Pixel.");
-        state.setTextSize(14);
+        titles.addView(title);
+        LinearLayout stateRow = new LinearLayout(this);
+        stateRow.setGravity(Gravity.CENTER_VERTICAL);
+        titles.addView(stateRow);
+        stateDot = new View(this);
+        stateRow.addView(stateDot, new LinearLayout.LayoutParams(dp(8), dp(8)));
+        state = text("Nicht verbunden", 13, MUTED);
+        state.setPadding(dp(6), 0, 0, 0);
         state.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
-        page.addView(state);
-        connection = button("Pixel auswählen", true);
-        page.addView(connection);
+        stateRow.addView(state);
+        connection = pill("Verbinden", true);
         connection.setOnClickListener(view -> {
-            if (ready || connecting) stop("Verbindung getrennt.");
-            else choosePixel();
+            if (ready || connecting) stop("Verbindung getrennt");
+            else choosePixel(false);
         });
+        connection.setOnLongClickListener(view -> { choosePixel(true); return true; });
+        header.addView(connection);
 
-        outputScroll = new ScrollView(this);
-        outputScroll.setFillViewport(true);
-        outputScroll.setBackgroundColor(INK);
-        LinearLayout.LayoutParams outputParams = new LinearLayout.LayoutParams(-1, 0, 1);
-        outputParams.topMargin = dp(8);
-        page.addView(outputScroll, outputParams);
-        terminal = new TextView(this);
-        terminal.setTypeface(Typeface.MONOSPACE);
-        terminal.setTextSize(13);
-        terminal.setTextColor(0xffe4edff);
-        terminal.setPadding(dp(12), dp(9), dp(12), dp(9));
-        terminal.setTextIsSelectable(true);
-        terminal.setText("Die Ausgabe vom Pixel erscheint hier.");
-        outputScroll.addView(terminal);
+        // Reiter
+        LinearLayout tabs = new LinearLayout(this);
+        tabs.setBackground(round(SURFACE, 22));
+        tabs.setPadding(dp(4), dp(4), dp(4), dp(4));
+        LinearLayout.LayoutParams tabsParams = new LinearLayout.LayoutParams(-1, -2);
+        tabsParams.topMargin = dp(12);
+        page.addView(tabs, tabsParams);
+        tabAgent = tab("Agent");
+        tabConsole = tab("Konsole");
+        tabs.addView(tabAgent, new LinearLayout.LayoutParams(0, dp(38), 1));
+        tabs.addView(tabConsole, new LinearLayout.LayoutParams(0, dp(38), 1));
+        tabAgent.setOnClickListener(view -> showTab(true));
+        tabConsole.setOnClickListener(view -> showTab(false));
 
-        provider = new Spinner(this);
-        ArrayAdapter<String> providers = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item,
-                new String[]{"Agent: automatisch (Mac, sonst Antigravity)", "Agent: Antigravity", "Agent: offline am Pixel"});
-        providers.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        provider.setAdapter(providers);
-        provider.setContentDescription("Anbieter für den Agenten");
-        LinearLayout.LayoutParams providerParams = new LinearLayout.LayoutParams(-1, -2);
-        providerParams.topMargin = dp(6);
-        page.addView(provider, providerParams);
+        FrameLayout panes = new FrameLayout(this);
+        LinearLayout.LayoutParams panesParams = new LinearLayout.LayoutParams(-1, 0, 1);
+        panesParams.topMargin = dp(10);
+        page.addView(panes, panesParams);
+        agentPane = buildAgentPane();
+        consolePane = buildConsolePane();
+        panes.addView(agentPane, new FrameLayout.LayoutParams(-1, -1));
+        panes.addView(consolePane, new FrameLayout.LayoutParams(-1, -1));
 
+        // Eingabezeile
+        LinearLayout bar = new LinearLayout(this);
+        bar.setGravity(Gravity.BOTTOM);
+        LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(-1, -2);
+        barParams.topMargin = dp(10);
+        page.addView(bar, barParams);
         input = new EditText(this);
-        input.setSingleLine(false);
-        input.setMaxLines(4);
-        input.setTextColor(INK);
+        input.setTextColor(TEXT);
         input.setHintTextColor(MUTED);
-        input.setHint("Auftrag für den Agenten oder Befehl");
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        input.setTextSize(15);
+        input.setBackground(round(SURFACE, 22));
+        input.setPadding(dp(16), dp(11), dp(16), dp(11));
+        input.setMaxLines(5);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE
+                | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
         input.setImportantForAutofill(View.IMPORTANT_FOR_AUTOFILL_NO);
         input.setFilters(new InputFilter[]{new InputFilter.LengthFilter(4096)});
         input.setImeOptions(EditorInfo.IME_ACTION_SEND);
-        input.setOnEditorActionListener((view, action, event) -> {
-            if (action != EditorInfo.IME_ACTION_SEND) return false;
-            sendLine();
-            return true;
-        });
-        page.addView(input);
+        bar.addView(input, new LinearLayout.LayoutParams(0, -2, 1));
+        stopButton = roundButton("■", ERROR);
+        stopButton.setContentDescription("Laufenden Auftrag abbrechen");
+        stopButton.setOnClickListener(view -> transmit(new byte[]{3}));
+        LinearLayout.LayoutParams stopParams = new LinearLayout.LayoutParams(dp(46), dp(46));
+        stopParams.leftMargin = dp(8);
+        bar.addView(stopButton, stopParams);
+        send = roundButton("➤", ACCENT_DARK);
+        send.setContentDescription("Senden");
+        send.setOnClickListener(view -> submit());
+        LinearLayout.LayoutParams sendParams = new LinearLayout.LayoutParams(dp(46), dp(46));
+        sendParams.leftMargin = dp(8);
+        bar.addView(send, sendParams);
+        needsConnection.add(send);
 
-        LinearLayout buttons = new LinearLayout(this);
-        buttons.setOrientation(LinearLayout.HORIZONTAL);
-        page.addView(buttons);
-        ask = button("Agent fragen", true);
-        ask.setOnClickListener(view -> askAgent());
-        buttons.addView(ask, new LinearLayout.LayoutParams(0, -2, 1));
-        send = button("Als Befehl", false);
-        send.setOnClickListener(view -> sendLine());
-        buttons.addView(send);
-        interrupt = button("Strg+C", false);
-        interrupt.setContentDescription("Laufenden Befehl abbrechen");
-        interrupt.setOnClickListener(view -> transmit(new byte[]{3}));
-        buttons.addView(interrupt);
+        showTab(true);
+        message("Nicht verbunden", MUTED);
+        render();
+        String saved = prefs.getString("device", null);
+        if (saved != null && hasPermission()) main.post(() -> connectSaved(saved));
+    }
+
+    // ---------- Aufbau der beiden Ansichten ----------
+
+    private View buildAgentPane() {
+        LinearLayout pane = new LinearLayout(this);
+        pane.setOrientation(LinearLayout.VERTICAL);
+
+        HorizontalScrollView chipScroll = new HorizontalScrollView(this);
+        chipScroll.setHorizontalScrollBarEnabled(false);
+        LinearLayout chips = new LinearLayout(this);
+        chipScroll.addView(chips);
+        pane.addView(chipScroll);
+        for (int i = 0; i < PROVIDERS.length; i++) {
+            final int index = i;
+            TextView chip = chip(PROVIDERS[i]);
+            chip.setOnClickListener(view -> {
+                provider = index;
+                prefs.edit().putInt("provider", index).apply();
+                renderProviders();
+                toast(PROVIDER_HINTS[index]);
+            });
+            providerChips.add(chip);
+            chips.addView(chip, chipParams());
+        }
+        renderProviders();
+
+        chatScroll = new ScrollView(this);
+        chatScroll.setFillViewport(true);
+        chat = new LinearLayout(this);
+        chat.setOrientation(LinearLayout.VERTICAL);
+        chat.setPadding(0, dp(6), 0, dp(6));
+        chatScroll.addView(chat);
+        LinearLayout.LayoutParams chatParams = new LinearLayout.LayoutParams(-1, 0, 1);
+        chatParams.topMargin = dp(8);
+        pane.addView(chatScroll, chatParams);
+        system("Verbinde das Pixel und schreib einen Auftrag. Antworten erscheinen hier. "
+                + "Lange auf eine Antwort drücken kopiert sie.");
+
+        HorizontalScrollView quickScroll = new HorizontalScrollView(this);
+        quickScroll.setHorizontalScrollBarEnabled(false);
+        LinearLayout quick = new LinearLayout(this);
+        quickScroll.addView(quick);
+        pane.addView(quickScroll);
+        quickAction(quick, "Status", "Status",
+                "echo \"Akku: $(cat /sys/class/power_supply/qcom-battery/capacity)% ($(cat /sys/class/power_supply/qcom-battery/status))\";"
+                + " echo \"Energie: $(blueline-powerd status 2>/dev/null | sed -n 's/^modus=//p')\";"
+                + " echo \"Netz: $(nmcli -t -f DEVICE,STATE,CONNECTION dev 2>/dev/null | grep -E '^(wlan0|bnep)' | cut -d: -f2- | tr '\\n' ' ')\";"
+                + " echo \"Speicher frei: $(df -h / | awk 'NR==2{print $4}')\"; uptime -p");
+        quickAction(quick, "Akku", "Akku",
+                "b=/sys/class/power_supply/qcom-battery; echo \"$(cat $b/capacity)% · $(cat $b/status)\";"
+                + " echo \"Temperatur: $(( $(cat $b/temp) / 10 )) °C\"");
+        quickAction(quick, "WLAN", "WLAN",
+                "nmcli -t -f ACTIVE,SSID,SIGNAL dev wifi 2>/dev/null | grep '^yes' | cut -d: -f2- | sed 's/:/ · Signal /'"
+                + " | grep . || echo 'Kein WLAN'; ip -4 -br addr show wlan0 2>/dev/null | awk '{print \"IP: \"$3}'");
+        quickAction(quick, "Taschenlampe", "Taschenlampe",
+                "f=/sys/class/leds/white:flash/brightness; if [ \"$(cat $f)\" -gt 0 ]; then echo 0 > $f;"
+                + " echo 'Taschenlampe aus'; else echo 64 > $f; echo 'Taschenlampe an'; fi");
+        quickAction(quick, "Bildschirm an", "Bildschirm",
+                "hyprctl dispatch 'hl.dsp.dpms({ action = \"enable\" })' >/dev/null && echo 'Bildschirm an'");
+        quickAction(quick, "Agenten prüfen", "Agenten",
+                "curl -s -o /dev/null -w 'Mac-Modell: %{http_code}\\n' --max-time 3 http://127.0.0.1:11234/v1/models"
+                + " | sed 's/: 200/: erreichbar/; s/: 000/: nicht erreichbar/';"
+                + " curl -s -o /dev/null -w 'Internet: %{http_code}\\n' --max-time 5 https://example.com"
+                + " | sed 's/: 200/: ok/; s/: 000/: keine Verbindung/'");
+        return pane;
+    }
+
+    private View buildConsolePane() {
+        LinearLayout pane = new LinearLayout(this);
+        pane.setOrientation(LinearLayout.VERTICAL);
+        outputScroll = new ScrollView(this);
+        outputScroll.setFillViewport(true);
+        outputScroll.setBackground(round(0xff0a0d15, 16));
+        pane.addView(outputScroll, new LinearLayout.LayoutParams(-1, 0, 1));
+        terminal = new TextView(this);
+        terminal.setTypeface(Typeface.MONOSPACE);
+        terminal.setTextSize(12.5f);
+        terminal.setTextColor(0xffcfe0ff);
+        terminal.setPadding(dp(12), dp(10), dp(12), dp(10));
+        terminal.setTextIsSelectable(true);
+        console.append("Befehle laufen als Benutzer omarchy auf dem Pixel.\n");
+        terminal.setText(console);
+        outputScroll.addView(terminal);
+        return pane;
+    }
+
+    private void quickAction(LinearLayout row, String label, String title, String command) {
+        TextView chip = chip(label);
+        chip.setTextColor(TEXT);
+        chip.setBackground(round(SURFACE_HIGH, 18));
+        chip.setOnClickListener(view -> {
+            if (!ready) { toast("Zuerst das Pixel verbinden"); return; }
+            if (running > 0) { toast("Es läuft noch ein Auftrag"); return; }
+            runBlock(title, command, false);
+        });
+        needsConnection.add(chip);
+        row.addView(chip, chipParams());
+    }
+
+    // ---------- Senden ----------
+
+    private void submit() {
+        if (!ready) return;
+        String text = input.getText().toString().trim();
+        if (text.isEmpty()) return;
+        input.setText("");
+        String line = text.replace('\r', ' ').replace('\n', ' ');
+        if (!agentTab) {
+            appendConsole("$ " + line + "\n");
+            transmit((line + "\n").getBytes(StandardCharsets.UTF_8));
+            return;
+        }
+        bubble(text, true);
+        if (running > 0) {
+            // Rueckfrage des laufenden Auftrags beantworten
+            transmit((line + "\n").getBytes(StandardCharsets.UTF_8));
+            return;
+        }
+        String quoted = "'" + line.replace("'", "'\\''") + "'";
+        String command;
+        switch (provider) {
+            case 1: command = "hermes chat -Q --provider antigravity --query " + quoted; break;
+            case 2: command = "hermes-offline chat -Q --query " + quoted; break;
+            default: command = "hermes chat -Q --query " + quoted;
+        }
+        runBlock(PROVIDERS[provider], command, true);
+    }
+
+    private void runBlock(String title, String command, boolean agent) {
+        running++;
+        openBlock(title, agent);
+        String wrapped = "printf '\\036S\\n'; " + command + "; printf '\\036E%d\\n' \"$?\"\n";
+        transmit(wrapped.getBytes(StandardCharsets.UTF_8));
         render();
     }
 
-    private void choosePixel() {
-        if (Build.VERSION.SDK_INT >= 31 && checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
-                != PackageManager.PERMISSION_GRANTED) {
+    // ---------- Bluetooth ----------
+
+    private boolean hasPermission() {
+        return Build.VERSION.SDK_INT < 31 || checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private BluetoothAdapter adapter() {
+        BluetoothManager manager = getSystemService(BluetoothManager.class);
+        return manager == null ? null : manager.getAdapter();
+    }
+
+    private void connectSaved(String address) {
+        BluetoothAdapter adapter = adapter();
+        if (adapter == null || !adapter.isEnabled()) return;
+        try {
+            for (BluetoothDevice device : adapter.getBondedDevices()) {
+                if (device.getAddress().equals(address)) { connect(device); return; }
+            }
+        } catch (SecurityException ignored) {
+            // Ohne Berechtigung verbindet der Knopf.
+        }
+    }
+
+    private void choosePixel(boolean forceList) {
+        if (!hasPermission()) {
             requestPermissions(new String[]{Manifest.permission.BLUETOOTH_CONNECT}, PERMISSION);
             return;
         }
-        BluetoothManager manager = getSystemService(BluetoothManager.class);
-        BluetoothAdapter adapter = manager == null ? null : manager.getAdapter();
-        if (adapter == null) {
-            state.setText("Bluetooth ist auf diesem Handy nicht verfügbar.");
-            return;
-        }
-        if (!adapter.isEnabled()) {
-            state.setText("Schalte Bluetooth auf diesem Handy ein.");
-            openSettings();
-            return;
-        }
+        BluetoothAdapter adapter = adapter();
+        if (adapter == null) { message("Bluetooth ist nicht verfügbar", ERROR); return; }
+        if (!adapter.isEnabled()) { message("Schalte Bluetooth ein", WARN); openSettings(); return; }
+        String saved = prefs.getString("device", null);
         List<BluetoothDevice> devices = new ArrayList<>(adapter.getBondedDevices());
-        if (devices.isEmpty()) {
-            state.setText("Kopple das Pixel in den Bluetooth-Einstellungen.");
-            openSettings();
-            return;
+        if (!forceList && saved != null) {
+            for (BluetoothDevice device : devices) {
+                if (device.getAddress().equals(saved)) { connect(device); return; }
+            }
         }
+        if (devices.isEmpty()) { message("Kopple zuerst das Pixel", WARN); openSettings(); return; }
         String[] names = devices.stream().map(this::deviceName).toArray(String[]::new);
-        new AlertDialog.Builder(this).setTitle("Gekoppeltes Pixel auswählen")
+        new AlertDialog.Builder(this).setTitle("Pixel auswählen")
                 .setItems(names, (dialog, which) -> connect(devices.get(which)))
                 .setNeutralButton("Bluetooth-Einstellungen", (dialog, button) -> openSettings())
                 .setNegativeButton("Abbrechen", null).show();
@@ -206,12 +420,17 @@ public final class MainActivity extends Activity {
     @Override public void onRequestPermissionsResult(int request, String[] permissions, int[] results) {
         super.onRequestPermissionsResult(request, permissions, results);
         if (request != PERMISSION) return;
-        if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) choosePixel();
-        else state.setText("Erlaube in den App-Einstellungen den Zugriff auf Geräte in der Nähe.");
+        if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) choosePixel(false);
+        else message("Erlaube den Zugriff auf Geräte in der Nähe", WARN);
     }
 
     private String deviceName(BluetoothDevice device) {
-        String name = device.getName();
+        String name;
+        try {
+            name = device.getName();
+        } catch (SecurityException e) {
+            name = null;
+        }
         return name == null || name.trim().isEmpty() ? device.getAddress() : name;
     }
 
@@ -223,13 +442,11 @@ public final class MainActivity extends Activity {
             pending.setLength(0);
             pendingGeneration = current;
         }
-        history.setLength(0);
-        escapeState = 0;
-        terminal.setText("");
-        state.setText("Verbinde mit " + name + " …");
+        resetParser();
+        message("Verbinde mit " + name + " …", WARN);
         render();
         Runnable expiry = () -> {
-            if (generation == current && connecting) stop("Die Bluetooth-Verbindung hat zu lange gedauert.");
+            if (generation == current && connecting) stop("Das Pixel hat nicht geantwortet");
         };
         main.postDelayed(expiry, 20_000);
         reader.execute(() -> openSession(device, name, current, expiry));
@@ -251,15 +468,19 @@ public final class MainActivity extends Activity {
             InputStream stream = candidate.getInputStream();
             JSONObject reply = new JSONObject(readReply(stream));
             if (!reply.optBoolean("ok")) throw new IOException("Terminal unavailable");
+            // Ohne Zeileneditor und Echo kommt nur die Ausgabe zurueck.
+            candidate.getOutputStream().write(("set +o emacs +o vi; stty -echo; PS1=; PS2=; "
+                    + "export NO_COLOR=1 TERM=dumb; printf '\\036R\\n'\n").getBytes(StandardCharsets.UTF_8));
+            candidate.getOutputStream().flush();
             opened = true;
             main.post(() -> {
                 if (generation != current) return;
                 main.removeCallbacks(expiry);
                 connecting = false;
                 ready = true;
-                state.setText("Verbunden mit " + name);
+                prefs.edit().putString("device", device.getAddress()).apply();
+                message("Verbunden mit " + name, OK);
                 render();
-                input.requestFocus();
             });
             InputStreamReader text = new InputStreamReader(stream, StandardCharsets.UTF_8);
             char[] buffer = new char[4096];
@@ -268,13 +489,12 @@ public final class MainActivity extends Activity {
                 queueOutput(buffer, length, current);
             }
         } catch (IOException | JSONException | SecurityException failure) {
-            // The paired device can refuse access or the link can close while the terminal is open.
+            // Verweigerte Freigabe oder getrennte Verbindung beenden die Sitzung.
         } finally {
-            String message = opened ? "Die Pixelsitzung wurde beendet."
-                    : "Verbindung fehlgeschlagen. Prüfe die Freigabe am Pixel.";
+            String note = opened ? "Verbindung beendet" : "Verbindung fehlgeschlagen – Freigabe am Pixel prüfen";
             main.post(() -> {
                 main.removeCallbacks(expiry);
-                if (generation == current) stop(message);
+                if (generation == current) stop(note);
             });
         }
     }
@@ -290,32 +510,6 @@ public final class MainActivity extends Activity {
         throw new IOException("No terminal reply");
     }
 
-    // Ein Auftrag wird als Hermes-Aufruf in die Pixel-Shell geschrieben; die
-    // Antwort kommt wie jede Ausgabe zurueck, Rueckfragen beantwortet das
-    // Eingabefeld, Strg+C bricht ab.
-    private void askAgent() {
-        if (!ready) return;
-        String prompt = input.getText().toString().replace('\r', ' ').replace('\n', ' ').trim();
-        if (prompt.isEmpty()) return;
-        String quoted = "'" + prompt.replace("'", "'\\''") + "'";
-        String command;
-        switch (provider.getSelectedItemPosition()) {
-            case 1: command = "hermes chat -Q --provider antigravity --query " + quoted; break;
-            case 2: command = "hermes-offline chat -Q --query " + quoted; break;
-            default: command = "hermes chat -Q --query " + quoted;
-        }
-        appendOutput("\n» " + prompt + "\n");
-        transmit((command + "\n").getBytes(StandardCharsets.UTF_8));
-        input.setText("");
-    }
-
-    private void sendLine() {
-        if (!ready) return;
-        String command = input.getText().toString().replace('\n', ' ') + "\n";
-        transmit(command.getBytes(StandardCharsets.UTF_8));
-        input.setText("");
-    }
-
     private void transmit(byte[] message) {
         BluetoothSocket current = socket;
         if (!ready || current == null) return;
@@ -325,18 +519,19 @@ public final class MainActivity extends Activity {
                 current.getOutputStream().flush();
             } catch (IOException failure) {
                 main.post(() -> {
-                    if (socket == current) stop("Die Bluetooth-Verbindung wurde getrennt.");
+                    if (socket == current) stop("Bluetooth-Verbindung getrennt");
                 });
             }
         });
     }
 
-    private void queueOutput(char[] bytes, int length, int current) {
+    // ---------- Ausgabe verarbeiten ----------
+
+    private void queueOutput(char[] chars, int length, int current) {
         synchronized (pending) {
             if (generation != current) return;
             pendingGeneration = current;
-            pending.append(bytes, 0, length);
-            if (pending.length() > HISTORY_LIMIT) pending.delete(0, pending.length() - HISTORY_LIMIT);
+            pending.append(chars, 0, length);
             if (outputScheduled) return;
             outputScheduled = true;
         }
@@ -349,13 +544,42 @@ public final class MainActivity extends Activity {
                 pending.setLength(0);
                 outputScheduled = false;
             }
-            if (owner == generation) appendOutput(text);
+            if (owner == generation) consume(text);
         });
     }
 
-    private void appendOutput(String text) {
+    private void resetParser() {
+        escapeState = 0;
+        markState = 0;
+        markLine.setLength(0);
+        inBlock = false;
+        running = 0;
+    }
+
+    private void consume(String text) {
+        StringBuilder plain = new StringBuilder();
         for (int i = 0; i < text.length(); i++) {
             char ch = text.charAt(i);
+            if (markState == 1) {
+                markKind = ch;
+                markState = 2;
+                markLine.setLength(0);
+                continue;
+            }
+            if (markState == 2) {
+                if (ch == '\n') {
+                    flushPlain(plain);
+                    handleMark(markKind, markLine.toString());
+                    markState = 0;
+                } else if (ch != '\r') {
+                    markLine.append(ch);
+                }
+                continue;
+            }
+            if (ch == MARK) {
+                markState = 1;
+                continue;
+            }
             switch (escapeState) {
                 case 1: escapeState = ch == '[' ? 2 : ch == ']' ? 3 : 0; break;
                 case 2: if (ch >= '@' && ch <= '~') escapeState = 0; break;
@@ -363,55 +587,255 @@ public final class MainActivity extends Activity {
                 case 4: escapeState = ch == '\\' ? 0 : 3; break;
                 default:
                     if (ch == '\u001b') escapeState = 1;
-                    else if (ch == '\n' || ch == '\t' || !Character.isISOControl(ch)) history.append(ch);
+                    else if (ch == '\n' || ch == '\t' || !Character.isISOControl(ch)) plain.append(ch);
             }
         }
-        if (history.length() > HISTORY_LIMIT) history.delete(0, history.length() - HISTORY_LIMIT);
-        terminal.setText(history);
+        flushPlain(plain);
+    }
+
+    private void flushPlain(StringBuilder plain) {
+        if (plain.length() == 0) return;
+        String chunk = plain.toString();
+        plain.setLength(0);
+        if (inBlock && blockText != null) {
+            blockText.append(chunk);
+            String shown = blockText.toString().replaceAll("(?m)^session_id: .*$", "").trim();
+            blockView.setText(shown.isEmpty() ? "…" : shown);
+            scrollChat();
+        } else {
+            appendConsole(chunk);
+        }
+    }
+
+    private void handleMark(char kind, String rest) {
+        if (kind == 'R') {
+            // Shell eingerichtet: das Echo der Einrichtungszeile verwerfen.
+            console.setLength(0);
+            console.append("Befehle laufen als Benutzer omarchy auf dem Pixel.\n");
+            terminal.setText(console);
+        } else if (kind == 'S') {
+            inBlock = true;
+        } else if (kind == 'E') {
+            inBlock = false;
+            if (running > 0) running--;
+            String code = rest.trim();
+            boolean ok = code.equals("0");
+            boolean cancelled = code.equals("130");
+            if (blockMeta != null) {
+                blockMeta.setText(blockMeta.getText().toString().replace(" · läuft …", "")
+                        + (ok ? " · fertig" : cancelled ? " · abgebrochen" : " · Fehler " + code));
+                blockMeta.setTextColor(ok ? OK : cancelled ? WARN : ERROR);
+            }
+            if (blockText != null && blockText.toString().trim().isEmpty() && blockView != null) {
+                blockView.setText(ok ? "Erledigt." : "Keine Ausgabe.");
+            }
+            blockText = null;
+            render();
+        }
+    }
+
+    private void appendConsole(String chunk) {
+        console.append(chunk);
+        if (console.length() > HISTORY_LIMIT) console.delete(0, console.length() - HISTORY_LIMIT);
+        terminal.setText(console);
         outputScroll.post(() -> outputScroll.scrollTo(0, terminal.getHeight()));
     }
 
-    private synchronized void stop(String message) {
+    // ---------- Chat-Elemente ----------
+
+    private void openBlock(String title, boolean agent) {
+        LinearLayout card = new LinearLayout(this);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setBackground(round(SURFACE, 18));
+        card.setPadding(dp(14), dp(10), dp(14), dp(12));
+        blockMeta = text((agent ? "Hermes · " : "") + title + " · läuft …", 12, ACCENT);
+        card.addView(blockMeta);
+        blockView = text("…", 15, TEXT);
+        blockView.setLineSpacing(0, 1.15f);
+        blockView.setPadding(0, dp(4), 0, 0);
+        TextView target = blockView;
+        card.setOnLongClickListener(view -> {
+            copy(target.getText().toString());
+            return true;
+        });
+        card.addView(blockView);
+        blockText = new StringBuilder();
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, -2);
+        params.topMargin = dp(8);
+        params.rightMargin = dp(36);
+        chat.addView(card, params);
+        scrollChat();
+    }
+
+    private void bubble(String text, boolean mine) {
+        TextView view = text(text, 15, mine ? 0xffffffff : TEXT);
+        view.setBackground(round(mine ? ACCENT_DARK : SURFACE, 18));
+        view.setPadding(dp(14), dp(10), dp(14), dp(10));
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-2, -2);
+        params.topMargin = dp(8);
+        params.gravity = mine ? Gravity.END : Gravity.START;
+        if (mine) params.leftMargin = dp(48);
+        chat.addView(view, params);
+        scrollChat();
+    }
+
+    private void system(String text) {
+        TextView view = text(text, 13, MUTED);
+        view.setGravity(Gravity.CENTER);
+        view.setPadding(dp(12), dp(8), dp(12), dp(8));
+        chat.addView(view, new LinearLayout.LayoutParams(-1, -2));
+    }
+
+    private void scrollChat() { chatScroll.post(() -> chatScroll.fullScroll(View.FOCUS_DOWN)); }
+
+    private void copy(String text) {
+        ClipboardManager clipboard = getSystemService(ClipboardManager.class);
+        if (clipboard == null) return;
+        clipboard.setPrimaryClip(ClipData.newPlainText("Antwort", text));
+        toast("Kopiert");
+    }
+
+    // ---------- Zustand ----------
+
+    private synchronized void stop(String note) {
         generation++;
         BluetoothSocket previous = socket;
         socket = null;
         if (previous != null) {
-            try { previous.close(); } catch (IOException ignored) { }
+            try {
+                previous.close();
+            } catch (IOException ignored) {
+                // Bereits getrennt.
+            }
         }
         connecting = false;
         ready = false;
-        state.setText(message);
+        if (inBlock || running > 0) handleMark('E', "1");
+        resetParser();
+        message(note, MUTED);
         render();
     }
 
-    private void render() {
-        connection.setText(connecting ? "Verbindung abbrechen" : ready ? "Verbindung trennen" : "Pixel auswählen");
-        state.setTextColor(ready ? CONNECTED : MUTED);
-        input.setEnabled(ready);
-        send.setEnabled(ready);
-        ask.setEnabled(ready);
-        provider.setEnabled(ready);
-        interrupt.setEnabled(ready);
+    private void showTab(boolean agent) {
+        agentTab = agent;
+        agentPane.setVisibility(agent ? View.VISIBLE : View.GONE);
+        consolePane.setVisibility(agent ? View.GONE : View.VISIBLE);
+        styleTab(tabAgent, agent);
+        styleTab(tabConsole, !agent);
+        input.setHint(agent ? "Auftrag an Hermes …" : "Befehl für das Pixel …");
+        if (stopButton != null) render();
     }
 
-    private void openSettings() { startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS)); }
-    private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
+    private void render() {
+        connection.setText(connecting ? "Abbrechen" : ready ? "Trennen" : "Verbinden");
+        for (View view : needsConnection) {
+            view.setEnabled(ready);
+            view.setAlpha(ready ? 1f : 0.45f);
+        }
+        input.setEnabled(ready);
+        stopButton.setVisibility(ready && (running > 0 || !agentTab) ? View.VISIBLE : View.GONE);
+    }
 
-    private Button button(String label, boolean primary) {
+    private void renderProviders() {
+        for (int i = 0; i < providerChips.size(); i++) {
+            TextView chip = providerChips.get(i);
+            boolean selected = i == provider;
+            chip.setBackground(selected ? round(ACCENT, 18) : outline());
+            chip.setTextColor(selected ? 0xff0b1020 : MUTED);
+        }
+    }
+
+    private void message(String text, int color) {
+        state.setText(text);
+        state.setTextColor(color == OK ? TEXT : color);
+        GradientDrawable dot = new GradientDrawable();
+        dot.setShape(GradientDrawable.OVAL);
+        dot.setColor(color);
+        stateDot.setBackground(dot);
+    }
+
+    // ---------- Bausteine ----------
+
+    private TextView text(String value, float size, int color) {
+        TextView view = new TextView(this);
+        view.setText(value);
+        view.setTextSize(size);
+        view.setTextColor(color);
+        return view;
+    }
+
+    private TextView tab(String label) {
+        TextView view = text(label, 14, MUTED);
+        view.setGravity(Gravity.CENTER);
+        view.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
+        return view;
+    }
+
+    private void styleTab(TextView view, boolean selected) {
+        view.setBackground(selected ? round(SURFACE_HIGH, 18) : null);
+        view.setTextColor(selected ? TEXT : MUTED);
+    }
+
+    private TextView chip(String label) {
+        TextView view = text(label, 13, MUTED);
+        view.setPadding(dp(14), 0, dp(14), 0);
+        view.setGravity(Gravity.CENTER);
+        return view;
+    }
+
+    private LinearLayout.LayoutParams chipParams() {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-2, dp(34));
+        params.rightMargin = dp(8);
+        params.topMargin = dp(4);
+        return params;
+    }
+
+    private Button pill(String label, boolean primary) {
         Button button = new Button(this);
         button.setText(label);
         button.setAllCaps(false);
-        button.setMinimumHeight(dp(48));
-        if (primary) {
-            int[][] enabled = {new int[]{-android.R.attr.state_enabled}, new int[0]};
-            button.setBackgroundTintList(new ColorStateList(enabled, new int[]{0xffe3ebf7, BLUE}));
-            button.setTextColor(new ColorStateList(enabled, new int[]{MUTED, 0xffffffff}));
-        }
+        button.setTextColor(primary ? 0xffffffff : TEXT);
+        button.setBackground(round(primary ? ACCENT_DARK : SURFACE_HIGH, 20));
+        button.setPadding(dp(18), 0, dp(18), 0);
+        button.setMinHeight(dp(40));
+        button.setMinimumHeight(dp(40));
+        button.setStateListAnimator(null);
         return button;
     }
 
+    private Button roundButton(String label, int color) {
+        Button button = new Button(this);
+        button.setText(label);
+        button.setTextSize(16);
+        button.setTextColor(0xffffffff);
+        GradientDrawable shape = new GradientDrawable();
+        shape.setShape(GradientDrawable.OVAL);
+        shape.setColor(color);
+        button.setBackground(shape);
+        button.setPadding(0, 0, 0, 0);
+        button.setStateListAnimator(null);
+        return button;
+    }
+
+    private GradientDrawable round(int color, int radius) {
+        GradientDrawable shape = new GradientDrawable();
+        shape.setColor(color);
+        shape.setCornerRadius(dp(radius));
+        return shape;
+    }
+
+    private GradientDrawable outline() {
+        GradientDrawable shape = round(0x00000000, 18);
+        shape.setStroke(dp(1), 0xff33405c);
+        return shape;
+    }
+
+    private void toast(String text) { Toast.makeText(this, text, Toast.LENGTH_SHORT).show(); }
+    private void openSettings() { startActivity(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS)); }
+    private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
+
     @Override protected void onDestroy() {
-        stop("Verbindung getrennt.");
+        stop("Verbindung getrennt");
         reader.shutdownNow();
         writer.shutdownNow();
         main.removeCallbacksAndMessages(null);

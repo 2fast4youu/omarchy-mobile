@@ -15,7 +15,8 @@ mkdir "$stage/classes"
 javac --release 11 -encoding UTF-8 -Xlint:all -cp "$platform" -d "$stage/classes" "$source_dir/MainActivity.java"
 jar cf "$stage/classes.jar" -C "$stage/classes" .
 "$tools/d8" --min-api 26 --lib "$platform" --output "$stage" "$stage/classes.jar"
-"$tools/aapt2" link -I "$platform" --manifest "$source_dir/AndroidManifest.xml" -o "$stage/resources.apk"
+"$tools/aapt2" compile --dir "$source_dir/res" -o "$stage/res.zip"
+"$tools/aapt2" link -I "$platform" --manifest "$source_dir/AndroidManifest.xml" -R "$stage/res.zip" --auto-add-overlay -o "$stage/resources.apk"
 zip -q -j -X "$stage/resources.apk" "$stage/classes.dex"
 "$tools/zipalign" -f 4 "$stage/resources.apk" "$stage/aligned.apk"
 
