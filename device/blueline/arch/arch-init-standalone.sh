@@ -298,7 +298,16 @@ mkdir -p /home/omarchy/.local/state/omarchy/current/theme
 [ -f /home/omarchy/.local/state/omarchy/current/theme/foot.ini ] || : > /home/omarchy/.local/state/omarchy/current/theme/foot.ini
 [ -f /home/omarchy/.local/state/omarchy/current/background ] || cp /usr/share/omarchy/themes/catppuccin/backgrounds/2-waves.png /home/omarchy/.local/state/omarchy/current/background 2>/dev/null || true
 chown -R omarchy:omarchy /home/omarchy/.local/state/omarchy 2>/dev/null
-su - omarchy -c 'omarchy-done mark first-run-user' >/dev/null 2>&1 || true
+# Omarchys First-Run aktiviert zuerst systemd-Benutzerdienste; ohne
+# Benutzer-systemd scheitert genau dieser Schritt immer, und der First-Run
+# wiederholt sich bei jedem Login samt Willkommens- und Update-Hinweisen.
+# Ist er einmal bis zum letzten Schritt gelaufen, gilt er als erledigt.
+# (Frueher: "su - omarchy -c", das als omarchy selbst ein Passwort verlangt.)
+if ! omarchy-done check first-run-user 2>/dev/null &&
+   grep -q "Completed: schedule Wi-Fi, agent, fingerprint and update notifications" \
+       "\$HOME/.local/state/omarchy/first-run.log" 2>/dev/null; then
+    omarchy-done mark first-run-user 2>/dev/null || true
+fi
 # Until there is a local password, leave the idle lock unarmed. The
 # display's independent idle timers still run.
 if [ "\$(passwd -S omarchy 2>/dev/null | cut -d ' ' -f 2)" = L ]; then
