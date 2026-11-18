@@ -318,8 +318,13 @@ if idle.get("lock", 0) > 0:
 PY
 fi
 # Deutsches Tastatur-Layout fuer die Bildschirmtastatur (Squeekboard liest
-# die GNOME-xkb-Einstellung; ohne sie bleibt die OSK leer).
-su - omarchy -c 'gsettings set org.gnome.desktop.input-sources sources "[('"'"'xkb'"'"','"'"'de'"'"')]"' >/dev/null 2>&1 || true
+# die GNOME-xkb-Einstellung). Das muss in der D-Bus-Sitzung laufen: ein
+# frueheres "su - omarchy -c gsettings" ohne Sitzungsbus schrieb nur in
+# das Speicher-Backend, die Liste blieb leer und Squeekboard zeigte US.
+# Eine vom Benutzer gewaehlte Liste bleibt unangetastet.
+case "\$(gsettings get org.gnome.desktop.input-sources sources 2>/dev/null)" in
+    ''|'@a(ss) []') gsettings set org.gnome.desktop.input-sources sources "[('xkb', 'de')]" 2>/dev/null || true ;;
+esac
 start-hyprland >/tmp/hyprland.log 2>&1 &
 # Hyprland creates its control socket before the Wayland display exists.
 # Start the clients only after both sockets are available.
@@ -345,7 +350,27 @@ if [ -z "\$sig" ] || [ -z "\$wdisp" ]; then
     exit 1
 fi
 export WAYLAND_DISPLAY=\$wdisp HYPRLAND_INSTANCE_SIGNATURE=\$sig
-squeekboard >/tmp/squeekboard.log 2>&1 &
+# Bildschirmtastatur, Tastatur-Absicherung und Doppeltippen-Wecken laufen
+# sonst als systemd-Benutzerdienste mit Restart=; die Standalone-Sitzung hat
+# keinen Benutzer-systemd. Ein abgestuerztes Squeekboard liess bisher bis
+# zum naechsten Neustart keine Tastatur zurueck.
+keep() {
+    while :; do
+        "\$@"
+        sleep 3
+    done
+}
+# Hyprland startet Squeekboard zusaetzlich ueber autostart.lua
+# (omamobile-setup-user); ein zweites Exemplar beendet sich sofort. Deshalb
+# nur nachstarten, wenn keines laeuft.
+(
+    while :; do
+        pgrep -x -u omarchy squeekboard >/dev/null 2>&1 || squeekboard
+        sleep 5
+    done
+) >/tmp/squeekboard.log 2>&1 &
+[ ! -x /usr/bin/omamobile-osk-guard ] || keep /usr/bin/omamobile-osk-guard >/tmp/omamobile-osk-guard.log 2>&1 &
+[ ! -x /usr/bin/omamobile-doubletap ] || keep /usr/bin/omamobile-doubletap >/tmp/omamobile-doubletap.log 2>&1 &
 # Idle-Daemon: Helligkeit runter, dann Bildschirm aus (Akku).
 # All audio services share the same user D-Bus session as the mobile shell.
 pipewire >/tmp/pipewire.log 2>&1 &
